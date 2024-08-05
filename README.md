@@ -34,8 +34,8 @@ Benchmarks on 10X Xenium and MERSCOPE technologies reveal Segger's superiority i
 To install Segger, clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/yourusername/segger.git
-cd segger
+git clone https://github.com/EliHei2/segger_dev.git
+cd segger_dev
 pip install -r requirements.txt
 ```
 
