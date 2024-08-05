@@ -1,4 +1,3 @@
-Here's the updated `README.md` with a short introduction, focusing on the usage with clear and concise code examples:
 
 ---
 
