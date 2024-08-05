@@ -1,6 +1,3 @@
-
----
-
 # Segger
 
 ![Segger Model](docs/images/Segger_model_08_2024.png)
@@ -85,7 +82,3 @@ For detailed instructions, visit our [documentation](docs/index.html).
 ## License
 
 Segger is licensed under the MIT License.
-
----
-
-This version includes a brief introduction, installation instructions, and clear usage examples focusing on the code.
