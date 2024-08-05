@@ -1,8 +1,9 @@
 # Segger
 
-![Segger Model](docs/images/Segger_model_08_2024.png)
-
 Segger is a cell segmentation model designed for single-molecule resolved datasets, leveraging the co-occurrence of nucleic and cytoplasmic molecules (e.g., transcripts). It employs a heterogeneous graph structure on molecules and nuclei, integrating fixed-radius nearest neighbor graphs for nuclei and molecules, along with edges connecting transcripts to nuclei based on spatial proximity.
+
+
+![Segger Model](docs/images/Segger_model_08_2024.png)
 
 ## Table of Contents
 
