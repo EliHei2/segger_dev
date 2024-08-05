@@ -12,13 +12,7 @@ Imaging-based spatial omics datasets present challenges in reliably segmenting s
 
 Here we introduce Segger, a cell segmentation model designed for single-molecule resolved datasets, leveraging the co-occurrence of nucleic and cytoplasmic molecules (e.g., transcripts). It employs a heterogeneous graph structure on molecules and nuclei, integrating fixed-radius nearest neighbor graphs for nuclei and molecules, along with edges connecting transcripts to nuclei based on spatial proximity. A heterogeneous graph neural network (GNN) is then used to propagate information across these edges to learn the association of molecules with nuclei. Post-training, the model refines cell borders by regrouping transcripts based on confidence levels, overcoming issues like nucleus-less cells or overlapping cells.
 
-Benchmarks on 10X Xenium and MERSCOPE technologies reveal Segger's superiority in accuracy and efficiency over contemporary segmentation methods. Segger can be pre-trained on one or more datasets and fine-tuned with new data, even acquired via different technologies. Its highly parallelizable nature allows for efficient training across multiple GPU machines, facilitated by recent graph learning techniques. Compared to other model-based methods, Segger's training is orders of magnitude faster, making it ideal for integration into preprocessing pipelines for comprehensive spatial omics atlases.
 
-## Features
-
-- **Graph Construction:** Build heterogeneous graphs from spatial transcriptomics data.
-- **Data Processing:** Handle large datasets efficiently.
-- **Machine Learning:** Integrate with graph neural networks for advanced analysis.
 
 ## Installation
 
