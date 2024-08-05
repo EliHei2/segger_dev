@@ -60,7 +60,7 @@ def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_ch
     model = Segger(init_emb=init_emb, hidden_channels=hidden_channels, out_channels=out_channels, heads=heads)
     model = to_hetero(model, (['tx', 'nc'], [('tx', 'belongs', 'nc'), ('tx', 'neighbors', 'tx')]), aggr=aggr)
     litsegger = LitSegger(model)
-    litsegger = litsegger.load_from_checkpoint(checkpoint_path=checkpoint_path, map_location=torch.device('cuda'))
+    litsegger = litsegger.load_from_checkpoint(model, checkpoint_path=checkpoint_path, map_location=torch.device('cuda'))
     return litsegger
 
 def predict(litsegger: LitSegger, dataset_path: str, output_path: str, score_cut: float, k_nc: int, dist_nc: int, k_tx: int, dist_tx: int) -> None:
