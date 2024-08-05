@@ -107,6 +107,27 @@ def predict(litsegger: LitSegger, dataset_path: str, output_path: str, score_cut
             mapping[1, np.where(belongs.values < score_cut)] = 'UNASSIGNED'
             mapping[1, np.where(belongs.values == 0)] = 'FLOATING'
 
+            idx_unknown = np.where((mapping[1,:] == 'UNASSIGNED') | (mapping[1,:] == 'FLOATING'))[0]
+            ids_unknown = ids_tx[idx_unknown]
+            neighbour_idx = batch['tx'].tx_field
+            y_tx = m(y_hat['tx'])
+            similarity = torch.bmm(y_tx[neighbour_idx], y_hat['tx'].unsqueeze(-1))
+            similarity[similarity == 0] = -torch.inf
+            similarity = F.sigmoid(similarity)
+            adj = XeniumSample.kd_to_edge_index_((len(batch['tx'].id[0]), len(batch['tx'].id[0]) + 1), batch['tx'].tx_field.cpu().detach().numpy()).cpu()
+            adj = adj[:, adj[0,:].argsort()]
+            f_output = torch.zeros(len(batch['tx'].id[0]), len(batch['tx'].id[0]) + 1)
+            f_output[adj[0], adj[1]] = similarity.flatten().cpu()
+            f_output = f_output.fill_diagonal_(0)
+            temp = torch.zeros((len(idx_unknown), len(idx_unknown))).cpu()
+            temp[:len(idx_unknown), :len(idx_unknown)] = f_output[idx_unknown, :][:, idx_unknown]
+            n_comps, comps = cc(temp, connection='weak', directed=False)
+            random_strings = np.array([''.join(random.choices(string.ascii_lowercase, k=8)) + '-nx' for _ in range(n_comps)])
+            new_ids = random_strings[comps]
+            new_mapping = np.vstack((ids_unknown, new_ids, np.zeros(len(new_ids))))
+            mapping = mapping[:, ~((mapping[1,:] == 'UNASSIGNED') | (mapping[1,:] == 'FLOATING'))]
+            mapping = np.hstack((mapping, new_mapping))
+
             if all_mappings is None:
                 all_mappings = mapping
             else:
