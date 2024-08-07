@@ -22,7 +22,7 @@ python scripts/create_dataset.py \
     --d_y 180 \
     --x_size 200 \
     --y_size 200 \
-    --r 3 \
+    --r_tx 3 \
     --val_prob 0.1 \
     --test_prob 0.1 \
     --k_nc 3 \
@@ -30,4 +30,6 @@ python scripts/create_dataset.py \
     --k_tx 5 \
     --dist_tx 3 \
     --compute_labels True \
-    --sampling_rate 1
+    --sampling_rate 0.1 \
+    --parallel \
+    --num_workers 4

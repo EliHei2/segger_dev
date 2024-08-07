@@ -30,20 +30,42 @@ def main(args):
 
     xs = XeniumSample().load_transcripts(path=transcripts_path, min_qv=args.min_qv)
     xs.load_nuclei(path=nuclei_path)
-    xs.save_dataset_for_segger(
-        processed_data_dir, 
-        d_x=args.d_x, d_y=args.d_y, x_size=args.x_size, y_size=args.y_size, 
-        margin_x=args.margin_x, margin_y=args.margin_y,
-        r=args.r,
-        val_prob=args.val_prob,
-        test_prob=args.test_prob,
-        k_nc=args.k_nc, 
-        dist_nc=args.dist_nc,
-        k_tx=args.k_tx,
-        dist_tx=args.dist_tx,
-        compute_labels=args.compute_labels,
-        sampling_rate=args.sampling_rate
-    )
+
+    if args.parallel:
+        xs.save_dataset_for_segger_parallel(
+            processed_data_dir, 
+            d_x=args.d_x, d_y=args.d_y, x_size=args.x_size, y_size=args.y_size, 
+            margin_x=args.margin_x, margin_y=args.margin_y,
+            r_tx=args.r_tx,
+            val_prob=args.val_prob,
+            test_prob=args.test_prob,
+            compute_labels=args.compute_labels,
+            sampling_rate=args.sampling_rate,
+            num_workers=args.num_workers,
+            receptive_field={
+                "k_nc": args.k_nc, 
+                "dist_nc": args.dist_nc,
+                "k_tx": args.k_tx,
+                "dist_tx": args.dist_tx
+            }
+        )
+    else:
+        xs.save_dataset_for_segger(
+            processed_data_dir, 
+            d_x=args.d_x, d_y=args.d_y, x_size=args.x_size, y_size=args.y_size, 
+            margin_x=args.margin_x, margin_y=args.margin_y,
+            r_tx=args.r_tx,
+            val_prob=args.val_prob,
+            test_prob=args.test_prob,
+            compute_labels=args.compute_labels,
+            sampling_rate=args.sampling_rate,
+            receptive_field={
+                "k_nc": args.k_nc, 
+                "dist_nc": args.dist_nc,
+                "k_tx": args.k_tx,
+                "dist_tx": args.dist_tx
+            }
+        )
 
     print("Dataset creation completed.")
 
@@ -60,15 +82,17 @@ if __name__ == "__main__":
     parser.add_argument("--y_size", type=int, default=200, help="Height of each tile.")
     parser.add_argument("--margin_x", type=int, default=None, help="Margin in x direction.")
     parser.add_argument("--margin_y", type=int, default=None, help="Margin in y direction.")
-    parser.add_argument("--r", type=int, default=3, help="Radius for building the graph.")
+    parser.add_argument("--r_tx", type=int, default=3, help="Radius for building the graph.")
     parser.add_argument("--val_prob", type=float, default=0.1, help="Probability of assigning a tile to the validation set.")
     parser.add_argument("--test_prob", type=float, default=0.1, help="Probability of assigning a tile to the test set.")
     parser.add_argument("--k_nc", type=int, default=3, help="Number of nearest neighbors for nuclei.")
     parser.add_argument("--dist_nc", type=int, default=10, help="Distance threshold for nuclei.")
     parser.add_argument("--k_tx", type=int, default=5, help="Number of nearest neighbors for transcripts.")
     parser.add_argument("--dist_tx", type=int, default=3, help="Distance threshold for transcripts.")
-    parser.add_argument("--compute_labels", type=bool, default=True, help="Whether to compute labels.")
+    parser.add_argument("--compute_labels", type=bool, default=True, help="Whether to compute edge labels.")
     parser.add_argument("--sampling_rate", type=float, default=1, help="Rate of sampling tiles.")
+    parser.add_argument("--parallel", action='store_true', help="Use parallel processing.")
+    parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for parallel processing.")
     
     args = parser.parse_args()
     main(args)
