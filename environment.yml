@@ -22,5 +22,7 @@ dependencies:
   - pathlib=1.0.1
   - scikit-learn=1.2.2
   - adjustText=0.8.3
+  - pip
   - pip:
       - argparse==1.4.0
+      - -e .
