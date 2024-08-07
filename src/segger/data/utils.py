@@ -408,3 +408,85 @@ class XeniumSample:
 
 
 
+import os
+from typing import List, Callable
+import torch
+from torch_geometric.data import InMemoryDataset, Data
+
+class XeniumDataset(InMemoryDataset):
+    """
+    A dataset class for handling Xenium spatial transcriptomics data.
+
+    Attributes:
+        root (str): The root directory where the dataset is stored.
+        transform (callable): A function/transform that takes in a Data object and returns a transformed version.
+        pre_transform (callable): A function/transform that takes in a Data object and returns a transformed version.
+        pre_filter (callable): A function that takes in a Data object and returns a boolean indicating whether to keep it.
+    """
+    def __init__(self, root: str, transform: Callable = None, pre_transform: Callable = None, pre_filter: Callable = None):
+        """
+        Initialize the XeniumDataset.
+
+        Args:
+            root (str): Root directory where the dataset is stored.
+            transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
+            pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
+            pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
+        """
+        super().__init__(root, transform, pre_transform, pre_filter)
+        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
+
+    @property
+    def raw_file_names(self) -> List[str]:
+        """
+        Return a list of raw file names in the raw directory.
+
+        Returns:
+            List[str]: List of raw file names.
+        """
+        return os.listdir(self.raw_dir)
+
+    @property
+    def processed_file_names(self) -> List[str]:
+        """
+        Return a list of processed file names in the processed directory.
+
+        Returns:
+            List[str]: List of processed file names.
+        """
+        return [x for x in os.listdir(self.processed_dir) if 'tiles' in x]
+
+    def download(self) -> None:
+        """
+        Download the raw data. This method should be overridden if you need to download the data.
+        """
+        pass
+
+    def process(self) -> None:
+        """
+        Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.
+        """
+        pass
+
+    def len(self) -> int:
+        """
+        Return the number of processed files.
+
+        Returns:
+            int: Number of processed files.
+        """
+        return len(self.processed_file_names)
+
+    def get(self, idx: int) -> Data:
+        """
+        Get a processed data object.
+
+        Args:
+            idx (int): Index of the data object to retrieve.
+
+        Returns:
+            Data: The processed data object.
+        """
+        data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
+        data['tx'].x = data['tx'].x.to_dense()
+        return data
