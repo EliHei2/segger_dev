@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import anndata as ad
 from scipy.spatial import ConvexHull
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional,  List, Callable
 from tqdm import tqdm
 from pathlib import Path
 import gzip
@@ -14,9 +14,10 @@ from shapely.geometry import Polygon
 import geopandas as gpd
 import torch
 from sklearn.preprocessing import OneHotEncoder
-from torch_geometric.data import HeteroData
+from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import BaseTransform, RandomLinkSplit
 from torch_geometric.nn import radius_graph
+import os
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -198,31 +199,48 @@ class XeniumSample:
         unassigned_df.loc[unassigned_df['overlaps_nucleus'] == 0, 'cell_id'] = 'UNASSIGNED'
         return unassigned_df
 
-    def save_dataset_for_segger(self, processed_dir: Path, d_x: int = 900, d_y: int = 900, x_size: int = 1000, y_size: int = 1000, 
-                                margin_x: int = None, margin_y: int = None, compute_labels: bool = True, r: int = 5, 
-                                val_prob: float = 0.1, test_prob: float = 0.2, neg_sampling_ratio_approx: int = 5, k_nc: int = 4, 
-                                dist_nc: int = 20, k_tx: int = 5, dist_tx: int = 10, sampling_rate: float = 1, **kwargs) -> None:
+    def save_dataset_for_segger(self, 
+                                processed_dir: Path, 
+                                x_size: float = 1000, 
+                                y_size: float = 1000, 
+                                d_x: float = 900, 
+                                d_y: float = 900, 
+                                margin_x: float = None, 
+                                margin_y: float = None, 
+                                compute_labels: bool = True, 
+                                r_tx: float = 5, 
+                                val_prob: float = 0.1, 
+                                test_prob: float = 0.2, 
+                                neg_sampling_ratio_approx: float = 5, 
+                                sampling_rate: float = 1, 
+                                num_workers: int = 1,
+                                receptive_field: Dict[str, float] = {
+                                    "k_nc": 4,
+                                    "dist_nc": 20,
+                                    "k_tx": 5,
+                                    "dist_tx": 10
+                                }) -> None:
         """
         Saves the dataset for Segger in a processed format.
 
         Parameters:
         processed_dir (Path): Directory to save the processed dataset.
-        d_x (int): Step size in x direction for tiles.
-        d_y (int): Step size in y direction for tiles.
-        x_size (int): Width of each tile.
-        y_size (int): Height of each tile.
-        margin_x (int): Margin in x direction.
-        margin_y (int): Margin in y direction.
-        compute_labels (bool): Whether to compute labels.
-        r (int): Radius for building the graph.
+        x_size (float): Width of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
+        y_size (float): Height of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
+        d_x (float): Step size in the x direction for tiles. Determines the overlap between tiles and the total number of tiles.
+        d_y (float): Step size in the y direction for tiles. Determines the overlap between tiles and the total number of tiles.
+        margin_x (float): Margin in the x direction to include transcripts.
+        margin_y (float): Margin in the y direction to include transcripts.
+        compute_labels (bool): Whether to compute edge labels for tx_belongs_nc edges, used in training. Not necessary for prediction only.
+        r_tx (float): Radius for building the transcript-to-transcript graph.
         val_prob (float): Probability of assigning a tile to the validation set.
         test_prob (float): Probability of assigning a tile to the test set.
-        neg_sampling_ratio_approx (int): Approximate ratio of negative samples.
-        k_nc (int): Number of nearest neighbors for nuclei.
-        dist_nc (int): Distance threshold for nuclei.
-        k_tx (int): Number of nearest neighbors for transcripts.
-        dist_tx (int): Distance threshold for transcripts.
+        neg_sampling_ratio_approx (float): Approximate ratio of negative samples.
         sampling_rate (float): Rate of sampling tiles.
+        num_workers (int): Number of workers to use for parallel processing.
+        receptive_field (dict): Dictionary containing the values for 'k_nc', 'dist_nc', 'k_tx', and 'dist_tx', which are used to restrict the receptive field of transcripts for nuclei and transcripts.
+        
+        k_nc and dist_nc will determine the size of the cells with nucleus and k_tx and dist_tx will determine the size of the nucleus-less cells, implicitly.
         """
         processed_dir.mkdir(parents=True, exist_ok=True)
         (processed_dir / 'train_tiles/processed').mkdir(parents=True, exist_ok=True)
@@ -239,58 +257,98 @@ class XeniumSample:
 
         x_masks_nc = [(self.nuclei_df['vertex_x'] > x) & (self.nuclei_df['vertex_x'] < x + x_size) for x in x_range]
         y_masks_nc = [(self.nuclei_df['vertex_y'] > y) & (self.nuclei_df['vertex_y'] < y + y_size) for y in y_range]
-        x_masks_tx = [(self.transcripts_df['x_location'] > (x - 10)) & (self.transcripts_df['x_location'] < (x + x_size + 10)) for x in x_range]
-        y_masks_tx = [(self.transcripts_df['y_location'] > (y - 10)) & (self.transcripts_df['y_location'] < (y + y_size + 10)) for y in y_range]
+        x_masks_tx = [(self.transcripts_df['x_location'] > (x - margin_x)) & (self.transcripts_df['x_location'] < (x + x_size + margin_x)) for x in x_range]
+        y_masks_tx = [(self.transcripts_df['y_location'] > (y - margin_y)) & (self.transcripts_df['y_location'] < (y + y_size + margin_y)) for y in y_range]
 
-        for i, j in tqdm(product(range(len(x_range)), range(len(y_range)))):
+        tile_params = [
+            (
+                i, j, x_masks_nc, y_masks_nc, x_masks_tx, y_masks_tx, 
+                x_size, y_size, compute_labels, r_tx, 
+                neg_sampling_ratio_approx, val_prob, test_prob, 
+                processed_dir, receptive_field, sampling_rate
+            )
+            for i, j in product(range(len(x_range)), range(len(y_range)))
+        ]
+
+        if num_workers > 1:
+            with ProcessPoolExecutor(max_workers=num_workers) as executor:
+                futures = [executor.submit(self._process_tile, params) for params in tile_params]
+                for _ in tqdm(as_completed(futures), total=len(futures)):
+                    pass
+        else:
+            for params in tqdm(tile_params):
+                self._process_tile(params)
+
+    def _process_tile(self, tile_params: Tuple) -> None:
+        """
+        Process a single tile and save the data.
+
+        Parameters:
+        tile_params (tuple): Parameters for the tile processing.
+        """
+        (
+            i, j, x_masks_nc, y_masks_nc, x_masks_tx, y_masks_tx, 
+            x_size, y_size, compute_labels, r_tx, 
+            neg_sampling_ratio_approx, val_prob, test_prob, 
+            processed_dir, receptive_field, sampling_rate
+        ) = tile_params
+
+        prob = random.random()
+        if prob > sampling_rate:
+            return
+
+        x_mask = x_masks_nc[i]
+        y_mask = y_masks_nc[j]
+        mask = x_mask & y_mask
+
+        if mask.sum() == 0:
+            return
+
+        nc_df = self.nuclei_df[mask]
+        nc_df = self.nuclei_df.loc[self.nuclei_df.cell_id.isin(nc_df.cell_id), :]
+        tx_mask = x_masks_tx[i] & y_masks_tx[j]
+        transcripts_df = self.transcripts_df[tx_mask]
+
+        if transcripts_df.shape[0] == 0 or nc_df.shape[0] == 0:
+            return
+
+        data = self.build_pyg_data_from_tile(nc_df, transcripts_df, compute_labels=compute_labels)
+        data = BuildTxGraph(r=r_tx)(data)
+
+        try:
+            if compute_labels:
+                transform = RandomLinkSplit(num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'nc')], 
+                                            neg_sampling_ratio=neg_sampling_ratio_approx * 2)
+                data, _, _ = transform(data)
+                edge_index = data[('tx', 'belongs', 'nc')].edge_index
+                if edge_index.shape[1] < 10:
+                    return
+                edge_label_index = data[('tx', 'belongs', 'nc')].edge_label_index
+                data[('tx', 'belongs', 'nc')].edge_label_index = edge_label_index[:, torch.nonzero(
+                    torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
+                ).squeeze()]
+                data[('tx', 'belongs', 'nc')].edge_label = data[('tx', 'belongs', 'nc')].edge_label[torch.nonzero(
+                    torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
+                ).squeeze()]
+
+            coords_nc = data['nc'].pos
+            coords_tx = data['tx'].pos[:, :2]
+            data['tx'].tx_field = self.get_edge_index(coords_tx, coords_tx, k=receptive_field["k_tx"], dist=receptive_field["dist_tx"], type='kd_tree')
+            data['tx'].nc_field = self.get_edge_index(coords_nc, coords_tx, k=receptive_field["k_nc"], dist=receptive_field["dist_nc"], type='kd_tree')
+            
+            filename = f"tiles_x{int(x_size)}_y{int(y_size)}_{i}_{j}.pt"
             prob = random.random()
-            if prob > sampling_rate:
-                continue
-            x_mask = x_masks_nc[i]
-            y_mask = y_masks_nc[j]
-            mask = x_mask & y_mask
-            if mask.sum() == 0:
-                continue
-            nc_df = self.nuclei_df[mask]
-            nc_df = self.nuclei_df.loc[self.nuclei_df.cell_id.isin(nc_df.cell_id), :]
-            x_mask_tx = x_masks_tx[i]
-            y_mask_tx = y_masks_tx[j]
-            tx_mask = x_mask_tx & y_mask_tx
-            transcripts_df = self.transcripts_df[tx_mask]
-            if transcripts_df.shape[0] == 0 or nc_df.shape[0] == 0:
-                continue
-            data = self.build_pyg_data_from_tile(nc_df, transcripts_df, compute_labels=compute_labels, **kwargs)
-            data = BuildTxGraph(r=r)(data)
-            try:
-                if compute_labels:
-                    transform = RandomLinkSplit(num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'nc')], 
-                                                neg_sampling_ratio=neg_sampling_ratio_approx * 2)
-                    data, _, _ = transform(data)
-                    edge_index = data[('tx', 'belongs', 'nc')].edge_index
-                    if edge_index.shape[1] < 10:
-                        continue
-                    edge_label_index = data[('tx', 'belongs', 'nc')].edge_label_index
-                    data[('tx', 'belongs', 'nc')].edge_label_index = edge_label_index[:, torch.nonzero(
-                        torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
-                    ).squeeze()]
-                    data[('tx', 'belongs', 'nc')].edge_label = data[('tx', 'belongs', 'nc')].edge_label[torch.nonzero(
-                        torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
-                    ).squeeze()]
-                coords_nc = data['nc'].pos
-                coords_tx = data['tx'].pos[:, :2]
-                data['tx'].tx_field = self.get_edge_index(coords_tx, coords_tx, k=k_tx, dist=dist_tx, type='kd_tree')
-                data['tx'].nc_field = self.get_edge_index(coords_nc, coords_tx, k=k_nc, dist=dist_nc, type='kd_tree')
-                filename = f"tiles_x{int(x_size)}_y{int(y_size)}_{i}_{j}.pt"
-                prob = random.random()
-                if prob > val_prob + test_prob:
-                    torch.save(data, processed_dir / 'train_tiles/processed' / filename)
-                elif prob > val_prob:
-                    torch.save(data, processed_dir / 'test_tiles/processed' / filename)
-                else:
-                    torch.save(data, processed_dir / 'val_tiles/processed' / filename)
-            except:
-                pass
+            if prob > val_prob + test_prob:
+                torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
+            elif prob > val_prob:
+                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
+            else:
+                torch.save(data, processed_dir / 'val_tiles' / 'processed' / filename)
+        except Exception as e:
+            print(f"Error processing tile {i}, {j}: {e}")
 
+        
+        
     @staticmethod
     def compute_nuclei_geometries(nuclei_df: pd.DataFrame, area: bool = True, convexity: bool = True, elongation: bool = True, 
                                   circularity: bool = True) -> gpd.GeoDataFrame:
@@ -404,14 +462,6 @@ class XeniumSample:
         data['nc'].x = torch.as_tensor(nc_x.to_numpy()).float()
         data['tx', 'belongs', 'nc'].edge_index = torch.as_tensor(tx_nc_edge_index.T).long()
         return data
-
-
-
-
-import os
-from typing import List, Callable
-import torch
-from torch_geometric.data import InMemoryDataset, Data
 
 class XeniumDataset(InMemoryDataset):
     """
