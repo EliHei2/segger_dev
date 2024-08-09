@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import anndata as ad
 from scipy.spatial import ConvexHull
-from typing import Dict, Any, Optional,  List, Callable
+from typing import Dict, Any, Optional,  List, Callable, Tuple
 from tqdm import tqdm
 from pathlib import Path
 import gzip
@@ -108,6 +108,102 @@ def compute_transcript_metrics(df: pd.DataFrame, qv_threshold: float = 30, cell_
         'gene_metrics': gene_metrics
     }
     return results
+
+
+def create_anndata(
+    df: pd.DataFrame, 
+    panel_df: Optional[pd.DataFrame] = None, 
+    min_transcripts: int = 5, 
+    cell_id_col: str = 'cell_id', 
+    qv_threshold: float = 30, 
+    min_cell_area: float = 10.0, 
+    max_cell_area: float = 1000.0
+) -> ad.AnnData:
+    """
+    Generates an AnnData object from a dataframe of segmented transcriptomics data.
+    Parameters:
+    df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
+    panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
+    min_transcripts (int): The minimum number of transcripts required for a cell to be included.
+    cell_id_col (str): The column name representing the cell ID in the input dataframe.
+    qv_threshold (float): The quality value threshold for filtering transcripts.
+    min_cell_area (float): The minimum cell area to include a cell.
+    max_cell_area (float): The maximum cell area to include a cell.
+    Returns:
+    ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
+    """
+    df_filtered = filter_transcripts(df, min_qv=qv_threshold)
+    metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
+    df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
+    pivot_df = df_filtered.rename(columns={
+        cell_id_col: "cell",
+        "feature_name": "gene"
+    })[['cell', 'gene']].pivot_table(index='cell', columns='gene', aggfunc='size', fill_value=0)
+    pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
+    cell_summary = []
+    for cell_id, cell_data in df_filtered.groupby(cell_id_col):
+        if len(cell_data) < min_transcripts:
+            continue
+        cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']])
+        cell_area = cell_convex_hull.area
+        if cell_area < min_cell_area or cell_area > max_cell_area:
+            continue
+        if 'nucleus_distance' in cell_data:
+            nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
+        else:
+            nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
+        if len(nucleus_data) >= 3:
+            nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
+        else:
+            nucleus_convex_hull = None
+        cell_summary.append({
+            "cell": cell_id,
+            "cell_centroid_x": cell_data['x_location'].mean(),
+            "cell_centroid_y": cell_data['y_location'].mean(),
+            "cell_area": cell_area,
+            "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
+            "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
+            "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
+            "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
+            "has_nucleus": len(nucleus_data) > 0
+        })
+    cell_summary = pd.DataFrame(cell_summary).set_index("cell")
+    if panel_df is not None:
+        panel_df = panel_df.sort_values('gene')
+        genes = panel_df['gene'].values
+        for gene in genes:
+            if gene not in pivot_df:
+                pivot_df[gene] = 0
+        pivot_df = pivot_df[genes.tolist()]
+    if panel_df is None:
+        var_df = pd.DataFrame([{
+            "gene": i, 
+            "feature_types": 'Gene Expression', 
+            'genome': 'Unknown'
+        } for i in np.unique(pivot_df.columns.values)]).set_index('gene')
+    else:
+        var_df = panel_df[['gene', 'ensembl']].rename(columns={'ensembl':'gene_ids'})
+        var_df['feature_types'] = 'Gene Expression'
+        var_df['genome'] = 'Unknown'
+        var_df = var_df.set_index('gene')
+    gene_metrics = metrics['gene_metrics'].set_index('feature_name')
+    var_df = var_df.join(gene_metrics, how='left').fillna(0)
+    cells = list(set(pivot_df.index) & set(cell_summary.index))
+    pivot_df = pivot_df.loc[cells,:]
+    cell_summary = cell_summary.loc[cells,:]
+    adata = ad.AnnData(pivot_df.values)
+    adata.var = var_df
+    adata.obs['transcripts'] = pivot_df.sum(axis=1).values
+    adata.obs['unique_transcripts'] = (pivot_df > 0).sum(axis=1).values
+    adata.obs_names = pivot_df.index.values.tolist()
+    adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names,:], left_index=True, right_index=True)
+    adata.uns['metrics'] = {
+        'percent_assigned': metrics['percent_assigned'],
+        'percent_cytoplasmic': metrics['percent_cytoplasmic'],
+        'percent_nucleus': metrics['percent_nucleus'],
+        'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
+    }
+    return adata
 
 
 class BuildTxGraph(BaseTransform):
