@@ -22,6 +22,20 @@ class LitSegger(L.LightningModule):
         self.validation_step_outputs = []
         self.criterion = torch.nn.BCEWithLogitsLoss()
         
+    def forward(self, batch: XeniumDataset):
+        """
+        Forward pass for the batch of data.
+
+        Args:
+            batch (XeniumDataset): Batch of data.
+
+        Returns:
+            Output of the model.
+        """
+        z = self.model(batch.x_dict, batch.edge_index_dict)
+        output = torch.matmul(z['tx'], z['nc'].t())
+        return output
+        
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         """
         Defines the training step.

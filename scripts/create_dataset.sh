@@ -33,3 +33,6 @@ python scripts/create_dataset.py \
     --sampling_rate 0.1 \
     --parallel \
     --num_workers 4
+
+
+git config --global user.email elyas.heidari@dkfz-heidelberg.de

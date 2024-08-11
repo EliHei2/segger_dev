@@ -1,15 +1,4 @@
-"""
-Segger: A package for cell segmentation in spatial omics datasets.
+__all__ = ["data", "models", "prediction", "training", "validation"]
 
-Modules:
-    - data: Utilities for handling and processing spatial transcriptomics data.
-    - models: Implementation of the Segger model using Graph Neural Networks.
-    - training: Training scripts and utilities for the Segger model.
-    - prediction: Prediction scripts and utilities for the Segger model.
-"""
 
-from .data import *
-from .models import *
-from .training import *
-from .prediction import *
-from .validate import *
+from . import data, models, prediction, training, validation
