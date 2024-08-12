@@ -19,6 +19,8 @@ from torch_geometric.transforms import BaseTransform, RandomLinkSplit
 from torch_geometric.nn import radius_graph
 import os
 
+import pyarrow.parquet as pq
+
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
     Convert a 32-bit unsigned integer cell ID to a string with a specific suffix.
@@ -245,22 +247,41 @@ class XeniumSample:
         ]
         return XeniumSample(cropped_transcripts_df)
 
-    def load_transcripts(self, base_path: Path = None, sample: str = None, transcripts_filename: str = "transcripts.csv.gz", 
-                         path: Path = None, min_qv: int = 20) -> 'XeniumSample':
-        if path:
-            with gzip.open(path, 'rb') as file:
-                self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
-                print(sample, len(self.transcripts_df))
-        else:
-            with gzip.open(base_path / sample / transcripts_filename, 'rb') as file:
-                self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
-                print(sample, len(self.transcripts_df))
+    def load_transcripts(self, base_path: Path = None, sample: str = None, 
+                         transcripts_filename: str = "transcripts.csv.gz", 
+                         path: Path = None, min_qv: int = 20, 
+                         file_format: str = "csv") -> 'XeniumSample':
+        """
+        Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats.
 
-        self.transcripts_df = filter_transcripts(self.transcripts_df, min_qv=min_qv)
+        Parameters:
+        - base_path (Path): The base directory path where samples are stored.
+        - sample (str): The sample name or identifier.
+        - transcripts_filename (str): The filename of the transcripts file (default is "transcripts.csv.gz").
+        - path (Path): Optional specific path to the transcripts file.
+        - min_qv (int): Minimum quality value to filter transcripts (default is 20).
+        - file_format (str): Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
+
+        Returns:
+        - XeniumSample: The updated instance with loaded transcript data.
+        """
+        file_path = path or (base_path / sample / transcripts_filename)
+        
+        if file_format == "csv":
+            with gzip.open(file_path, 'rb') as file:
+                self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
+        elif file_format == "parquet":
+            self.transcripts_df = pd.read_parquet(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_format}")
+
+        print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
+
+        self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
         self.x_max = self.transcripts_df['x_location'].max()
         self.y_max = self.transcripts_df['y_location'].max()
         self.x_min = self.transcripts_df['x_location'].min()
-        self.y_min = self.transcripts_df['x_location'].min()
+        self.y_min = self.transcripts_df['y_location'].min()
 
         genes = self.transcripts_df[['feature_name']]
         self.tx_encoder = OneHotEncoder()
@@ -268,16 +289,25 @@ class XeniumSample:
 
         return self
 
-    def load_nuclei(self, base_path: Path = None, sample: str = None, nuclei_filename: str = "nucleus_boundaries.csv.gz", 
-                    path: Path = None) -> 'XeniumSample':
-        if path:
+    def load_nuclei(self, path: Path, file_format: str = "csv") -> 'XeniumSample':
+        """
+        Load nuclei data from a file, supporting both gzip-compressed CSV and Parquet formats.
+
+        Parameters:
+        - path (Path): Path to the nuclei file.
+        - file_format (str): Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
+
+        Returns:
+        - XeniumSample: The updated instance with loaded nuclei data.
+        """
+        if file_format == "csv":
             with gzip.open(path, 'rb') as file:
                 self.nuclei_df = pd.read_csv(io.BytesIO(file.read()))
-                print(sample, len(self.nuclei_df))
+        elif file_format == "parquet":
+            self.nuclei_df = pd.read_parquet(path)
         else:
-            with gzip.open(base_path / sample / nuclei_filename, 'rb') as file:
-                self.nuclei_df = pd.read_csv(io.BytesIO(file.read()))
-                print(sample, len(self.nuclei_df))
+            raise ValueError(f"Unsupported file format: {file_format}")
+
         return self
 
     @staticmethod
