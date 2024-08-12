@@ -18,8 +18,12 @@ from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import BaseTransform, RandomLinkSplit
 from torch_geometric.nn import radius_graph
 import os
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import pyarrow.parquet as pq
+from multiprocessing import Pool
+import itertools
+import inspect
+
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -250,7 +254,7 @@ class XeniumSample:
     def load_transcripts(self, base_path: Path = None, sample: str = None, 
                          transcripts_filename: str = "transcripts.csv.gz", 
                          path: Path = None, min_qv: int = 20, 
-                         file_format: str = "csv") -> 'XeniumSample':
+                         file_format: str = "csv") -> 'XeniumSample': 
         """
         Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats.
 
@@ -277,18 +281,16 @@ class XeniumSample:
 
         print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
 
-        self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
+        self.transcripts_df = filter_transcripts(self.transcripts_df, min_qv=min_qv)
         self.x_max = self.transcripts_df['x_location'].max()
         self.y_max = self.transcripts_df['y_location'].max()
         self.x_min = self.transcripts_df['x_location'].min()
         self.y_min = self.transcripts_df['y_location'].min()
-
         genes = self.transcripts_df[['feature_name']]
         self.tx_encoder = OneHotEncoder()
         self.tx_encoder.fit(genes)
-
-        return self
-
+        
+        
     def load_nuclei(self, path: Path, file_format: str = "csv") -> 'XeniumSample':
         """
         Load nuclei data from a file, supporting both gzip-compressed CSV and Parquet formats.
@@ -307,8 +309,6 @@ class XeniumSample:
             self.nuclei_df = pd.read_parquet(path)
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
-
-        return self
 
     @staticmethod
     def unassign_all_except_nucleus(transcripts_df: pd.DataFrame) -> pd.DataFrame:
@@ -397,9 +397,8 @@ class XeniumSample:
         ]
 
         if num_workers > 1:
-            with ProcessPoolExecutor(max_workers=num_workers) as executor:
-                futures = [executor.submit(self._process_tile, params) for params in tile_params]
-                for _ in tqdm(as_completed(futures), total=len(futures)):
+            with Pool(processes=num_workers) as pool:
+                for _ in tqdm(pool.imap_unordered(self._process_tile, tile_params), total=len(tile_params)):
                     pass
         else:
             for params in tqdm(tile_params):
@@ -502,7 +501,7 @@ class XeniumSample:
         if convexity:
             gdf['convexity'] = polygons.convex_hull.area / polygons.area
         if elongation:
-            r = polygons.minimum_rotated_rectangle
+            r = polygons.minimum_rotated_rectangle()
             gdf['elongation'] = r.area / (r.length * r.width)
         if circularity:
             r = gdf.minimum_bounding_radius()

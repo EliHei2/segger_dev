@@ -10,8 +10,7 @@ __all__ = [
     "uint32_to_str", 
     "filter_transcripts", 
     "create_anndata", 
-    "compute_transcript_metrics", 
-    "create_anndata"
+    "compute_transcript_metrics"
     ]
 
 from .utils import XeniumSample, XeniumDataset, uint32_to_str, filter_transcripts, create_anndata, compute_transcript_metrics
