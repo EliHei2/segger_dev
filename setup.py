@@ -36,7 +36,7 @@ setup(
         "tqdm>=4.61.0",
         "torch>=2.0.0",
         "torchvision>=0.10.0",
-        "pytorch-lightning>=1.3.0",
+        "lightning>=1.9.0",
         "torchmetrics>=0.5.0",
         "scanpy>=1.9.3",
         "squidpy>=1.1.0",

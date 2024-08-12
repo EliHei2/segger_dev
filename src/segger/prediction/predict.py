@@ -8,39 +8,15 @@ from torch_geometric.loader import DataLoader
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import XeniumDataset, XeniumSample, get_anndata_from_segger
+from segger.data.utils import XeniumDataset, XeniumSample, create_anndata
 from segger.models.segger_model import Segger
+from segger.training.train import LitSegger
 from lightning import LightningModule
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-
-class LitSegger(LightningModule):
-    def __init__(self, model: Segger):
-        """
-        Initializes the Lightning wrapper for the Segger model.
-
-        Args:
-            model (Segger): The Segger model.
-        """
-        super().__init__()
-        self.model = model
-
-    def forward(self, batch: XeniumDataset):
-        """
-        Forward pass for the batch of data.
-
-        Args:
-            batch (XeniumDataset): Batch of data.
-
-        Returns:
-            Output of the model.
-        """
-        z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['nc'].t())
-        return output
 
 def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str) -> LitSegger:
     """

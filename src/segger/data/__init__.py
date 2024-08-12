@@ -11,7 +11,7 @@ __all__ = [
     "filter_transcripts", 
     "create_anndata", 
     "compute_transcript_metrics", 
-    "get_anndata_from_segger"
+    "create_anndata"
     ]
 
-from .utils import XeniumSample, XeniumDataset, uint32_to_str, filter_transcripts, create_anndata, compute_transcript_metrics, get_anndata_from_segger
+from .utils import XeniumSample, XeniumDataset, uint32_to_str, filter_transcripts, create_anndata, compute_transcript_metrics

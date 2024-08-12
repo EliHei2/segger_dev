@@ -1,7 +1,8 @@
 import torch
 from torch_geometric.nn import GATv2Conv, Linear, to_hetero
 from torch import Tensor
-from torch_geometric.typing import EdgeIndex
+from typing import Tuple, Union
+from torch_geometric.typing import SparseTensor
 
 class Segger(torch.nn.Module):
     def __init__(self, init_emb: int = 16, hidden_channels: int = 32, out_channels: int = 32, heads: int = 3):
@@ -21,7 +22,7 @@ class Segger(torch.nn.Module):
         self.conv_last = GATv2Conv((-1, -1), out_channels, heads=heads, add_self_loops=False)
         self.lin_last = Linear(-1, out_channels * heads)
         
-    def forward(self, x: Tensor, edge_index: EdgeIndex) -> Tensor:
+    def forward(self, x: Tensor, edge_index: Union[Tensor, SparseTensor]) -> Tensor:
         """
         Forward pass for the Segger model.
 
@@ -39,7 +40,7 @@ class Segger(torch.nn.Module):
         x = self.conv_last(x, edge_index) + self.lin_last(x)
         return x
     
-    def decode(self, z: Tensor, edge_label_index: EdgeIndex) -> Tensor:
+    def decode(self, z: Tensor, edge_index: Union[Tensor, SparseTensor]) -> Tensor:
         """
         Decode the node embeddings to predict edge values.
 
