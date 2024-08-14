@@ -12,6 +12,9 @@ from segger.data.utils import XeniumDataset, XeniumSample, create_anndata
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
 from lightning import LightningModule
+from torch_geometric.nn import to_hetero
+import random
+import string
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
@@ -26,6 +29,7 @@ def load_model(
     out_channels: int,
     heads: int,
     aggr: str,
+    test: bool,
 ) -> LitSegger:
     """
     Loads the model from the checkpoint.
@@ -52,9 +56,8 @@ def load_model(
         (["tx", "nc"], [("tx", "belongs", "nc"), ("tx", "neighbors", "tx")]),
         aggr=aggr,
     )
-    litsegger = LitSegger(model)
-    litsegger = litsegger.load_from_checkpoint(
-        model,
+    litsegger = LitSegger.load_from_checkpoint(
+        model=model,
         checkpoint_path=checkpoint_path,
         map_location=torch.device("cuda"),
     )

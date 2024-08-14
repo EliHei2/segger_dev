@@ -8,6 +8,8 @@ from torch_geometric.loader import DataLoader
 from segger.data.utils import XeniumDataset
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
+from torch_geometric.nn import to_hetero
+from lightning.pytorch.plugins.environments import LightningEnvironment
 
 
 def main(args):
@@ -46,6 +48,7 @@ def main(args):
         devices=args.devices,
         max_epochs=args.epochs,
         default_root_dir=args.default_root_dir,
+        plugins=[LightningEnvironment()],
     )
 
     # Train model

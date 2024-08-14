@@ -166,15 +166,19 @@ def create_anndata(
                 "cell_centroid_x": cell_data["x_location"].mean(),
                 "cell_centroid_y": cell_data["y_location"].mean(),
                 "cell_area": cell_area,
-                "nucleus_centroid_x": nucleus_data["x_location"].mean()
-                if len(nucleus_data) > 0
-                else cell_data["x_location"].mean(),
-                "nucleus_centroid_y": nucleus_data["x_location"].mean()
-                if len(nucleus_data) > 0
-                else cell_data["x_location"].mean(),
-                "nucleus_area": nucleus_convex_hull.area
-                if nucleus_convex_hull
-                else 0,
+                "nucleus_centroid_x": (
+                    nucleus_data["x_location"].mean()
+                    if len(nucleus_data) > 0
+                    else cell_data["x_location"].mean()
+                ),
+                "nucleus_centroid_y": (
+                    nucleus_data["x_location"].mean()
+                    if len(nucleus_data) > 0
+                    else cell_data["x_location"].mean()
+                ),
+                "nucleus_area": (
+                    nucleus_convex_hull.area if nucleus_convex_hull else 0
+                ),
                 "percent_cytoplasmic": len(
                     cell_data[cell_data["overlaps_nucleus"] != 1]
                 )
