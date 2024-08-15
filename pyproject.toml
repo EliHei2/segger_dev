@@ -39,10 +39,11 @@ dependencies = [
     "geopandas>=0.9.0",
     "shapely>=1.7.0",
     "path>=17.0.0",
-    "pyarrow>=17.0.0"
-#     "torch-geometric>=2.2.0",
-#    "torch_scatter>=2.1.2",
-#    "torch_sparse>=0.6.18",
+    "pyarrow>=17.0.0",
+    "click",
+#   "torch-geometric>=2.2.0",
+#   "torch_scatter>=2.1.2",
+#   "torch_sparse>=0.6.18",
 #   "torch_cluster>=1.6.3"
 ]
 
@@ -86,4 +87,7 @@ tests = [
 [tool.setuptools]
 packages = ["segger"]
 package-dir = {"" = "src"}
+
+[project.scripts]
+segger = "segger.cli.cli:segger"
 

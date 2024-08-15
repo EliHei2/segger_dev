@@ -14,7 +14,9 @@ import squidpy as sq
 from sklearn.metrics import calinski_harabasz_score, silhouette_score, f1_score
 
 
-def filter_transcripts(transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
+def filter_transcripts(
+    transcripts_df: pd.DataFrame, min_qv: float = 20.0
+) -> pd.DataFrame:
     """
     Filters transcripts based on quality value and removes weird transcripts.
 
@@ -26,19 +28,25 @@ def filter_transcripts(transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd
     pd.DataFrame: The filtered dataframe.
     """
     return transcripts_df[
-        (transcripts_df['qv'] >= min_qv) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlProbe_")) &
-        (~transcripts_df["feature_name"].str.startswith("antisense_")) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlCodeword_")) &
-        (~transcripts_df["feature_name"].str.startswith("BLANK_")) &
-        (~transcripts_df["feature_name"].str.startswith("DeprecatedCodeword_"))
+        (transcripts_df["qv"] >= min_qv)
+        & (~transcripts_df["feature_name"].str.startswith("NegControlProbe_"))
+        & (~transcripts_df["feature_name"].str.startswith("antisense_"))
+        & (
+            ~transcripts_df["feature_name"].str.startswith(
+                "NegControlCodeword_"
+            )
+        )
+        & (~transcripts_df["feature_name"].str.startswith("BLANK_"))
+        & (
+            ~transcripts_df["feature_name"].str.startswith(
+                "DeprecatedCodeword_"
+            )
+        )
     ]
 
 
 def compute_transcript_metrics(
-    df: pd.DataFrame,
-    qv_threshold: float = 30,
-    cell_id_col: str = 'cell_id'
+    df: pd.DataFrame, qv_threshold: float = 30, cell_id_col: str = "cell_id"
 ) -> Dict[str, Any]:
     """
     Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.
@@ -51,41 +59,64 @@ def compute_transcript_metrics(
     Returns:
     Dict[str, Any]: A dictionary containing various computed metrics.
     """
-    df_filtered = df[df['qv'] > qv_threshold]
+    df_filtered = df[df["qv"] > qv_threshold]
     total_transcripts = len(df_filtered)
-    assigned_transcripts = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
+    assigned_transcripts = df_filtered[
+        df_filtered[cell_id_col].astype(str) != "-1"
+    ]
     percent_assigned = len(assigned_transcripts) / total_transcripts * 100
-    cytoplasmic_transcripts = assigned_transcripts[assigned_transcripts['overlaps_nucleus'] != 1]
-    nucleus_transcripts = assigned_transcripts[assigned_transcripts['overlaps_nucleus'] == 1]
-    percent_cytoplasmic = len(cytoplasmic_transcripts) / len(assigned_transcripts) * 100
+    cytoplasmic_transcripts = assigned_transcripts[
+        assigned_transcripts["overlaps_nucleus"] != 1
+    ]
+    nucleus_transcripts = assigned_transcripts[
+        assigned_transcripts["overlaps_nucleus"] == 1
+    ]
+    percent_cytoplasmic = (
+        len(cytoplasmic_transcripts) / len(assigned_transcripts) * 100
+    )
     percent_nucleus = len(nucleus_transcripts) / len(assigned_transcripts) * 100
-    non_assigned_transcripts = df_filtered[df_filtered[cell_id_col].astype(str) == '-1']
-    non_assigned_cytoplasmic = non_assigned_transcripts[non_assigned_transcripts['overlaps_nucleus'] != 1]
-    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / len(non_assigned_transcripts) * 100
-    gene_group_assigned = assigned_transcripts.groupby('feature_name')
-    gene_group_all = df_filtered.groupby('feature_name')
-    gene_percent_assigned = (gene_group_assigned.size() / gene_group_all.size() * 100).reset_index(name='percent_assigned')
-    cytoplasmic_gene_group = cytoplasmic_transcripts.groupby('feature_name')
-    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts) * 100).reset_index(name='percent_cytoplasmic')
-    gene_metrics = pd.merge(gene_percent_assigned, gene_percent_cytoplasmic, on='feature_name', how='outer').fillna(0)
+    non_assigned_transcripts = df_filtered[
+        df_filtered[cell_id_col].astype(str) == "-1"
+    ]
+    non_assigned_cytoplasmic = non_assigned_transcripts[
+        non_assigned_transcripts["overlaps_nucleus"] != 1
+    ]
+    percent_non_assigned_cytoplasmic = (
+        len(non_assigned_cytoplasmic) / len(non_assigned_transcripts) * 100
+    )
+    gene_group_assigned = assigned_transcripts.groupby("feature_name")
+    gene_group_all = df_filtered.groupby("feature_name")
+    gene_percent_assigned = (
+        gene_group_assigned.size() / gene_group_all.size() * 100
+    ).reset_index(name="percent_assigned")
+    cytoplasmic_gene_group = cytoplasmic_transcripts.groupby("feature_name")
+    gene_percent_cytoplasmic = (
+        cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts) * 100
+    ).reset_index(name="percent_cytoplasmic")
+    gene_metrics = pd.merge(
+        gene_percent_assigned,
+        gene_percent_cytoplasmic,
+        on="feature_name",
+        how="outer",
+    ).fillna(0)
     results = {
-        'percent_assigned': percent_assigned,
-        'percent_cytoplasmic': percent_cytoplasmic,
-        'percent_nucleus': percent_nucleus,
-        'percent_non_assigned_cytoplasmic': percent_non_assigned_cytoplasmic,
-        'gene_metrics': gene_metrics
+        "percent_assigned": percent_assigned,
+        "percent_cytoplasmic": percent_cytoplasmic,
+        "percent_nucleus": percent_nucleus,
+        "percent_non_assigned_cytoplasmic": percent_non_assigned_cytoplasmic,
+        "gene_metrics": gene_metrics,
     }
     return results
 
 
 def create_anndata(
-    df: pd.DataFrame, 
-    panel_df: Optional[pd.DataFrame] = None, 
-    min_transcripts: int = 5, 
-    cell_id_col: str = 'cell_id', 
-    qv_threshold: float = 30, 
-    min_cell_area: float = 10.0, 
-    max_cell_area: float = 1000.0
+    df: pd.DataFrame,
+    panel_df: Optional[pd.DataFrame] = None,
+    min_transcripts: int = 5,
+    cell_id_col: str = "cell_id",
+    qv_threshold: float = 30,
+    min_cell_area: float = 10.0,
+    max_cell_area: float = 1000.0,
 ) -> ad.AnnData:
     """
     Generates an AnnData object from a dataframe of segmented transcriptomics data.
@@ -104,84 +135,117 @@ def create_anndata(
     """
     df_filtered = filter_transcripts(df, min_qv=qv_threshold)
     metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
-    df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
-    pivot_df = df_filtered.rename(columns={
-        cell_id_col: "cell",
-        "feature_name": "gene"
-    })[['cell', 'gene']].pivot_table(index='cell', columns='gene', aggfunc='size', fill_value=0)
+    df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != "-1"]
+    pivot_df = df_filtered.rename(
+        columns={cell_id_col: "cell", "feature_name": "gene"}
+    )[["cell", "gene"]].pivot_table(
+        index="cell", columns="gene", aggfunc="size", fill_value=0
+    )
     pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
     cell_summary = []
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
             continue
-        cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']])
+        cell_convex_hull = ConvexHull(cell_data[["x_location", "y_location"]])
         cell_area = cell_convex_hull.area
         if cell_area < min_cell_area or cell_area > max_cell_area:
             continue
-        if 'nucleus_distance' in cell_data:
-            nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
+        if "nucleus_distance" in cell_data:
+            nucleus_data = cell_data[cell_data["nucleus_distance"] == 0]
         else:
-            nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
+            nucleus_data = cell_data[cell_data["overlaps_nucleus"] == 1]
         if len(nucleus_data) >= 3:
-            nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
+            nucleus_convex_hull = ConvexHull(
+                nucleus_data[["x_location", "y_location"]]
+            )
         else:
             nucleus_convex_hull = None
-        cell_summary.append({
-            "cell": cell_id,
-            "cell_centroid_x": cell_data['x_location'].mean(),
-            "cell_centroid_y": cell_data['y_location'].mean(),
-            "cell_area": cell_area,
-            "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
-            "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
-            "has_nucleus": len(nucleus_data) > 0
-        })
+        cell_summary.append(
+            {
+                "cell": cell_id,
+                "cell_centroid_x": cell_data["x_location"].mean(),
+                "cell_centroid_y": cell_data["y_location"].mean(),
+                "cell_area": cell_area,
+                "nucleus_centroid_x": (
+                    nucleus_data["x_location"].mean()
+                    if len(nucleus_data) > 0
+                    else cell_data["x_location"].mean()
+                ),
+                "nucleus_centroid_y": (
+                    nucleus_data["x_location"].mean()
+                    if len(nucleus_data) > 0
+                    else cell_data["x_location"].mean()
+                ),
+                "nucleus_area": (
+                    nucleus_convex_hull.area if nucleus_convex_hull else 0
+                ),
+                "percent_cytoplasmic": len(
+                    cell_data[cell_data["overlaps_nucleus"] != 1]
+                )
+                / len(cell_data)
+                * 100,
+                "has_nucleus": len(nucleus_data) > 0,
+            }
+        )
     cell_summary = pd.DataFrame(cell_summary).set_index("cell")
     if panel_df is not None:
-        panel_df = panel_df.sort_values('gene')
-        genes = panel_df['gene'].values
+        panel_df = panel_df.sort_values("gene")
+        genes = panel_df["gene"].values
         for gene in genes:
             if gene not in pivot_df:
                 pivot_df[gene] = 0
         pivot_df = pivot_df[genes.tolist()]
     if panel_df is None:
-        var_df = pd.DataFrame([{
-            "gene": i, 
-            "feature_types": 'Gene Expression', 
-            'genome': 'Unknown'
-        } for i in np.unique(pivot_df.columns.values)]).set_index('gene')
+        var_df = pd.DataFrame(
+            [
+                {
+                    "gene": i,
+                    "feature_types": "Gene Expression",
+                    "genome": "Unknown",
+                }
+                for i in np.unique(pivot_df.columns.values)
+            ]
+        ).set_index("gene")
     else:
-        var_df = panel_df[['gene', 'ensembl']].rename(columns={'ensembl':'gene_ids'})
-        var_df['feature_types'] = 'Gene Expression'
-        var_df['genome'] = 'Unknown'
-        var_df = var_df.set_index('gene')
-    gene_metrics = metrics['gene_metrics'].set_index('feature_name')
-    var_df = var_df.join(gene_metrics, how='left').fillna(0)
+        var_df = panel_df[["gene", "ensembl"]].rename(
+            columns={"ensembl": "gene_ids"}
+        )
+        var_df["feature_types"] = "Gene Expression"
+        var_df["genome"] = "Unknown"
+        var_df = var_df.set_index("gene")
+    gene_metrics = metrics["gene_metrics"].set_index("feature_name")
+    var_df = var_df.join(gene_metrics, how="left").fillna(0)
     cells = list(set(pivot_df.index) & set(cell_summary.index))
-    pivot_df = pivot_df.loc[cells,:]
-    cell_summary = cell_summary.loc[cells,:]
+    pivot_df = pivot_df.loc[cells, :]
+    cell_summary = cell_summary.loc[cells, :]
     adata = ad.AnnData(pivot_df.values)
     adata.var = var_df
-    adata.obs['transcripts'] = pivot_df.sum(axis=1).values
-    adata.obs['unique_transcripts'] = (pivot_df > 0).sum(axis=1).values
+    adata.obs["transcripts"] = pivot_df.sum(axis=1).values
+    adata.obs["unique_transcripts"] = (pivot_df > 0).sum(axis=1).values
     adata.obs_names = pivot_df.index.values.tolist()
-    adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names,:], left_index=True, right_index=True)
-    adata.uns['metrics'] = {
-        'percent_assigned': metrics['percent_assigned'],
-        'percent_cytoplasmic': metrics['percent_cytoplasmic'],
-        'percent_nucleus': metrics['percent_nucleus'],
-        'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
+    adata.obs = pd.merge(
+        adata.obs,
+        cell_summary.loc[adata.obs_names, :],
+        left_index=True,
+        right_index=True,
+    )
+    adata.uns["metrics"] = {
+        "percent_assigned": metrics["percent_assigned"],
+        "percent_cytoplasmic": metrics["percent_cytoplasmic"],
+        "percent_nucleus": metrics["percent_nucleus"],
+        "percent_non_assigned_cytoplasmic": metrics[
+            "percent_non_assigned_cytoplasmic"
+        ],
     }
     return adata
 
 
 def find_markers(
-    adata: ad.AnnData, 
-    cell_type_column: str, 
-    pos_percentile: float = 5, 
-    neg_percentile: float = 10, 
-    percentage: float = 50
+    adata: ad.AnnData,
+    cell_type_column: str,
+    pos_percentile: float = 5,
+    neg_percentile: float = 10,
+    percentage: float = 50,
 ) -> Dict[str, Dict[str, List[str]]]:
     """
     Identify positive and negative markers for each cell type based on gene expression and filter by expression percentage.
@@ -219,16 +283,16 @@ def find_markers(
         positive_markers = genes[valid_pos_indices]
         negative_markers = genes[neg_indices]
         markers[cell_type] = {
-            'positive': list(positive_markers),
-            'negative': list(negative_markers)
+            "positive": list(positive_markers),
+            "negative": list(negative_markers),
         }
     return markers
 
 
 def find_mutually_exclusive_genes(
-    adata: ad.AnnData, 
-    markers: Dict[str, Dict[str, List[str]]], 
-    cell_type_column: str
+    adata: ad.AnnData,
+    markers: Dict[str, Dict[str, List[str]]],
+    cell_type_column: str,
 ) -> List[Tuple[str, str]]:
     """
     Identify mutually exclusive genes based on expression criteria.
@@ -251,17 +315,29 @@ def find_mutually_exclusive_genes(
     all_exclusive = []
     gene_expression = adata.to_df()
     for cell_type, marker_sets in markers.items():
-        positive_markers = marker_sets['positive']
+        positive_markers = marker_sets["positive"]
         exclusive_genes[cell_type] = []
         for gene in positive_markers:
             gene_expr = adata[:, gene].X
             cell_type_mask = adata.obs[cell_type_column] == cell_type
             non_cell_type_mask = ~cell_type_mask
-            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (gene_expr[non_cell_type_mask] > 0).mean() < 0.01:
+            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (
+                gene_expr[non_cell_type_mask] > 0
+            ).mean() < 0.01:
                 exclusive_genes[cell_type].append(gene)
                 all_exclusive.append(gene)
-    unique_genes = list({gene for i in exclusive_genes.keys() for gene in exclusive_genes[i] if gene in all_exclusive})
-    filtered_exclusive_genes = {i: [gene for gene in exclusive_genes[i] if gene in unique_genes] for i in exclusive_genes.keys()}
+    unique_genes = list(
+        {
+            gene
+            for i in exclusive_genes.keys()
+            for gene in exclusive_genes[i]
+            if gene in all_exclusive
+        }
+    )
+    filtered_exclusive_genes = {
+        i: [gene for gene in exclusive_genes[i] if gene in unique_genes]
+        for i in exclusive_genes.keys()
+    }
     mutually_exclusive_gene_pairs = [
         (gene1, gene2)
         for key1, key2 in combinations(filtered_exclusive_genes.keys(), 2)
@@ -272,8 +348,7 @@ def find_mutually_exclusive_genes(
 
 
 def compute_MECR(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]]
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]]
 ) -> Dict[Tuple[str, str], float]:
     """
     Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.
@@ -295,15 +370,17 @@ def compute_MECR(
         expr_gene2 = gene_expression[gene2] > 0
         both_expressed = (expr_gene1 & expr_gene2).mean()
         at_least_one_expressed = (expr_gene1 | expr_gene2).mean()
-        mecr = both_expressed / at_least_one_expressed if at_least_one_expressed > 0 else 0
+        mecr = (
+            both_expressed / at_least_one_expressed
+            if at_least_one_expressed > 0
+            else 0
+        )
         mecr_dict[(gene1, gene2)] = mecr
     return mecr_dict
 
 
 def compute_quantized_mecr_area(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    quantiles: int = 10
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]], quantiles: int = 10
 ) -> pd.DataFrame:
     """
     Compute the average MECR and average cell area for quantiles of cell areas.
@@ -320,26 +397,28 @@ def compute_quantized_mecr_area(
     - quantized_data: pd.DataFrame
         DataFrame containing quantile information, average MECR, average area, and number of cells.
     """
-    adata.obs['quantile'] = pd.qcut(adata.obs['cell_area'], quantiles, labels=False)
+    adata.obs["quantile"] = pd.qcut(
+        adata.obs["cell_area"], quantiles, labels=False
+    )
     quantized_data = []
     for quantile in range(quantiles):
-        cells_in_quantile = adata.obs['quantile'] == quantile
+        cells_in_quantile = adata.obs["quantile"] == quantile
         mecr = compute_MECR(adata[cells_in_quantile, :], gene_pairs)
         average_mecr = np.mean([i for i in mecr.values()])
-        average_area = adata.obs.loc[cells_in_quantile, 'cell_area'].mean()
-        quantized_data.append({
-            'quantile': quantile / quantiles,
-            'average_mecr': average_mecr,
-            'average_area': average_area,
-            'num_cells': cells_in_quantile.sum()
-        })
+        average_area = adata.obs.loc[cells_in_quantile, "cell_area"].mean()
+        quantized_data.append(
+            {
+                "quantile": quantile / quantiles,
+                "average_mecr": average_mecr,
+                "average_area": average_area,
+                "num_cells": cells_in_quantile.sum(),
+            }
+        )
     return pd.DataFrame(quantized_data)
 
 
 def compute_quantized_mecr_counts(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    quantiles: int = 10
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]], quantiles: int = 10
 ) -> pd.DataFrame:
     """
     Compute the average MECR and average transcript counts for quantiles of transcript counts.
@@ -356,26 +435,28 @@ def compute_quantized_mecr_counts(
     - quantized_data: pd.DataFrame
         DataFrame containing quantile information, average MECR, average counts, and number of cells.
     """
-    adata.obs['quantile'] = pd.qcut(adata.obs['transcripts'], quantiles, labels=False)
+    adata.obs["quantile"] = pd.qcut(
+        adata.obs["transcripts"], quantiles, labels=False
+    )
     quantized_data = []
     for quantile in range(quantiles):
-        cells_in_quantile = adata.obs['quantile'] == quantile
+        cells_in_quantile = adata.obs["quantile"] == quantile
         mecr = compute_MECR(adata[cells_in_quantile, :], gene_pairs)
         average_mecr = np.mean([i for i in mecr.values()])
-        average_counts = adata.obs.loc[cells_in_quantile, 'transcripts'].mean()
-        quantized_data.append({
-            'quantile': quantile / quantiles,
-            'average_mecr': average_mecr,
-            'average_counts': average_counts,
-            'num_cells': cells_in_quantile.sum()
-        })
+        average_counts = adata.obs.loc[cells_in_quantile, "transcripts"].mean()
+        quantized_data.append(
+            {
+                "quantile": quantile / quantiles,
+                "average_mecr": average_mecr,
+                "average_counts": average_counts,
+                "num_cells": cells_in_quantile.sum(),
+            }
+        )
     return pd.DataFrame(quantized_data)
 
 
 def compute_binned_mecr_area(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    bins: int = 8
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]], bins: int = 8
 ) -> pd.DataFrame:
     """
     Compute the average MECR and bin centers for logarithmic bins of cell areas.
@@ -394,26 +475,26 @@ def compute_binned_mecr_area(
     """
     bin_edges = np.logspace(np.log2(10), np.log2(1000), bins + 1, base=2)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    adata.obs['bin'] = pd.cut(adata.obs['cell_area'], bin_edges, labels=False)
+    adata.obs["bin"] = pd.cut(adata.obs["cell_area"], bin_edges, labels=False)
     binned_data = []
     for bin in range(len(bin_edges) - 1):
-        cells_in_bin = adata.obs['bin'] == bin
+        cells_in_bin = adata.obs["bin"] == bin
         mecr = compute_MECR(adata[cells_in_bin, :], gene_pairs)
         average_mecr = np.mean(list(mecr.values()))
         sd_mecr = np.std(list(mecr.values()))
-        binned_data.append({
-            'bin_center': bin_centers[bin],
-            'average_mecr': average_mecr,
-            'sd_mecr': sd_mecr,
-            'num_cells': cells_in_bin.sum()
-        })
+        binned_data.append(
+            {
+                "bin_center": bin_centers[bin],
+                "average_mecr": average_mecr,
+                "sd_mecr": sd_mecr,
+                "num_cells": cells_in_bin.sum(),
+            }
+        )
     return pd.DataFrame(binned_data)
 
 
 def compute_binned_mecr_counts(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    bins: int = 11
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]], bins: int = 11
 ) -> pd.DataFrame:
     """
     Compute the average MECR and bin centers for logarithmic bins of transcript counts.
@@ -432,26 +513,26 @@ def compute_binned_mecr_counts(
     """
     bin_edges = np.logspace(np.log2(10), np.log2(10000), bins + 1, base=2)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    adata.obs['bin'] = pd.cut(adata.obs['transcripts'], bin_edges, labels=False)
+    adata.obs["bin"] = pd.cut(adata.obs["transcripts"], bin_edges, labels=False)
     binned_data = []
     for bin in range(len(bin_edges) - 1):
-        cells_in_bin = adata.obs['bin'] == bin
+        cells_in_bin = adata.obs["bin"] == bin
         mecr = compute_MECR(adata[cells_in_bin, :], gene_pairs)
         average_mecr = np.mean(list(mecr.values()))
         sd_mecr = np.std(list(mecr.values()))
-        binned_data.append({
-            'bin_center': bin_centers[bin],
-            'average_mecr': average_mecr,
-            'sd_mecr': sd_mecr,
-            'num_cells': cells_in_bin.sum()
-        })
+        binned_data.append(
+            {
+                "bin_center": bin_centers[bin],
+                "average_mecr": average_mecr,
+                "sd_mecr": sd_mecr,
+                "num_cells": cells_in_bin.sum(),
+            }
+        )
     return pd.DataFrame(binned_data)
 
 
 def annotate_query_with_reference(
-    reference_adata: ad.AnnData, 
-    query_adata: ad.AnnData, 
-    transfer_column: str
+    reference_adata: ad.AnnData, query_adata: ad.AnnData, transfer_column: str
 ) -> ad.AnnData:
     """
     Annotate query AnnData object using a scRNA-seq reference atlas.
@@ -468,28 +549,32 @@ def annotate_query_with_reference(
     - query_adata: ad.AnnData
         Annotated query AnnData object with transferred labels and UMAP coordinates from the reference.
     """
-    common_genes = list(set(reference_adata.var_names) & set(query_adata.var_names))
+    common_genes = list(
+        set(reference_adata.var_names) & set(query_adata.var_names)
+    )
     reference_adata = reference_adata[:, common_genes]
     query_adata = query_adata[:, common_genes]
-    query_adata.layers['raw'] = query_adata.raw.X if query_adata.raw else query_adata.X
-    query_adata.var['raw_counts'] = query_adata.layers['raw'].sum(axis=0)
+    query_adata.layers["raw"] = (
+        query_adata.raw.X if query_adata.raw else query_adata.X
+    )
+    query_adata.var["raw_counts"] = query_adata.layers["raw"].sum(axis=0)
     sc.pp.normalize_total(query_adata, target_sum=1e4)
     sc.pp.log1p(query_adata)
     sc.pp.pca(reference_adata)
     sc.pp.neighbors(reference_adata)
     sc.tl.umap(reference_adata)
     sc.tl.ingest(query_adata, reference_adata, obs=transfer_column)
-    query_adata.obsm['X_umap'] = query_adata.obsm['X_umap']
+    query_adata.obsm["X_umap"] = query_adata.obsm["X_umap"]
     return query_adata
 
 
 def calculate_contamination(
-    adata: ad.AnnData, 
-    markers: Dict[str, Dict[str, List[str]]], 
-    radius: float = 15, 
-    n_neighs: int = 10, 
-    celltype_column: str = 'celltype_major', 
-    num_cells: int = 10000
+    adata: ad.AnnData,
+    markers: Dict[str, Dict[str, List[str]]],
+    radius: float = 15,
+    n_neighs: int = 10,
+    celltype_column: str = "celltype_major",
+    num_cells: int = 10000,
 ) -> pd.DataFrame:
     """
     Calculate normalized contamination from neighboring cells of different cell types based on positive markers.
@@ -516,46 +601,69 @@ def calculate_contamination(
     """
     if celltype_column not in adata.obs:
         raise ValueError("Column celltype_column must be present in adata.obs.")
-    positive_markers = {ct: markers[ct]['positive'] for ct in markers}
-    adata.obsm["spatial"] = adata.obs[["cell_centroid_x", "cell_centroid_y"]].copy().to_numpy()
-    sq.gr.spatial_neighbors(adata, radius=radius, n_neighs=n_neighs, coord_type='generic')
-    neighbors = adata.obsp['spatial_connectivities'].tolil()
-    raw_counts = adata[:, adata.var_names].layers['raw'].toarray()
+    positive_markers = {ct: markers[ct]["positive"] for ct in markers}
+    adata.obsm["spatial"] = (
+        adata.obs[["cell_centroid_x", "cell_centroid_y"]].copy().to_numpy()
+    )
+    sq.gr.spatial_neighbors(
+        adata, radius=radius, n_neighs=n_neighs, coord_type="generic"
+    )
+    neighbors = adata.obsp["spatial_connectivities"].tolil()
+    raw_counts = adata[:, adata.var_names].layers["raw"].toarray()
     cell_types = adata.obs[celltype_column]
-    selected_cells = np.random.choice(adata.n_obs, size=min(num_cells, adata.n_obs), replace=False)
-    contamination = {ct: {ct2: 0 for ct2 in positive_markers.keys()} for ct in positive_markers.keys()}
-    negighborings = {ct: {ct2: 0 for ct2 in positive_markers.keys()} for ct in positive_markers.keys()}
+    selected_cells = np.random.choice(
+        adata.n_obs, size=min(num_cells, adata.n_obs), replace=False
+    )
+    contamination = {
+        ct: {ct2: 0 for ct2 in positive_markers.keys()}
+        for ct in positive_markers.keys()
+    }
+    negighborings = {
+        ct: {ct2: 0 for ct2 in positive_markers.keys()}
+        for ct in positive_markers.keys()
+    }
     for cell_idx in selected_cells:
         cell_type = cell_types[cell_idx]
         own_markers = set(positive_markers[cell_type])
         for marker in own_markers:
             if marker in adata.var_names:
-                total_counts_in_neighborhood = raw_counts[cell_idx, adata.var_names.get_loc(marker)]
+                total_counts_in_neighborhood = raw_counts[
+                    cell_idx, adata.var_names.get_loc(marker)
+                ]
                 for neighbor_idx in neighbors.rows[cell_idx]:
-                    total_counts_in_neighborhood += raw_counts[neighbor_idx, adata.var_names.get_loc(marker)]
+                    total_counts_in_neighborhood += raw_counts[
+                        neighbor_idx, adata.var_names.get_loc(marker)
+                    ]
                 for neighbor_idx in neighbors.rows[cell_idx]:
                     neighbor_type = cell_types[neighbor_idx]
                     if cell_type == neighbor_type:
                         continue
-                    neighbor_markers = set(positive_markers.get(neighbor_type, []))
+                    neighbor_markers = set(
+                        positive_markers.get(neighbor_type, [])
+                    )
                     contamination_markers = own_markers - neighbor_markers
                     for marker in contamination_markers:
                         if marker in adata.var_names:
-                            marker_counts_in_neighbor = raw_counts[neighbor_idx, adata.var_names.get_loc(marker)]
+                            marker_counts_in_neighbor = raw_counts[
+                                neighbor_idx, adata.var_names.get_loc(marker)
+                            ]
                             if total_counts_in_neighborhood > 0:
-                                contamination[cell_type][neighbor_type] += marker_counts_in_neighbor / total_counts_in_neighborhood
+                                contamination[cell_type][neighbor_type] += (
+                                    marker_counts_in_neighbor
+                                    / total_counts_in_neighborhood
+                                )
                                 negighborings[cell_type][neighbor_type] += 1
     contamination_df = pd.DataFrame(contamination).T
     negighborings_df = pd.DataFrame(negighborings).T
-    contamination_df.index.name = 'Source Cell Type'
-    contamination_df.columns.name = 'Target Cell Type'
+    contamination_df.index.name = "Source Cell Type"
+    contamination_df.columns.name = "Target Cell Type"
     return contamination_df / (negighborings_df + 1)
 
 
 def calculate_sensitivity(
-    adata: ad.AnnData, 
-    purified_markers: Dict[str, List[str]], 
-    max_cells_per_type: int = 1000
+    adata: ad.AnnData,
+    purified_markers: Dict[str, List[str]],
+    max_cells_per_type: int = 1000,
 ) -> Dict[str, List[float]]:
     """
     Calculate the sensitivity of the purified markers for each cell type.
@@ -572,24 +680,30 @@ def calculate_sensitivity(
     - sensitivity_results: dict
         Dictionary with cell types as keys and lists of sensitivity values for each cell.
     """
-    sensitivity_results = {cell_type: [] for cell_type in purified_markers.keys()}
+    sensitivity_results = {
+        cell_type: [] for cell_type in purified_markers.keys()
+    }
     for cell_type, markers in purified_markers.items():
-        markers = markers['positive']
-        subset = adata[adata.obs['celltype_major'] == cell_type]
+        markers = markers["positive"]
+        subset = adata[adata.obs["celltype_major"] == cell_type]
         if subset.n_obs > max_cells_per_type:
-            cell_indices = np.random.choice(subset.n_obs, max_cells_per_type, replace=False)
+            cell_indices = np.random.choice(
+                subset.n_obs, max_cells_per_type, replace=False
+            )
             subset = subset[cell_indices]
         for cell_counts in subset.X:
-            expressed_markers = np.asarray((cell_counts[subset.var_names.get_indexer(markers)] > 0).sum())
+            expressed_markers = np.asarray(
+                (cell_counts[subset.var_names.get_indexer(markers)] > 0).sum()
+            )
             sensitivity = expressed_markers / len(markers) if markers else 0
             sensitivity_results[cell_type].append(sensitivity)
     return sensitivity_results
 
 
 def compute_clustering_scores(
-    adata: ad.AnnData, 
-    cell_type_column: str = 'celltype_major', 
-    use_pca: bool = True
+    adata: ad.AnnData,
+    cell_type_column: str = "celltype_major",
+    use_pca: bool = True,
 ) -> Tuple[float, float]:
     """
     Compute the Calinski-Harabasz and Silhouette scores for an AnnData object based on the assigned cell types.
@@ -609,7 +723,9 @@ def compute_clustering_scores(
         The Silhouette score.
     """
     if cell_type_column not in adata.obs:
-        raise ValueError(f"Column '{cell_type_column}' must be present in adata.obs.")
+        raise ValueError(
+            f"Column '{cell_type_column}' must be present in adata.obs."
+        )
     features = adata.X
     cell_indices = np.random.choice(adata.n_obs, 10000, replace=False)
     features = features[cell_indices, :]
@@ -620,9 +736,7 @@ def compute_clustering_scores(
 
 
 def compute_neighborhood_metrics(
-    adata: ad.AnnData, 
-    radius: int = 10, 
-    celltype_column: str = 'celltype_major'
+    adata: ad.AnnData, radius: int = 10, celltype_column: str = "celltype_major"
 ) -> None:
     """
     Compute neighborhood entropy and number of neighbors for each cell in the AnnData object.
@@ -635,8 +749,10 @@ def compute_neighborhood_metrics(
     - celltype_column: str, default='celltype_major'
         Column name in `adata.obs` that specifies cell types.
     """
-    sq.gr.spatial_neighbors(adata, radius=radius, coord_type='generic', n_neighs=100)
-    neighbors = adata.obsp['spatial_distances'].tolil().rows
+    sq.gr.spatial_neighbors(
+        adata, radius=radius, coord_type="generic", n_neighs=100
+    )
+    neighbors = adata.obsp["spatial_distances"].tolil().rows
     entropies = []
     num_neighbors = []
     for cell_index, neighbor_indices in enumerate(neighbors):
@@ -650,8 +766,8 @@ def compute_neighborhood_metrics(
             entropies.append(cell_type_entropy)
         else:
             entropies.append(0)
-    adata.obs['neighborhood_entropy'] = entropies
-    adata.obs['number_of_neighbors'] = num_neighbors
+    adata.obs["neighborhood_entropy"] = entropies
+    adata.obs["number_of_neighbors"] = num_neighbors
 
 
 def compute_transcript_density(adata: ad.AnnData) -> None:
@@ -663,16 +779,15 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
         Annotated data object containing transcript and cell area information.
     """
     try:
-        transcript_counts = adata.obs['transcript_counts']
+        transcript_counts = adata.obs["transcript_counts"]
     except:
-        transcript_counts = adata.obs['transcripts']
-    cell_areas = adata.obs['cell_area']
-    adata.obs['transcript_density'] = transcript_counts / cell_areas
+        transcript_counts = adata.obs["transcripts"]
+    cell_areas = adata.obs["cell_area"]
+    adata.obs["transcript_density"] = transcript_counts / cell_areas
 
 
 def compute_celltype_f1_purity(
-    adata: ad.AnnData, 
-    marker_genes: Dict[str, Dict[str, List[str]]]
+    adata: ad.AnnData, marker_genes: Dict[str, Dict[str, List[str]]]
 ) -> Dict[str, float]:
     """
     Compute the purity F1 score for each cell type based on marker genes.
@@ -691,24 +806,27 @@ def compute_celltype_f1_purity(
     """
     f1_scores = {}
     for cell_type, markers in marker_genes.items():
-        pos_markers = markers['positive']
-        neg_markers = markers['negative']
+        pos_markers = markers["positive"]
+        neg_markers = markers["negative"]
         pos_expr = adata[:, pos_markers].X.toarray().mean(axis=1)
         neg_expr = adata[:, neg_markers].X.toarray().mean(axis=1)
-        pos_labels = adata.obs['celltype_major'] == cell_type
-        neg_labels = adata.obs['celltype_major'] != cell_type
+        pos_labels = adata.obs["celltype_major"] == cell_type
+        neg_labels = adata.obs["celltype_major"] != cell_type
         pos_f1 = f1_score(pos_labels, pos_expr >= np.percentile(pos_expr, 97))
         neg_f1 = f1_score(pos_labels, neg_expr <= np.percentile(neg_expr, 10))
         scaled_pos_f1 = (pos_f1 - 0) / (1 - 0)
         scaled_neg_f1 = (neg_f1 - 0) / (1 - 0)
-        purity_f1 = 2 * (scaled_pos_f1 * scaled_neg_f1) / (scaled_pos_f1 + scaled_neg_f1)
+        purity_f1 = (
+            2
+            * (scaled_pos_f1 * scaled_neg_f1)
+            / (scaled_pos_f1 + scaled_neg_f1)
+        )
         f1_scores[cell_type] = purity_f1
     return f1_scores
 
 
 def average_log_normalized_expression(
-    adata: ad.AnnData, 
-    celltype_column: str
+    adata: ad.AnnData, celltype_column: str
 ) -> pd.DataFrame:
     """
     Compute the average log-normalized expression for each cell type.
@@ -727,10 +845,10 @@ def average_log_normalized_expression(
 
 
 def compute_neighborhood_contamination(
-    adata: ad.AnnData, 
-    marker_genes: Dict[str, Dict[str, List[str]]], 
-    radii: List[int], 
-    celltype_column: str = 'celltype_major'
+    adata: ad.AnnData,
+    marker_genes: Dict[str, Dict[str, List[str]]],
+    radii: List[int],
+    celltype_column: str = "celltype_major",
 ) -> pd.DataFrame:
     """
     Compute neighborhood contamination for each cell type based on marker genes and specified radii.
@@ -752,31 +870,50 @@ def compute_neighborhood_contamination(
         DataFrame containing the contamination values for each cell type and radius.
     """
     contamination_dfs = []
-    sq.gr.spatial_neighbors(adata, radius=max(radii), coord_type='generic', n_neighs=1000)
-    distances = adata.obsp['spatial_distances'].toarray()
+    sq.gr.spatial_neighbors(
+        adata, radius=max(radii), coord_type="generic", n_neighs=1000
+    )
+    distances = adata.obsp["spatial_distances"].toarray()
     for radius in radii:
         contamination = []
-        adata.obs['contamination_' + str(radius)] = 0
+        adata.obs["contamination_" + str(radius)] = 0
         for cell_type, markers in marker_genes.items():
-            positive_markers = markers['positive']
-            cells_a_indices = np.where(adata.obs[celltype_column] == cell_type)[0]
-            other_cells_indices = np.where(adata.obs[celltype_column] != cell_type)[0]
-            within_radius = (distances[cells_a_indices] <= radius) & (distances[cells_a_indices] != 0)
+            positive_markers = markers["positive"]
+            cells_a_indices = np.where(adata.obs[celltype_column] == cell_type)[
+                0
+            ]
+            other_cells_indices = np.where(
+                adata.obs[celltype_column] != cell_type
+            )[0]
+            within_radius = (distances[cells_a_indices] <= radius) & (
+                distances[cells_a_indices] != 0
+            )
             neighbor_expr = adata[:, positive_markers].X
             total_expr_within_radius = (within_radius @ neighbor_expr).sum(1)
             if len(cells_a_indices) > 0 and len(other_cells_indices) > 0:
-                neighbor_expr_other_cells = (within_radius[:, other_cells_indices] @ neighbor_expr[other_cells_indices]).sum(1)
-                contamination_values = neighbor_expr_other_cells / total_expr_within_radius
-                contamination.extend([(cell_type, val, radius) for val in contamination_values])
-                adata.obs['contamination_' + str(radius)][cells_a_indices] = contamination_values
-        contamination_df = pd.DataFrame(contamination, columns=[celltype_column, 'neighborhood_contamination', 'radius'])
+                neighbor_expr_other_cells = (
+                    within_radius[:, other_cells_indices]
+                    @ neighbor_expr[other_cells_indices]
+                ).sum(1)
+                contamination_values = (
+                    neighbor_expr_other_cells / total_expr_within_radius
+                )
+                contamination.extend(
+                    [(cell_type, val, radius) for val in contamination_values]
+                )
+                adata.obs["contamination_" + str(radius)][
+                    cells_a_indices
+                ] = contamination_values
+        contamination_df = pd.DataFrame(
+            contamination,
+            columns=[celltype_column, "neighborhood_contamination", "radius"],
+        )
         contamination_dfs.append(contamination_df)
     return pd.concat(contamination_dfs)
 
 
 def prepare_violin_data(
-    adata_list: List[ad.AnnData], 
-    method_names: List[str]
+    adata_list: List[ad.AnnData], method_names: List[str]
 ) -> pd.DataFrame:
     """
     Prepare data for violin plots comparing various methods.
@@ -793,15 +930,16 @@ def prepare_violin_data(
     """
     df_list = []
     for adata, method in zip(adata_list, method_names):
-        df = adata.obs[['transcripts', 'cell_area', 'transcript_density']].copy()
-        df['method'] = method
+        df = adata.obs[
+            ["transcripts", "cell_area", "transcript_density"]
+        ].copy()
+        df["method"] = method
         df_list.append(df)
     return pd.concat(df_list)
 
 
 def prepare_comparison_data(
-    adata_list: List[ad.AnnData], 
-    method_names: List[str]
+    adata_list: List[ad.AnnData], method_names: List[str]
 ) -> pd.DataFrame:
     """
     Prepare data for comparing various methods based on specific metrics.
@@ -818,21 +956,30 @@ def prepare_comparison_data(
     """
     df_list = []
     for adata, method in zip(adata_list, method_names):
-        df = adata.obs[['celltype_major', 'transcripts', 'cell_area', 'transcript_density', 
-                        f'contamination_16', f'contamination_64', f'contamination_256']].copy()
-        df['method'] = method
+        df = adata.obs[
+            [
+                "celltype_major",
+                "transcripts",
+                "cell_area",
+                "transcript_density",
+                f"contamination_16",
+                f"contamination_64",
+                f"contamination_256",
+            ]
+        ].copy()
+        df["method"] = method
         df_list.append(df)
     combined_df = pd.concat(df_list)
     return combined_df.loc[:, ~combined_df.columns.duplicated()]
 
 
 def plot_metric_comparison(
-    ax: plt.Axes, 
-    data: pd.DataFrame, 
-    metric: str, 
-    label: str, 
-    method1: str, 
-    method2: str
+    ax: plt.Axes,
+    data: pd.DataFrame,
+    metric: str,
+    label: str,
+    method1: str,
+    method2: str,
 ) -> None:
     """
     Plot a comparison of a specific metric between two methods.
@@ -851,15 +998,26 @@ def plot_metric_comparison(
     - method2: str
         The second method to compare.
     """
-    subset1 = data[data['method'] == method1]
-    subset2 = data[data['method'] == method2]
-    merged_data = pd.merge(subset1, subset2, on='celltype_major', suffixes=(f'_{method1}', f'_{method2}'))
-    for cell_type in merged_data['celltype_major'].unique():
-        cell_data = merged_data[merged_data['celltype_major'] == cell_type]
-        ax.scatter(cell_data[f'{metric}_{method1}'], cell_data[f'{metric}_{method2}'], 
-                   label=cell_type)
-    max_value = max(merged_data[f'{metric}_{method1}'].max(), merged_data[f'{metric}_{method2}'].max())
-    ax.plot([0, max_value], [0, max_value], 'k--', alpha=0.5)
-    ax.set_xlabel(f'{label} ({method1})')
-    ax.set_ylabel(f'{label} ({method2})')
-    ax.set_title(f'{label}: {method1} vs {method2}')
+    subset1 = data[data["method"] == method1]
+    subset2 = data[data["method"] == method2]
+    merged_data = pd.merge(
+        subset1,
+        subset2,
+        on="celltype_major",
+        suffixes=(f"_{method1}", f"_{method2}"),
+    )
+    for cell_type in merged_data["celltype_major"].unique():
+        cell_data = merged_data[merged_data["celltype_major"] == cell_type]
+        ax.scatter(
+            cell_data[f"{metric}_{method1}"],
+            cell_data[f"{metric}_{method2}"],
+            label=cell_type,
+        )
+    max_value = max(
+        merged_data[f"{metric}_{method1}"].max(),
+        merged_data[f"{metric}_{method2}"].max(),
+    )
+    ax.plot([0, max_value], [0, max_value], "k--", alpha=0.5)
+    ax.set_xlabel(f"{label} ({method1})")
+    ax.set_ylabel(f"{label} ({method2})")
+    ax.set_title(f"{label}: {method1} vs {method2}")
