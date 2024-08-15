@@ -15,6 +15,13 @@ from lightning import LightningModule
 from torch_geometric.nn import to_hetero
 import random
 import string
+import os
+import yaml
+from pathlib import Path
+import glob
+import typing
+import re
+
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
@@ -23,78 +30,67 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def load_model(
-    checkpoint_path: str,
-    init_emb: int,
-    hidden_channels: int,
-    out_channels: int,
-    heads: int,
-    aggr: str,
-    test: bool,
+    checkpoint_path: os.PathLike,
 ) -> LitSegger:
     """
-    Loads the model from the checkpoint.
+    Load a LitSegger model from a checkpoint.
 
-    Args:
-        checkpoint_path (str): Path to the checkpoint.
-        init_emb (int): Initial embedding size.
-        hidden_channels (int): Number of hidden channels.
-        out_channels (int): Number of output channels.
-        heads (int): Number of attention heads.
-        aggr (str): Aggregation method.
+    Parameters
+    ----------
+    checkpoint_path : os.Pathlike
+        Specific checkpoint file to load, or directory where the model 
+        checkpoints are stored. If directory, the latest checkpoint is loaded.
 
-    Returns:
-        LitSegger: Loaded Lightning model.
+    Returns
+    -------
+    LitSegger
+        The loaded LitSegger model.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified checkpoint file does not exist.
     """
-    model = Segger(
-        init_emb=init_emb,
-        hidden_channels=hidden_channels,
-        out_channels=out_channels,
-        heads=heads,
+    # Get last checkpoint if directory provided
+    checkpoint_path = Path(checkpoint_path)
+    msg = (
+        f"No checkpoint found at {checkpoint_path}. Please make sure "
+        "you've provided the correct path."
     )
-    model = to_hetero(
-        model,
-        (["tx", "nc"], [("tx", "belongs", "nc"), ("tx", "neighbors", "tx")]),
-        aggr=aggr,
-    )
-    litsegger = LitSegger.load_from_checkpoint(
-        model=model,
+    if os.path.isdir(checkpoint_path):
+        checkpoints = glob.glob(str(checkpoint_path / '*.ckpt'))
+        if len(checkpoints) == 0:
+            raise FileNotFoundError(msg)
+        def sort_order(c):
+            match = re.match(r'.*epoch=(\d+)-step=(\d+).ckpt', c)
+            return int(match[1]), int(match[2])
+        checkpoint_path = Path(sorted(checkpoints, key=sort_order)[-1])
+    elif not checkpoint_path.exists():
+        raise FileExistsError(msg)
+
+    # Load model
+    lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         map_location=torch.device("cuda"),
     )
-    return litsegger
+
+    return lit_segger
 
 
 def predict(
-    litsegger: LitSegger,
-    dataset_path: str,
-    output_path: str,
+    lit_segger: LitSegger,
+    data_loader: DataLoader,
     score_cut: float,
     k_nc: int,
     dist_nc: int,
     k_tx: int,
     dist_tx: int,
-) -> None:
+) -> pd.DataFrame:
     """
-    Predicts and saves the output.
-
-    Args:
-        litsegger (LitSegger): The Lightning model.
-        dataset_path (str): Path to the dataset.
-        output_path (str): Path to save the output.
-        score_cut (float): Score cut-off for predictions.
-        k_nc (int): Number of nearest neighbors for nuclei.
-        dist_nc (int): Distance threshold for nuclei.
-        k_tx (int): Number of nearest neighbors for transcripts.
-        dist_tx (int): Distance threshold for transcripts.
     """
-    dataset = XeniumDataset(root=dataset_path)
-    model = litsegger.model
+    model = lit_segger.model
     model.eval()
     all_mappings = None
-
-    data_loader = DataLoader(
-        dataset, batch_size=1, num_workers=0, pin_memory=True, shuffle=False
-    )
     m = torch.nn.ZeroPad2d((0, 0, 0, 1))
 
     with torch.no_grad():
@@ -187,4 +183,4 @@ def predict(
     )
     idx = mappings_df.groupby("transcript_id")["score"].idxmax()
     mappings_df = mappings_df.loc[idx].reset_index(drop=True)
-    mappings_df.to_csv(output_path, index=False, compression="gzip")
+    return mappings_df

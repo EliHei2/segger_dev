@@ -1,0 +1,49 @@
+checkpoint_path: 
+  type: str
+  required: true
+  help: "Path to the model checkpoint"
+
+dataset_path: 
+  type: str
+  required: true
+  help: "Path to the dataset tile directory"
+
+output_path: 
+  type: str
+  required: true
+  help: "Path to save the predictions"
+
+score_cut: 
+  type: float
+  default: 0.5
+  help: "Score cut-off for predictions"
+
+# k_nc: 
+#   type: int
+#   default: 5
+#   help: "Number of nearest neighbors for nuclei"
+
+# dist_nc: 
+#   type: int
+#   default: 3
+#   help: "Distance threshold for nuclei"
+
+# k_tx: 
+#   type: int
+#   default: 5
+#   help: "Number of nearest neighbors for transcripts"
+
+# dist_tx: 
+#   type: int
+#   default: 1
+#   help: "Distance threshold for transcripts"
+
+batch_size:
+  type: int
+  default: 1
+  help: "Size of batch used by data loader"
+
+workers:
+  type: int
+  default: 0
+  help: "Workers used to load data"

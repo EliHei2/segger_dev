@@ -24,6 +24,7 @@ from multiprocessing import Pool
 import itertools
 import inspect
 from scipy.spatial import KDTree
+import yaml
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -348,7 +349,7 @@ class XeniumSample:
         sample: str = None,
         transcripts_filename: str = "transcripts.csv.gz",
         path: Path = None,
-        min_qv: int = 20,
+        min_qv: int = 30,
         file_format: str = "csv",
     ) -> "XeniumSample":
         """
@@ -373,13 +374,9 @@ class XeniumSample:
             self.transcripts_df = pd.read_parquet(file_path)
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
-
-        print(
-            f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'."
-        )
-
         self.transcripts_df = filter_transcripts(
-            self.transcripts_df, min_qv=min_qv
+            self.transcripts_df,
+            min_qv=min_qv,
         )
         self.x_max = self.transcripts_df["x_location"].max()
         self.y_max = self.transcripts_df["y_location"].max()
@@ -474,16 +471,30 @@ class XeniumSample:
 
         k_nc and dist_nc will determine the size of the cells with nucleus and k_tx and dist_tx will determine the size of the nucleus-less cells, implicitly.
         """
+        # Hyperparameters for constructing dataset
+        hparams = dict(
+            x_size=x_size,
+            y_size=y_size,
+            d_x=d_x,
+            d_y=d_y,
+            margin_x=margin_x,
+            margin_y=margin_y,
+            compute_labels=compute_labels,
+            r_tx=r_tx,
+        )
+        hparams.update(receptive_field)
+
+        # Filesystem setup
+        processed_dir = Path(processed_dir)
         processed_dir.mkdir(parents=True, exist_ok=True)
-        (processed_dir / "train_tiles/processed").mkdir(
-            parents=True, exist_ok=True
-        )
-        (processed_dir / "test_tiles/processed").mkdir(
-            parents=True, exist_ok=True
-        )
-        (processed_dir / "val_tiles/processed").mkdir(
-            parents=True, exist_ok=True
-        )
+        for data_type in ['train', 'test', 'val']:
+            tile_dir = processed_dir / f'{data_type}_tiles'
+            pro_dir = tile_dir / 'processed'
+            pro_dir.mkdir(parents=True, exist_ok=True)
+            raw_dir = tile_dir / 'raw'
+            raw_dir.mkdir(parents=True, exist_ok=True)
+            with open(tile_dir / 'hparams.yaml', 'w') as file:
+                yaml.dump(hparams, file)
 
         if margin_x is None:
             margin_x = d_x // 10
@@ -686,7 +697,7 @@ class XeniumSample:
         nuclei_df: pd.DataFrame,
         area: bool = True,
         convexity: bool = True,
-        elongation: bool = False,
+        elongation: bool = True,
         circularity: bool = True,
     ) -> gpd.GeoDataFrame:
         """
@@ -720,7 +731,7 @@ class XeniumSample:
                 r = polygons.minimum_rotated_rectangle()
                 gdf["elongation"] = r.area / (r.length * r.width)
             except:
-                gdf["elongation"] = 0
+                gdf["elongation"] = 1
         if circularity:
             r = gdf.minimum_bounding_radius()
             gdf["circularity"] = polygons.area / (r * r)
@@ -900,8 +911,18 @@ class XeniumDataset(InMemoryDataset):
             pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
             pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
         """
-        #os.makedirs(os.path.join(self.processed_dir, "raw"), exist_ok=True)
+        # Call parent init
         super().__init__(root, transform, pre_transform, pre_filter)
+        # Add dictionary of hyperparameters used to construct
+        self._hparams_path = Path(root) / 'hparams.yaml'
+
+    def __getattr__(self, key):
+        try:
+            with open(self._hparams_path, 'r') as file:
+                hparams = yaml.safe_load(file.read())
+            return hparams[key]
+        except KeyError as e:
+            raise AttributeError(e)
 
     @property
     def raw_file_names(self) -> List[str]:
@@ -959,3 +980,4 @@ class XeniumDataset(InMemoryDataset):
         )
         data["tx"].x = data["tx"].x.to_dense()
         return data
+

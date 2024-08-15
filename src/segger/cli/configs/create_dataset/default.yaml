@@ -1,0 +1,94 @@
+data_dir: 
+  type: str
+  required: true
+  help: "Directory to store raw and processed data."
+
+xenium_dir: 
+  type: str
+  required: true
+  help: "Path to Xenium dataset."
+
+min_qv: 
+  type: int
+  default: 30
+  help: "Minimum quality value for filtering transcripts."
+
+d_x: 
+  type: int
+  default: 180
+  help: "Step size in x direction for tiles."
+
+d_y: 
+  type: int
+  default: 180
+  help: "Step size in y direction for tiles."
+
+x_size: 
+  type: int
+  default: 200
+  help: "Width of each tile."
+
+y_size: 
+  type: int
+  default: 200
+  help: "Height of each tile."
+
+margin_x: 
+  type: int
+  default: null
+  help: "Margin in x direction."
+
+margin_y: 
+  type: int
+  default: null
+  help: "Margin in y direction."
+
+r_tx: 
+  type: int
+  default: 3
+  help: "Radius for building the graph."
+
+val_prob: 
+  type: float
+  default: 0.1
+  help: "Probability of assigning a tile to the validation set."
+
+test_prob: 
+  type: float
+  default: 0.1
+  help: "Probability of assigning a tile to the test set."
+
+k_nc: 
+  type: int
+  default: 3
+  help: "Number of nearest neighbors for nuclei."
+
+dist_nc: 
+  type: int
+  default: 4
+  help: "Distance threshold for nuclei."
+
+k_tx: 
+  type: int
+  default: 3
+  help: "Number of nearest neighbors for transcripts."
+
+dist_tx: 
+  type: int
+  default: 1
+  help: "Distance threshold for transcripts."
+
+compute_labels: 
+  type: bool
+  default: true
+  help: "Whether to compute edge labels."
+
+sampling_rate: 
+  type: float
+  default: 1
+  help: "Rate of sampling tiles."
+
+workers: 
+  type: int
+  default: 4
+  help: "Number of workers for parallel processing."
