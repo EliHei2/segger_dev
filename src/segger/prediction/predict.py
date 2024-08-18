@@ -5,10 +5,12 @@ import numpy as np
 import torch.nn.functional as F
 import torch._dynamo
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import Batch
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import XeniumDataset, XeniumSample, create_anndata
+from segger.data.utils import XeniumDataset
+from segger.data.utils import XeniumSample
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
 from lightning import LightningModule
@@ -77,6 +79,69 @@ def load_model(
     return lit_segger
 
 
+def get_similarity_scores(
+    model: Segger, 
+    batch: Batch,
+    from_type: str,
+    to_type: str,
+):
+    """
+    Computes similarity scores between 'from_type' and 'to_type' nodes.
+
+    Parameters
+    ----------
+    model : Segger
+        The Segger model to be used for computing embeddings.
+    batch : Batch
+        The batch of data containing node features and edge indices.
+    from_type : str
+        The type of nodes from which similarity is computed.
+    to_type : str
+        The type of nodes to which similarity is computed.
+
+    Returns
+    -------
+    scores : torch.Tensor
+        A tensor containing the similarity scores between 'from_type' and 
+        'to_type' nodes.
+
+    Notes
+    -----
+    This function computes the similarity scores by obtaining the embedding 
+    spaces from the model, padding the embeddings, and then calculating the 
+    similarity of each 'from_type' node to its 'to_type' neighbors in the 
+    embedding space. The similarity scores are then filtered and returned.
+    """
+
+    # Get embedding spaces from model
+    batch = batch.to("cuda")
+    y_hat = model(batch.x_dict, batch.edge_index_dict)
+    m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
+    y_hat[to_type] = m(y_hat[to_type])
+
+    # Similarity of each 'from_type' to 'to_type' neighbors in embedding
+    nbr_idx = batch[from_type][f'{to_type}_field']
+    similarity = torch.bmm(
+        y_hat[to_type][nbr_idx],       # 'to' x 'from' neighbors x embed
+        y_hat[from_type].unsqueeze(-1) # 'to' x embed x 1
+    )                                  # -> 'to' x 'from' neighbors x 1
+
+    # Softmax to get most similar 'to_type' neighbor
+    similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
+    similarity = F.sigmoid(similarity)
+
+    # Sparse adjacency indices from neighbors
+    shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0] + 1
+    adj = XeniumSample.kd_to_edge_index_(shape, nbr_idx.cpu().detach()).cpu()
+    adj = adj[:, adj[0, :].argsort()]  # sort to correct indexing order
+
+    # Neighbor-filtered similarity scores
+    scores = torch.zeros(shape)
+    scores[adj[0], adj[1]] = similarity.flatten().cpu()
+
+    return scores
+
+
 def predict(
     lit_segger: LitSegger,
     data_loader: DataLoader,
@@ -88,33 +153,17 @@ def predict(
 ) -> pd.DataFrame:
     """
     """
-    model = lit_segger.model
-    model.eval()
-    all_mappings = None
-    m = torch.nn.ZeroPad2d((0, 0, 0, 1))
-
     with torch.no_grad():
+        
         for batch in data_loader:
-            batch = batch.to("cuda")
-            y_hat = model(batch.x_dict, batch.edge_index_dict)
-            y_hat["nc"] = m(y_hat["nc"])
 
-            neighbour_idx = batch["tx"].nc_field
-            similarity = torch.bmm(
-                y_hat["nc"][neighbour_idx], y_hat["tx"].unsqueeze(-1)
-            )
-            similarity[similarity == 0] = -torch.inf
-            similarity = F.sigmoid(similarity)
-            adj = XeniumSample.kd_to_edge_index_(
-                (len(batch["tx"].id[0]), len(batch["nc"].id[0]) + 1),
-                batch["tx"].nc_field.cpu().detach().numpy(),
-            ).cpu()
-            adj = adj[:, adj[0, :].argsort()]
-            f_output = torch.zeros(
-                len(batch["tx"].id[0]), len(batch["nc"].id[0]) + 1
-            )
-            f_output[adj[0], adj[1]] = similarity.flatten().cpu()
-            belongs = f_output.max(1)
+            batch = batch.to("cuda")
+
+            # Transcript-cell similarity scores, filtered by neighbors
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
+            belongs = scores.max(1)
+
+            # Get direct assignments of transcripts to cells
             ids_tx = (
                 np.concatenate(batch["tx"].id).reshape((1, -1))[0].astype("str")
             )
@@ -132,22 +181,11 @@ def predict(
                 (mapping[1, :] == "UNASSIGNED") | (mapping[1, :] == "FLOATING")
             )[0]
             ids_unknown = ids_tx[idx_unknown]
-            neighbour_idx = batch["tx"].tx_field
-            y_tx = m(y_hat["tx"])
-            similarity = torch.bmm(
-                y_tx[neighbour_idx], y_hat["tx"].unsqueeze(-1)
-            )
-            similarity[similarity == 0] = -torch.inf
-            similarity = F.sigmoid(similarity)
-            adj = XeniumSample.kd_to_edge_index_(
-                (len(batch["tx"].id[0]), len(batch["tx"].id[0]) + 1),
-                batch["tx"].tx_field.cpu().detach().numpy(),
-            ).cpu()
-            adj = adj[:, adj[0, :].argsort()]
-            f_output = torch.zeros(
-                len(batch["tx"].id[0]), len(batch["tx"].id[0]) + 1
-            )
-            f_output[adj[0], adj[1]] = similarity.flatten().cpu()
+            
+            # Transcript-transcript similarity scores, filtered by neighbors
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+            f_output = scores
+
             f_output = f_output.fill_diagonal_(0)
             temp = torch.zeros((len(idx_unknown), len(idx_unknown))).cpu()
             temp[: len(idx_unknown), : len(idx_unknown)] = f_output[

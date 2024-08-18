@@ -61,34 +61,30 @@ def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
 
 
 def filter_transcripts(
-    transcripts_df: pd.DataFrame, min_qv: float = 20.0
+    transcripts_df: pd.DataFrame,
+    min_qv: float = 20.0,
 ) -> pd.DataFrame:
     """
     Filters transcripts based on quality value and removes unwanted transcripts.
 
     Parameters:
     transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-    min_qv (float): The minimum quality value threshold for filtering transcripts.
+    min_qv (float): The minimum quality value threshold for filtering 
+    transcripts.
 
     Returns:
     pd.DataFrame: The filtered dataframe.
     """
-    return transcripts_df[
-        (transcripts_df["qv"] >= min_qv)
-        & (~transcripts_df["feature_name"].str.startswith("NegControlProbe_"))
-        & (~transcripts_df["feature_name"].str.startswith("antisense_"))
-        & (
-            ~transcripts_df["feature_name"].str.startswith(
-                "NegControlCodeword_"
-            )
-        )
-        & (~transcripts_df["feature_name"].str.startswith("BLANK_"))
-        & (
-            ~transcripts_df["feature_name"].str.startswith(
-                "DeprecatedCodeword_"
-            )
-        )
-    ]
+    filter_codewords = (
+        "NegControlProbe_",
+        "antisense_",
+        "NegControlCodeword_",
+        "BLANK_",
+        "DeprecatedCodeword_",
+    )
+    mask = transcripts_df["qv"].ge(min_qv)
+    mask &= ~transcripts_df["feature_name"].str.startswith(filter_codewords)
+    return transcripts_df[mask]
 
 
 def compute_transcript_metrics(
@@ -317,6 +313,7 @@ class BuildTxGraph(BaseTransform):
 
 
 class XeniumSample:
+
     def __init__(
         self,
         transcripts_df: pd.DataFrame = None,
