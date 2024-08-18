@@ -7,9 +7,12 @@ from lightning import LightningModule
 from torch_geometric.loader import DataLoader
 from torch_geometric.typing import Metadata
 from torch_geometric.nn import to_hetero
+from torch_geometric.data import HeteroData
 from segger.models.segger_model import Segger
 from segger.data.utils import XeniumDataset
 from typing import Any, List, Tuple, Union
+from argparse import Namespace
+import inspect
 
 
 class LitSegger(LightningModule):
@@ -42,6 +45,85 @@ class LitSegger(LightningModule):
     """
     def __init__(
         self, 
+        **kwargs,
+    ):
+        """
+        Initializes the LitSegger module with the given parameters.
+
+        This constructor can initialize the module either with new parameters
+        or with components for testing purposes.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments for initializing the module. The specific 
+            parameters depend on whether the module is being initialized with 
+            new parameters or with components for testing.
+
+            For new parameters:
+                init_emb : int
+                    The initial embedding size.
+                hidden_channels : int
+                    The number of hidden channels.
+                out_channels : int
+                    The number of output channels.
+                heads : int
+                    The number of attention heads.
+                aggr : str
+                    The aggregation method.
+                metadata : Any
+                    Additional metadata.
+
+            For components:
+                model : Segger
+                    The Segger model to be used.
+
+        Notes
+        -----
+        The constructor determines the initialization method based on the 
+        provided keyword arguments. If the arguments match the parameters for 
+        new initialization, it calls `self.from_new(**kwargs)`. If the 
+        arguments match the parameters for component initialization, it calls 
+        `self.from_components(**kwargs)`.
+
+        Examples
+        --------
+        >>> # Initializing with new parameters
+        >>> lit_segger = LitSegger(init_emb=8, hidden_channels=64, 
+        >>> out_channels=16, heads=4, aggr='mean', metadata=None)
+
+        >>> # Initializing with components for testing
+        >>> model = Segger(init_emb=8, hidden_channels=64, out_channels=16, 
+        >>> heads=4)
+        >>> lit_segger = LitSegger(model=model)
+        """
+        super().__init__()
+        new_args = inspect.getfullargspec(self.from_new)[0][1:]
+        cmp_args = inspect.getfullargspec(self.from_components)[0][1:]
+
+        # Normal constructor
+        if set(kwargs.keys()) == set(new_args):
+            self.from_new(**kwargs)
+
+        # Component constructor for testing
+        elif set(kwargs.keys()) == set(cmp_args):
+            self.from_components(**kwargs)
+
+        # Otherwise throw error
+        else:
+            msg = (
+                "Supplied kwargs do not match either constructor. Should be "
+                f"one of '{new_args}' or '{cmp_args}'."
+            )
+            raise ValueError(msg)
+
+        # Other setup
+        self.validation_step_outputs = []
+        self.criterion = torch.nn.BCEWithLogitsLoss()
+
+
+    def from_new(
+        self,
         init_emb: int,
         hidden_channels: int,
         out_channels: int,
@@ -50,7 +132,7 @@ class LitSegger(LightningModule):
         metadata: Union[Tuple, Metadata],
     ):
         """
-        Initializes the LitSegger module for training and validation.
+        Initializes the LitSegger module with new parameters.
 
         Parameters
         ----------
@@ -66,9 +148,14 @@ class LitSegger(LightningModule):
             Aggregation method.
         metadata : Union[Tuple, Metadata]
             Metadata for the heterogeneous graph.
+
+        Notes
+        -----
+        This method creates a new Segger model with the specified parameters
+        and saves the hyperparameters for reconstruction or record-keeping.
         """
         # Create Segger model
-        super().__init__()
+        
         model = Segger(
             init_emb=init_emb,
             hidden_channels=hidden_channels,
@@ -79,9 +166,27 @@ class LitSegger(LightningModule):
         self.model = model
         # Save hyperparameters to file for reconstruction/record-keeping
         self.save_hyperparameters()
-        # Other setup
-        self.validation_step_outputs = []
-        self.criterion = torch.nn.BCEWithLogitsLoss()
+
+
+    def from_components(
+        self,
+        model: Segger,
+    ):
+        """
+        Initializes the LitSegger module with existing components for testing.
+
+        Parameters
+        ----------
+        model : Segger
+            The Segger model to be used.
+
+        Notes
+        -----
+        This method sets the provided Segger model and data as attributes of
+        the LitSegger module.
+        """
+        self.model = model
+
 
     def forward(self, batch: XeniumDataset):
         """
