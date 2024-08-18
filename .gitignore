@@ -162,7 +162,4 @@ cython_debug/
 #.idea/
 
 
-data*
-model*
-
 *.egg_info
