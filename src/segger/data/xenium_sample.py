@@ -17,8 +17,7 @@ from segger.data.xenium_utils import (
     BoundaryColumns,
     get_polygons_from_xy,
 )
-
-shapely.Polygon().boundary
+from scipy.spatial import KDTree
 
 class XeniumFilename:
     transcripts = "transcripts.parquet",
@@ -28,9 +27,7 @@ class XeniumFilename:
 class XeniumSample:
 
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         pass
 
 
@@ -339,197 +336,6 @@ class XeniumSample:
             print(f"Error processing tile {i}, {j}: {e}")
 
 
-    @staticmethod
-    def compute_nuclei_geometries(
-        nuclei_df: pd.DataFrame,
-        area: bool = True,
-        convexity: bool = True,
-        elongation: bool = True,
-        circularity: bool = True,
-    ) -> gpd.GeoDataFrame:
-        """
-        Computes geometries for nuclei from the dataframe.
-
-        Parameters:
-        nuclei_df (pd.DataFrame): The dataframe containing nuclei data.
-        area (bool): Whether to compute area.
-        convexity (bool): Whether to compute convexity.
-        elongation (bool): Whether to compute elongation.
-        circularity (bool): Whether to compute circularity.
-
-        Returns:
-        gpd.GeoDataFrame: A geodataframe containing computed geometries.
-        """
-        grouped = nuclei_df.groupby("cell_id")
-        polygons = [
-            Polygon(list(zip(group_data["vertex_x"], group_data["vertex_y"])))
-            for _, group_data in grouped
-        ]
-        polygons = gpd.GeoSeries(polygons)
-        gdf = gpd.GeoDataFrame(geometry=polygons)
-        gdf["cell_id"] = list(grouped.groups.keys())
-        gdf[["x", "y"]] = gdf.centroid.get_coordinates()
-        if area:
-            gdf["area"] = polygons.area
-        if convexity:
-            gdf["convexity"] = polygons.convex_hull.area / polygons.area
-        if elongation:
-            try:
-                r = polygons.minimum_rotated_rectangle()
-                gdf["elongation"] = r.area / (r.length * r.width)
-            except:
-                gdf["elongation"] = 1
-        if circularity:
-            r = gdf.minimum_bounding_radius()
-            gdf["circularity"] = polygons.area / (r * r)
-        return gdf
-
-    @staticmethod
-    def get_edge_index(
-        coords_1: np.ndarray,
-        coords_2: np.ndarray,
-        k: int = 100,
-        dist: int = 10,
-        type: str = "edge_index",
-    ) -> torch.Tensor:
-        """
-        Computes edge indices using KDTree for given coordinates.
-
-        Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
-        k (int): Number of nearest neighbors.
-        dist (int): Distance threshold.
-        type (str): Type of edge index to return.
-
-        Returns:
-        torch.Tensor: Edge indices.
-        """
-        tree = KDTree(coords_1)
-        d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist)
-        if type == "kd_tree":
-            return torch.tensor(idx_out, dtype=torch.long)
-        edge_index = XeniumSample.kd_to_edge_index_(
-            (idx_out.shape[0], coords_1.shape[0]), idx_out
-        )
-        if type == "edge_index":
-            return edge_index
-        if type == "adj":
-            return torch_geometric.utils.to_dense_adj(edge_index)[0].to_sparse()
-
-    @staticmethod
-    def kd_to_edge_index_(shape: tuple, idx_out: np.ndarray) -> torch.Tensor:
-        """
-        Converts KDTree indices to edge indices.
-
-        Parameters:
-        shape (tuple): Shape of the original matrix.
-        idx_out (np.ndarray): Indices from KDTree query.
-
-        Returns:
-        torch.Tensor: Edge indices.
-        """
-        idx = np.column_stack((np.arange(shape[0]), idx_out))
-        idc = (
-            pd.DataFrame(idx).melt(0).loc[lambda df: df["value"] != shape[1], :]
-        )
-        edge_index = (
-            torch.tensor(
-                idc[["variable", "value"]].to_numpy(), dtype=torch.long
-            )
-            .t()
-            .contiguous()
-        )
-        return edge_index
-
-    def build_pyg_data_from_tile(
-        self,
-        nuclei_df: pd.DataFrame,
-        transcripts_df: pd.DataFrame,
-        compute_labels: bool = True,
-        **kwargs,
-    ) -> HeteroData:
-        """
-        Builds PyG data from a tile of nuclei and transcripts data.
-
-        Parameters:
-        nuclei_df (pd.DataFrame): Dataframe containing nuclei data.
-        transcripts_df (pd.DataFrame): Dataframe containing transcripts data.
-        compute_labels (bool): Whether to compute labels.
-        **kwargs: Additional arguments for geometry computation.
-
-        Returns:
-        HeteroData: PyG Heterogeneous Data object.
-        """
-        data = HeteroData()  # Initialize an empty HeteroData object
-
-        # Extract relevant kwargs for nuclei computation
-        nc_args = list(inspect.signature(self.compute_nuclei_geometries).parameters)
-        nc_dict = {k: kwargs.pop(k) for k in kwargs if k in nc_args}
-        
-        # Compute nuclei geometries
-        nc_gdf = self.compute_nuclei_geometries(nuclei_df, **nc_dict)
-        max_area = nc_gdf["area"].max()  # Find the maximum area of nuclei
-
-        # Extract relevant kwargs for edge index computation
-        tx_args = list(inspect.signature(self.get_edge_index).parameters)
-        tx_dict = {k: kwargs.pop(k) for k in kwargs if k in tx_args}
-
-        # Convert transcript locations to a tensor
-        x_xyz = torch.as_tensor(
-            transcripts_df[["x_location", "y_location", "z_location"]].values
-        ).float()
-        data["tx"].id = transcripts_df[["transcript_id"]].values  # Assign transcript IDs to the data object
-        data["tx"].pos = x_xyz  # Assign positions to the data object
-
-        # Encode transcript features and convert to a tensor
-        x_features = torch.as_tensor(
-            self.tx_encoder.transform(
-                transcripts_df[["feature_name"]]
-            ).toarray()
-        ).float()
-        data["tx"].x = x_features.to_sparse()  # Assign features to the data object in sparse format
-
-        # Compute edge indices for the graph
-        tx_edge_index = self.get_edge_index(
-            nc_gdf[["x", "y"]].values,
-            transcripts_df[["x_location", "y_location"]].values,
-            k=3,
-            dist=np.sqrt(max_area) * 10,
-        )
-        data["tx", "neighbors", "nc"].edge_index = tx_edge_index  # Assign edge indices to the data object
-
-        # Find indices of transcripts that overlap with nuclei
-        ind = np.where(
-            (transcripts_df.overlaps_nucleus == 1)
-            & (transcripts_df.cell_id.isin(nc_gdf["cell_id"]))
-        )[0]
-
-        # Create edge indices for transcripts belonging to nuclei
-        tx_nc_edge_index = np.column_stack(
-            (
-                ind,
-                np.searchsorted(
-                    nc_gdf["cell_id"].values,
-                    transcripts_df.iloc[ind]["cell_id"].values,
-                ),
-            )
-        )
-
-        data["nc"].id = nc_gdf[["cell_id"]].values  # Assign cell IDs to the data object
-        data["nc"].pos = nc_gdf[["x", "y"]].values  # Assign positions to the data object
-
-        # Extract features from the nuclei dataframe
-        nc_x = nc_gdf.iloc[:, 4:]
-        data["nc"].x = torch.as_tensor(nc_x.to_numpy()).float()  # Convert nuclei features to a tensor
-
-        # Assign edge indices for transcripts belonging to nuclei
-        data["tx", "belongs", "nc"].edge_index = torch.as_tensor(
-            tx_nc_edge_index.T
-        ).long()
-
-        return data  # Return the constructed HeteroData object
-
 
 class XeniumTile:
 
@@ -540,6 +346,8 @@ class XeniumTile:
     ):
         self.sample = sample
         self.bounds = bounds
+
+        # Filter sample-level data by provided tile bounds
         self.boundaries = self.get_filtered_boundaries()
         self.transcripts = self.get_filtered_transcripts()
 
@@ -555,6 +363,24 @@ class XeniumTile:
     def get_transcript_props(
         self,
     ):
+        """
+        Encodes transcript features in a sparse format.
+
+        This method uses the transcript encoder to transform the transcript
+        labels into an encoded format and then converts the encoding to a sparse
+        tensor.
+
+        Returns
+        -------
+        props : torch.sparse.FloatTensor
+            A sparse tensor containing the encoded transcript features.
+
+        Notes
+        -----
+        The encoder can be any type of encoder that transforms the transcript
+        labels into a numerical matrix. The resulting matrix is then converted
+        to a sparse tensor for efficient storage and computation.
+        """
         # Encode transcript features in sparse format
         enums = TranscriptColumns
         encoder = self.sample.tx_encoder  # typically, a one-hot encoder
@@ -572,6 +398,34 @@ class XeniumTile:
         elongation: bool = True,
         circularity: bool = True,
     ):
+        """
+        Computes geometric properties of polygons.
+
+        Parameters
+        ----------
+        polygons : gpd.GeoSeries
+            A GeoSeries containing polygon geometries.
+        area : bool, optional
+            If True, compute the area of each polygon (default is True).
+        convexity : bool, optional
+            If True, compute the convexity of each polygon (default is True).
+        elongation : bool, optional
+            If True, compute the elongation of each polygon (default is True).
+        circularity : bool, optional
+            If True, compute the circularity of each polygon (default is True).
+
+        Returns
+        -------
+        props : pd.DataFrame
+            A DataFrame containing the computed properties for each polygon.
+
+        Notes
+        -----
+        The function calculates various geometric properties of the polygons
+        based on the specified parameters. The properties include area,
+        convexity, elongation, and circularity. The results are stored in a
+        DataFrame with each property as a column.
+        """
         props = pd.DataFrame(index=polygons.index, dtype=float)
         if area:
             props['area'] = polygons.area
@@ -587,6 +441,56 @@ class XeniumTile:
         return props
 
 
+    @staticmethod
+    def get_kdtree_edge_index(
+        index_coords: np.ndarray,
+        query_coords: np.ndarray,
+        k: int,
+        max_distance: float,
+    ):
+        """
+        Computes the k-nearest neighbor edge indices using a KDTree.
+
+        Parameters
+        ----------
+        index_coords : np.ndarray
+            An array of shape (n_samples, n_features) representing the
+            coordinates of the points to be indexed.
+        query_coords : np.ndarray
+            An array of shape (m_samples, n_features) representing the
+            coordinates of the query points.
+        k : int
+            The number of nearest neighbors to find for each query point.
+        max_distance : float
+            The maximum distance to consider for neighbors.
+
+        Returns
+        -------
+        edge_index : torch.Tensor
+            An array of shape (2, n_edges) containing the edge indices. Each
+            column represents an edge between two points, where the first row
+            contains the source indices and the second row contains the target
+            indices.
+
+        Notes
+        -----
+        This function constructs a KDTree from the index points and queries the
+        tree to find the k-nearest neighbors for each query point within the
+        specified maximum distance. The resulting edge indices are returned as
+        a 2D array.
+        """
+        # KDTree search
+        tree = KDTree(index_coords)
+        dist, idx = tree.query(query_coords, k, max_distance)
+
+        # To sparse adjacency
+        edge_index = np.argwhere(dist != np.inf).T
+        edge_index[1] = idx[dist != np.inf]
+        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
+
+        return edge_index
+
+
     def get_boundary_props(
         self,
         area: bool = True,
@@ -594,6 +498,38 @@ class XeniumTile:
         elongation: bool = True,
         circularity: bool = True,
     ) -> torch.Tensor:
+        """
+        Computes geometric properties of boundary polygons.
+
+        Parameters
+        ----------
+        boundaries : gpd.GeoSeries
+            A GeoSeries containing boundary polygon geometries.
+        area : bool, optional
+            If True, compute the area of each boundary polygon (default is 
+            True).
+        convexity : bool, optional
+            If True, compute the convexity of each boundary polygon (default is
+            True).
+        elongation : bool, optional
+            If True, compute the elongation of each boundary polygon (default is
+            True).
+        circularity : bool, optional
+            If True, compute the circularity of each boundary polygon (default 
+            is True).
+
+        Returns
+        -------
+        props : pd.DataFrame
+            A DataFrame containing the computed properties for each boundary
+            polygon.
+
+        Notes
+        -----
+        The function calculates various geometric properties of the boundary
+        polygons based on the specified parameters. The results are stored in a
+        DataFrame with each property as a column.
+        """
 
         # Get polygons from coordinates
         polygons = get_polygons_from_xy(self.boundaries)
@@ -615,8 +551,35 @@ class XeniumTile:
         convexity: bool = True,
         elongation: bool = True,
         circularity: bool = True,
-    ):
-        '''
+    ) -> HeteroData:
+        """
+        Converts the sample data to a PyG HeteroData object (more information
+        on the structure of the object below).
+
+        Parameters
+        ----------
+        k_nc : int, optional
+            The number of nearest neighbors for the 'nc' nodes (default is 4).
+        dist_nc : float, optional
+            The maximum distance for neighbors of 'nc' nodes (default is 20).
+        k_tx : int, optional
+            The number of nearest neighbors for the 'tx' nodes (default is 4).
+        dist_tx : float, optional
+            The maximum distance for neighbors of 'tx' nodes (default is 20).
+        area : bool, optional
+            If True, compute the area of each polygon (default is True).
+        convexity : bool, optional
+            If True, compute the convexity of each polygon (default is True).
+        elongation : bool, optional
+            If True, compute the elongation of each polygon (default is True).
+        circularity : bool, optional
+            If True, compute the circularity of each polygon (default is True).
+
+        Returns
+        -------
+        data : HeteroData
+            A PyG HeteroData object containing the sample data.
+
         Segger PyG HeteroData Spec
         --------------------------
         A heterogenous graph with two node types and two edge types.
@@ -657,7 +620,7 @@ class XeniumTile:
             Attributes
             ----------
             edge_index : torch.Tensor
-                Edge indices #TODO
+                Edge indices in COO format between transcripts and nuclei
 
         2. ("tx", "neighbors", "nc")
             Represents the relationship where a transcripts is nearby but not
@@ -666,24 +629,46 @@ class XeniumTile:
             Attributes
             ----------
             edge_index : torch.Tensor
-                Edge indices #TODO
-        '''
+                Edge indices in COO format between transcripts and nuclei
+        """
         # Initialize an empty HeteroData object
         pyg_data = HeteroData()
 
-        # Setup Nucleus nodes
+        # Set up Nucleus nodes
         polygons = get_polygons_from_xy(self.boundaries)
+        centroids = polygons.centroid.get_coordinates()
         pyg_data['nc'].id = polygons.index.to_numpy()
-        pyg_data['nc'].pos = polygons.centroid.get_coordinates().values
+        pyg_data['nc'].pos = centroids.values
         pyg_data['nc'].x = self.get_boundary_props(
             area, convexity, elongation, circularity
         )
 
-        # Setup Transcript Nodes
+        # Set up Transcript nodes
         enums = TranscriptColumns
         pyg_data['tx'].id = self.transcripts[enums.id].values
         pyg_data['tx'].pos = self.transcripts[enums.xyz].values
         pyg_data['tx'].x = self.get_transcript_props()
 
-        # Setup Edges
-        
+        # Set up neighbor edges
+        dist = np.sqrt(polygons.area.max()) * 10  # heuristic distance
+        nbrs_edge_idx = self.get_kdtree_edge_index(
+            centroids,
+            self.transcripts[enums.xy],
+            k=k_nc,
+            max_distance=dist,
+        )
+        pyg_data["tx", "neighbors", "nc"].edge_index = nbrs_edge_idx
+
+        # Find nuclear transcripts
+        tx_cell_ids = self.transcripts[BoundaryColumns.id]
+        cell_ids_map = {idx: i for (i, idx) in enumerate(polygons.index)}
+        is_nuclear = self.transcripts[TranscriptColumns.nuclear].astype(bool) 
+        is_nuclear &= tx_cell_ids.isin(polygons.index)
+
+        # Set up overlap edges
+        row_idx = np.where(is_nuclear)
+        col_idx = tx_cell_ids.iloc[row_idx].map(cell_ids_map)
+        blng_edge_idx = torch.tensor(np.stack([row_idx, col_idx])).long()
+        pyg_data["tx", "belongs", "nc"].edge_index = blng_edge_idx
+
+        return pyg_data

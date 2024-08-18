@@ -26,6 +26,7 @@ class TranscriptColumns():
     z = 'z_location'
     id = 'codeword_index'
     label = 'feature_name'
+    nuclear = 'overlaps_nucleus'
     xy = [x, y]
     xyz = [x, y, z]
 
@@ -49,7 +50,7 @@ class BoundaryColumns():
     """
     x = 'vertex_x'
     y = 'vertex_y'
-    id = 'label_id'
+    id = 'cell_id'
     label = 'cell_id'
     xy = [x, y]
 
