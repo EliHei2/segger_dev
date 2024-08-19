@@ -18,26 +18,6 @@ score_cut:
   default: 0.5
   help: "Score cut-off for predictions"
 
-# k_nc: 
-#   type: int
-#   default: 5
-#   help: "Number of nearest neighbors for nuclei"
-
-# dist_nc: 
-#   type: int
-#   default: 3
-#   help: "Distance threshold for nuclei"
-
-# k_tx: 
-#   type: int
-#   default: 5
-#   help: "Number of nearest neighbors for transcripts"
-
-# dist_tx: 
-#   type: int
-#   default: 1
-#   help: "Distance threshold for transcripts"
-
 batch_size:
   type: int
   default: 1

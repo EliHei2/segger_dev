@@ -23,6 +23,7 @@ from pathlib import Path
 import glob
 import typing
 import re
+from tqdm import tqdm
 
 
 # CONFIG
@@ -86,43 +87,35 @@ def get_similarity_scores(
     to_type: str,
 ):
     """
-    Computes similarity scores between 'from_type' and 'to_type' nodes.
+    Compute similarity scores between 'from_type' and 'to_type' embeddings 
+    within a batch.
 
     Parameters
     ----------
     model : Segger
-        The Segger model to be used for computing embeddings.
+        The segmentation model used to generate embeddings.
     batch : Batch
-        The batch of data containing node features and edge indices.
+        A batch of data containing input features and edge indices.
     from_type : str
-        The type of nodes from which similarity is computed.
+        The type of node from which the similarity is computed.
     to_type : str
-        The type of nodes to which similarity is computed.
+        The type of node to which the similarity is computed.
 
     Returns
     -------
-    scores : torch.Tensor
-        A tensor containing the similarity scores between 'from_type' and 
-        'to_type' nodes.
-
-    Notes
-    -----
-    This function computes the similarity scores by obtaining the embedding 
-    spaces from the model, padding the embeddings, and then calculating the 
-    similarity of each 'from_type' node to its 'to_type' neighbors in the 
-    embedding space. The similarity scores are then filtered and returned.
+    torch.Tensor
+        A dense tensor containing the similarity scores between 'from_type' 
+        and 'to_type' nodes.
     """
-
     # Get embedding spaces from model
     batch = batch.to("cuda")
     y_hat = model(batch.x_dict, batch.edge_index_dict)
-    m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
-    y_hat[to_type] = m(y_hat[to_type])
 
     # Similarity of each 'from_type' to 'to_type' neighbors in embedding
     nbr_idx = batch[from_type][f'{to_type}_field']
+    m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
     similarity = torch.bmm(
-        y_hat[to_type][nbr_idx],       # 'to' x 'from' neighbors x embed
+        m(y_hat[to_type])[nbr_idx],       # 'to' x 'from' neighbors x embed
         y_hat[from_type].unsqueeze(-1) # 'to' x embed x 1
     )                                  # -> 'to' x 'from' neighbors x 1
 
@@ -130,95 +123,121 @@ def get_similarity_scores(
     similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
     similarity = F.sigmoid(similarity)
 
-    # Sparse adjacency indices from neighbors
-    shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0] + 1
-    adj = XeniumSample.kd_to_edge_index_(shape, nbr_idx.cpu().detach()).cpu()
-    adj = adj[:, adj[0, :].argsort()]  # sort to correct indexing order
-
     # Neighbor-filtered similarity scores
-    scores = torch.zeros(shape)
-    scores[adj[0], adj[1]] = similarity.flatten().cpu()
+    shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
+    indices =  torch.argwhere(nbr_idx != shape[1]).T
+    indices[1] = nbr_idx[nbr_idx != shape[1]]
+    values = similarity.to_sparse().values()
+    sparse_sim = torch.sparse_coo_tensor(indices, values, shape)
+
+    # Return in dense format for backwards compatibility
+    scores = sparse_sim.to_dense().detach().cpu()
 
     return scores
+
+
+def predict_batch(
+    lit_segger: LitSegger,
+    batch: Batch,
+    score_cut: float,
+    use_cc: bool = True,
+) -> pd.DataFrame:
+    """
+    Predict cell assignments for a batch of transcript data using a 
+    segmentation model.
+
+    Parameters
+    ----------
+    lit_segger : LitSegger
+        The lightning module wrapping the segmentation model.
+    batch : Batch
+        A batch of transcript and cell data.
+    score_cut : float
+        The threshold for assigning transcripts to cells based on similarity 
+        scores.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the transcript IDs, similarity scores, and 
+        assigned cell IDs.
+    """
+    # Get random Xenium-style ID
+    def _get_id():
+        id_chars = random.choices(string.ascii_lowercase, k=8)
+        return ''.join(id_chars) + '-nx'
+    
+    with torch.no_grad():
+
+        batch = batch.to("cuda")
+
+        # Assignments of cells to nuclei
+        assignments = pd.DataFrame()
+        assignments['transcript_id'] = batch['tx'].id[0].flatten()
+
+        # Transcript-cell similarity scores, filtered by neighbors
+        scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
+
+        # 1. Get direct assignments from similarity matrix
+        belongs = scores.max(1)
+        assignments['score'] = belongs.values.cpu()
+        mask = assignments['score'] > score_cut
+        all_ids = batch['nc'].id[0].flatten()[belongs.indices]
+        assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
+
+        if use_cc:
+            # Transcript-transcript similarity scores, filtered by neighbors
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+            scores = scores.fill_diagonal_(0)  # ignore self-similarity
+
+            # 2. Assign remainder using connected components
+            no_id = assignments['segger_cell_id'].isna().values
+            no_id_scores = scores[no_id][:, no_id]
+            n, comps = cc(no_id_scores, connection="weak", directed=False)
+            new_ids = np.array([_get_id() for _ in range(n)])
+            assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
+
+        return assignments
 
 
 def predict(
     lit_segger: LitSegger,
     data_loader: DataLoader,
     score_cut: float,
-    k_nc: int,
-    dist_nc: int,
-    k_tx: int,
-    dist_tx: int,
 ) -> pd.DataFrame:
     """
+    Predict cell assignments for multiple batches of transcript data using 
+    a segmentation model.
+
+    Parameters
+    ----------
+    lit_segger : LitSegger
+        The lightning module wrapping the segmentation model.
+    data_loader : DataLoader
+        A data loader providing batches of transcript and cell data.
+    score_cut : float
+        The threshold for assigning transcripts to cells based on similarity 
+        scores.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the transcript IDs, similarity scores, and 
+        assigned cell IDs, consolidated across all batches.
     """
-    with torch.no_grad():
-        
-        for batch in data_loader:
+    assignments = []
 
-            batch = batch.to("cuda")
+    # Assign transcripts from each batch to nuclei
+    # TODO: parallelize this step
+    for batch in tqdm(data_loader):
+        batch_assignments = predict_batch(lit_segger, batch, score_cut)
+        assignments.append(batch_assignments)
 
-            # Transcript-cell similarity scores, filtered by neighbors
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
-            belongs = scores.max(1)
+    # Join across batches and handle duplicates between batches
+    assignments = pd.concat(assignments).reset_index(drop=True)
 
-            # Get direct assignments of transcripts to cells
-            ids_tx = (
-                np.concatenate(batch["tx"].id).reshape((1, -1))[0].astype("str")
-            )
-            ids_nc = (
-                np.concatenate(batch["nc"].id).reshape((1, -1))[0].astype("str")
-            )
-            belongs.indices[belongs.indices == len(ids_nc)] = 0
-            mapping = np.vstack(
-                (ids_tx, ids_nc[belongs.indices], belongs.values)
-            )
-            mapping[1, np.where(belongs.values < score_cut)] = "UNASSIGNED"
-            mapping[1, np.where(belongs.values == 0)] = "FLOATING"
+    # Handle duplicate assignments of transcripts
+    idx = assignments.groupby('transcript_id')['score'].idxmax()
+    assignments = assignments.loc[idx].reset_index(drop=True)
 
-            idx_unknown = np.where(
-                (mapping[1, :] == "UNASSIGNED") | (mapping[1, :] == "FLOATING")
-            )[0]
-            ids_unknown = ids_tx[idx_unknown]
-            
-            # Transcript-transcript similarity scores, filtered by neighbors
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
-            f_output = scores
-
-            f_output = f_output.fill_diagonal_(0)
-            temp = torch.zeros((len(idx_unknown), len(idx_unknown))).cpu()
-            temp[: len(idx_unknown), : len(idx_unknown)] = f_output[
-                idx_unknown, :
-            ][:, idx_unknown]
-            n_comps, comps = cc(temp, connection="weak", directed=False)
-            random_strings = np.array(
-                [
-                    "".join(random.choices(string.ascii_lowercase, k=8)) + "-nx"
-                    for _ in range(n_comps)
-                ]
-            )
-            new_ids = random_strings[comps]
-            new_mapping = np.vstack(
-                (ids_unknown, new_ids, np.zeros(len(new_ids)))
-            )
-            mapping = mapping[
-                :,
-                ~(
-                    (mapping[1, :] == "UNASSIGNED")
-                    | (mapping[1, :] == "FLOATING")
-                ),
-            ]
-            mapping = np.hstack((mapping, new_mapping))
-
-            if all_mappings is None:
-                all_mappings = mapping
-            else:
-                all_mappings = np.hstack((all_mappings, mapping))
-
-    mappings_df = pd.DataFrame(
-        all_mappings.T, columns=["transcript_id", "segger_cell_id", "score"]
-    )
-    idx = mappings_df.groupby("transcript_id")["score"].idxmax()
-    mappings_df = mappings_df.loc[idx].reset_index(drop=True)
-    return mappings_df
+    return assignments

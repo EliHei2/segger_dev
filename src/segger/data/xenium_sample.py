@@ -16,8 +16,12 @@ from segger.data.xenium_utils import (
     TranscriptColumns,
     BoundaryColumns,
     get_polygons_from_xy,
+    filter_boundaries,
 )
 from scipy.spatial import KDTree
+from multiprocessing import Pool
+from functools import cached_property
+
 
 class XeniumFilename:
     transcripts = "transcripts.parquet",
@@ -70,129 +74,45 @@ class XeniumSample:
         self.nuclei_df = self._load_dataframe(path)
 
 
+    def get_tile_bounds(self, tile_width: float, tile_height: float):
+    
+        # Generate the x and y coordinates for the tile boundaries
+        x_coords = np.arange(self.x_min, self.x_max, tile_width)
+        x_coords = np.append(x_coords, self.x_max)
+        y_coords = np.arange(self.y_min, self.y_max, tile_height)
+        y_coords = np.append(y_coords, self.y_max)
+        
+        # Generate tiles from grid points
+        tiles = []
+        for x_min, x_max in zip(x_coords[:-1], x_coords[1:]):
+            for y_min, y_max in zip(y_coords[:-1], y_coords[1:]):
+                tiles.append(shapely.box(x_min, y_min, x_max, y_max))
+
+        return tiles
+
+
     def to_pyg_dataset(
         self,
         output_dir: Path,
-        x_size: float = 1000,
-        y_size: float = 1000,
-        d_x: float = 900,
-        d_y: float = 900,
-        margin_x: float = None,
-        margin_y: float = None,
-        compute_labels: bool = True,
+        tile_width: float,
+        tile_height: float,
+        tile_margin: float = 15,
         r_tx: float = 5,
-        val_prob: float = 0.1,
-        test_prob: float = 0.2,
-        neg_sampling_ratio_approx: float = 5,
-        sampling_rate: float = 1,
-        num_workers: int = 1,
         k_nc: int = 4,
         dist_nc: float = 20,
         k_tx: int = 4,
         dist_tx: float = 20,
+        workers: int = -1,
     ) -> None:
-        """
-        Saves the dataset for Segger in a processed format.
 
-        Parameters:
-        processed_dir (Path): Directory to save the processed dataset.
-        x_size (float): Width of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
-        y_size (float): Height of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
-        d_x (float): Step size in the x direction for tiles. Determines the overlap between tiles and the total number of tiles.
-        d_y (float): Step size in the y direction for tiles. Determines the overlap between tiles and the total number of tiles.
-        margin_x (float): Margin in the x direction to include transcripts.
-        margin_y (float): Margin in the y direction to include transcripts.
-        compute_labels (bool): Whether to compute edge labels for tx_belongs_nc edges, used in training. Not necessary for prediction only.
-        r_tx (float): Radius for building the transcript-to-transcript graph.
-        val_prob (float): Probability of assigning a tile to the validation set.
-        test_prob (float): Probability of assigning a tile to the test set.
-        neg_sampling_ratio_approx (float): Approximate ratio of negative samples.
-        sampling_rate (float): Rate of sampling tiles.
-        num_workers (int): Number of workers to use for parallel processing.
-        receptive_field (dict): Dictionary containing the values for 'k_nc', 'dist_nc', 'k_tx', and 'dist_tx', which are used to restrict the receptive field of transcripts for nuclei and transcripts.
+        # Divide Xenium samples into non-overlapping spatial regions
+        tile_bounds = self.get_tile_bounds(tile_width, tile_height)
+        tiles = [XeniumTile(bounds=t, margin=tile_margin) for t in tile_bounds]
 
-        k_nc and dist_nc will determine the size of the cells with nucleus and k_tx and dist_tx will determine the size of the nucleus-less cells, implicitly.
-        """
-        # Hyperparameters for constructing dataset
-        hparams = dict(
-            x_size=x_size,
-            y_size=y_size,
-            d_x=d_x,
-            d_y=d_y,
-            margin_x=margin_x,
-            margin_y=margin_y,
-            r_tx=r_tx,
-            k_nc=k_nc,
-            dist_nc=dist_nc,
-            k_tx=k_tx,
-            dist_tx=dist_tx,
-        )
-
-        # Filesystem setup
-        processed_dir = Path(processed_dir)
-        processed_dir.mkdir(parents=True, exist_ok=True)
-        for data_type in ['train', 'test', 'val']:
-            tile_dir = processed_dir / f'{data_type}_tiles'
-            pro_dir = tile_dir / 'processed'
-            pro_dir.mkdir(parents=True, exist_ok=True)
-            raw_dir = tile_dir / 'raw'
-            raw_dir.mkdir(parents=True, exist_ok=True)
-            with open(tile_dir / 'hparams.yaml', 'w') as file:
-                yaml.dump(hparams, file)
-
-        if margin_x is None:
-            margin_x = d_x // 10
-        if margin_y is None:
-            margin_y = d_y // 10
-
-        x_range = np.arange(self.x_min // 1000 * 1000, self.x_max, d_x)
-        y_range = np.arange(self.y_min // 1000 * 1000, self.y_max, d_y)
-
-        x_masks_nc = [
-            (self.nuclei_df["vertex_x"] > x)
-            & (self.nuclei_df["vertex_x"] < x + x_size)
-            for x in x_range
-        ]
-        y_masks_nc = [
-            (self.nuclei_df["vertex_y"] > y)
-            & (self.nuclei_df["vertex_y"] < y + y_size)
-            for y in y_range
-        ]
-        x_masks_tx = [
-            (self.transcripts_df["x_location"] > (x - margin_x))
-            & (self.transcripts_df["x_location"] < (x + x_size + margin_x))
-            for x in x_range
-        ]
-        y_masks_tx = [
-            (self.transcripts_df["y_location"] > (y - margin_y))
-            & (self.transcripts_df["y_location"] < (y + y_size + margin_y))
-            for y in y_range
-        ]
-
-        tile_params = [
-            (
-                i,
-                j,
-                x_masks_nc,
-                y_masks_nc,
-                x_masks_tx,
-                y_masks_tx,
-                x_size,
-                y_size,
-                compute_labels,
-                r_tx,
-                neg_sampling_ratio_approx,
-                val_prob,
-                test_prob,
-                processed_dir,
-                receptive_field,
-                sampling_rate,
-            )
-            for i, j in product(range(len(x_range)), range(len(y_range)))
-        ]
-
-        if num_workers > 1:
-            with Pool(processes=num_workers) as pool:
+        # Process each region
+        if workers > 1:
+            with Pool(processes=workers) as pool:
+                
                 for _ in tqdm(
                     pool.imap_unordered(self._process_tile, tile_params),
                     total=len(tile_params),
@@ -338,26 +258,150 @@ class XeniumSample:
 
 
 class XeniumTile:
+    """
+    A class representing a tile of a Xenium sample.
+
+    Attributes
+    ----------
+    sample : XeniumSample
+        The Xenium sample containing data.
+    bounds : shapely.Polygon
+        The bounds of the tile in the sample.
+    margin : int, optional
+        The margin around the bounds to include additional data (default is 10).
+    boundaries : pd.DataFrame
+        Filtered boundaries within the tile bounds.
+    transcripts : pd.DataFrame
+        Filtered transcripts within the tile bounds.
+    """
 
     def __init__(
         self,
         sample: XeniumSample,
         bounds: shapely.Polygon,
+        margin: int = 10,
     ):
+        """
+        Initializes a XeniumTile instance.
+
+        Parameters
+        ----------
+        sample : XeniumSample
+            The Xenium sample containing data.
+        bounds : shapely.Polygon
+            The bounds of the tile in the sample.
+        margin : int, optional
+            The margin around the bounds to include additional data (default 
+            is 10).
+
+        Notes
+        -----
+        The `boundaries` and `transcripts` attributes are cached to avoid the 
+        overhead of filtering when tiles are instantiated. This is particularly 
+        useful in multiprocessing settings where generating tiles in parallel 
+        could lead to high overhead.
+
+        Internal Attributes
+        --------------------
+        _boundaries : pd.DataFrame, optional
+            Cached DataFrame of filtered boundaries. Initially set to None.
+        _transcripts : pd.DataFrame, optional
+            Cached DataFrame of filtered transcripts. Initially set to None.
+        """
         self.sample = sample
         self.bounds = bounds
 
-        # Filter sample-level data by provided tile bounds
-        self.boundaries = self.get_filtered_boundaries()
-        self.transcripts = self.get_filtered_transcripts()
+        # Internal caches for filtered data
+        self._boundaries = None
+        self._transcripts = None
+
+
+    @cached_property
+    def boundaries(self):
+        """
+        Returns the filtered boundaries within the tile bounds, cached for
+        efficiency.
+
+        The boundaries are computed only once and cached. If the boundaries 
+        have not been computed yet, they are computed using 
+        `get_filtered_boundaries()`.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the filtered boundaries within the tile 
+            bounds.
+        """
+        if self._boundaries is None:
+            self._boundaries = self.get_filtered_boundaries()
+        else:
+            return self._boundaries
+
+
+    @cached_property
+    def transcripts(self):
+        """
+        Returns the filtered transcripts within the tile bounds, cached for
+        efficiency.
+
+        The transcripts are computed only once and cached. If the transcripts 
+        have not been computed yet, they are computed using 
+        `get_filtered_transcripts()`.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the filtered transcripts within the tile 
+            bounds.
+        """
+        if self._transcripts is None:
+            self._transcripts = self.get_filtered_transcripts()
+        else:
+            return self._transcripts
 
 
     def get_filtered_boundaries(self) -> pd.DataFrame:
-        pass
+        """
+        Filters the boundaries in the sample to include only those within
+        the specified tile bounds.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the filtered boundaries within the tile 
+            bounds.
+        """
+        filtered_boundaries = filter_boundaries(
+            boundaries=self.sample.nuclei_df,
+            inset=self.bounds,
+            outset=self.bounds.buffer(self.margin, join_style='mitre')
+        )
+        return filtered_boundaries
 
 
     def get_filtered_transcripts(self) -> pd.DataFrame:
-        pass
+        """
+        Filters the transcripts in the sample to include only those within
+        the specified tile bounds.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the filtered transcripts within the tile 
+            bounds.
+        """
+
+        # Buffer tile bounds to include transcripts around boundary
+        outset = self.bounds.buffer(self.margin, join_style='mitre')
+        xmin, ymin, xmax, ymax =  outset.bounds
+
+        # Get transcripts inside buffered region
+        enums = TranscriptColumns
+        mask = self.sample.transcripts_df[enums.x].between(xmin, xmax)
+        mask &= self.sample.transcripts_df[enums.y].between(ymin, ymax)
+        filtered_transcripts = self.sample.transcripts_df[mask]
+
+        return filtered_transcripts
 
 
     def get_transcript_props(
@@ -366,10 +410,6 @@ class XeniumTile:
         """
         Encodes transcript features in a sparse format.
 
-        This method uses the transcript encoder to transform the transcript
-        labels into an encoded format and then converts the encoding to a sparse
-        tensor.
-
         Returns
         -------
         props : torch.sparse.FloatTensor
@@ -377,9 +417,10 @@ class XeniumTile:
 
         Notes
         -----
-        The encoder can be any type of encoder that transforms the transcript
-        labels into a numerical matrix. The resulting matrix is then converted
-        to a sparse tensor for efficient storage and computation.
+        The intention is for this function to simplify testing new strategies 
+        for 'tx' node representations. For example, the encoder can be any type
+        of encoder that transforms the transcript labels into a numerical 
+        matrix (in sparse format).
         """
         # Encode transcript features in sparse format
         enums = TranscriptColumns
@@ -418,13 +459,6 @@ class XeniumTile:
         -------
         props : pd.DataFrame
             A DataFrame containing the computed properties for each polygon.
-
-        Notes
-        -----
-        The function calculates various geometric properties of the polygons
-        based on the specified parameters. The properties include area,
-        convexity, elongation, and circularity. The results are stored in a
-        DataFrame with each property as a column.
         """
         props = pd.DataFrame(index=polygons.index, dtype=float)
         if area:
@@ -466,18 +500,11 @@ class XeniumTile:
 
         Returns
         -------
-        edge_index : torch.Tensor
+        torch.Tensor
             An array of shape (2, n_edges) containing the edge indices. Each
             column represents an edge between two points, where the first row
             contains the source indices and the second row contains the target
             indices.
-
-        Notes
-        -----
-        This function constructs a KDTree from the index points and queries the
-        tree to find the k-nearest neighbors for each query point within the
-        specified maximum distance. The resulting edge indices are returned as
-        a 2D array.
         """
         # KDTree search
         tree = KDTree(index_coords)
@@ -503,32 +530,31 @@ class XeniumTile:
 
         Parameters
         ----------
-        boundaries : gpd.GeoSeries
-            A GeoSeries containing boundary polygon geometries.
         area : bool, optional
             If True, compute the area of each boundary polygon (default is 
             True).
         convexity : bool, optional
-            If True, compute the convexity of each boundary polygon (default is
+            If True, compute the convexity of each boundary polygon (default is 
             True).
         elongation : bool, optional
             If True, compute the elongation of each boundary polygon (default is
-            True).
+              True).
         circularity : bool, optional
             If True, compute the circularity of each boundary polygon (default 
             is True).
 
         Returns
         -------
-        props : pd.DataFrame
-            A DataFrame containing the computed properties for each boundary
+        torch.Tensor
+            A tensor containing the computed properties for each boundary 
             polygon.
 
         Notes
         -----
-        The function calculates various geometric properties of the boundary
-        polygons based on the specified parameters. The results are stored in a
-        DataFrame with each property as a column.
+        The intention is for this function to simplify testing new strategies 
+        for 'nc' node representations. You can just change the function body to
+        return another torch.Tensor without worrying about changes to the rest 
+        of the code.
         """
 
         # Get polygons from coordinates
@@ -648,6 +674,8 @@ class XeniumTile:
         pyg_data['tx'].id = self.transcripts[enums.id].values
         pyg_data['tx'].pos = self.transcripts[enums.xyz].values
         pyg_data['tx'].x = self.get_transcript_props()
+        #TODO: Add pyg_data['tx'].nc_field
+        #TODO: Add pyg_data['tx'].tx_field
 
         # Set up neighbor edges
         dist = np.sqrt(polygons.area.max()) * 10  # heuristic distance

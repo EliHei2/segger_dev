@@ -657,7 +657,7 @@ class XeniumSample:
                 type="kd_tree",
             )
             # Compute the edge index for the nuclei field using a k-d tree
-            data["tx"].nc_field = self.get_edge_index(
+            data["tx"].e = self.get_edge_index(
                 coords_nc,
                 coords_tx,
                 k=receptive_field["k_nc"],
@@ -779,17 +779,10 @@ class XeniumSample:
         Returns:
         torch.Tensor: Edge indices.
         """
-        idx = np.column_stack((np.arange(shape[0]), idx_out))
-        idc = (
-            pd.DataFrame(idx).melt(0).loc[lambda df: df["value"] != shape[1], :]
-        )
-        edge_index = (
-            torch.tensor(
-                idc[["variable", "value"]].to_numpy(), dtype=torch.long
-            )
-            .t()
-            .contiguous()
-        )
+        # To sparse adjacency
+        edge_index = np.argwhere(idx_out != shape[0]).T
+        edge_index[1] = idx_out[idx_out != shape[0]]
+        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
         return edge_index
 
     def build_pyg_data_from_tile(

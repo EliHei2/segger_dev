@@ -46,10 +46,6 @@ def predict(args):
         lit_segger=lit_segger,
         data_loader=data_loader,
         score_cut=args.score_cut,
-        k_nc=dataset.k_nc,
-        dist_nc=dataset.dist_nc,
-        k_tx=dataset.k_tx,
-        dist_tx=dataset.dist_tx,
     )
     logging.info("Done.")
 
