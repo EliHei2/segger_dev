@@ -657,7 +657,7 @@ class XeniumSample:
                 type="kd_tree",
             )
             # Compute the edge index for the nuclei field using a k-d tree
-            data["tx"].e = self.get_edge_index(
+            data["tx"].nc_field = self.get_edge_index(
                 coords_nc,
                 coords_tx,
                 k=receptive_field["k_nc"],

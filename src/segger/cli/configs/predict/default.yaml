@@ -18,6 +18,11 @@ score_cut:
   default: 0.5
   help: "Score cut-off for predictions"
 
+use_cc:
+  type: bool
+  default: true
+  help: "Whether to assign floating transcripts using connected components"
+
 batch_size:
   type: int
   default: 1

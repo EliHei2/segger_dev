@@ -37,6 +37,10 @@ def predict(args):
         pin_memory=True,
         shuffle=False,
     )
+    if len(data_loader) == 0:
+        msg = f"Nothing to predict: No data found at '{args.dataset_path}'."
+        logging.warning(msg)
+        return
     lit_segger = load_model(args.checkpoint_path)
     logging.info("Done.")
 
@@ -46,6 +50,7 @@ def predict(args):
         lit_segger=lit_segger,
         data_loader=data_loader,
         score_cut=args.score_cut,
+        use_cc=args.use_cc,
     )
     logging.info("Done.")
 

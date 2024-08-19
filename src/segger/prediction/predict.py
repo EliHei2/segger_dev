@@ -204,6 +204,7 @@ def predict(
     lit_segger: LitSegger,
     data_loader: DataLoader,
     score_cut: float,
+    use_cc: bool = True,
 ) -> pd.DataFrame:
     """
     Predict cell assignments for multiple batches of transcript data using 
@@ -225,12 +226,16 @@ def predict(
         A DataFrame containing the transcript IDs, similarity scores, and 
         assigned cell IDs, consolidated across all batches.
     """
+    # If data loader is empty, do nothing
+    if len(data_loader) == 0:
+        return None
+    
     assignments = []
 
     # Assign transcripts from each batch to nuclei
     # TODO: parallelize this step
     for batch in tqdm(data_loader):
-        batch_assignments = predict_batch(lit_segger, batch, score_cut)
+        batch_assignments = predict_batch(lit_segger, batch, score_cut, use_cc)
         assignments.append(batch_assignments)
 
     # Join across batches and handle duplicates between batches
