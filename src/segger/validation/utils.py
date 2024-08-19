@@ -12,6 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import squidpy as sq
 from sklearn.metrics import calinski_harabasz_score, silhouette_score, f1_score
+from pathlib import Path
 
 
 def filter_transcripts(transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
@@ -863,3 +864,329 @@ def plot_metric_comparison(
     ax.set_xlabel(f'{label} ({method1})')
     ax.set_ylabel(f'{label} ({method2})')
     ax.set_title(f'{label}: {method1} vs {method2}')
+
+
+
+
+
+def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnData]:
+    """
+    Load segmentation data from provided paths and handle special cases like separating 'segger' into 'segger_n0' and 'segger_n1'.
+
+    Parameters:
+    segmentation_paths (Dict[str, Path]): Dictionary mapping segmentation method names to their file paths.
+
+    Returns:
+    Dict[str, sc.AnnData]: Dictionary mapping segmentation method names to loaded AnnData objects.
+    """
+    segmentations_dict = {}
+    for method, path in segmentation_paths.items():
+        adata = sc.read(path)
+        
+        # Special handling for 'segger' to separate into 'segger_n0' and 'segger_n1'
+        if method == 'segger':
+            cells_n1 = [i for i in adata.obs_names if not i.endswith('-nx')]
+            cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
+            segmentations_dict['segger_n1'] = adata[cells_n1, :]
+            segmentations_dict['segger_n0'] = adata[cells_n0, :]
+        else:
+            segmentations_dict[method] = adata
+            
+    return segmentations_dict
+
+def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the number of cells per segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Calculate the number of cells in each segmentation method
+    cell_counts = {method: seg.n_obs for method, seg in segmentations_dict.items()}
+    
+    # Create a DataFrame for the bar plot
+    df = pd.DataFrame(cell_counts, index=['Number of Cells']).T
+    
+    # Generate the bar plot
+    ax = df.plot(kind='bar', stacked=False, color=[method_colors.get(key, '#333333') for key in df.index], figsize=(3, 6), width=0.9)
+    
+    # Add a dashed line for the 10X baseline
+    if '10X' in cell_counts:
+        baseline_height = cell_counts['10X']
+        ax.axhline(y=baseline_height, color='gray', linestyle='--', linewidth=1.5, label='10X Baseline')
+    
+    # Set plot titles and labels
+    plt.title('Number of Cells per Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Number of Cells')
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'cell_counts_bar_plot.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the percentage of assigned transcripts (normalized) for each segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Calculate total counts per gene for each segmentation method
+    total_counts_per_gene = pd.DataFrame()
+
+    for method, adata in segmentations_dict.items():
+        gene_counts = adata.X.sum(axis=0).flatten()  # Sum across cells for each gene and flatten to 1D
+        gene_counts = pd.Series(gene_counts, index=adata.var_names, name=method)
+        total_counts_per_gene = pd.concat([total_counts_per_gene, gene_counts], axis=1)
+
+    # Normalize by the maximum count per gene across all segmentations
+    max_counts_per_gene = total_counts_per_gene.max(axis=1)
+    percent_assigned_normalized = total_counts_per_gene.divide(max_counts_per_gene, axis=0) * 100
+
+    # Prepare the data for the violin plot
+    violin_data = pd.DataFrame({
+        'Segmentation Method': [],
+        'Percent Assigned (Normalized)': []
+    })
+
+    # Add normalized percent_assigned data for each method
+    for method in segmentations_dict.keys():
+        method_data = percent_assigned_normalized[method].dropna()
+        method_df = pd.DataFrame({
+            'Segmentation Method': [method] * len(method_data),
+            'Percent Assigned (Normalized)': method_data.values
+        })
+        violin_data = pd.concat([violin_data, method_df], axis=0)
+
+    # Plot the violin plots
+    plt.figure(figsize=(12, 8))
+    ax = sns.violinplot(x='Segmentation Method', y='Percent Assigned (Normalized)', data=violin_data, palette=method_colors)
+
+    # Add a dashed line for the 10X baseline
+    if '10X' in segmentations_dict:
+        baseline_height = percent_assigned_normalized['10X'].mean()
+        ax.axhline(y=baseline_height, color='gray', linestyle='--', linewidth=1.5, label='10X Baseline')
+
+    # Set plot titles and labels
+    plt.title('Percentage of Assigned Transcripts (Normalized) by Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Percent Assigned (Normalized)')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'percent_assigned_normalized_violin_plot.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the normalized gene counts for each segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Calculate total counts per gene for each segmentation method
+    total_counts_per_gene = pd.DataFrame()
+
+    for method, adata in segmentations_dict.items():
+        gene_counts = adata.X.sum(axis=0).flatten()
+        gene_counts = pd.Series(gene_counts, index=adata.var_names, name=method)
+        total_counts_per_gene = pd.concat([total_counts_per_gene, gene_counts], axis=1)
+
+    # Normalize by the maximum count per gene across all segmentations
+    max_counts_per_gene = total_counts_per_gene.max(axis=1)
+    normalized_counts_per_gene = total_counts_per_gene.divide(max_counts_per_gene, axis=0)
+
+    # Prepare the data for the box plot
+    boxplot_data = pd.DataFrame({
+        'Segmentation Method': [],
+        'Normalized Counts': []
+    })
+
+    for method in segmentations_dict.keys():
+        method_counts = normalized_counts_per_gene[method]
+        method_df = pd.DataFrame({
+            'Segmentation Method': [method] * len(method_counts),
+            'Normalized Counts': method_counts.values
+        })
+        boxplot_data = pd.concat([boxplot_data, method_df], axis=0)
+
+    # Plot the box plots
+    plt.figure(figsize=(3, 6))
+    ax = sns.boxplot(x='Segmentation Method', y='Normalized Counts', data=boxplot_data, palette=method_colors, width=0.9)
+
+    # Add a dashed line for the 10X baseline
+    if '10X' in normalized_counts_per_gene:
+        baseline_height = normalized_counts_per_gene['10X'].mean()
+        plt.axhline(y=baseline_height, color='gray', linestyle='--', linewidth=1.5, label='10X Baseline')
+
+    # Set plot titles and labels
+    plt.title('Normalized Gene Counts by Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Normalized Counts')
+    plt.xticks(rotation=0)
+
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'gene_counts_normalized_boxplot_by_method.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the counts per cell (log2) for each segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Prepare the data for the violin plot
+    violin_data = pd.DataFrame({
+        'Segmentation Method': [],
+        'Counts per Cell (log2)': []
+    })
+
+    for method, adata in segmentations_dict.items():
+        method_counts = np.log2(adata.obs['transcripts'] + 1)
+        method_df = pd.DataFrame({
+            'Segmentation Method': [method] * len(method_counts),
+            'Counts per Cell (log2)': method_counts.values
+        })
+        violin_data = pd.concat([violin_data, method_df], axis=0)
+
+    # Plot the violin plots
+    plt.figure(figsize=(4, 6))
+    ax = sns.violinplot(x='Segmentation Method', y='Counts per Cell (log2)', data=violin_data, palette=method_colors)
+
+    # Add a dashed line for the 10X-nucleus median
+    if '10X-nucleus' in segmentations_dict:
+        median_10X_nucleus = np.median(np.log2(segmentations_dict['10X-nucleus'].obs['transcripts'] + 1))
+        ax.axhline(y=median_10X_nucleus, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
+
+    # Set plot titles and labels
+    plt.title('Counts per Cell by Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Counts per Cell (log2)')
+    plt.xticks(rotation=0)
+
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'counts_per_cell_violin_plot.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the cell area (log2) for each segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Prepare the data for the violin plot
+    violin_data = pd.DataFrame({
+        'Segmentation Method': [],
+        'Cell Area (log2)': []
+    })
+
+    for method in segmentations_dict.keys():
+        if 'cell_area' in segmentations_dict[method].obs.columns:
+            method_area = np.log2(segmentations_dict[method].obs['cell_area'] + 1)
+            method_df = pd.DataFrame({
+                'Segmentation Method': [method] * len(method_area),
+                'Cell Area (log2)': method_area.values
+            })
+            violin_data = pd.concat([violin_data, method_df], axis=0)
+
+    # Plot the violin plots
+    plt.figure(figsize=(4, 6))
+    ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=method_colors)
+
+    # Add a dashed line for the 10X-nucleus median
+    if '10X-nucleus' in segmentations_dict:
+        median_10X_nucleus_area = np.median(np.log2(segmentations_dict['10X-nucleus'].obs['cell_area'] + 1))
+        ax.axhline(y=median_10X_nucleus_area, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
+
+    # Set plot titles and labels
+    plt.title('Cell Area (log2) by Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Cell Area (log2)')
+    plt.xticks(rotation=0)
+
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'cell_area_log2_violin_plot.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Plot the transcript density (log2) for each segmentation method.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the plot will be saved.
+    """
+    # Prepare the data for the violin plot
+    violin_data = pd.DataFrame({
+        'Segmentation Method': [],
+        'Transcript Density (log2)': []
+    })
+
+    for method in segmentations_dict.keys():
+        if 'cell_area' in segmentations_dict[method].obs.columns:
+            method_density = segmentations_dict[method].obs['transcripts'] / segmentations_dict[method].obs['cell_area']
+            method_density_log2 = np.log2(method_density + 1)
+            method_df = pd.DataFrame({
+                'Segmentation Method': [method] * len(method_density_log2),
+                'Transcript Density (log2)': method_density_log2.values
+            })
+            violin_data = pd.concat([violin_data, method_df], axis=0)
+
+    # Plot the violin plots
+    plt.figure(figsize=(4, 6))
+    ax = sns.violinplot(x='Segmentation Method', y='Transcript Density (log2)', data=violin_data, palette=method_colors)
+
+    # Add a dashed line for the 10X-nucleus median
+    if '10X-nucleus' in segmentations_dict:
+        median_10X_nucleus_density_log2 = np.median(np.log2(segmentations_dict['10X-nucleus'].obs['transcripts'] / segmentations_dict['10X-nucleus'].obs['cell_area'] + 1))
+        ax.axhline(y=median_10X_nucleus_density_log2, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
+
+    # Set plot titles and labels
+    plt.title('Transcript Density (log2) by Segmentation Method')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('Transcript Density (log2)')
+    plt.xticks(rotation=0)
+
+    # Save the figure as a PDF
+    plt.savefig(output_path / 'transcript_density_log2_violin_plot.pdf', bbox_inches='tight')
+    plt.show()
+
+def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+    """
+    Create a summary plot with all the general statistics subplots.
+
+    Parameters:
+    segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+    output_path (Path): Path to the directory where the summary plot will be saved.
+    """
+    plt.figure(figsize=(15, 20))
+
+    plt.subplot(3, 2, 1)
+    plot_cell_counts(segmentations_dict, output_path)
+
+    plt.subplot(3, 2, 2)
+    plot_percent_assigned(segmentations_dict, output_path)
+
+    plt.subplot(3, 2, 3)
+    plot_gene_counts(segmentations_dict, output_path)
+
+    plt.subplot(3, 2, 4)
+    plot_counts_per_cell(segmentations_dict, output_path)
+
+    plt.subplot(3, 2, 5)
+    plot_cell_area(segmentations_dict, output_path)
+
+    plt.subplot(3, 2, 6)
+    plot_transcript_density(segmentations_dict, output_path)
+
+    plt.tight_layout()
+    plt.savefig(output_path / 'general_statistics_plots.pdf', bbox_inches='tight')
+    plt.show()
