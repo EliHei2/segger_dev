@@ -15,166 +15,7 @@ from sklearn.metrics import calinski_harabasz_score, silhouette_score, f1_score
 from pathlib import Path
 
 
-def filter_transcripts(transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
-    """
-    Filters transcripts based on quality value and removes weird transcripts.
 
-    Parameters:
-    transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-    min_qv (float): The minimum quality value threshold for filtering transcripts.
-
-    Returns:
-    pd.DataFrame: The filtered dataframe.
-    """
-    return transcripts_df[
-        (transcripts_df['qv'] >= min_qv) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlProbe_")) &
-        (~transcripts_df["feature_name"].str.startswith("antisense_")) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlCodeword_")) &
-        (~transcripts_df["feature_name"].str.startswith("BLANK_")) &
-        (~transcripts_df["feature_name"].str.startswith("DeprecatedCodeword_"))
-    ]
-
-
-def compute_transcript_metrics(
-    df: pd.DataFrame,
-    qv_threshold: float = 30,
-    cell_id_col: str = 'cell_id'
-) -> Dict[str, Any]:
-    """
-    Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe containing transcript data.
-    qv_threshold (float): The quality value threshold for filtering transcripts.
-    cell_id_col (str): The name of the column representing the cell ID.
-
-    Returns:
-    Dict[str, Any]: A dictionary containing various computed metrics.
-    """
-    df_filtered = df[df['qv'] > qv_threshold]
-    total_transcripts = len(df_filtered)
-    assigned_transcripts = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
-    percent_assigned = len(assigned_transcripts) / total_transcripts * 100
-    cytoplasmic_transcripts = assigned_transcripts[assigned_transcripts['overlaps_nucleus'] != 1]
-    nucleus_transcripts = assigned_transcripts[assigned_transcripts['overlaps_nucleus'] == 1]
-    percent_cytoplasmic = len(cytoplasmic_transcripts) / len(assigned_transcripts) * 100
-    percent_nucleus = len(nucleus_transcripts) / len(assigned_transcripts) * 100
-    non_assigned_transcripts = df_filtered[df_filtered[cell_id_col].astype(str) == '-1']
-    non_assigned_cytoplasmic = non_assigned_transcripts[non_assigned_transcripts['overlaps_nucleus'] != 1]
-    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / len(non_assigned_transcripts) * 100
-    gene_group_assigned = assigned_transcripts.groupby('feature_name')
-    gene_group_all = df_filtered.groupby('feature_name')
-    gene_percent_assigned = (gene_group_assigned.size() / gene_group_all.size() * 100).reset_index(name='percent_assigned')
-    cytoplasmic_gene_group = cytoplasmic_transcripts.groupby('feature_name')
-    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts) * 100).reset_index(name='percent_cytoplasmic')
-    gene_metrics = pd.merge(gene_percent_assigned, gene_percent_cytoplasmic, on='feature_name', how='outer').fillna(0)
-    results = {
-        'percent_assigned': percent_assigned,
-        'percent_cytoplasmic': percent_cytoplasmic,
-        'percent_nucleus': percent_nucleus,
-        'percent_non_assigned_cytoplasmic': percent_non_assigned_cytoplasmic,
-        'gene_metrics': gene_metrics
-    }
-    return results
-
-
-def create_anndata(
-    df: pd.DataFrame, 
-    panel_df: Optional[pd.DataFrame] = None, 
-    min_transcripts: int = 5, 
-    cell_id_col: str = 'cell_id', 
-    qv_threshold: float = 30, 
-    min_cell_area: float = 10.0, 
-    max_cell_area: float = 1000.0
-) -> ad.AnnData:
-    """
-    Generates an AnnData object from a dataframe of segmented transcriptomics data.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
-    panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
-    min_transcripts (int): The minimum number of transcripts required for a cell to be included.
-    cell_id_col (str): The column name representing the cell ID in the input dataframe.
-    qv_threshold (float): The quality value threshold for filtering transcripts.
-    min_cell_area (float): The minimum cell area to include a cell.
-    max_cell_area (float): The maximum cell area to include a cell.
-
-    Returns:
-    ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
-    """
-    df_filtered = filter_transcripts(df, min_qv=qv_threshold)
-    metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
-    df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
-    pivot_df = df_filtered.rename(columns={
-        cell_id_col: "cell",
-        "feature_name": "gene"
-    })[['cell', 'gene']].pivot_table(index='cell', columns='gene', aggfunc='size', fill_value=0)
-    pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
-    cell_summary = []
-    for cell_id, cell_data in df_filtered.groupby(cell_id_col):
-        if len(cell_data) < min_transcripts:
-            continue
-        cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']])
-        cell_area = cell_convex_hull.area
-        if cell_area < min_cell_area or cell_area > max_cell_area:
-            continue
-        if 'nucleus_distance' in cell_data:
-            nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
-        else:
-            nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
-        if len(nucleus_data) >= 3:
-            nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
-        else:
-            nucleus_convex_hull = None
-        cell_summary.append({
-            "cell": cell_id,
-            "cell_centroid_x": cell_data['x_location'].mean(),
-            "cell_centroid_y": cell_data['y_location'].mean(),
-            "cell_area": cell_area,
-            "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
-            "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
-            "has_nucleus": len(nucleus_data) > 0
-        })
-    cell_summary = pd.DataFrame(cell_summary).set_index("cell")
-    if panel_df is not None:
-        panel_df = panel_df.sort_values('gene')
-        genes = panel_df['gene'].values
-        for gene in genes:
-            if gene not in pivot_df:
-                pivot_df[gene] = 0
-        pivot_df = pivot_df[genes.tolist()]
-    if panel_df is None:
-        var_df = pd.DataFrame([{
-            "gene": i, 
-            "feature_types": 'Gene Expression', 
-            'genome': 'Unknown'
-        } for i in np.unique(pivot_df.columns.values)]).set_index('gene')
-    else:
-        var_df = panel_df[['gene', 'ensembl']].rename(columns={'ensembl':'gene_ids'})
-        var_df['feature_types'] = 'Gene Expression'
-        var_df['genome'] = 'Unknown'
-        var_df = var_df.set_index('gene')
-    gene_metrics = metrics['gene_metrics'].set_index('feature_name')
-    var_df = var_df.join(gene_metrics, how='left').fillna(0)
-    cells = list(set(pivot_df.index) & set(cell_summary.index))
-    pivot_df = pivot_df.loc[cells,:]
-    cell_summary = cell_summary.loc[cells,:]
-    adata = ad.AnnData(pivot_df.values)
-    adata.var = var_df
-    adata.obs['transcripts'] = pivot_df.sum(axis=1).values
-    adata.obs['unique_transcripts'] = (pivot_df > 0).sum(axis=1).values
-    adata.obs_names = pivot_df.index.values.tolist()
-    adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names,:], left_index=True, right_index=True)
-    adata.uns['metrics'] = {
-        'percent_assigned': metrics['percent_assigned'],
-        'percent_cytoplasmic': metrics['percent_cytoplasmic'],
-        'percent_nucleus': metrics['percent_nucleus'],
-        'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
-    }
-    return adata
 
 
 def find_markers(
@@ -258,7 +99,7 @@ def find_mutually_exclusive_genes(
             gene_expr = adata[:, gene].X
             cell_type_mask = adata.obs[cell_type_column] == cell_type
             non_cell_type_mask = ~cell_type_mask
-            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (gene_expr[non_cell_type_mask] > 0).mean() < 0.01:
+            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (gene_expr[non_cell_type_mask] > 0).mean() < 0.05:
                 exclusive_genes[cell_type].append(gene)
                 all_exclusive.append(gene)
     unique_genes = list({gene for i in exclusive_genes.keys() for gene in exclusive_genes[i] if gene in all_exclusive})
@@ -302,12 +143,12 @@ def compute_MECR(
 
 
 def compute_quantized_mecr_area(
-    adata: ad.AnnData, 
+    adata: sc.AnnData, 
     gene_pairs: List[Tuple[str, str]], 
     quantiles: int = 10
 ) -> pd.DataFrame:
     """
-    Compute the average MECR and average cell area for quantiles of cell areas.
+    Compute the average MECR, variance of MECR, and average cell area for quantiles of cell areas.
 
     Parameters:
     - adata: AnnData
@@ -319,7 +160,7 @@ def compute_quantized_mecr_area(
 
     Returns:
     - quantized_data: pd.DataFrame
-        DataFrame containing quantile information, average MECR, average area, and number of cells.
+        DataFrame containing quantile information, average MECR, variance of MECR, average area, and number of cells.
     """
     adata.obs['quantile'] = pd.qcut(adata.obs['cell_area'], quantiles, labels=False)
     quantized_data = []
@@ -327,10 +168,12 @@ def compute_quantized_mecr_area(
         cells_in_quantile = adata.obs['quantile'] == quantile
         mecr = compute_MECR(adata[cells_in_quantile, :], gene_pairs)
         average_mecr = np.mean([i for i in mecr.values()])
+        variance_mecr = np.var([i for i in mecr.values()])
         average_area = adata.obs.loc[cells_in_quantile, 'cell_area'].mean()
         quantized_data.append({
             'quantile': quantile / quantiles,
             'average_mecr': average_mecr,
+            'variance_mecr': variance_mecr,
             'average_area': average_area,
             'num_cells': cells_in_quantile.sum()
         })
@@ -338,12 +181,12 @@ def compute_quantized_mecr_area(
 
 
 def compute_quantized_mecr_counts(
-    adata: ad.AnnData, 
+    adata: sc.AnnData, 
     gene_pairs: List[Tuple[str, str]], 
     quantiles: int = 10
 ) -> pd.DataFrame:
     """
-    Compute the average MECR and average transcript counts for quantiles of transcript counts.
+    Compute the average MECR, variance of MECR, and average transcript counts for quantiles of transcript counts.
 
     Parameters:
     - adata: AnnData
@@ -355,7 +198,7 @@ def compute_quantized_mecr_counts(
 
     Returns:
     - quantized_data: pd.DataFrame
-        DataFrame containing quantile information, average MECR, average counts, and number of cells.
+        DataFrame containing quantile information, average MECR, variance of MECR, average counts, and number of cells.
     """
     adata.obs['quantile'] = pd.qcut(adata.obs['transcripts'], quantiles, labels=False)
     quantized_data = []
@@ -363,90 +206,16 @@ def compute_quantized_mecr_counts(
         cells_in_quantile = adata.obs['quantile'] == quantile
         mecr = compute_MECR(adata[cells_in_quantile, :], gene_pairs)
         average_mecr = np.mean([i for i in mecr.values()])
+        variance_mecr = np.var([i for i in mecr.values()])
         average_counts = adata.obs.loc[cells_in_quantile, 'transcripts'].mean()
         quantized_data.append({
             'quantile': quantile / quantiles,
             'average_mecr': average_mecr,
+            'variance_mecr': variance_mecr,
             'average_counts': average_counts,
             'num_cells': cells_in_quantile.sum()
         })
     return pd.DataFrame(quantized_data)
-
-
-def compute_binned_mecr_area(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    bins: int = 8
-) -> pd.DataFrame:
-    """
-    Compute the average MECR and bin centers for logarithmic bins of cell areas.
-
-    Parameters:
-    - adata: AnnData
-        Annotated data object containing gene expression data.
-    - gene_pairs: List[Tuple[str, str]]
-        List of tuples representing gene pairs to evaluate.
-    - bins: int, default=8
-        Number of logarithmic bins for cell area.
-
-    Returns:
-    - binned_data: pd.DataFrame
-        DataFrame containing bin information, average MECR, bin centers, standard deviation, and number of cells.
-    """
-    bin_edges = np.logspace(np.log2(10), np.log2(1000), bins + 1, base=2)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    adata.obs['bin'] = pd.cut(adata.obs['cell_area'], bin_edges, labels=False)
-    binned_data = []
-    for bin in range(len(bin_edges) - 1):
-        cells_in_bin = adata.obs['bin'] == bin
-        mecr = compute_MECR(adata[cells_in_bin, :], gene_pairs)
-        average_mecr = np.mean(list(mecr.values()))
-        sd_mecr = np.std(list(mecr.values()))
-        binned_data.append({
-            'bin_center': bin_centers[bin],
-            'average_mecr': average_mecr,
-            'sd_mecr': sd_mecr,
-            'num_cells': cells_in_bin.sum()
-        })
-    return pd.DataFrame(binned_data)
-
-
-def compute_binned_mecr_counts(
-    adata: ad.AnnData, 
-    gene_pairs: List[Tuple[str, str]], 
-    bins: int = 11
-) -> pd.DataFrame:
-    """
-    Compute the average MECR and bin centers for logarithmic bins of transcript counts.
-
-    Parameters:
-    - adata: AnnData
-        Annotated data object containing gene expression data.
-    - gene_pairs: List[Tuple[str, str]]
-        List of tuples representing gene pairs to evaluate.
-    - bins: int, default=11
-        Number of logarithmic bins for transcript counts.
-
-    Returns:
-    - binned_data: pd.DataFrame
-        DataFrame containing bin information, average MECR, bin centers, standard deviation, and number of cells.
-    """
-    bin_edges = np.logspace(np.log2(10), np.log2(10000), bins + 1, base=2)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    adata.obs['bin'] = pd.cut(adata.obs['transcripts'], bin_edges, labels=False)
-    binned_data = []
-    for bin in range(len(bin_edges) - 1):
-        cells_in_bin = adata.obs['bin'] == bin
-        mecr = compute_MECR(adata[cells_in_bin, :], gene_pairs)
-        average_mecr = np.mean(list(mecr.values()))
-        sd_mecr = np.std(list(mecr.values()))
-        binned_data.append({
-            'bin_center': bin_centers[bin],
-            'average_mecr': average_mecr,
-            'sd_mecr': sd_mecr,
-            'num_cells': cells_in_bin.sum()
-        })
-    return pd.DataFrame(binned_data)
 
 
 def annotate_query_with_reference(
@@ -622,8 +391,10 @@ def compute_clustering_scores(
 
 def compute_neighborhood_metrics(
     adata: ad.AnnData, 
-    radius: int = 10, 
-    celltype_column: str = 'celltype_major'
+    radius: float = 10, 
+    celltype_column: str = 'celltype_major',
+    n_neighs: int = 20,
+    subset_size: int = 10000
 ) -> None:
     """
     Compute neighborhood entropy and number of neighbors for each cell in the AnnData object.
@@ -636,11 +407,31 @@ def compute_neighborhood_metrics(
     - celltype_column: str, default='celltype_major'
         Column name in `adata.obs` that specifies cell types.
     """
-    sq.gr.spatial_neighbors(adata, radius=radius, coord_type='generic', n_neighs=100)
+    """
+    Compute neighborhood entropy and number of neighbors for a random subset of cells in the AnnData object.
+
+    Parameters:
+    - adata: AnnData
+        Annotated data object containing spatial information and cell type assignments.
+    - radius: int, default=10
+        Radius for spatial neighbor calculation.
+    - celltype_column: str, default='celltype_major'
+        Column name in `adata.obs` that specifies cell types.
+    - subset_size: int, default=10000
+        Number of cells to randomly select for the calculation.
+    """
+    # Ensure the subset size does not exceed the number of cells
+    subset_size = min(subset_size, adata.n_obs)
+    # Randomly select a subset of cells
+    subset_indices = np.random.choice(adata.n_obs, subset_size, replace=False)
+    # Compute spatial neighbors for the entire dataset
+    sq.gr.spatial_neighbors(adata, radius=radius, coord_type='generic', n_neighs=n_neighs)
     neighbors = adata.obsp['spatial_distances'].tolil().rows
     entropies = []
     num_neighbors = []
-    for cell_index, neighbor_indices in enumerate(neighbors):
+    # Calculate entropy and number of neighbors only for the selected subset
+    for cell_index in subset_indices:
+        neighbor_indices = neighbors[cell_index]
         neighbor_cell_types = adata.obs[celltype_column].iloc[neighbor_indices]
         cell_type_counts = neighbor_cell_types.value_counts()
         total_neighbors = len(neighbor_cell_types)
@@ -651,8 +442,14 @@ def compute_neighborhood_metrics(
             entropies.append(cell_type_entropy)
         else:
             entropies.append(0)
-    adata.obs['neighborhood_entropy'] = entropies
-    adata.obs['number_of_neighbors'] = num_neighbors
+    # Store the results back into the original AnnData object
+    # We fill with NaN for cells not in the subset
+    entropy_full = np.full(adata.n_obs, np.nan)
+    neighbors_full = np.full(adata.n_obs, np.nan)
+    entropy_full[subset_indices] = entropies
+    neighbors_full[subset_indices] = num_neighbors
+    adata.obs['neighborhood_entropy'] = entropy_full
+    adata.obs['number_of_neighbors'] = neighbors_full
 
 
 def compute_transcript_density(adata: ad.AnnData) -> None:
@@ -727,52 +524,6 @@ def average_log_normalized_expression(
     return adata.to_df().groupby(adata.obs[celltype_column]).mean()
 
 
-def compute_neighborhood_contamination(
-    adata: ad.AnnData, 
-    marker_genes: Dict[str, Dict[str, List[str]]], 
-    radii: List[int], 
-    celltype_column: str = 'celltype_major'
-) -> pd.DataFrame:
-    """
-    Compute neighborhood contamination for each cell type based on marker genes and specified radii.
-
-    Parameters:
-    - adata: AnnData
-        Annotated data object containing spatial and gene expression information.
-    - marker_genes: dict
-        Dictionary where keys are cell types and values are dictionaries containing:
-            'positive': list of top x% highly expressed genes
-            'negative': list of top x% lowly expressed genes.
-    - radii: List[int]
-        List of radii for which to compute neighborhood contamination.
-    - celltype_column: str, default='celltype_major'
-        Column name in `adata.obs` that specifies cell types.
-
-    Returns:
-    - contamination_df: pd.DataFrame
-        DataFrame containing the contamination values for each cell type and radius.
-    """
-    contamination_dfs = []
-    sq.gr.spatial_neighbors(adata, radius=max(radii), coord_type='generic', n_neighs=1000)
-    distances = adata.obsp['spatial_distances'].toarray()
-    for radius in radii:
-        contamination = []
-        adata.obs['contamination_' + str(radius)] = 0
-        for cell_type, markers in marker_genes.items():
-            positive_markers = markers['positive']
-            cells_a_indices = np.where(adata.obs[celltype_column] == cell_type)[0]
-            other_cells_indices = np.where(adata.obs[celltype_column] != cell_type)[0]
-            within_radius = (distances[cells_a_indices] <= radius) & (distances[cells_a_indices] != 0)
-            neighbor_expr = adata[:, positive_markers].X
-            total_expr_within_radius = (within_radius @ neighbor_expr).sum(1)
-            if len(cells_a_indices) > 0 and len(other_cells_indices) > 0:
-                neighbor_expr_other_cells = (within_radius[:, other_cells_indices] @ neighbor_expr[other_cells_indices]).sum(1)
-                contamination_values = neighbor_expr_other_cells / total_expr_within_radius
-                contamination.extend([(cell_type, val, radius) for val in contamination_values])
-                adata.obs['contamination_' + str(radius)][cells_a_indices] = contamination_values
-        contamination_df = pd.DataFrame(contamination, columns=[celltype_column, 'neighborhood_contamination', 'radius'])
-        contamination_dfs.append(contamination_df)
-    return pd.concat(contamination_dfs)
 
 
 def prepare_violin_data(
@@ -1189,4 +940,252 @@ def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], out
 
     plt.tight_layout()
     plt.savefig(output_path / 'general_statistics_plots.pdf', bbox_inches='tight')
+    plt.show()
+
+
+def plot_mecr_results(mecr_results: Dict[str, Dict[Tuple[str, str], float]], output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot the MECR (Mutually Exclusive Co-expression Rate) results for each segmentation method.
+
+    Parameters:
+    mecr_results (Dict[str, Dict[Tuple[str, str], float]]): Dictionary of MECR results for each segmentation method.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    # Prepare the data for plotting
+    plot_data = []
+    for method, mecr_dict in mecr_results.items():
+        for gene_pair, mecr_value in mecr_dict.items():
+            plot_data.append({
+                'Segmentation Method': method,
+                'Gene Pair': f"{gene_pair[0]} - {gene_pair[1]}",
+                'MECR': mecr_value
+            })
+    df = pd.DataFrame(plot_data)
+    plt.figure(figsize=(3, 6))
+    sns.boxplot(x='Segmentation Method', y='MECR', data=df, palette=palette)
+    plt.title('Mutually Exclusive Co-expression Rate (MECR)')
+    plt.xlabel('Segmentation Method')
+    plt.ylabel('MECR')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig(output_path / 'mecr_results_boxplot.pdf', bbox_inches='tight')
+    plt.show()
+    
+
+
+def plot_quantized_mecr_counts(quantized_mecr_counts: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.
+
+    Parameters:
+    quantized_mecr_counts (Dict[str, pd.DataFrame]): Dictionary of quantized MECR count data for each segmentation method.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    plt.figure(figsize=(9, 6))
+    for method, df in quantized_mecr_counts.items():
+        plt.plot(
+            df['average_counts'], 
+            df['average_mecr'], 
+            marker='o', 
+            linestyle='-', 
+            color=palette.get(method, '#333333'), 
+            label=method,
+            markersize=0  # No markers, only lines
+        )
+        plt.scatter(
+            df['average_counts'], 
+            df['average_mecr'], 
+            s=df['variance_mecr'] * 1e5,  # Size of points based on the variance of MECR
+            color=palette.get(method, '#333333'), 
+            alpha=0.7,  # Slight transparency for overlapping points
+            edgecolor='w',  # White edge color for better visibility
+            linewidth=0.5  # Thin edge line
+        )
+    plt.title('Quantized MECR by Transcript Counts')
+    plt.xlabel('Average Transcript Counts')
+    plt.ylabel('Average MECR')
+    # Place the legend outside the plot on the top right
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig(output_path / 'quantized_mecr_counts_plot.pdf', bbox_inches='tight')
+    plt.show()
+    
+    
+def plot_quantized_mecr_area(quantized_mecr_area: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot the quantized MECR values against cell areas for each segmentation method, with point size proportional to the variance of MECR.
+
+    Parameters:
+    quantized_mecr_area (Dict[str, pd.DataFrame]): Dictionary of quantized MECR area data for each segmentation method.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    plt.figure(figsize=(6, 4))
+    for method, df in quantized_mecr_area.items():
+        plt.plot(
+            df['average_area'], 
+            df['average_mecr'], 
+            marker='o', 
+            # s=df['variance_mecr']  * 1e5,
+            linestyle='-', 
+            color=palette.get(method, '#333333'), 
+            label=method,
+            markersize=0
+        )
+        plt.scatter(
+            df['average_area'], 
+            df['average_mecr'], 
+            s=df['variance_mecr']  * 1e5,  # Size of points based on the variance of MECR
+            color=palette.get(method, '#333333'), 
+            alpha=0.7,  # Slight transparency for overlapping points
+            edgecolor='w',  # White edge color for better visibility
+            linewidth=0.5  # Thin edge line
+        )
+    plt.title('Quantized MECR by Cell Area')
+    plt.xlabel('Average Cell Area')
+    plt.ylabel('Average MECR')
+    # Place the legend outside the plot on the top right
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig(output_path / 'quantized_mecr_area_plot.pdf', bbox_inches='tight')
+    plt.show()
+    
+
+
+def plot_contamination_results(contamination_results: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot contamination results for each segmentation method.
+
+    Parameters:
+    contamination_results (Dict[str, pd.DataFrame]): Dictionary of contamination data for each segmentation method.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    for method, df in contamination_results.items():
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(df, annot=True, cmap='coolwarm', linewidths=0.5)
+        plt.title(f'Contamination Matrix for {method}')
+        plt.xlabel('Target Cell Type')
+        plt.ylabel('Source Cell Type')
+        plt.tight_layout()
+        plt.savefig(output_path / f'{method}_contamination_matrix.pdf', bbox_inches='tight')
+        plt.show()
+        
+        
+def plot_contamination_boxplots(boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot boxplots for contamination values across different segmentation methods.
+
+    Parameters:
+    boxplot_data (pd.DataFrame): DataFrame containing contamination data for all segmentation methods.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    plt.figure(figsize=(14, 8))
+    sns.boxplot(
+        x='Source Cell Type', 
+        y='Contamination', 
+        hue='Segmentation Method', 
+        data=boxplot_data, 
+        palette=palette
+    )
+    plt.title('Neighborhood Contamination')
+    plt.xlabel('Source Cell Type')
+    plt.ylabel('Contamination')
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.xticks(rotation=45, ha='right')
+    
+    plt.tight_layout()
+    plt.savefig(output_path / 'contamination_boxplots.pdf', bbox_inches='tight')
+    plt.show()
+    
+    
+def plot_umaps_with_scores(
+    segmentations_dict: Dict[str, sc.AnnData], 
+    clustering_scores: Dict[str, Tuple[float, float]], 
+    output_path: Path, 
+    palette: Dict[str, str]
+) -> None:
+    """
+    Plot UMAPs colored by cell type for each segmentation method and display clustering scores in the title.
+    Parameters:
+    segmentations_dict (Dict[str, AnnData]): Dictionary of AnnData objects for each segmentation method.
+    clustering_scores (Dict[str, Tuple[float, float]]): Dictionary of clustering scores for each method.
+    output_path (Path): Path to the directory where the plots will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    for method, adata in segmentations_dict.items():
+        print(method)
+        adata_copy = adata.copy()
+        sc.pp.subsample(adata_copy, n_obs=10000)
+        sc.pp.normalize_total(adata_copy)
+        # Plot UMAP colored by cell type
+        plt.figure(figsize=(8, 6))
+        sc.pp.neighbors(adata_copy, n_neighbors=5)
+        sc.tl.umap(adata_copy, spread=5)
+        sc.pl.umap(adata_copy, color='celltype_major', palette=palette, show=False)
+        # Add clustering scores to the title
+        ch_score, sh_score = compute_clustering_scores(adata_copy, cell_type_column='celltype_major')
+        plt.title(f"{method} - UMAP\nCalinski-Harabasz: {ch_score:.2f}, Silhouette: {sh_score:.2f}")
+        # Save the figure
+        plt.savefig(output_path / f'{method}_umap_with_scores.pdf', bbox_inches='tight')
+        plt.show()
+
+
+
+
+def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot boxplots for neighborhood entropy across different segmentation methods by cell type.
+
+    Parameters:
+    entropy_boxplot_data (pd.DataFrame): DataFrame containing neighborhood entropy data for all segmentation methods.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    plt.figure(figsize=(14, 8))
+    sns.boxplot(
+        x='Cell Type', 
+        y='Neighborhood Entropy', 
+        hue='Segmentation Method', 
+        data=entropy_boxplot_data, 
+        palette=palette
+    )
+    plt.title('Neighborhood Entropy')
+    plt.xlabel('Cell Type')
+    plt.ylabel('Neighborhood Entropy')
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig(output_path / 'neighborhood_entropy_boxplots.pdf', bbox_inches='tight')
+    plt.show()
+    
+    
+
+
+def plot_sensitivity_boxplots(sensitivity_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
+    """
+    Plot boxplots for sensitivity across different segmentation methods by cell type.
+    Parameters:
+    sensitivity_boxplot_data (pd.DataFrame): DataFrame containing sensitivity data for all segmentation methods.
+    output_path (Path): Path to the directory where the plot will be saved.
+    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+    """
+    plt.figure(figsize=(14, 8))
+    sns.boxplot(
+        x='Cell Type', 
+        y='Sensitivity', 
+        hue='Segmentation Method', 
+        data=sensitivity_boxplot_data, 
+        palette=palette
+    )
+    plt.title('Sensitivity Score')
+    plt.xlabel('Cell Type')
+    plt.ylabel('Sensitivity')
+    plt.legend(title='', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig(output_path / 'sensitivity_boxplots.pdf', bbox_inches='tight')
     plt.show()
