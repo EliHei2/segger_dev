@@ -468,114 +468,64 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
     adata.obs['transcript_density'] = transcript_counts / cell_areas
 
 
-def compute_celltype_f1_purity(
-    adata: ad.AnnData, 
-    marker_genes: Dict[str, Dict[str, List[str]]]
-) -> Dict[str, float]:
-    """
-    Compute the purity F1 score for each cell type based on marker genes.
+# def compute_celltype_f1_purity(
+#     adata: ad.AnnData, 
+#     marker_genes: Dict[str, Dict[str, List[str]]]
+# ) -> Dict[str, float]:
+#     """
+#     Compute the purity F1 score for each cell type based on marker genes.
 
-    Parameters:
-    - adata: AnnData
-        Annotated data object containing gene expression data.
-    - marker_genes: dict
-        Dictionary where keys are cell types and values are dictionaries containing:
-            'positive': list of top x% highly expressed genes
-            'negative': list of top x% lowly expressed genes.
+#     Parameters:
+#     - adata: AnnData
+#         Annotated data object containing gene expression data.
+#     - marker_genes: dict
+#         Dictionary where keys are cell types and values are dictionaries containing:
+#             'positive': list of top x% highly expressed genes
+#             'negative': list of top x% lowly expressed genes.
 
-    Returns:
-    - f1_scores: dict
-        Dictionary with cell types as keys and their corresponding purity F1 scores.
-    """
-    f1_scores = {}
-    for cell_type, markers in marker_genes.items():
-        pos_markers = markers['positive']
-        neg_markers = markers['negative']
-        pos_expr = adata[:, pos_markers].X.toarray().mean(axis=1)
-        neg_expr = adata[:, neg_markers].X.toarray().mean(axis=1)
-        pos_labels = adata.obs['celltype_major'] == cell_type
-        neg_labels = adata.obs['celltype_major'] != cell_type
-        pos_f1 = f1_score(pos_labels, pos_expr >= np.percentile(pos_expr, 97))
-        neg_f1 = f1_score(pos_labels, neg_expr <= np.percentile(neg_expr, 10))
-        scaled_pos_f1 = (pos_f1 - 0) / (1 - 0)
-        scaled_neg_f1 = (neg_f1 - 0) / (1 - 0)
-        purity_f1 = 2 * (scaled_pos_f1 * scaled_neg_f1) / (scaled_pos_f1 + scaled_neg_f1)
-        f1_scores[cell_type] = purity_f1
-    return f1_scores
-
-
-def average_log_normalized_expression(
-    adata: ad.AnnData, 
-    celltype_column: str
-) -> pd.DataFrame:
-    """
-    Compute the average log-normalized expression for each cell type.
-
-    Parameters:
-    - adata: AnnData
-        Annotated data object containing gene expression data.
-    - celltype_column: str
-        Column name in `adata.obs` that specifies cell types.
-
-    Returns:
-    - avg_expr: pd.DataFrame
-        DataFrame containing the average log-normalized expression for each cell type.
-    """
-    return adata.to_df().groupby(adata.obs[celltype_column]).mean()
+#     Returns:
+#     - f1_scores: dict
+#         Dictionary with cell types as keys and their corresponding purity F1 scores.
+#     """
+#     f1_scores = {}
+#     for cell_type, markers in marker_genes.items():
+#         pos_markers = markers['positive']
+#         neg_markers = markers['negative']
+#         pos_expr = adata[:, pos_markers].X.toarray().mean(axis=1)
+#         neg_expr = adata[:, neg_markers].X.toarray().mean(axis=1)
+#         pos_labels = adata.obs['celltype_major'] == cell_type
+#         neg_labels = adata.obs['celltype_major'] != cell_type
+#         pos_f1 = f1_score(pos_labels, pos_expr >= np.percentile(pos_expr, 97))
+#         neg_f1 = f1_score(pos_labels, neg_expr <= np.percentile(neg_expr, 10))
+#         scaled_pos_f1 = (pos_f1 - 0) / (1 - 0)
+#         scaled_neg_f1 = (neg_f1 - 0) / (1 - 0)
+#         purity_f1 = 2 * (scaled_pos_f1 * scaled_neg_f1) / (scaled_pos_f1 + scaled_neg_f1)
+#         f1_scores[cell_type] = purity_f1
+#     return f1_scores
 
 
+# def average_log_normalized_expression(
+#     adata: ad.AnnData, 
+#     celltype_column: str
+# ) -> pd.DataFrame:
+#     """
+#     Compute the average log-normalized expression for each cell type.
+
+#     Parameters:
+#     - adata: AnnData
+#         Annotated data object containing gene expression data.
+#     - celltype_column: str
+#         Column name in `adata.obs` that specifies cell types.
+
+#     Returns:
+#     - avg_expr: pd.DataFrame
+#         DataFrame containing the average log-normalized expression for each cell type.
+#     """
+#     return adata.to_df().groupby(adata.obs[celltype_column]).mean()
 
 
-def prepare_violin_data(
-    adata_list: List[ad.AnnData], 
-    method_names: List[str]
-) -> pd.DataFrame:
-    """
-    Prepare data for violin plots comparing various methods.
-
-    Parameters:
-    - adata_list: List[AnnData]
-        List of AnnData objects for each method.
-    - method_names: List[str]
-        List of method names corresponding to the AnnData objects.
-
-    Returns:
-    - violin_data: pd.DataFrame
-        DataFrame containing the data for violin plots.
-    """
-    df_list = []
-    for adata, method in zip(adata_list, method_names):
-        df = adata.obs[['transcripts', 'cell_area', 'transcript_density']].copy()
-        df['method'] = method
-        df_list.append(df)
-    return pd.concat(df_list)
 
 
-def prepare_comparison_data(
-    adata_list: List[ad.AnnData], 
-    method_names: List[str]
-) -> pd.DataFrame:
-    """
-    Prepare data for comparing various methods based on specific metrics.
-
-    Parameters:
-    - adata_list: List[AnnData]
-        List of AnnData objects for each method.
-    - method_names: List[str]
-        List of method names corresponding to the AnnData objects.
-
-    Returns:
-    - comparison_data: pd.DataFrame
-        DataFrame containing the data for comparing various methods.
-    """
-    df_list = []
-    for adata, method in zip(adata_list, method_names):
-        df = adata.obs[['celltype_major', 'transcripts', 'cell_area', 'transcript_density', 
-                        f'contamination_16', f'contamination_64', f'contamination_256']].copy()
-        df['method'] = method
-        df_list.append(df)
-    combined_df = pd.concat(df_list)
-    return combined_df.loc[:, ~combined_df.columns.duplicated()]
 
 
 def plot_metric_comparison(
@@ -618,8 +568,6 @@ def plot_metric_comparison(
 
 
 
-
-
 def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnData]:
     """
     Load segmentation data from provided paths and handle special cases like separating 'segger' into 'segger_n0' and 'segger_n1'.
@@ -640,8 +588,8 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
             cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
             segmentations_dict['segger_n1'] = adata[cells_n1, :]
             segmentations_dict['segger_n0'] = adata[cells_n0, :]
-        else:
-            segmentations_dict[method] = adata
+            
+        segmentations_dict[method] = adata
             
     return segmentations_dict
 
