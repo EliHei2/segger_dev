@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import squidpy as sq
 from sklearn.metrics import calinski_harabasz_score, silhouette_score, f1_score
 from pathlib import Path
-
+import seaborn as sns
 
 
 
@@ -581,19 +581,18 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
     segmentations_dict = {}
     for method, path in segmentation_paths.items():
         adata = sc.read(path)
-        
         # Special handling for 'segger' to separate into 'segger_n0' and 'segger_n1'
         if method == 'segger':
             cells_n1 = [i for i in adata.obs_names if not i.endswith('-nx')]
             cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
             segmentations_dict['segger_n1'] = adata[cells_n1, :]
             segmentations_dict['segger_n0'] = adata[cells_n0, :]
-            
         segmentations_dict[method] = adata
-            
     return segmentations_dict
 
-def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+
+
+def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str] ) -> None:
     """
     Plot the number of cells per segmentation method.
 
@@ -608,7 +607,7 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     df = pd.DataFrame(cell_counts, index=['Number of Cells']).T
     
     # Generate the bar plot
-    ax = df.plot(kind='bar', stacked=False, color=[method_colors.get(key, '#333333') for key in df.index], figsize=(3, 6), width=0.9)
+    ax = df.plot(kind='bar', stacked=False, color=[palette.get(key, '#333333') for key in df.index], figsize=(3, 6), width=0.9)
     
     # Add a dashed line for the 10X baseline
     if '10X' in cell_counts:
@@ -625,7 +624,7 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     plt.savefig(output_path / 'cell_counts_bar_plot.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Plot the percentage of assigned transcripts (normalized) for each segmentation method.
 
@@ -662,7 +661,7 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
 
     # Plot the violin plots
     plt.figure(figsize=(12, 8))
-    ax = sns.violinplot(x='Segmentation Method', y='Percent Assigned (Normalized)', data=violin_data, palette=method_colors)
+    ax = sns.violinplot(x='Segmentation Method', y='Percent Assigned (Normalized)', data=violin_data, palette=palette)
 
     # Add a dashed line for the 10X baseline
     if '10X' in segmentations_dict:
@@ -670,7 +669,7 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
         ax.axhline(y=baseline_height, color='gray', linestyle='--', linewidth=1.5, label='10X Baseline')
 
     # Set plot titles and labels
-    plt.title('Percentage of Assigned Transcripts (Normalized) by Segmentation Method')
+    plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Percent Assigned (Normalized)')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -679,7 +678,7 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
     plt.savefig(output_path / 'percent_assigned_normalized_violin_plot.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Plot the normalized gene counts for each segmentation method.
 
@@ -715,7 +714,7 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
 
     # Plot the box plots
     plt.figure(figsize=(3, 6))
-    ax = sns.boxplot(x='Segmentation Method', y='Normalized Counts', data=boxplot_data, palette=method_colors, width=0.9)
+    ax = sns.boxplot(x='Segmentation Method', y='Normalized Counts', data=boxplot_data, palette=palette, width=0.9)
 
     # Add a dashed line for the 10X baseline
     if '10X' in normalized_counts_per_gene:
@@ -723,7 +722,7 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
         plt.axhline(y=baseline_height, color='gray', linestyle='--', linewidth=1.5, label='10X Baseline')
 
     # Set plot titles and labels
-    plt.title('Normalized Gene Counts by Segmentation Method')
+    plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Normalized Counts')
     plt.xticks(rotation=0)
@@ -732,7 +731,7 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     plt.savefig(output_path / 'gene_counts_normalized_boxplot_by_method.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Plot the counts per cell (log2) for each segmentation method.
 
@@ -756,7 +755,7 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
 
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x='Segmentation Method', y='Counts per Cell (log2)', data=violin_data, palette=method_colors)
+    ax = sns.violinplot(x='Segmentation Method', y='Counts per Cell (log2)', data=violin_data, palette=palette)
 
     # Add a dashed line for the 10X-nucleus median
     if '10X-nucleus' in segmentations_dict:
@@ -764,7 +763,7 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
         ax.axhline(y=median_10X_nucleus, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
 
     # Set plot titles and labels
-    plt.title('Counts per Cell by Segmentation Method')
+    plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Counts per Cell (log2)')
     plt.xticks(rotation=0)
@@ -773,7 +772,7 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
     plt.savefig(output_path / 'counts_per_cell_violin_plot.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Plot the cell area (log2) for each segmentation method.
 
@@ -798,7 +797,7 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path)
 
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=method_colors)
+    ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=palette)
 
     # Add a dashed line for the 10X-nucleus median
     if '10X-nucleus' in segmentations_dict:
@@ -806,7 +805,7 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path)
         ax.axhline(y=median_10X_nucleus_area, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
 
     # Set plot titles and labels
-    plt.title('Cell Area (log2) by Segmentation Method')
+    plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Cell Area (log2)')
     plt.xticks(rotation=0)
@@ -815,7 +814,7 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path)
     plt.savefig(output_path / 'cell_area_log2_violin_plot.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Plot the transcript density (log2) for each segmentation method.
 
@@ -841,7 +840,7 @@ def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_pa
 
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x='Segmentation Method', y='Transcript Density (log2)', data=violin_data, palette=method_colors)
+    ax = sns.violinplot(x='Segmentation Method', y='Transcript Density (log2)', data=violin_data, palette=palette)
 
     # Add a dashed line for the 10X-nucleus median
     if '10X-nucleus' in segmentations_dict:
@@ -849,7 +848,7 @@ def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_pa
         ax.axhline(y=median_10X_nucleus_density_log2, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
 
     # Set plot titles and labels
-    plt.title('Transcript Density (log2) by Segmentation Method')
+    plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Transcript Density (log2)')
     plt.xticks(rotation=0)
@@ -858,7 +857,7 @@ def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_pa
     plt.savefig(output_path / 'transcript_density_log2_violin_plot.pdf', bbox_inches='tight')
     plt.show()
 
-def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], output_path: Path) -> None:
+def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """
     Create a summary plot with all the general statistics subplots.
 
@@ -869,22 +868,21 @@ def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], out
     plt.figure(figsize=(15, 20))
 
     plt.subplot(3, 2, 1)
-    plot_cell_counts(segmentations_dict, output_path)
+    plot_cell_counts(segmentations_dict, output_path, palette=palette)
 
     plt.subplot(3, 2, 2)
-    plot_percent_assigned(segmentations_dict, output_path)
+    plot_percent_assigned(segmentations_dict, output_path, palette=palette)
 
     plt.subplot(3, 2, 3)
-    plot_gene_counts(segmentations_dict, output_path)
+    plot_gene_counts(segmentations_dict, output_path, palette=palette)
 
     plt.subplot(3, 2, 4)
-    plot_counts_per_cell(segmentations_dict, output_path)
-
+    plot_counts_per_cell(segmentations_dict, output_path, palette=palette)
     plt.subplot(3, 2, 5)
-    plot_cell_area(segmentations_dict, output_path)
+    plot_cell_area(segmentations_dict, output_path, palette=palette)
 
     plt.subplot(3, 2, 6)
-    plot_transcript_density(segmentations_dict, output_path)
+    plot_transcript_density(segmentations_dict, output_path, palette=palette)
 
     plt.tight_layout()
     plt.savefig(output_path / 'general_statistics_plots.pdf', bbox_inches='tight')
