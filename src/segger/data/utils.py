@@ -305,27 +305,46 @@ class XeniumSample:
 
 
     def load_transcripts(self, base_path: Path = None, sample: str = None, 
-                         transcripts_filename: str = "transcripts.csv.gz", 
-                         path: Path = None, min_qv: int = 20, 
-                         file_format: str = "csv", 
-                         additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None) -> 'XeniumSample': 
+                        transcripts_filename: str = "transcripts.csv.gz", 
+                        path: Path = None, min_qv: int = 20, 
+                        file_format: str = "csv", 
+                        additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None)  -> None: 
         """
-        Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats.
-
+        Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats, and allows the inclusion
+        of additional gene embeddings, such as cell type abundance.
         Parameters:
-        - base_path (Path): The base directory path where samples are stored.
-        - sample (str): The sample name or identifier.
-        - transcripts_filename (str): The filename of the transcripts file (default is "transcripts.csv.gz").
-        - path (Path): Optional specific path to the transcripts file.
-        - min_qv (int): Minimum quality value to filter transcripts (default is 20).
-        - file_format (str): Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
-        - additional_embeddings (Dict[str, pd.DataFrame]): Dictionary of additional embeddings for genes.
-        
-        Returns:
-        - XeniumSample: The updated instance with loaded transcript data and optional embeddings.
+        -----------
+        base_path : Path
+            The base directory path where samples are stored.
+        sample : str
+            The sample name or identifier.
+        transcripts_filename : str
+            The filename of the transcripts file (default is "transcripts.csv.gz").
+        path : Path
+            Optional specific path to the transcripts file.
+        min_qv : int
+            Minimum quality value to filter transcripts (default is 20).
+        file_format : str
+            Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
+        additional_embeddings : Dict[str, pd.DataFrame], optional
+            A dictionary of additional embeddings for genes. Each key is the name of the embedding, and each value
+            is a DataFrame where rows are genes and columns are embedding features.
+            
+        Example:
+        --------
+        >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
+        >>> celltype_column = 'celltype_major'
+        >>> abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)
+        >>> xenium_sample = XeniumSample()
+        >>> xenium_sample.load_transcripts(
+        ...     base_path=Path("/data/xenium"),
+        ...     sample="sample_1",
+        ...     additional_embeddings={"cell_type_abundance": abundance_df}
+        ... )
+        >>> xenium_sample.set_embedding("cell_type_abundance")
+        >>> pyg_data = xenium_sample.build_pyg_data_from_tile(nuclei_df, xenium_sample.transcripts_df)
         """
         file_path = path or (base_path / sample / transcripts_filename)
-        
         if file_format == "csv":
             with gzip.open(file_path, 'rb') as file:
                 self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
@@ -335,19 +354,16 @@ class XeniumSample:
             raise ValueError(f"Unsupported file format: {file_format}")
 
         print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
-
         self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
         self.x_max = self.transcripts_df['x_location'].max()
         self.y_max = self.transcripts_df['y_location'].max()
         self.x_min = self.transcripts_df['x_location'].min()
         self.y_min = self.transcripts_df['y_location'].min()
-        
         # Encode genes as one-hot by default
         genes = self.transcripts_df[['feature_name']]
         self.tx_encoder = OneHotEncoder()
         self.tx_encoder.fit(genes)
         self.embeddings_dict['one_hot'] = self.tx_encoder.transform(genes).toarray()
-
         # Add additional embeddings if provided
         if additional_embeddings:
             for key, embedding_df in additional_embeddings.items():
@@ -620,7 +636,13 @@ class XeniumSample:
         Set the current embedding type for the transcripts.
 
         Parameters:
-        - embedding_name (str): The name of the embedding to use. It must be one of the keys in `embeddings_dict`.
+        -----------
+        embedding_name : str
+            The name of the embedding to use. It must be one of the keys in `embeddings_dict`.
+
+        Example:
+        --------
+        >>> xenium_sample.set_embedding("cell_type_abundance")
         """
         if embedding_name in self.embeddings_dict:
             self.current_embedding = embedding_name
