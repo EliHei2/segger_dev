@@ -229,6 +229,58 @@ class BuildTxGraph(BaseTransform):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(r={self.r})'
+    
+
+def calculate_gene_celltype_abundance_embedding(adata: AnnData, celltype_column: str) -> pd.DataFrame:
+    """
+    Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type 
+    that express the gene (non-zero expression).
+
+    Parameters:
+    -----------
+    adata : AnnData
+        An AnnData object containing gene expression data and cell type information.
+    celltype_column : str
+        The column name in `adata.obs` that contains the cell type information.
+
+    Returns:
+    --------
+    pd.DataFrame
+        A DataFrame where rows are genes and columns are cell types, with each value representing 
+        the percentage of cells in that cell type expressing the gene.
+
+    Example:
+    --------
+    >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
+    >>> celltype_column = 'celltype_major'
+    >>> abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)
+    >>> abundance_df.head()
+    """
+    # Extract expression data (cells x genes) and cell type information (cells)
+    expression_data = adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X
+    cell_types = adata.obs[celltype_column].values
+    # Create a binary matrix for gene expression (1 if non-zero, 0 otherwise)
+    gene_expression_binary = (expression_data > 0).astype(int)
+    # Convert the binary matrix to a DataFrame
+    gene_expression_df = pd.DataFrame(gene_expression_binary, index=adata.obs_names, columns=adata.var_names)
+    # Perform one-hot encoding on the cell types
+    encoder = OneHotEncoder(sparse=False)
+    cell_type_encoded = encoder.fit_transform(cell_types.reshape(-1, 1))
+    # Calculate the percentage of cells expressing each gene per cell type
+    cell_type_abundance_list = []
+    for i in range(cell_type_encoded.shape[1]):
+        # Extract cells of the current cell type
+        cell_type_mask = cell_type_encoded[:, i] == 1
+        # Calculate the abundance: sum of non-zero expressions in this cell type / total cells in this cell type
+        abundance = gene_expression_df[cell_type_mask].mean(axis=0) * 100
+        cell_type_abundance_list.append(abundance)
+    # Create a DataFrame for the cell type abundance with gene names as rows and cell types as columns
+    cell_type_abundance_df = pd.DataFrame(cell_type_abundance_list, 
+                                            columns=adata.var_names, 
+                                            index=encoder.categories_[0]).T
+    return cell_type_abundance_df
+
+
 
 
 class XeniumSample:
@@ -251,10 +303,12 @@ class XeniumSample:
         ]
         return XeniumSample(cropped_transcripts_df)
 
+
     def load_transcripts(self, base_path: Path = None, sample: str = None, 
                          transcripts_filename: str = "transcripts.csv.gz", 
                          path: Path = None, min_qv: int = 20, 
-                         file_format: str = "csv") -> 'XeniumSample': 
+                         file_format: str = "csv", 
+                         additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None) -> 'XeniumSample': 
         """
         Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats.
 
@@ -265,9 +319,10 @@ class XeniumSample:
         - path (Path): Optional specific path to the transcripts file.
         - min_qv (int): Minimum quality value to filter transcripts (default is 20).
         - file_format (str): Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
-
+        - additional_embeddings (Dict[str, pd.DataFrame]): Dictionary of additional embeddings for genes.
+        
         Returns:
-        - XeniumSample: The updated instance with loaded transcript data.
+        - XeniumSample: The updated instance with loaded transcript data and optional embeddings.
         """
         file_path = path or (base_path / sample / transcripts_filename)
         
@@ -281,14 +336,24 @@ class XeniumSample:
 
         print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
 
-        self.transcripts_df = filter_transcripts(self.transcripts_df, min_qv=min_qv)
+        self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
         self.x_max = self.transcripts_df['x_location'].max()
         self.y_max = self.transcripts_df['y_location'].max()
         self.x_min = self.transcripts_df['x_location'].min()
         self.y_min = self.transcripts_df['y_location'].min()
+        
+        # Encode genes as one-hot by default
         genes = self.transcripts_df[['feature_name']]
         self.tx_encoder = OneHotEncoder()
         self.tx_encoder.fit(genes)
+        self.embeddings_dict['one_hot'] = self.tx_encoder.transform(genes).toarray()
+
+        # Add additional embeddings if provided
+        if additional_embeddings:
+            for key, embedding_df in additional_embeddings.items():
+                self.embeddings_dict[key] = embedding_df.loc[genes['feature_name'].values].values
+        
+
         
         
     def load_nuclei(self, path: Path, file_format: str = "csv") -> 'XeniumSample':
@@ -549,6 +614,19 @@ class XeniumSample:
         idc = pd.DataFrame(idx).melt(0).loc[lambda df: df['value'] != shape[1], :]
         edge_index = torch.tensor(idc[['variable', 'value']].to_numpy(), dtype=torch.long).t().contiguous()
         return edge_index
+    
+    def set_embedding(self, embedding_name: str) -> None:
+        """
+        Set the current embedding type for the transcripts.
+
+        Parameters:
+        - embedding_name (str): The name of the embedding to use. It must be one of the keys in `embeddings_dict`.
+        """
+        if embedding_name in self.embeddings_dict:
+            self.current_embedding = embedding_name
+        else:
+            raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
+
 
     def build_pyg_data_from_tile(self, nuclei_df: pd.DataFrame, transcripts_df: pd.DataFrame, compute_labels: bool = True, 
                                  **kwargs) -> HeteroData:
@@ -574,7 +652,9 @@ class XeniumSample:
         x_xyz = torch.as_tensor(transcripts_df[['x_location', 'y_location', 'z_location']].values).float()
         data['tx'].id = transcripts_df[['transcript_id']].values
         data['tx'].pos = x_xyz
-        x_features = torch.as_tensor(self.tx_encoder.transform(transcripts_df[['feature_name']]).toarray()).float()
+        # x_features = torch.as_tensor(self.tx_encoder.transform(transcripts_df[['feature_name']]).toarray()).float()
+        # data['tx'].x = x_features.to_sparse()
+        x_features = torch.as_tensor(self.embeddings_dict[self.current_embedding]).float()
         data['tx'].x = x_features.to_sparse()
         tx_edge_index = self.get_edge_index(nc_gdf[['x', 'y']].values, transcripts_df[['x_location', 'y_location']].values, 
                                             k=3, dist=np.sqrt(max_area) * 10)
