@@ -23,6 +23,7 @@ import pyarrow.parquet as pq
 from multiprocessing import Pool
 import itertools
 import inspect
+from anndata import AnnData
 
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
