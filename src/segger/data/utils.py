@@ -25,6 +25,7 @@ import itertools
 import inspect
 from scipy.spatial import KDTree
 import yaml
+from joblib import Parallel, delayed
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -543,7 +544,6 @@ class XeniumSample:
             )
             for i, j in product(range(len(x_range)), range(len(y_range)))
         ]
-
         if num_workers > 1:
             with Pool(processes=num_workers) as pool:
                 for _ in tqdm(
@@ -554,6 +554,7 @@ class XeniumSample:
         else:
             for params in tqdm(tile_params):
                 self._process_tile(params)
+
 
     def _process_tile(self, tile_params):
         """
@@ -577,6 +578,8 @@ class XeniumSample:
         x_mask = x_masks_nc[i]
         y_mask = y_masks_nc[j]
         mask = x_mask & y_mask
+
+        print(i, j, mask.sum())
 
         # If the combined mask is empty, return early
         if mask.sum() == 0:
@@ -684,6 +687,9 @@ class XeniumSample:
                 torch.save(
                     data, processed_dir / "val_tiles" / "processed" / filename
                 )
+        
+            print('Done: ', i, j)
+
         except Exception as e:
             # Print an error message if an exception occurs
             print(f"Error processing tile {i}, {j}: {e}")

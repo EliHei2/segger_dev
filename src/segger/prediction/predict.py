@@ -74,7 +74,7 @@ def load_model(
     # Load model
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
-        map_location=torch.device("cuda"),
+        #map_location=torch.device("cuda"),
     )
 
     return lit_segger
@@ -115,11 +115,11 @@ def get_similarity_scores(
     nbr_idx = batch[from_type][f'{to_type}_field']
     m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
     similarity = torch.bmm(
-        m(y_hat[to_type])[nbr_idx],       # 'to' x 'from' neighbors x embed
+        m(y_hat[to_type])[nbr_idx],    # 'to' x 'from' neighbors x embed
         y_hat[from_type].unsqueeze(-1) # 'to' x embed x 1
     )                                  # -> 'to' x 'from' neighbors x 1
 
-    # Softmax to get most similar 'to_type' neighbor
+    # Sigmoid to get most similar 'to_type' neighbor
     similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
     similarity = F.sigmoid(similarity)
 
