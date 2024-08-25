@@ -31,10 +31,7 @@ torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-
-def load_model(
-    checkpoint_path: os.PathLike,
-) -> LitSegger:
+def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str) -> LitSegger:
     """
     Load a LitSegger model from a checkpoint.
 

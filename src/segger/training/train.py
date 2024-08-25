@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import torchmetrics
 from torchmetrics import F1Score
-from lightning import LightningModule
+import lightning as L
 from torch_geometric.loader import DataLoader
 from torch_geometric.typing import Metadata
 from torch_geometric.nn import to_hetero
@@ -192,92 +192,68 @@ class LitSegger(LightningModule):
         """
         Forward pass for the batch of data.
 
-        Parameters
-        ----------
-        batch : XeniumDataset
-            Batch of data.
+        Args:
+            batch (XeniumDataset): Batch of data.
 
-        Returns
-        -------
-        torch.Tensor
+        Returns:
             Output of the model.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z["tx"], z["nc"].t())
+        output = torch.matmul(z['tx'], z['nc'].t())
         return output
-
+        
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         """
         Defines the training step.
 
-        Parameters
-        ----------
-        batch : Any
-            The batch of data.
-        batch_idx : int
-            The index of the batch.
+        Args:
+            batch (Any): The batch of data.
+            batch_idx (int): The index of the batch.
 
-        Returns
-        -------
-        torch.Tensor
-            The loss value.
+        Returns:
+            torch.Tensor: The loss value.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z["tx"], z["nc"].t())
-        edge_label_index = batch["tx", "belongs", "nc"].edge_label_index
+        output = torch.matmul(z['tx'], z['nc'].t()) 
+        edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch["tx", "belongs", "nc"].edge_label
+        edge_label = batch['tx', 'belongs', 'nc'].edge_label
         loss = self.criterion(out_values, edge_label)
-        self.log(
-            "train_loss", loss, prog_bar=False, batch_size=batch.num_graphs
-        )
+        self.log("train_loss", loss, prog_bar=False, batch_size=batch.num_graphs)
         return loss
-
+    
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         """
-        Defines a single validation step.
+        Defines the validation step.
 
-        Parameters
-        ----------
-        batch : Any
-            A batch of data.
-        batch_idx : int
-            Index of the batch.
+        Args:
+            batch (Any): The batch of data.
+            batch_idx (int): The index of the batch.
 
-        Returns
-        -------
-        torch.Tensor
-            A tensor containing the validation loss.
+        Returns:
+            torch.Tensor: The loss value.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z["tx"], z["nc"].t())
-        edge_label_index = batch["tx", "belongs", "nc"].edge_label_index
+        output = torch.matmul(z['tx'], z['nc'].t()) 
+        edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch["tx", "belongs", "nc"].edge_label
+        edge_label = batch['tx', 'belongs', 'nc'].edge_label
         loss = self.criterion(out_values, edge_label)
         out_values = F.sigmoid(out_values)
         auroc = torchmetrics.AUROC(task="binary")
         auroc_res = auroc(out_values, edge_label)
-        f1 = F1Score(task="binary", num_classes=2).to(self.device)
+        f1 = F1Score(task='binary', num_classes=2).to(self.device)
         f1_res = f1(out_values, edge_label)
         self.log("validation_loss", loss, batch_size=batch.num_graphs)
-        self.log(
-            "validation_auroc",
-            auroc_res,
-            prog_bar=False,
-            batch_size=batch.num_graphs,
-        )
-        self.log(
-            "validation_f1", f1_res, prog_bar=False, batch_size=batch.num_graphs
-        )
+        self.log("validation_auroc",  auroc_res, prog_bar=False, batch_size=batch.num_graphs)
+        self.log("validation_f1",  f1_res, prog_bar=False, batch_size=batch.num_graphs)
         return loss
-
+    
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """
-        Configures the optimizers and learning rate scheduler.
+        Configures the optimizer.
 
-        Returns
-        -------
+        Returns:
             torch.optim.Optimizer: The optimizer.
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)

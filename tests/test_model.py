@@ -4,8 +4,8 @@ from segger.models.segger_model import Segger
 from torch_geometric.nn import to_hetero
 from torch_geometric.data import HeteroData
 
-
 class TestSeggerModel(unittest.TestCase):
+
     def setUp(self):
         model = Segger(
             init_emb=16, hidden_channels=32, out_channels=32, heads=3
@@ -15,14 +15,10 @@ class TestSeggerModel(unittest.TestCase):
         )
         self.model = to_hetero(model, metadata=metadata, aggr='sum')
         self.data = HeteroData()
-        self.data["tx"].x = torch.randn(10, 16)
-        self.data["nc"].x = torch.randn(5, 16)
-        self.data["tx", "belongs", "nc"].edge_index = torch.tensor(
-            [[0, 1, 2], [0, 1, 2]], dtype=torch.long
-        )
-        self.data["tx", "neighbors", "tx"].edge_index = torch.tensor(
-            [[0, 1], [1, 2]], dtype=torch.long
-        )
+        self.data['tx'].x = torch.randn(10, 16)
+        self.data['nc'].x = torch.randn(5, 16)
+        self.data['tx', 'belongs', 'nc'].edge_index = torch.tensor([[0, 1, 2], [0, 1, 2]], dtype=torch.long)
+        self.data['tx', 'neighbors', 'tx'].edge_index = torch.tensor([[0, 1], [1, 2]], dtype=torch.long)
 
     def test_forward(self):
         out = self.model(self.data.x_dict, self.data.edge_index_dict)
@@ -32,10 +28,8 @@ class TestSeggerModel(unittest.TestCase):
         self.assertEqual(out["nc"].shape[1], 32 * 3)
     '''
     def test_decode(self):
-        z = {"tx": torch.randn(10, 16), "nc": torch.randn(5, 16)}
-        edge_label_index = torch.tensor(
-            [[0, 1, 2], [0, 1, 2]], dtype=torch.long
-        )
+        z = {'tx': torch.randn(10, 16), 'nc': torch.randn(5, 16)}
+        edge_label_index = torch.tensor([[0, 1, 2], [0, 1, 2]], dtype=torch.long)
         out = self.model.decode(z, edge_label_index)
         self.assertEqual(out.shape[0], 3)
     '''

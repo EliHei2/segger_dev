@@ -4,8 +4,8 @@ from segger.models.segger_model import Segger
 from torch_geometric.data import HeteroData
 import torch
 
-
 class TestTraining(unittest.TestCase):
+
     def setUp(self):
 
         # Setup model and data
@@ -47,6 +47,5 @@ class TestTraining(unittest.TestCase):
         optimizer.step()
         self.assertGreater(loss.item(), 0)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
