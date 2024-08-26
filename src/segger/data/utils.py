@@ -265,7 +265,7 @@ def calculate_gene_celltype_abundance_embedding(adata: AnnData, celltype_column:
     # Convert the binary matrix to a DataFrame
     gene_expression_df = pd.DataFrame(gene_expression_binary, index=adata.obs_names, columns=adata.var_names)
     # Perform one-hot encoding on the cell types
-    encoder = OneHotEncoder(sparse=False)
+    encoder = OneHotEncoder(sparse_output=False)
     cell_type_encoded = encoder.fit_transform(cell_types.reshape(-1, 1))
     # Calculate the percentage of cells expressing each gene per cell type
     cell_type_abundance_list = []
@@ -289,6 +289,7 @@ class XeniumSample:
         self.transcripts_df = transcripts_df
         self.transcripts_radius = transcripts_radius
         self.nuclei_graph = nuclei_graph
+        self.embeddings_dict = {}
         if self.transcripts_df is not None:
             self.x_max = self.transcripts_df['x_location'].max()
             self.y_max = self.transcripts_df['y_location'].max()
@@ -362,7 +363,7 @@ class XeniumSample:
         self.y_min = self.transcripts_df['y_location'].min()
         # Encode genes as one-hot by default
         genes = self.transcripts_df[['feature_name']]
-        self.tx_encoder = OneHotEncoder()
+        self.tx_encoder = OneHotEncoder(sparse_output=False)
         self.tx_encoder.fit(genes)
         self.embeddings_dict['one_hot'] = self.tx_encoder.transform(genes).toarray()
         # Add additional embeddings if provided
