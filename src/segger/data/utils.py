@@ -356,7 +356,7 @@ class XeniumSample:
             raise ValueError(f"Unsupported file format: {file_format}")
 
         print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
-        self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
+        self.transcripts_df = filter_transcripts(self.transcripts_df, min_qv=min_qv)
         self.x_max = self.transcripts_df['x_location'].max()
         self.y_max = self.transcripts_df['y_location'].max()
         self.x_min = self.transcripts_df['x_location'].min()

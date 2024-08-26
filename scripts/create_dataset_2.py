@@ -28,7 +28,8 @@ xenium_sample = XeniumSample()
 xenium_sample.load_transcripts(
     base_path=Path(raw_data_dir),
     sample=sample_tag,
-    transcripts_filename='transcripts.parquet'
+    transcripts_filename='transcripts.parquet',
+    file_format="parquet",
     additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding}
 )
 
