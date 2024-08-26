@@ -23,7 +23,9 @@ import pyarrow.parquet as pq
 from multiprocessing import Pool
 import itertools
 import inspect
-
+from scipy.spatial import KDTree
+import yaml
+from joblib import Parallel, delayed
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -47,25 +49,31 @@ def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     return f"{str_prefix}-{dataset_suffix}"
 
 
-def filter_transcripts(transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
+def filter_transcripts(
+    transcripts_df: pd.DataFrame,
+    min_qv: float = 20.0,
+) -> pd.DataFrame:
     """
     Filters transcripts based on quality value and removes unwanted transcripts.
 
     Parameters:
     transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-    min_qv (float): The minimum quality value threshold for filtering transcripts.
+    min_qv (float): The minimum quality value threshold for filtering 
+    transcripts.
 
     Returns:
     pd.DataFrame: The filtered dataframe.
     """
-    return transcripts_df[
-        (transcripts_df['qv'] >= min_qv) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlProbe_")) &
-        (~transcripts_df["feature_name"].str.startswith("antisense_")) &
-        (~transcripts_df["feature_name"].str.startswith("NegControlCodeword_")) &
-        (~transcripts_df["feature_name"].str.startswith("BLANK_")) & 
-        (~transcripts_df["feature_name"].str.startswith("DeprecatedCodeword_"))
-    ]
+    filter_codewords = (
+        "NegControlProbe_",
+        "antisense_",
+        "NegControlCodeword_",
+        "BLANK_",
+        "DeprecatedCodeword_",
+    )
+    mask = transcripts_df["qv"].ge(min_qv)
+    mask &= ~transcripts_df["feature_name"].str.startswith(filter_codewords)
+    return transcripts_df[mask]
 
 
 def compute_transcript_metrics(df: pd.DataFrame, qv_threshold: float = 30, cell_id_col: str = 'cell_id') -> Dict[str, Any]:
@@ -232,7 +240,13 @@ class BuildTxGraph(BaseTransform):
 
 
 class XeniumSample:
-    def __init__(self, transcripts_df: pd.DataFrame = None, transcripts_radius: int = 10, nuclei_graph: bool = False):
+
+    def __init__(
+        self,
+        transcripts_df: pd.DataFrame = None,
+        transcripts_radius: int = 10,
+        nuclei_graph: bool = False,
+    ):
         self.transcripts_df = transcripts_df
         self.transcripts_radius = transcripts_radius
         self.nuclei_graph = nuclei_graph
@@ -395,7 +409,6 @@ class XeniumSample:
             )
             for i, j in product(range(len(x_range)), range(len(y_range)))
         ]
-
         if num_workers > 1:
             with Pool(processes=num_workers) as pool:
                 for _ in tqdm(pool.imap_unordered(self._process_tile, tile_params), total=len(tile_params)):
@@ -545,9 +558,10 @@ class XeniumSample:
         Returns:
         torch.Tensor: Edge indices.
         """
-        idx = np.column_stack((np.arange(shape[0]), idx_out))
-        idc = pd.DataFrame(idx).melt(0).loc[lambda df: df['value'] != shape[1], :]
-        edge_index = torch.tensor(idc[['variable', 'value']].to_numpy(), dtype=torch.long).t().contiguous()
+        # To sparse adjacency
+        edge_index = np.argwhere(idx_out != shape[0]).T
+        edge_index[1] = idx_out[idx_out != shape[0]]
+        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
         return edge_index
 
     def build_pyg_data_from_tile(self, nuclei_df: pd.DataFrame, transcripts_df: pd.DataFrame, compute_labels: bool = True, 

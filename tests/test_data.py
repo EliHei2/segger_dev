@@ -3,7 +3,7 @@ import pandas as pd
 import unittest
 import torch
 from torch_geometric.data import Data
-from src.segger.data.utils import *
+from segger.data.utils import *
 import unittest
 import pandas as pd
 
