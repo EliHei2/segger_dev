@@ -13,6 +13,7 @@ from segger.data.utils import XeniumDataset
 from typing import Any, List, Tuple, Union
 from argparse import Namespace
 import inspect
+from pytorch_lightning import LightningModule
 
 
 class LitSegger(LightningModule):
