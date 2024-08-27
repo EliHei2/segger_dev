@@ -25,8 +25,13 @@ import itertools
 import inspect
 from anndata import AnnData
 from scipy.spatial import KDTree
+import faiss
+import cuml.neighbors
+import cudf
+import cugraph
 import yaml
 from joblib import Parallel, delayed
+
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """

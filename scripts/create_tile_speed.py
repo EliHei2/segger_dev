@@ -45,7 +45,7 @@ xenium_sample.load_nuclei(path=nuclei_path, file_format='parquet')
 xenium_sample.get_bounding_box(x_max=1000, y_max=1000, in_place=True)
 
 # Compare the speed of different methods
-methods = ['kd_tree', 'faiss_cpu', 'faiss_gpu', 'rapids', 'cugraph']
+methods = ['kd_tree', 'faiss_cpu', 'faiss_gpu']
 timings = {}
 
 
