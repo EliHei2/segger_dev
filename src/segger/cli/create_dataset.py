@@ -7,36 +7,45 @@ import logging
 from argparse import Namespace
 import yaml
 
-
+# Path to default YAML configuration file
 data_yml = Path(__file__).parent / 'configs' / 'create_dataset' / 'default.yaml'
 
-
-help_msg = "Create Segger dataset from Xenium data"
+# CLI command to create a Segger dataset
+help_msg = "Create Segger dataset from spatial transcriptomics data (Xenium or MERSCOPE)"
 @click.command(name="create_dataset", help=help_msg)
-#@click.option('--foo', default="bar")  # add more options above, not below
 @add_options(config_path=data_yml)
 def create_dataset(args: Namespace):
 
-    # Setup
+    # Setup logging
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     ch.setFormatter(CustomFormatter())
     logging.basicConfig(level=logging.INFO, handlers=[ch])
 
-    # Import packages
+    # Import necessary packages based on the dataset type
     logging.info("Importing packages...")
-    from segger.data.utils import XeniumSample
+    if args.dataset_type == 'xenium':
+        from segger.data.io import XeniumSample as Sample
+    elif args.dataset_type == 'merscope':
+        from segger.data.io import MerscopeSample as Sample
+    else:
+        raise ValueError("Unsupported dataset type. Please choose 'xenium' or 'merscope'.")
     logging.info("Done.")
 
-    # Load Xenium data
-    logging.info("Loading data from Xenium sample...")
-    sample = XeniumSample()
-    xenium_dir = Path(args.xenium_dir)
+    # Load the dataset (Xenium or MERSCOPE)
+    logging.info(f"Loading data from {args.dataset_type} sample...")
+    sample = Sample()
+    dataset_dir = Path(args.dataset_dir)
+
+    # Load transcripts
     sample.load_transcripts(
-        path=xenium_dir / 'transcripts.csv.gz',
+        path=dataset_dir / args.transcripts_file,
         min_qv=args.min_qv,
+        file_format=args.file_format,
     )
-    sample.load_nuclei(xenium_dir / 'nucleus_boundaries.csv.gz')
+
+    # Load boundaries (nucleus boundaries for Xenium, cell boundaries for MERSCOPE)
+    sample.load_boundaries(dataset_dir / args.boundaries_file, file_format=args.file_format)
     logging.info("Done.")
 
     # Save Segger dataset
@@ -62,5 +71,7 @@ def create_dataset(args: Namespace):
             "k_tx": args.k_tx,
             "dist_tx": args.dist_tx,
         },
+        method=args.method,
+        gpu=args.gpu
     )
     logging.info("Done.")

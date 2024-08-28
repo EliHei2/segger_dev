@@ -22,6 +22,8 @@ import cuml.neighbors
 import cudf
 import cugraph
 from joblib import Parallel, delayed
+import cuspatial
+
 
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
@@ -290,10 +292,10 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
                                             index=encoder.categories_[0]).T
     return cell_type_abundance_df
 
-def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 100, dist: int = 10, method: str = 'kd_tree',
+def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree',
                    gpu: bool = False) -> torch.Tensor:
     """
-    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, or cuGraph).
+    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
 
     Parameters:
     -----------
@@ -306,7 +308,7 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 100, dis
     dist : int, optional
         Distance threshold.
     method : str, optional
-        The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph').
+        The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph', 'cuspatial').
     gpu : bool, optional
         Whether to use GPU acceleration (applicable for FAISS).
 
@@ -323,8 +325,11 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 100, dis
         return get_edge_index_rapids(coords_1, coords_2, k=k, dist=dist)
     elif method == 'cugraph':
         return get_edge_index_cugraph(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'cuspatial':
+        return get_edge_index_cuspatial(coords_1, coords_2, k=k, dist=dist)
     else:
         raise ValueError(f"Unknown method {method}")
+
 
 
 def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
@@ -482,6 +487,57 @@ def get_edge_index_cugraph(
     edges = result[['src', 'dst']].loc[valid_mask].to_pandas().values
     edge_index = torch.tensor(edges.T, dtype=torch.long).contiguous()
     return edge_index
+
+
+def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+    """
+    Computes edge indices using cuSpatial's spatial join functionality.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates (2D).
+    coords_2 : np.ndarray
+        Second set of coordinates (2D).
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    # Convert numpy arrays to cuDF DataFrames
+    coords_1_df = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
+    coords_2_df = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
+    
+    # Perform the nearest neighbor search using cuSpatial's point-to-point nearest neighbor
+    result = cuspatial.point_to_nearest_neighbor(
+        coords_1_df['x'], coords_1_df['y'],
+        coords_2_df['x'], coords_2_df['y'],
+        k=k
+    )
+    
+    # The result is a tuple (distances, indices)
+    distances, indices = result
+    
+    # Filter by distance threshold
+    valid_mask = distances < dist
+    edges = []
+    
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = indices[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+    
+    # Convert to torch.Tensor
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
+
 
 
 class SpatialTranscriptomicsDataset(InMemoryDataset):
