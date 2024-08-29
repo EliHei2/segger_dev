@@ -27,6 +27,7 @@ from anndata import AnnData
 from scipy.spatial import KDTree
 import yaml
 from joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -641,6 +642,10 @@ class XeniumSample:
         Returns:
         torch.Tensor: Edge indices.
         """
+        # To sparse adjacency
+        edge_index = np.argwhere(idx_out != shape[0]).T
+        edge_index[1] = idx_out[idx_out != shape[0]]
+        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
         # To sparse adjacency
         edge_index = np.argwhere(idx_out != shape[0]).T
         edge_index[1] = idx_out[idx_out != shape[0]]
