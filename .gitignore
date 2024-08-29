@@ -163,3 +163,4 @@ cython_debug/
 
 
 *.egg_info
+figure*
