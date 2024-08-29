@@ -1,20 +1,75 @@
 import os
 import sys
+import sphinx_rtd_theme
+
+# Add the project source directory to sys.path
 sys.path.insert(0, os.path.abspath('../../src'))
 
+# Project information
 project = 'Segger'
 author = 'Elyas Heidari'
 release = '0.1.0'
 
+# General configuration
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'nbsphinx',
-    'sphinx_rtd_theme',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.intersphinx',
+    'sphinx_click',
+    'sphinx_autodoc_typehints',
+    'sphinx_copybutton',
+    'sphinx_design',
+    'sphinxcontrib.bibtex',
+    'myst_parser',
+    'sphinx_book_theme',
 ]
 
+# Paths for templates and static files
 templates_path = ['_templates']
-exclude_patterns = []
-
-html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+# The master toctree document
+master_doc = 'index'
+
+# Autodoc settings
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'private-members': True,
+    'show-inheritance': True,
+}
+
+# Theming
+html_theme = 'sphinx_book_theme'
+html_theme_options = {
+    "repository_url": "https://github.com/EliHei2/segger_dev",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True,
+    "use_download_button": False,
+    "home_page_in_toc": True,
+}
+
+# Source file suffixes
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
+
+# Intersphinx configuration to link to other projects' documentation
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pandas': ('https://pandas.pydata.org/docs/', None),
+}
+
+# Copy button settings for code snippets
+copybutton_prompt_text = ">>> "
+
+# Path to your source files
+sys.path.insert(0, os.path.abspath('../../src/segger'))
+
+# Set the path to your CLI source files
+sys.path.insert(0, os.path.abspath('../../src/cli'))
