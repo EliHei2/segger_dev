@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Directory for processed data
-DATA_DIR="data_tidy/pyg_datasets"
-LOG_DIR="logs"
+
+LOG_DIR="logs_cli"
 SAMPLE_TAG="Xenium_FFPE_Human_Breast_Cancer_Rep1"
 DATASET_DIR="data_raw/xenium"
-TRANSCRIPTS_FILE="transcripts.parquet"
+TRANSCRIPTS_FILE="${SAMPLE_TAG}/transcripts.parquet"
 BOUNDARIES_FILE="${SAMPLE_TAG}/nucleus_boundaries.parquet"
+DATA_DIR="data_tidy/pyg_datasets/${SAMPLE_TAG}"
 GRID_SIZE=10  # 10x10 grid
 OVERLAP=50  # Overlap between tiles (in the same units as your coordinates)
 
@@ -44,7 +45,7 @@ do
         Y_MAX=$(echo "if($Y_MAX > $Y_MAX_GLOBAL) $Y_MAX_GLOBAL else $Y_MAX" | bc)
 
         # Create a job submission script for this tile
-        JOB_SCRIPT="job_${i}_${j}.sh"
+        JOB_SCRIPT="jobs/job_${i}_${j}.sh"
         echo "#!/bin/bash" > $JOB_SCRIPT
         echo "source activate segger_dev" >> $JOB_SCRIPT  # Activate your conda environment if needed
         echo "python -m segger.cli.create_dataset \\" >> $JOB_SCRIPT
@@ -56,10 +57,10 @@ do
         echo "  --boundaries_file $BOUNDARIES_FILE \\" >> $JOB_SCRIPT
         echo "  --method kd_tree \\" >> $JOB_SCRIPT
         echo "  --x_min $X_MIN --y_min $Y_MIN --x_max $X_MAX --y_max $Y_MAX" >> $JOB_SCRIPT
-        chmod +x $JOB_SCRIPT
+        # chmod +x $JOB_SCRIPT
 
         # Submit the job to the cluster
-        bsub -R "rusage[mem=200G]" -q long -o "$LOG_DIR/job_${i}_${j}.log" < $JOB_SCRIPT
+        # bsub -R "rusage[mem=200G]" -q long -o "$LOG_DIR/job_${i}_${j}.log" < $JOB_SCRIPT
     done
 done
 
