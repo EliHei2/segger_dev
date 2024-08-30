@@ -1,3 +1,11 @@
+# Function to attempt importing a module and warn if it's not installed
+def try_import(module_name):
+    try:
+        globals()[module_name] = __import__(module_name)
+    except ImportError:
+        print(f"Warning: {module_name} is not installed. Please install it to use this functionality.")
+
+# Standard imports
 import pandas as pd
 import numpy as np
 import anndata as ad
@@ -17,12 +25,17 @@ from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import BaseTransform, RandomLinkSplit
 from torch_geometric.nn import radius_graph
 import os
-from multiprocessing import Pool
-import cuml.neighbors
-import cudf
-import cugraph
-from joblib import Parallel, delayed
-import cuspatial
+from scipy.spatial import cKDTree
+import hnswlib
+
+# Attempt to import specific modules with try_import function
+try_import('multiprocessing')
+try_import('joblib')
+try_import('faiss')
+try_import('cuml')
+try_import('cudf')
+try_import('cugraph')
+try_import('cuspatial')
 
 
 
@@ -293,7 +306,7 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
     return cell_type_abundance_df
 
 def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree',
-                   gpu: bool = False) -> torch.Tensor:
+                   gpu: bool = False, workers: int = 1) -> torch.Tensor:
     """
     Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
 
@@ -318,7 +331,7 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
         Edge indices.
     """
     if method == 'kd_tree':
-        return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist)
+        return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist, workers=workers)
     elif method == 'faiss':
         return get_edge_index_faiss(coords_1, coords_2, k=k, dist=dist, gpu=gpu)
     elif method == 'rapids':
@@ -327,12 +340,14 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
         return get_edge_index_cugraph(coords_1, coords_2, k=k, dist=dist)
     elif method == 'cuspatial':
         return get_edge_index_cuspatial(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'hnsw':
+        return get_edge_index_hnsw(coords_1, coords_2, k=k, dist=dist)
     else:
         raise ValueError(f"Unknown method {method}")
 
 
 
-def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, workers: int = 1) -> torch.Tensor:
     """
     Computes edge indices using KDTree.
 
@@ -352,8 +367,8 @@ def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
     torch.Tensor
         Edge indices.
     """
-    tree = KDTree(coords_1)
-    d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist)
+    tree = cKDTree(coords_1)
+    d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist, workers=workers)
     valid_mask = d_kdtree < dist
     edges = []
 
@@ -390,6 +405,8 @@ def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5,
     torch.Tensor
         Edge indices.
     """
+    coords_1 = np.ascontiguousarray(coords_1, dtype=np.float32)
+    coords_2 = np.ascontiguousarray(coords_2, dtype=np.float32)
     d = coords_1.shape[1]
     if gpu:
         res = faiss.StandardGpuResources()
@@ -443,9 +460,9 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
 
     for idx, valid in enumerate(valid_mask):
         valid_indices = I[idx][valid]
-        if valid_indices size > 0:
+        if valid_indices.size > 0:
             edges.append(
-                np.vstack((np.full(valid_indices shape, idx), valid_indices)).T
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
             )
 
     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
@@ -617,3 +634,52 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
         data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         data['tx'].x = data['tx'].x.to_dense()
         return data
+
+
+
+def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+    """
+    Computes edge indices using the HNSW algorithm.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    num_elements = coords_1.shape[0]
+    dim = coords_1.shape[1]
+
+    # Initialize the HNSW index
+    p = hnswlib.Index(space='l2', dim=dim)  # l2 for Euclidean distance
+    p.init_index(max_elements=num_elements, ef_construction=200, M=16)
+
+    # Add points to the index
+    p.add_items(coords_1)
+
+    # Query the index for nearest neighbors
+    indices, distances = p.knn_query(coords_2, k=k)
+
+    # Filter by distance threshold
+    valid_mask = distances < dist ** 2
+    edges = []
+
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = indices[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index

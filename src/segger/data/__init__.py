@@ -7,12 +7,15 @@ Contains utilities for handling and processing spatial transcriptomics data.
 __all__ = [
     "XeniumSample", 
     "MerscopeSample", 
-    "XeniumDataset", 
+    "SpatialTranscriptomicsDataset", 
     "uint32_to_str", 
     "filter_transcripts", 
     "create_anndata", 
     "compute_transcript_metrics", 
     "SpatialTranscriptomicsSample",
+    "calculate_gene_celltype_abundance_embedding",
+    "get_edge_index",
+    "BuildTxGraph"
 ]
 
 from .utils import (
@@ -23,6 +26,7 @@ from .utils import (
     get_edge_index, 
     BuildTxGraph, 
     calculate_gene_celltype_abundance_embedding,
+    SpatialTranscriptomicsDataset
 )
 
 from .io import (
@@ -37,4 +41,3 @@ from .constants import (
     MerscopeKeys
 )
 
-from .dataset import SpatialTranscriptomicsDataset

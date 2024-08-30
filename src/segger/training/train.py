@@ -6,7 +6,7 @@ from torchmetrics import AUROC, F1Score
 from pytorch_lightning import LightningModule
 from torch_geometric.nn import to_hetero
 from segger.models.segger_model import Segger
-from segger.data.utils import SpatialTranscriptomicsSample
+from segger.data.utils import SpatialTranscriptomicsDataset
 from typing import Any, Union, Tuple
 import inspect
 
@@ -30,7 +30,7 @@ class LitSegger(LightningModule):
 
     Methods
     -------
-    forward(batch: SpatialTranscriptomicsSample) -> torch.Tensor
+    forward(batch: SpatialTranscriptomicsDataset) -> torch.Tensor
         Forward pass for the batch of data.
     training_step(batch: Any, batch_idx: int) -> torch.Tensor
         Defines a single training step.
@@ -148,7 +148,7 @@ class LitSegger(LightningModule):
         """
         self.model = model
 
-    def forward(self, batch: SpatialTranscriptomicsSample) -> torch.Tensor:
+    def forward(self, batch: SpatialTranscriptomicsDataset) -> torch.Tensor:
         """
         Forward pass for the batch of data.
 
@@ -157,7 +157,7 @@ class LitSegger(LightningModule):
 
         Parameters
         ----------
-        batch : SpatialTranscriptomicsSample
+        batch : SpatialTranscriptomicsDataset
             Batch of data, including node features and edge indices.
 
         Returns
