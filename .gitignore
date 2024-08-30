@@ -161,6 +161,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-
+# Figures and build info
 *.egg_info
 figure*
+
+# Data used for development and testing WIP code
+dev
+dev/*

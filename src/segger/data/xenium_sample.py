@@ -21,18 +21,29 @@ from segger.data.xenium_utils import (
 from scipy.spatial import KDTree
 from multiprocessing import Pool
 from functools import cached_property
+from typing import List
+import inspect
+import logging
+from itertools import compress
 
 
 class XeniumFilename:
-    transcripts = "transcripts.parquet",
+    transcripts = "transcripts.parquet"
     boundaries = "nucleus_boundaries.parquet"
 
 
 class XeniumSample:
 
 
-    def __init__(self):
-        pass
+    def __init__(self, base_dir: os.PathLike):
+        # Load nuclei and transcripts
+        base_dir = Path(base_dir)  # TODO: check that Xenium directory is valid
+        self.load_transcripts(base_dir / XeniumFilename.transcripts)
+        self.load_nuclei(base_dir / XeniumFilename.boundaries)
+        
+        # Setup logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.Logger(f'XeniumSample@{base_dir}')
 
 
     @staticmethod
@@ -41,7 +52,7 @@ class XeniumSample:
         path = Path(path)  # make sure input is Path type
         if '.csv' in path.suffixes:
             df = pd.read_csv(path)
-        elif 'parquet' in path.suffixes:
+        elif '.parquet' in path.suffixes:
             df = pd.read_parquet(path)
         else:
             raise ValueError("Unsupported file format")
@@ -74,7 +85,18 @@ class XeniumSample:
         self.nuclei_df = self._load_dataframe(path)
 
 
-    def get_tile_bounds(self, tile_width: float, tile_height: float):
+    def _get_balanced_tile_bounds(
+        self,
+        tile_max_size: int,
+    ) -> List[shapely.Polygon]:
+        pass
+
+
+    def _get_square_tile_bounds(
+        self,
+        tile_width: float,
+        tile_height: float,
+    ) -> List[shapely.Polygon]:
     
         # Generate the x and y coordinates for the tile boundaries
         x_coords = np.arange(self.x_min, self.x_max, tile_width)
@@ -91,11 +113,40 @@ class XeniumSample:
         return tiles
 
 
+    def tile(
+        self,
+        tile_width: float = None,
+        tile_height: float = None,
+        tile_max_size: int = None,
+     ) -> List[shapely.Polygon]:
+        
+        # Balanced tiling kwargs provided
+        if tile_max_size and not (tile_width or tile_height):
+            return self._get_balanced_tile_bounds(tile_max_size)
+
+        # Square tiling kwargs provided
+        elif not tile_max_size and (tile_width and tile_height):
+            return self._get_square_tile_bounds(tile_width, tile_height)
+
+        # Bad set of kwargs
+        else:
+            args = list(compress(locals().keys(), locals().values()))
+            args.remove('self')
+            msg = (
+                "Function requires either 'tile_max_size' or both "
+                f"'tile_width' and 'tile_height'. Found: {', '.join(args)}."
+            )
+            logging.error(msg)
+            raise ValueError
+
+
     def to_pyg_dataset(
         self,
         output_dir: Path,
-        tile_width: float,
-        tile_height: float,
+        tile_mode: str,
+        tile_width: float = None,
+        tile_height: float = None,
+        tile_max_size: int = None,
         tile_margin: float = 15,
         r_tx: float = 5,
         k_nc: int = 4,
@@ -103,10 +154,10 @@ class XeniumSample:
         k_tx: int = 4,
         dist_tx: float = 20,
         workers: int = -1,
-    ) -> None:
+    ):
 
         # Divide Xenium samples into non-overlapping spatial regions
-        tile_bounds = self.get_tile_bounds(tile_width, tile_height)
+        tile_bounds = self.tile(tile_width, tile_height, tile_max_size)
         tiles = [XeniumTile(bounds=t, margin=tile_margin) for t in tile_bounds]
 
         # Process each region
@@ -310,6 +361,7 @@ class XeniumTile:
         """
         self.sample = sample
         self.bounds = bounds
+        self.margin = margin
 
         # Internal caches for filtered data
         self._boundaries = None
@@ -334,6 +386,7 @@ class XeniumTile:
         """
         if self._boundaries is None:
             self._boundaries = self.get_filtered_boundaries()
+            return self._boundaries
         else:
             return self._boundaries
 
@@ -356,6 +409,7 @@ class XeniumTile:
         """
         if self._transcripts is None:
             self._transcripts = self.get_filtered_transcripts()
+            return self._transcripts
         else:
             return self._transcripts
 
@@ -694,7 +748,7 @@ class XeniumTile:
         is_nuclear &= tx_cell_ids.isin(polygons.index)
 
         # Set up overlap edges
-        row_idx = np.where(is_nuclear)
+        row_idx = np.where(is_nuclear)[0]
         col_idx = tx_cell_ids.iloc[row_idx].map(cell_ids_map)
         blng_edge_idx = torch.tensor(np.stack([row_idx, col_idx])).long()
         pyg_data["tx", "belongs", "nc"].edge_index = blng_edge_idx

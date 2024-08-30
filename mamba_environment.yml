@@ -1,0 +1,32 @@
+name: segger-rapids-cu11.8
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+  - pyg
+  - rapidsai
+  - nvidia
+dependencies:
+  - python>=3.10
+  - pytorch=*=*cuda*
+  - pyg=*=*cu118
+  - pyg-lib
+  - rapids=24.08
+  - pytorch-scatter
+  - pytorch-sparse
+  - torchvision
+  - torchmetrics
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - seaborn
+  - jupyter
+  - lightning
+  - scanpy
+  - adjustText
+  - scikit-learn
+  - geopandas
+  - shapely
+  - path
+  - pyarrow
