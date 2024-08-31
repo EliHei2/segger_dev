@@ -87,3 +87,5 @@ tests = [
 packages = ["segger"]
 package-dir = {"" = "src"}
 
+[project.scripts]
+segger = "segger.cli.cli:segger"
