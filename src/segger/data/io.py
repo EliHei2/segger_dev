@@ -18,6 +18,7 @@ from segger.data.constants import *
 from enum import Enum
 from scipy.spatial import KDTree
 import warnings
+from shapely.affinity import scale
 
 class SpatialTranscriptomicsSample(ABC):
     def __init__(
@@ -154,7 +155,6 @@ class SpatialTranscriptomicsSample(ABC):
                 self.embeddings_dict[key] = embedding_df.loc[
                     self.transcripts_df[self.keys.FEATURE_NAME.value].values
                 ].values
-                
                 # Check if the OVERLAPS_BOUNDARY column exists and cast it to boolean if needed
         if self.keys.OVERLAPS_BOUNDARY.value in self.transcripts_df.columns:
             self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
@@ -391,10 +391,10 @@ class SpatialTranscriptomicsSample(ABC):
     def generate_and_scale_polygons(
         self,
         boundaries_df: pd.DataFrame,
-        scale_factor: float
-    ) -> List[Polygon]:
+        scale_factor: float = 1.0
+    ) -> gpd.GeoDataFrame:
         """
-        Generate polygons from boundary coordinates and scale them.
+        Generate polygons from boundary coordinates, scale them, and add centroids.
 
         Parameters:
         -----------
@@ -405,25 +405,36 @@ class SpatialTranscriptomicsSample(ABC):
 
         Returns:
         --------
-        List[Polygon]
-            A list of scaled Polygon objects.
+        gpd.GeoDataFrame
+            A GeoDataFrame containing scaled Polygon objects and their centroids.
         """
         polygons = []
-        
-        for _, row in boundaries_df.iterrows():
-            x_coords = row[self.keys.BOUNDARIES_VERTEX_X.value]
-            y_coords = row[self.keys.BOUNDARIES_VERTEX_Y.value]
+        valid_cells = []
+
+        grouped = boundaries_df.groupby(self.keys.CELL_ID.value)
+
+        for cell_id, group_data in grouped:
+            x_coords = group_data[self.keys.BOUNDARIES_VERTEX_X.value]
+            y_coords = group_data[self.keys.BOUNDARIES_VERTEX_Y.value]
             
-            if isinstance(x_coords, list) and isinstance(y_coords, list):
-                polygon = Polygon(zip(x_coords, y_coords))
-                # Handle degenerate polygons
-                if polygon.is_empty or not polygon.is_valid:
-                    continue
-                scaled_polygon = scale(polygon, xfact=scale_factor, yfact=scale_factor, origin='centroid')
-                if not scaled_polygon.is_empty and scaled_polygon.is_valid:
-                    polygons.append(scaled_polygon)
-        
-        return polygons
+            if len(x_coords) >= 3:  # Ensure there are at least 3 points to form a polygon
+                polygon = Polygon(list(zip(x_coords, y_coords)))
+                if polygon.is_valid and not polygon.is_empty:  # Check for valid, non-degenerate polygon
+                    scaled_polygon = scale(polygon, xfact=scale_factor, yfact=scale_factor, origin='centroid')
+                    if scaled_polygon.is_valid and not scaled_polygon.is_empty:
+                        polygons.append(scaled_polygon)
+                        valid_cells.append(cell_id)
+
+        # Create a GeoDataFrame to hold the polygons
+        polygons_gdf = gpd.GeoDataFrame(geometry=polygons, crs='EPSG:4326')
+        polygons_gdf[self.keys.CELL_ID.value] = valid_cells
+
+        # Add centroids
+        polygons_gdf['centroid_x'] = polygons_gdf.geometry.centroid.x
+        polygons_gdf['centroid_y'] = polygons_gdf.geometry.centroid.y
+
+        return polygons_gdf
+
     
 
     def compute_transcript_overlap_with_boundaries(
@@ -452,9 +463,9 @@ class SpatialTranscriptomicsSample(ABC):
             and assigned cell IDs.
         """
         # Generate and scale polygons from boundaries_df
-        polygons = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
 
-        if not polygons:
+        if polygons_gdf.empty:
             raise ValueError("No valid polygons were generated.")
 
         overlaps = []
@@ -467,10 +478,12 @@ class SpatialTranscriptomicsSample(ABC):
             
             overlap = False
             cell_id = None
-            for i, polygon in enumerate(polygons):
-                if polygon.contains(point):
+
+            # Use spatial join to check for point containment within polygons
+            for i, polygon in polygons_gdf.iterrows():
+                if polygon.geometry.contains(point):
                     overlap = True
-                    cell_id = boundaries_df.iloc[i][self.keys.CELL_ID.value]
+                    cell_id = polygon[self.keys.CELL_ID.value]
                     break
             
             overlaps.append(overlap)
@@ -480,6 +493,7 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df[self.keys.CELL_ID.value] = cell_ids
         
         return transcripts_df
+
 
 
 
@@ -513,35 +527,31 @@ class SpatialTranscriptomicsSample(ABC):
         Returns:
         --------
         gpd.GeoDataFrame
-            A geodataframe containing computed geometries.
+            A GeoDataFrame containing computed geometries.
         """
         # Generate and scale polygons
-        polygons = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
 
-        valid_cells = []
-        if not polygons:
+        if polygons_gdf.empty:
             raise ValueError("No valid polygons were generated.")
 
-        for cell_id, polygon in zip(boundaries_df[self.keys.CELL_ID.value], polygons):
-            if not polygon.is_empty and polygon.is_valid:
-                valid_cells.append((cell_id, polygon))
-        
-        if not valid_cells:
-            raise ValueError("No valid boundary polygons available after scaling.")
-
-        gdf = gpd.GeoDataFrame(valid_cells, columns=['cell_id', 'geometry'])
-        
+        # Compute additional geometrical properties
         if area:
-            gdf['area'] = gdf['geometry'].area
+            polygons_gdf['area'] = polygons_gdf['geometry'].area
         if convexity:
-            gdf['convexity'] = gdf['geometry'].convex_hull.area / gdf['area']
+            polygons_gdf['convexity'] = polygons_gdf['geometry'].convex_hull.area / polygons_gdf['area']
         if elongation:
-            gdf['elongation'] = (gdf['geometry'].bounds[2] - gdf['geometry'].bounds[0]) / (gdf['geometry'].bounds[3] - gdf['geometry'].bounds[1])
+            min_bounds = polygons_gdf['geometry'].minimum_rotated_rectangle
+            length = min_bounds.apply(lambda poly: max(poly.exterior.coords[1][0] - poly.exterior.coords[0][0], 
+                                                        poly.exterior.coords[2][1] - poly.exterior.coords[1][1]))
+            width = min_bounds.apply(lambda poly: min(poly.exterior.coords[1][0] - poly.exterior.coords[0][0], 
+                                                    poly.exterior.coords[2][1] - poly.exterior.coords[1][1]))
+            polygons_gdf['elongation'] = length / width
         if circularity:
-            gdf['circularity'] = (4 * 3.14159 * gdf['area']) / (gdf['geometry'].length ** 2)
-        
-        print(f"Processed {len(gdf)} valid cells.")
-        return gdf
+            polygons_gdf['circularity'] = (4 * 3.14159 * polygons_gdf['area']) / (polygons_gdf['geometry'].length ** 2)
+
+        print(f"Processed {len(polygons_gdf)} valid cells.")
+        return polygons_gdf
 
     def _validate_bbox(self, x_min: float, y_min: float, x_max: float, y_max: float) -> Tuple[float, float, float, float]:
         """Validates and sets default values for bounding box coordinates."""

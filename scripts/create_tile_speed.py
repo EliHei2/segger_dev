@@ -43,10 +43,22 @@ xenium_sample.set_embedding("cell_type_abundance")
 # Load nuclei data
 xenium_sample.load_boundaries(path=nuclei_path, file_format='parquet')
 
+xenium_sample.get_bounding_box(x_min = 1000, y_min = 1000, x_max=2000, y_max=2000, in_place=True)
+
+
 xenium_sample.precompute_tx_tx_graph(k=5, dist=10, workers = 1)
 
+
+data = xenium_sample.build_pyg_data_from_tile(
+            boundaries_df=xenium_sample.boundaries_df,
+            transcripts_df=xenium_sample.transcripts_df,
+            use_precomputed=True,
+            workers=1
+        )
+
+
 # Crop to a smaller bounding box to speed up the comparison
-xenium_sample.get_bounding_box(x_min = 1000, y_min = 1000, x_max=2000, y_max=2000, in_place=True)
+
 
 # Compare the speed of different methods
 methods = ['kd_tree', 'hnsw', 'faiss_cpu', 'faiss_gpu']
