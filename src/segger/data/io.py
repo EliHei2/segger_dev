@@ -502,16 +502,16 @@ class SpatialTranscriptomicsSample(ABC):
         if mask.sum() == 0:
             return
 
-        nc_df = self.boundaries_df[mask]
-        nc_df = self.boundaries_df.loc[self.boundaries_df.cell_id.isin(nc_df.cell_id), :]
+        bd_df = self.boundaries_df[mask]
+        bd_df = self.boundaries_df.loc[self.boundaries_df.cell_id.isin(bd_df.cell_id), :]
         tx_mask = x_masks_tx[i] & y_masks_tx[j]
         transcripts_df = self.transcripts_df[tx_mask]
 
-        if transcripts_df.shape[0] == 0 or nc_df.shape[0] == 0:
+        if transcripts_df.shape[0] == 0 or bd_df.shape[0] == 0:
             return
 
         data = self.build_pyg_data_from_tile(
-            nc_df, transcripts_df, compute_labels=compute_labels, method=method, gpu=gpu,
+            bd_df, transcripts_df, compute_labels=compute_labels, method=method, gpu=gpu,
             workers=workers
         )
         data = BuildTxGraph(r=r_tx)(data)
@@ -553,7 +553,7 @@ class SpatialTranscriptomicsSample(ABC):
                 gpu=gpu,
                 workers=workers
             )
-            data['tx'].nc_field = get_edge_index(
+            data['tx'].bd_field = get_edge_index(
                 coords_bd, coords_tx, k=receptive_field["k_bd"], dist=receptive_field["dist_bd"], method=method,
                 gpu=gpu,
                 workers=workers
@@ -666,8 +666,8 @@ class SpatialTranscriptomicsSample(ABC):
         data = HeteroData()
 
         # Compute boundaries geometries
-        nc_gdf = self.compute_boundaries_geometries(boundaries_df)
-        max_area = nc_gdf['area'].max()
+        bd_gdf = self.compute_boundaries_geometries(boundaries_df)
+        max_area = bd_gdf['area'].max()
 
         # Prepare transcript features and positions
         x_xyz = torch.as_tensor(transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value, self.keys.TRANSCRIPTS_Y.value]].values).float()
@@ -679,7 +679,7 @@ class SpatialTranscriptomicsSample(ABC):
 
         # Compute edge indices using the chosen method
         tx_edge_index = get_edge_index(
-            nc_gdf[['x', 'y']].values,
+            bd_gdf[['x', 'y']].values,
             transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].values,
             k=3,
             dist=np.sqrt(max_area) * 10,
@@ -691,15 +691,15 @@ class SpatialTranscriptomicsSample(ABC):
 
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
         ind = np.where(
-            (transcripts_df[self.keys.OVERLAPS_NUCLEUS.value] == 1) & (transcripts_df[self.keys.CELL_ID.value].isin(nc_gdf[self.keys.CELL_ID.value]))
+            (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] == 1) & (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
         )[0]
         tx_bd_edge_index = np.column_stack(
-            (ind, np.searchsorted(nc_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
+            (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
         )
-        data['bd'].id = nc_gdf[[self.keys.CELL_ID.value]].values
-        data['bd'].pos = nc_gdf[['x', 'y']].values
-        nc_x = nc_gdf.iloc[:, 4:]
-        data['bd'].x = torch.as_tensor(nc_x.to_numpy()).float()
+        data['bd'].id = bd_gdf[[self.keys.CELL_ID.value]].values
+        data['bd'].pos = bd_gdf[['x', 'y']].values
+        bd_x = bd_gdf.iloc[:, 4:]
+        data['bd'].x = torch.as_tensor(bd_x.to_numpy()).float()
         data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T).long()
 
         return data

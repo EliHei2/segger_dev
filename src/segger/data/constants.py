@@ -26,7 +26,7 @@ class SpatialTranscriptomicsKeys(Enum):
     CELL_Y = auto()
     FEATURE_NAME = auto()
     QUALITY_VALUE = auto()
-    OVERLAPS_NUCLEUS = auto()
+    OVERLAPS_BOUNDARY = auto()
 
 
 class XeniumKeys(Enum):
@@ -49,7 +49,7 @@ class XeniumKeys(Enum):
     # Metadata
     FEATURE_NAME = "feature_name"
     QUALITY_VALUE = "qv"
-    OVERLAPS_NUCLEUS = "overlaps_nucleus"
+    OVERLAPS_BOUNDARY = "overlaps_nucleus"
     METADATA_CELL_KEY = None  # Not applicable for Xenium
     COUNTS_CELL_KEY = None  # Not applicable for Xenium
     CELL_X = None  # Not applicable for Xenium
@@ -76,7 +76,7 @@ class MerscopeKeys(Enum):
     # Metadata
     FEATURE_NAME = "gene"
     QUALITY_VALUE = None  # Not applicable for Merscope
-    OVERLAPS_NUCLEUS = None  # Not applicable for Merscope
+    OVERLAPS_BOUNDARY = None  # Not applicable for Merscope
     METADATA_CELL_KEY = "EntityID"
     COUNTS_CELL_KEY = "cell"
     CELL_X = "center_x"

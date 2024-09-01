@@ -5,7 +5,7 @@
 LOG_DIR="logs_cli"
 SAMPLE_TAG="Xenium_FFPE_Human_Breast_Cancer_Rep1"
 DATASET_DIR="data_raw/xenium"
-TRANSCRIPTS_FILE="${SAMPLE_TAG}/transcripts.parquet"
+TRANSCRIPTS_FILE="transcripts.parquet"
 BOUNDARIES_FILE="${SAMPLE_TAG}/nucleus_boundaries.parquet"
 DATA_DIR="data_tidy/pyg_datasets/${SAMPLE_TAG}"
 GRID_SIZE=10  # 10x10 grid
@@ -17,14 +17,28 @@ mkdir -p $LOG_DIR
 # Load the dataset to calculate the bounds
 python -c "
 from segger.data.io import XeniumSample
+from pathlib import Path
 sample = XeniumSample()
-sample.load_transcripts(base_path='$DATASET_DIR', sample='$SAMPLE_TAG', transcripts_filename='$TRANSCRIPTS_FILE', file_format='parquet')
+sample.load_transcripts(base_path=Path('$DATASET_DIR'), sample='$SAMPLE_TAG', transcripts_filename='$TRANSCRIPTS_FILE', file_format='parquet')
 sample.load_boundaries('$DATASET_DIR/$BOUNDARIES_FILE', file_format='parquet')
 x_min, y_min, x_max, y_max = sample.x_min, sample.y_min, sample.x_max, sample.y_max
 tile_width = (x_max - x_min) / $GRID_SIZE + $OVERLAP
 tile_height = (y_max - y_min) / $GRID_SIZE + $OVERLAP
 print(f'{x_min},{y_min},{x_max},{y_max},{tile_width},{tile_height}')
 " > bounds.txt
+
+
+# python -c "
+# from segger.data.io import XeniumSample
+# from pathlib import Path
+# sample = XeniumSample()
+# sample.load_transcripts(base_path=Path('data_raw/xenium'), sample='Xenium_FFPE_Human_Breast_Cancer_Rep1', transcripts_filename='transcripts.parquet', file_format='parquet')
+# sample.load_boundaries('data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/nucleus_boundaries.parquet', file_format='parquet')
+# x_min, y_min, x_max, y_max = sample.x_min, sample.y_min, sample.x_max, sample.y_max
+# tile_width = (x_max - x_min) / 10 + 50
+# tile_height = (y_max - y_min) / 10 + 50
+# print(f'{x_min},{y_min},{x_max},{y_max},{tile_width},{tile_height}')
+# "
 
 # Read the calculated bounds
 read X_MIN_GLOBAL Y_MIN_GLOBAL X_MAX_GLOBAL Y_MAX_GLOBAL TILE_WIDTH TILE_HEIGHT < <(cat bounds.txt)
@@ -57,7 +71,7 @@ do
         echo "  --boundaries_file $BOUNDARIES_FILE \\" >> $JOB_SCRIPT
         echo "  --method kd_tree \\" >> $JOB_SCRIPT
         echo "  --x_min $X_MIN --y_min $Y_MIN --x_max $X_MAX --y_max $Y_MAX" >> $JOB_SCRIPT
-        # chmod +x $JOB_SCRIPT
+        chmod +x $JOB_SCRIPT
 
         # Submit the job to the cluster
         # bsub -R "rusage[mem=200G]" -q long -o "$LOG_DIR/job_${i}_${j}.log" < $JOB_SCRIPT
