@@ -1,13 +1,20 @@
+# Function to attempt importing a module and warn if it's not installed
+def try_import(module_name):
+    try:
+        globals()[module_name] = __import__(module_name)
+    except ImportError:
+        print(f"Warning: {module_name} is not installed. Please install it to use this functionality.")
+
+# Standard imports
 import pandas as pd
 import numpy as np
 import anndata as ad
 from scipy.spatial import ConvexHull
-from typing import Dict, Any, Optional,  List, Callable, Tuple
+from typing import Dict, Any, Optional, List, Callable, Tuple
 from tqdm import tqdm
 from pathlib import Path
 import gzip
 import io
-import matplotlib.pyplot as plt
 import random
 from itertools import product
 from shapely.geometry import Polygon
@@ -18,16 +25,19 @@ from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import BaseTransform, RandomLinkSplit
 from torch_geometric.nn import radius_graph
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import pyarrow.parquet as pq
-from multiprocessing import Pool
-import itertools
-import inspect
-from anndata import AnnData
-from scipy.spatial import KDTree
-import yaml
-from joblib import Parallel, delayed
-from joblib import Parallel, delayed
+from scipy.spatial import cKDTree
+import hnswlib
+
+# Attempt to import specific modules with try_import function
+try_import('multiprocessing')
+try_import('joblib')
+try_import('faiss')
+try_import('cuml')
+try_import('cudf')
+try_import('cugraph')
+try_import('cuspatial')
+
+
 
 def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
     """
@@ -60,8 +70,7 @@ def filter_transcripts(
 
     Parameters:
     transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-    min_qv (float): The minimum quality value threshold for filtering 
-    transcripts.
+    min_qv (float): The minimum quality value threshold for filtering transcripts.
 
     Returns:
     pd.DataFrame: The filtered dataframe.
@@ -78,7 +87,11 @@ def filter_transcripts(
     return transcripts_df[mask]
 
 
-def compute_transcript_metrics(df: pd.DataFrame, qv_threshold: float = 30, cell_id_col: str = 'cell_id') -> Dict[str, Any]:
+def compute_transcript_metrics(
+    df: pd.DataFrame,
+    qv_threshold: float = 30,
+    cell_id_col: str = 'cell_id'
+) -> Dict[str, Any]:
     """
     Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.
 
@@ -137,6 +150,7 @@ def create_anndata(
 ) -> ad.AnnData:
     """
     Generates an AnnData object from a dataframe of segmented transcriptomics data.
+    
     Parameters:
     df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
     panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
@@ -145,6 +159,7 @@ def create_anndata(
     qv_threshold (float): The quality value threshold for filtering transcripts.
     min_cell_area (float): The minimum cell area to include a cell.
     max_cell_area (float): The maximum cell area to include a cell.
+    
     Returns:
     ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
     """
@@ -241,7 +256,7 @@ class BuildTxGraph(BaseTransform):
         return f'{self.__class__.__name__}(r={self.r})'
     
 
-def calculate_gene_celltype_abundance_embedding(adata: AnnData, celltype_column: str) -> pd.DataFrame:
+def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_column: str) -> pd.DataFrame:
     """
     Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type 
     that express the gene (non-zero expression).
@@ -290,430 +305,261 @@ def calculate_gene_celltype_abundance_embedding(adata: AnnData, celltype_column:
                                             index=encoder.categories_[0]).T
     return cell_type_abundance_df
 
-
-
-
-class XeniumSample:
-
-    def __init__(
-        self,
-        transcripts_df: pd.DataFrame = None,
-        transcripts_radius: int = 10,
-        nuclei_graph: bool = False,
-    ):
-        self.transcripts_df = transcripts_df
-        self.transcripts_radius = transcripts_radius
-        self.nuclei_graph = nuclei_graph
-        self.embeddings_dict = {}
-        if self.transcripts_df is not None:
-            self.x_max = self.transcripts_df['x_location'].max()
-            self.y_max = self.transcripts_df['y_location'].max()
-            self.x_min = self.transcripts_df['x_location'].min()
-            self.y_min = self.transcripts_df['y_location'].min()
-
-    def crop_transcripts(self, x: float, y: float, x_size: int = 1000, y_size: int = 1000) -> 'XeniumSample':
-        cropped_transcripts_df = self.transcripts_df[
-            (self.transcripts_df['x_location'] > x) &
-            (self.transcripts_df['x_location'] < x + x_size) &
-            (self.transcripts_df['y_location'] > y) &
-            (self.transcripts_df['y_location'] < y + y_size)
-        ]
-        return XeniumSample(cropped_transcripts_df)
-
-
-    def load_transcripts(self, base_path: Path = None, sample: str = None, 
-                        transcripts_filename: str = "transcripts.csv.gz", 
-                        path: Path = None, min_qv: int = 20, 
-                        file_format: str = "csv", 
-                        additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None)  -> None: 
-        """
-        Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats, and allows the inclusion
-        of additional gene embeddings, such as cell type abundance.
-        Parameters:
-        -----------
-        base_path : Path
-            The base directory path where samples are stored.
-        sample : str
-            The sample name or identifier.
-        transcripts_filename : str
-            The filename of the transcripts file (default is "transcripts.csv.gz").
-        path : Path
-            Optional specific path to the transcripts file.
-        min_qv : int
-            Minimum quality value to filter transcripts (default is 20).
-        file_format : str
-            Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
-        additional_embeddings : Dict[str, pd.DataFrame], optional
-            A dictionary of additional embeddings for genes. Each key is the name of the embedding, and each value
-            is a DataFrame where rows are genes and columns are embedding features.
-            
-        Example:
-        --------
-        >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
-        >>> celltype_column = 'celltype_major'
-        >>> abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)
-        >>> xenium_sample = XeniumSample()
-        >>> xenium_sample.load_transcripts(
-        ...     base_path=Path("/data/xenium"),
-        ...     sample="sample_1",
-        ...     additional_embeddings={"cell_type_abundance": abundance_df}
-        ... )
-        >>> xenium_sample.set_embedding("cell_type_abundance")
-        >>> pyg_data = xenium_sample.build_pyg_data_from_tile(nuclei_df, xenium_sample.transcripts_df)
-        """
-        file_path = path or (base_path / sample / transcripts_filename)
-        if file_format == "csv":
-            with gzip.open(file_path, 'rb') as file:
-                self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
-        elif file_format == "parquet":
-            self.transcripts_df = pd.read_parquet(file_path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_format}")
-
-        print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
-        self.transcripts_df = filter_transcripts(self.transcripts_df, min_qv=min_qv)
-        self.x_max = self.transcripts_df['x_location'].max()
-        self.y_max = self.transcripts_df['y_location'].max()
-        self.x_min = self.transcripts_df['x_location'].min()
-        self.y_min = self.transcripts_df['y_location'].min()
-        # Encode genes as one-hot by default
-        genes = self.transcripts_df[['feature_name']]
-        self.tx_encoder = OneHotEncoder(sparse_output=False)
-        self.tx_encoder.fit(genes)
-        self.embeddings_dict['one_hot'] = self.tx_encoder.transform(genes).toarray()
-        # Add additional embeddings if provided
-        if additional_embeddings:
-            for key, embedding_df in additional_embeddings.items():
-                self.embeddings_dict[key] = embedding_df.loc[genes['feature_name'].values].values
-        
-
-        
-        
-    def load_nuclei(self, path: Path, file_format: str = "csv") -> 'XeniumSample':
-        """
-        Load nuclei data from a file, supporting both gzip-compressed CSV and Parquet formats.
-
-        Parameters:
-        - path (Path): Path to the nuclei file.
-        - file_format (str): Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
-
-        Returns:
-        - XeniumSample: The updated instance with loaded nuclei data.
-        """
-        if file_format == "csv":
-            with gzip.open(path, 'rb') as file:
-                self.nuclei_df = pd.read_csv(io.BytesIO(file.read()))
-        elif file_format == "parquet":
-            self.nuclei_df = pd.read_parquet(path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_format}")
-
-    @staticmethod
-    def unassign_all_except_nucleus(transcripts_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Unassign all transcripts except those overlapping with the nucleus.
-
-        Parameters:
-        transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-
-        Returns:
-        pd.DataFrame: The dataframe with unassigned transcripts.
-        """
-        unassigned_df = transcripts_df.copy()
-        unassigned_df.loc[unassigned_df['overlaps_nucleus'] == 0, 'cell_id'] = 'UNASSIGNED'
-        return unassigned_df
-
-    def save_dataset_for_segger(self, 
-                                processed_dir: Path, 
-                                x_size: float = 1000, 
-                                y_size: float = 1000, 
-                                d_x: float = 900, 
-                                d_y: float = 900, 
-                                margin_x: float = None, 
-                                margin_y: float = None, 
-                                compute_labels: bool = True, 
-                                r_tx: float = 5, 
-                                val_prob: float = 0.1, 
-                                test_prob: float = 0.2, 
-                                neg_sampling_ratio_approx: float = 5, 
-                                sampling_rate: float = 1, 
-                                num_workers: int = 1,
-                                receptive_field: Dict[str, float] = {
-                                    "k_nc": 4,
-                                    "dist_nc": 20,
-                                    "k_tx": 5,
-                                    "dist_tx": 10
-                                }) -> None:
-        """
-        Saves the dataset for Segger in a processed format.
-
-        Parameters:
-        processed_dir (Path): Directory to save the processed dataset.
-        x_size (float): Width of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
-        y_size (float): Height of each tile. This is important to determine the number of tiles and to ensure tiles fit into GPU memory for prediction. Adjust based on GPU memory size and desired number of tiles.
-        d_x (float): Step size in the x direction for tiles. Determines the overlap between tiles and the total number of tiles.
-        d_y (float): Step size in the y direction for tiles. Determines the overlap between tiles and the total number of tiles.
-        margin_x (float): Margin in the x direction to include transcripts.
-        margin_y (float): Margin in the y direction to include transcripts.
-        compute_labels (bool): Whether to compute edge labels for tx_belongs_nc edges, used in training. Not necessary for prediction only.
-        r_tx (float): Radius for building the transcript-to-transcript graph.
-        val_prob (float): Probability of assigning a tile to the validation set.
-        test_prob (float): Probability of assigning a tile to the test set.
-        neg_sampling_ratio_approx (float): Approximate ratio of negative samples.
-        sampling_rate (float): Rate of sampling tiles.
-        num_workers (int): Number of workers to use for parallel processing.
-        receptive_field (dict): Dictionary containing the values for 'k_nc', 'dist_nc', 'k_tx', and 'dist_tx', which are used to restrict the receptive field of transcripts for nuclei and transcripts.
-        
-        k_nc and dist_nc will determine the size of the cells with nucleus and k_tx and dist_tx will determine the size of the nucleus-less cells, implicitly.
-        """
-        processed_dir.mkdir(parents=True, exist_ok=True)
-        (processed_dir / 'train_tiles/processed').mkdir(parents=True, exist_ok=True)
-        (processed_dir / 'test_tiles/processed').mkdir(parents=True, exist_ok=True)
-        (processed_dir / 'val_tiles/processed').mkdir(parents=True, exist_ok=True)
-
-        if margin_x is None:
-            margin_x = d_x // 10
-        if margin_y is None:
-            margin_y = d_y // 10
-
-        x_range = np.arange(self.x_min // 1000 * 1000, self.x_max, d_x)
-        y_range = np.arange(self.y_min // 1000 * 1000, self.y_max, d_y)
-
-        x_masks_nc = [(self.nuclei_df['vertex_x'] > x) & (self.nuclei_df['vertex_x'] < x + x_size) for x in x_range]
-        y_masks_nc = [(self.nuclei_df['vertex_y'] > y) & (self.nuclei_df['vertex_y'] < y + y_size) for y in y_range]
-        x_masks_tx = [(self.transcripts_df['x_location'] > (x - margin_x)) & (self.transcripts_df['x_location'] < (x + x_size + margin_x)) for x in x_range]
-        y_masks_tx = [(self.transcripts_df['y_location'] > (y - margin_y)) & (self.transcripts_df['y_location'] < (y + y_size + margin_y)) for y in y_range]
-
-        tile_params = [
-            (
-                i, j, x_masks_nc, y_masks_nc, x_masks_tx, y_masks_tx, 
-                x_size, y_size, compute_labels, r_tx, 
-                neg_sampling_ratio_approx, val_prob, test_prob, 
-                processed_dir, receptive_field, sampling_rate
-            )
-            for i, j in product(range(len(x_range)), range(len(y_range)))
-        ]
-        if num_workers > 1:
-            with Pool(processes=num_workers) as pool:
-                for _ in tqdm(pool.imap_unordered(self._process_tile, tile_params), total=len(tile_params)):
-                    pass
-        else:
-            for params in tqdm(tile_params):
-                self._process_tile(params)
-
-    def _process_tile(self, tile_params: Tuple) -> None:
-        """
-        Process a single tile and save the data.
-
-        Parameters:
-        tile_params (tuple): Parameters for the tile processing.
-        """
-        (
-            i, j, x_masks_nc, y_masks_nc, x_masks_tx, y_masks_tx, 
-            x_size, y_size, compute_labels, r_tx, 
-            neg_sampling_ratio_approx, val_prob, test_prob, 
-            processed_dir, receptive_field, sampling_rate
-        ) = tile_params
-
-        prob = random.random()
-        if prob > sampling_rate:
-            return
-
-        x_mask = x_masks_nc[i]
-        y_mask = y_masks_nc[j]
-        mask = x_mask & y_mask
-
-        if mask.sum() == 0:
-            return
-
-        nc_df = self.nuclei_df[mask]
-        nc_df = self.nuclei_df.loc[self.nuclei_df.cell_id.isin(nc_df.cell_id), :]
-        tx_mask = x_masks_tx[i] & y_masks_tx[j]
-        transcripts_df = self.transcripts_df[tx_mask]
-
-        if transcripts_df.shape[0] == 0 or nc_df.shape[0] == 0:
-            return
-
-        data = self.build_pyg_data_from_tile(nc_df, transcripts_df, compute_labels=compute_labels)
-        data = BuildTxGraph(r=r_tx)(data)
-
-        try:
-            if compute_labels:
-                transform = RandomLinkSplit(num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'nc')], 
-                                            neg_sampling_ratio=neg_sampling_ratio_approx * 2)
-                data, _, _ = transform(data)
-                edge_index = data[('tx', 'belongs', 'nc')].edge_index
-                if edge_index.shape[1] < 10:
-                    return
-                edge_label_index = data[('tx', 'belongs', 'nc')].edge_label_index
-                data[('tx', 'belongs', 'nc')].edge_label_index = edge_label_index[:, torch.nonzero(
-                    torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
-                ).squeeze()]
-                data[('tx', 'belongs', 'nc')].edge_label = data[('tx', 'belongs', 'nc')].edge_label[torch.nonzero(
-                    torch.any(edge_label_index[0].unsqueeze(1) == edge_index[0].unsqueeze(0), dim=1)
-                ).squeeze()]
-
-            coords_nc = data['nc'].pos
-            coords_tx = data['tx'].pos[:, :2]
-            data['tx'].tx_field = self.get_edge_index(coords_tx, coords_tx, k=receptive_field["k_tx"], dist=receptive_field["dist_tx"], type='kd_tree')
-            data['tx'].nc_field = self.get_edge_index(coords_nc, coords_tx, k=receptive_field["k_nc"], dist=receptive_field["dist_nc"], type='kd_tree')
-            
-            filename = f"tiles_x{int(x_size)}_y{int(y_size)}_{i}_{j}.pt"
-            prob = random.random()
-            if prob > val_prob + test_prob:
-                torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
-            elif prob > val_prob:
-                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
-            else:
-                torch.save(data, processed_dir / 'val_tiles' / 'processed' / filename)
-        except Exception as e:
-            print(f"Error processing tile {i}, {j}: {e}")
-
-        
-        
-    @staticmethod
-    def compute_nuclei_geometries(nuclei_df: pd.DataFrame, area: bool = True, convexity: bool = True, elongation: bool = True, 
-                                  circularity: bool = True) -> gpd.GeoDataFrame:
-        """
-        Computes geometries for nuclei from the dataframe.
-
-        Parameters:
-        nuclei_df (pd.DataFrame): The dataframe containing nuclei data.
-        area (bool): Whether to compute area.
-        convexity (bool): Whether to compute convexity.
-        elongation (bool): Whether to compute elongation.
-        circularity (bool): Whether to compute circularity.
-
-        Returns:
-        gpd.GeoDataFrame: A geodataframe containing computed geometries.
-        """
-        grouped = nuclei_df.groupby('cell_id')
-        polygons = [Polygon(list(zip(group_data['vertex_x'], group_data['vertex_y']))) for _, group_data in grouped]
-        polygons = gpd.GeoSeries(polygons)
-        gdf = gpd.GeoDataFrame(geometry=polygons, crs='EPSG:4326')
-        gdf['cell_id'] = list(grouped.groups.keys())
-        gdf[['x', 'y']] = gdf.centroid.get_coordinates()
-        if area:
-            gdf['area'] = polygons.area
-        if convexity:
-            gdf['convexity'] = polygons.convex_hull.area / polygons.area
-        if elongation:
-            r = polygons.minimum_rotated_rectangle()
-            gdf['elongation'] = r.area / (r.length * r.width)
-        if circularity:
-            r = gdf.minimum_bounding_radius()
-            gdf['circularity'] = polygons.area / (r * r)
-        return gdf
-
-    @staticmethod
-    def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 100, dist: int = 10, type: str = 'edge_index') -> torch.Tensor:
-        """
-        Computes edge indices using KDTree for given coordinates.
-
-        Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
-        k (int): Number of nearest neighbors.
-        dist (int): Distance threshold.
-        type (str): Type of edge index to return.
-
-        Returns:
-        torch.Tensor: Edge indices.
-        """
-        tree = KDTree(coords_1)
-        d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist)
-        if type == 'kd_tree':
-            return torch.tensor(idx_out, dtype=torch.long)
-        edge_index = XeniumSample.kd_to_edge_index_((idx_out.shape[0], coords_1.shape[0]), idx_out)
-        if type == 'edge_index':
-            return edge_index
-        if type == 'adj':
-            return torch_geometric.utils.to_dense_adj(edge_index)[0].to_sparse()
-
-    @staticmethod
-    def kd_to_edge_index_(shape: tuple, idx_out: np.ndarray) -> torch.Tensor:
-        """
-        Converts KDTree indices to edge indices.
-
-        Parameters:
-        shape (tuple): Shape of the original matrix.
-        idx_out (np.ndarray): Indices from KDTree query.
-
-        Returns:
-        torch.Tensor: Edge indices.
-        """
-        # To sparse adjacency
-        edge_index = np.argwhere(idx_out != shape[0]).T
-        edge_index[1] = idx_out[idx_out != shape[0]]
-        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
-        # To sparse adjacency
-        edge_index = np.argwhere(idx_out != shape[0]).T
-        edge_index[1] = idx_out[idx_out != shape[0]]
-        edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
-        return edge_index
-    
-    def set_embedding(self, embedding_name: str) -> None:
-        """
-        Set the current embedding type for the transcripts.
-
-        Parameters:
-        -----------
-        embedding_name : str
-            The name of the embedding to use. It must be one of the keys in `embeddings_dict`.
-
-        Example:
-        --------
-        >>> xenium_sample.set_embedding("cell_type_abundance")
-        """
-        if embedding_name in self.embeddings_dict:
-            self.current_embedding = embedding_name
-        else:
-            raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
-
-
-    def build_pyg_data_from_tile(self, nuclei_df: pd.DataFrame, transcripts_df: pd.DataFrame, compute_labels: bool = True, 
-                                 **kwargs) -> HeteroData:
-        """
-        Builds PyG data from a tile of nuclei and transcripts data.
-
-        Parameters:
-        nuclei_df (pd.DataFrame): Dataframe containing nuclei data.
-        transcripts_df (pd.DataFrame): Dataframe containing transcripts data.
-        compute_labels (bool): Whether to compute labels.
-        **kwargs: Additional arguments for geometry computation.
-
-        Returns:
-        HeteroData: PyG Heterogeneous Data object.
-        """
-        data = HeteroData()
-        nc_args = list(inspect.signature(self.compute_nuclei_geometries).parameters)
-        nc_dict = {k: kwargs.pop(k) for k in kwargs if k in nc_args}
-        nc_gdf = self.compute_nuclei_geometries(nuclei_df, **nc_dict)
-        max_area = nc_gdf['area'].max()
-        tx_args = list(inspect.signature(self.get_edge_index).parameters)
-        tx_dict = {k: kwargs.pop(k) for k in kwargs if k in tx_args}
-        x_xyz = torch.as_tensor(transcripts_df[['x_location', 'y_location', 'z_location']].values).float()
-        data['tx'].id = transcripts_df[['transcript_id']].values
-        data['tx'].pos = x_xyz
-        # x_features = torch.as_tensor(self.tx_encoder.transform(transcripts_df[['feature_name']]).toarray()).float()
-        # data['tx'].x = x_features.to_sparse()
-        x_features = torch.as_tensor(self.embeddings_dict[self.current_embedding]).float()
-        data['tx'].x = x_features.to_sparse()
-        tx_edge_index = self.get_edge_index(nc_gdf[['x', 'y']].values, transcripts_df[['x_location', 'y_location']].values, 
-                                            k=3, dist=np.sqrt(max_area) * 10)
-        data['tx', 'neighbors', 'nc'].edge_index = tx_edge_index
-        ind = np.where((transcripts_df.overlaps_nucleus == 1) & (transcripts_df.cell_id.isin(nc_gdf['cell_id'])))[0]
-        tx_nc_edge_index = np.column_stack((ind, np.searchsorted(nc_gdf['cell_id'].values, transcripts_df.iloc[ind]['cell_id'].values)))
-        data['nc'].id = nc_gdf[['cell_id']].values
-        data['nc'].pos = nc_gdf[['x', 'y']].values
-        nc_x = nc_gdf.iloc[:, 4:]
-        data['nc'].x = torch.as_tensor(nc_x.to_numpy()).float()
-        data['tx', 'belongs', 'nc'].edge_index = torch.as_tensor(tx_nc_edge_index.T).long()
-        return data
-
-class XeniumDataset(InMemoryDataset):
+def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree',
+                   gpu: bool = False, workers: int = 1) -> torch.Tensor:
     """
-    A dataset class for handling Xenium spatial transcriptomics data.
+    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+    method : str, optional
+        The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph', 'cuspatial').
+    gpu : bool, optional
+        Whether to use GPU acceleration (applicable for FAISS).
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    if method == 'kd_tree':
+        return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist, workers=workers)
+    elif method == 'faiss':
+        return get_edge_index_faiss(coords_1, coords_2, k=k, dist=dist, gpu=gpu)
+    elif method == 'rapids':
+        return get_edge_index_rapids(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'cugraph':
+        return get_edge_index_cugraph(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'cuspatial':
+        return get_edge_index_cuspatial(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'hnsw':
+        return get_edge_index_hnsw(coords_1, coords_2, k=k, dist=dist)
+    else:
+        raise ValueError(f"Unknown method {method}")
+
+
+
+def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, workers: int = 1) -> torch.Tensor:
+    """
+    Computes edge indices using KDTree.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    tree = cKDTree(coords_1)
+    d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist, workers=workers)
+    valid_mask = d_kdtree < dist
+    edges = []
+
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = idx_out[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
+
+
+def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, gpu: bool = False) -> torch.Tensor:
+    """
+    Computes edge indices using FAISS.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+    gpu : bool, optional
+        Whether to use GPU acceleration.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    coords_1 = np.ascontiguousarray(coords_1, dtype=np.float32)
+    coords_2 = np.ascontiguousarray(coords_2, dtype=np.float32)
+    d = coords_1.shape[1]
+    if gpu:
+        res = faiss.StandardGpuResources()
+        index = faiss.GpuIndexFlatL2(res, d)
+    else:
+        index = faiss.IndexFlatL2(d)
+
+    index.add(coords_1.astype('float32'))
+    D, I = index.search(coords_2.astype('float32'), k)
+
+    valid_mask = D < dist ** 2
+    edges = []
+
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = I[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
+
+
+def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+    """
+    Computes edge indices using RAPIDS cuML.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    index = cuml.neighbors.NearestNeighbors(n_neighbors=k, algorithm='brute', metric='euclidean')
+    index.fit(coords_1)
+    D, I = index.kneighbors(coords_2)
+
+    valid_mask = D < dist ** 2
+    edges = []
+
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = I[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
+
+def get_edge_index_cugraph(
+    coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10
+) -> torch.Tensor:
+    """
+    Computes edge indices using RAPIDS cuGraph.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    gdf_1 = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
+    gdf_2 = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
+
+    gdf_1['id'] = gdf_1.index
+    gdf_2['id'] = gdf_2.index
+
+    result = cugraph.spatial_knn(
+        gdf_1, gdf_2, k=k, return_distance=True
+    )
+
+    valid_mask = result['distance'] < dist
+    edges = result[['src', 'dst']].loc[valid_mask].to_pandas().values
+    edge_index = torch.tensor(edges.T, dtype=torch.long).contiguous()
+    return edge_index
+
+
+def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+    """
+    Computes edge indices using cuSpatial's spatial join functionality.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates (2D).
+    coords_2 : np.ndarray
+        Second set of coordinates (2D).
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    # Convert numpy arrays to cuDF DataFrames
+    coords_1_df = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
+    coords_2_df = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
+    
+    # Perform the nearest neighbor search using cuSpatial's point-to-point nearest neighbor
+    result = cuspatial.point_to_nearest_neighbor(
+        coords_1_df['x'], coords_1_df['y'],
+        coords_2_df['x'], coords_2_df['y'],
+        k=k
+    )
+    
+    # The result is a tuple (distances, indices)
+    distances, indices = result
+    
+    # Filter by distance threshold
+    valid_mask = distances < dist
+    edges = []
+    
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = indices[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+    
+    # Convert to torch.Tensor
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
+
+
+
+class SpatialTranscriptomicsDataset(InMemoryDataset):
+    """
+    A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.
 
     Attributes:
         root (str): The root directory where the dataset is stored.
@@ -723,7 +569,7 @@ class XeniumDataset(InMemoryDataset):
     """
     def __init__(self, root: str, transform: Callable = None, pre_transform: Callable = None, pre_filter: Callable = None):
         """
-        Initialize the XeniumDataset.
+        Initialize the SpatialTranscriptomicsDataset.
 
         Args:
             root (str): Root directory where the dataset is stored.
@@ -788,3 +634,52 @@ class XeniumDataset(InMemoryDataset):
         data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         data['tx'].x = data['tx'].x.to_dense()
         return data
+
+
+
+def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+    """
+    Computes edge indices using the HNSW algorithm.
+
+    Parameters:
+    -----------
+    coords_1 : np.ndarray
+        First set of coordinates.
+    coords_2 : np.ndarray
+        Second set of coordinates.
+    k : int, optional
+        Number of nearest neighbors.
+    dist : int, optional
+        Distance threshold.
+
+    Returns:
+    --------
+    torch.Tensor
+        Edge indices.
+    """
+    num_elements = coords_1.shape[0]
+    dim = coords_1.shape[1]
+
+    # Initialize the HNSW index
+    p = hnswlib.Index(space='l2', dim=dim)  # l2 for Euclidean distance
+    p.init_index(max_elements=num_elements, ef_construction=200, M=16)
+
+    # Add points to the index
+    p.add_items(coords_1)
+
+    # Query the index for nearest neighbors
+    indices, distances = p.knn_query(coords_2, k=k)
+
+    # Filter by distance threshold
+    valid_mask = distances < dist ** 2
+    edges = []
+
+    for idx, valid in enumerate(valid_mask):
+        valid_indices = indices[idx][valid]
+        if valid_indices.size > 0:
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
+
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    return edge_index
