@@ -233,7 +233,6 @@ class SpatialTranscriptomicsSample(ABC):
             If in_place is True, returns None after modifying the existing instance.
             If in_place is False, returns a new SpatialTranscriptomicsSample instance with the subsetted data.
         """
-
         # Print initial counts
         initial_transcripts_count = len(self.transcripts_df)
         initial_boundaries_count = len(self.boundaries_df) if self.boundaries_df is not None else 0
@@ -246,7 +245,7 @@ class SpatialTranscriptomicsSample(ABC):
             & (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] <= x_max)
             & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] >= y_min)
             & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] <= y_max)
-        ]
+        ].reset_index(drop=True)  # Reset the index after subsetting
 
         # Subset boundaries_df if it exists
         subset_boundaries_df = None
@@ -256,19 +255,24 @@ class SpatialTranscriptomicsSample(ABC):
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] <= x_max)
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] >= y_min)
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
-            ]
+            ].reset_index(drop=True)  # Reset the index after subsetting
 
-        # Update the precomputed tx_tx_edge_index if it exists
-        subset_tx_tx_edge_index = None
+        # Invalidate the precomputed tx_tx_edge_index if it exists
         if self.tx_tx_edge_index is not None:
-            # Find the indices of the transcripts within the new bounding box
-            valid_indices = subset_transcripts_df.index.values
-            # Subset the precomputed edge index based on these valid indices
-            edge_mask = (
-                torch.isin(self.tx_tx_edge_index[0], torch.as_tensor(valid_indices)) &
-                torch.isin(self.tx_tx_edge_index[1], torch.as_tensor(valid_indices))
+            warnings.warn(
+                "Bounding box modification invalidates the precomputed tx_tx_edge_index. It will need to be recomputed."
             )
-            subset_tx_tx_edge_index = self.tx_tx_edge_index[:, edge_mask]
+            subset_tx_tx_edge_index = None
+        else:
+            subset_tx_tx_edge_index = None
+
+        # Invalidate KD-Trees
+        if self.tx_tree is not None or self.bd_tree is not None:
+            warnings.warn(
+                "Bounding box modification invalidates the precomputed tx_tree and bd_tree. They will need to be recomputed."
+            )
+            self.tx_tree = None
+            self.bd_tree = None
 
         # Calculate new counts
         final_transcripts_count = len(subset_transcripts_df)
@@ -281,7 +285,7 @@ class SpatialTranscriptomicsSample(ABC):
             self.x_min, self.y_min, self.x_max, self.y_max = x_min, y_min, x_max, y_max
             # Print summary
             print(f"Subset completed in-place: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
-                f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
+                  f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
         else:
             subset_sample = self.__class__(subset_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
             subset_sample.boundaries_df = subset_boundaries_df
@@ -289,8 +293,9 @@ class SpatialTranscriptomicsSample(ABC):
             subset_sample.x_min, subset_sample.y_min, subset_sample.x_max, subset_sample.y_max = x_min, y_min, x_max, y_max
             # Print summary
             print(f"Subset completed with new instance: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
-                f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
+                  f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
             return subset_sample
+
 
         
     def precompute_tx_tree(self) -> None:
@@ -530,28 +535,25 @@ class SpatialTranscriptomicsSample(ABC):
             A GeoDataFrame containing computed geometries.
         """
         # Generate and scale polygons
-        polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
 
-        if polygons_gdf.empty:
+        if gdf is None:
             raise ValueError("No valid polygons were generated.")
 
+        polygons = gdf.geometry
+        
         # Compute additional geometrical properties
         if area:
-            polygons_gdf['area'] = polygons_gdf['geometry'].area
+            gdf['area'] = polygons.area
         if convexity:
-            polygons_gdf['convexity'] = polygons_gdf['geometry'].convex_hull.area / polygons_gdf['area']
+            gdf['convexity'] = polygons.convex_hull.area / polygons.area
         if elongation:
-            min_bounds = polygons_gdf['geometry'].minimum_rotated_rectangle
-            length = min_bounds.apply(lambda poly: max(poly.exterior.coords[1][0] - poly.exterior.coords[0][0], 
-                                                        poly.exterior.coords[2][1] - poly.exterior.coords[1][1]))
-            width = min_bounds.apply(lambda poly: min(poly.exterior.coords[1][0] - poly.exterior.coords[0][0], 
-                                                    poly.exterior.coords[2][1] - poly.exterior.coords[1][1]))
-            polygons_gdf['elongation'] = length / width
+            r = polygons.minimum_rotated_rectangle()
+            gdf['elongation'] = (r.length * r.length) / r.area
         if circularity:
-            polygons_gdf['circularity'] = (4 * 3.14159 * polygons_gdf['area']) / (polygons_gdf['geometry'].length ** 2)
-
-        print(f"Processed {len(polygons_gdf)} valid cells.")
-        return polygons_gdf
+            r = gdf.minimum_bounding_radius()
+            gdf['circularity'] = polygons.area / (r * r)
+        return gdf
 
     def _validate_bbox(self, x_min: float, y_min: float, x_max: float, y_max: float) -> Tuple[float, float, float, float]:
         """Validates and sets default values for bounding box coordinates."""
@@ -964,7 +966,7 @@ class SpatialTranscriptomicsSample(ABC):
             (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
         )
         data['bd'].id = bd_gdf[[self.keys.CELL_ID.value]].values
-        data['bd'].pos = bd_gdf[['x', 'y']].values
+        data['bd'].pos = bd_gdf[['centroid_x', 'centroid_y']].values
         bd_x = bd_gdf.iloc[:, 4:]
         data['bd'].x = torch.as_tensor(bd_x.to_numpy()).float()
         data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T).long()
