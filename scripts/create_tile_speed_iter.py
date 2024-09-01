@@ -41,6 +41,14 @@ xenium_sample.load_transcripts(
     additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding}
 )
 
+
+
+data = xenium_sample.build_pyg_data_from_tile(
+            boundaries_df=xenium_sample.boundaries_df,
+            transcripts_df=xenium_sample.transcripts_df,
+            use_precomputed=True,
+            workers=1
+        )
 # Step 4: Set the embedding to "cell_type_abundance"
 xenium_sample.set_embedding("cell_type_abundance")
 

@@ -16,6 +16,8 @@ from tqdm import tqdm
 from segger.data.utils import *
 from segger.data.constants import *
 from enum import Enum
+from scipy.spatial import KDTree
+import warnings
 
 class SpatialTranscriptomicsSample(ABC):
     def __init__(
@@ -44,6 +46,9 @@ class SpatialTranscriptomicsSample(ABC):
         self.boundaries_graph = boundaries_graph
         self.keys = keys
         self.embeddings_dict = {}
+        self.tx_tree = None
+        self.bd_tree = None
+        self.tx_tx_edge_index = None
 
         if self.transcripts_df is not None:
             self._set_bounds()
@@ -150,6 +155,10 @@ class SpatialTranscriptomicsSample(ABC):
                     self.transcripts_df[self.keys.FEATURE_NAME.value].values
                 ].values
                 
+                # Check if the OVERLAPS_BOUNDARY column exists and cast it to boolean if needed
+        if self.keys.OVERLAPS_BOUNDARY.value in self.transcripts_df.columns:
+            self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
+                
     def set_embedding(self, embedding_name: str) -> None:
         """
         Set the current embedding type for the transcripts.
@@ -168,8 +177,7 @@ class SpatialTranscriptomicsSample(ABC):
         else:
             raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
 
-
-    def load_boundaries(self, path: Path, file_format: str = "csv") -> 'SpatialTranscriptomicsSample':
+    def load_boundaries(self, path: Path, file_format: str = "csv") -> None:
         """
         Load boundaries data from a file, supporting both gzip-compressed CSV and Parquet formats.
 
@@ -193,37 +201,8 @@ class SpatialTranscriptomicsSample(ABC):
             raise ValueError(f"Unsupported file format: {file_format}")
         
 
-    # def crop_transcripts(
-    #     self, x: float, y: float, x_size: int = 1000, y_size: int = 1000
-    # ) -> 'SpatialTranscriptomicsSample':
-    #     """
-    #     Crop the transcripts to a specific area.
 
-    #     Parameters:
-    #     -----------
-    #     x : float
-    #         The x-coordinate of the top-left corner of the crop.
-    #     y : float
-    #         The y-coordinate of the top-left corner of the crop.
-    #     x_size : int, optional
-    #         The width of the crop area.
-    #     y_size : int, optional
-    #         The height of the crop area.
-
-    #     Returns:
-    #     --------
-    #     SpatialTranscriptomicsSample
-    #         A new instance of the class with the cropped transcripts.
-    #     """
-    #     cropped_transcripts_df = self.transcripts_df[
-    #         (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] > x)
-    #         & (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] < x + x_size)
-    #         & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] > y)
-    #         & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] < y + y_size)
-    #     ]
-    # .__class__(cropped_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
-
-
+            
     def get_bounding_box(
         self,
         x_min: float = None,
@@ -279,6 +258,18 @@ class SpatialTranscriptomicsSample(ABC):
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
             ]
 
+        # Update the precomputed tx_tx_edge_index if it exists
+        subset_tx_tx_edge_index = None
+        if self.tx_tx_edge_index is not None:
+            # Find the indices of the transcripts within the new bounding box
+            valid_indices = subset_transcripts_df.index.values
+            # Subset the precomputed edge index based on these valid indices
+            edge_mask = (
+                torch.isin(self.tx_tx_edge_index[0], torch.as_tensor(valid_indices)) &
+                torch.isin(self.tx_tx_edge_index[1], torch.as_tensor(valid_indices))
+            )
+            subset_tx_tx_edge_index = self.tx_tx_edge_index[:, edge_mask]
+
         # Calculate new counts
         final_transcripts_count = len(subset_transcripts_df)
         final_boundaries_count = len(subset_boundaries_df) if subset_boundaries_df is not None else 0
@@ -286,21 +277,271 @@ class SpatialTranscriptomicsSample(ABC):
         if in_place:
             self.transcripts_df = subset_transcripts_df
             self.boundaries_df = subset_boundaries_df
+            self.tx_tx_edge_index = subset_tx_tx_edge_index
             self.x_min, self.y_min, self.x_max, self.y_max = x_min, y_min, x_max, y_max
-
             # Print summary
             print(f"Subset completed in-place: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
                 f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
         else:
             subset_sample = self.__class__(subset_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
             subset_sample.boundaries_df = subset_boundaries_df
+            subset_sample.tx_tx_edge_index = subset_tx_tx_edge_index
             subset_sample.x_min, subset_sample.y_min, subset_sample.x_max, subset_sample.y_max = x_min, y_min, x_max, y_max
-
             # Print summary
             print(f"Subset completed with new instance: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
                 f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
-            
             return subset_sample
+
+        
+    def precompute_tx_tree(self) -> None:
+        """
+        Precompute the KD-Tree for the transcript (tx) coordinates.
+
+        This method builds the KD-Tree for the transcript positions and stores it in the instance
+        for efficient querying later.
+
+        Raises a warning if the transcripts DataFrame does not exist.
+
+        Returns:
+        --------
+        None
+        """
+        if self.transcripts_df is None:
+            warnings.warn("transcripts_df is not set. Please load the transcripts data first by calling the appropriate function.")
+            return
+
+        coords_tx = self.transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].values
+        self.tx_tree = KDTree(coords_tx)
+        print(f"Precomputed KD-Tree for tx coordinates with {coords_tx.shape[0]} transcripts.")
+        
+
+    def precompute_bd_tree(self) -> None:
+        """
+        Precompute the KD-Tree for the boundary (bd) centroids.
+
+        This method computes the centroids of the boundary polygons, builds the KD-Tree
+        for these centroids, and stores it in the instance for efficient querying later.
+
+        Raises a warning if the boundaries DataFrame does not exist.
+
+        Returns:
+        --------
+        None
+        """
+        if self.boundaries_df is None:
+            warnings.warn("boundaries_df is not set. Please load the boundaries data first by calling the appropriate function.")
+            return
+
+        # Compute centroids of the boundary polygons
+        centroids = self.boundaries_df.groupby(self.keys.CELL_ID.value).apply(
+            lambda group: group[[self.keys.BOUNDARIES_VERTEX_X.value, self.keys.BOUNDARIES_VERTEX_Y.value]].mean()
+        ).values
+
+        self.bd_tree = KDTree(centroids)
+        print(f"Precomputed KD-Tree for bd centroids with {centroids.shape[0]} boundaries.")
+    
+    def precompute_tx_tx_graph(self, k: int = 10, dist: float = float('inf'), workers: int = 1) -> torch.Tensor:
+        """
+        Precompute the `tx-tx` graph by finding the nearest neighbors for each transcript.
+
+        This method uses the precomputed KD-Tree for `tx` coordinates to find the nearest neighbors.
+        If the KD-Tree is not precomputed, it will be computed automatically.
+
+        Parameters:
+        -----------
+        k : int, optional
+            The number of nearest neighbors to find for each transcript.
+        dist : float, optional
+            The maximum distance within which neighbors should be considered.
+
+        Returns:
+        --------
+        torch.Tensor
+            A tensor representing the edge index for `['tx', 'neighbors', 'tx']`.
+        """
+        # Check if the KD-Tree for tx is precomputed; if not, compute it
+        if self.tx_tree is None:
+            warnings.warn("tx_tree is not precomputed. Automatically computing the KD-Tree now.")
+            self.precompute_tx_tree()
+
+        # Query the KDTree for k nearest neighbors within the specified distance
+        distances, indices = self.tx_tree.query(self.tx_tree.data, k=k, distance_upper_bound=dist, workers=10)
+
+        # Filter out invalid entries (distances exceeding the threshold)
+        valid_edges = (distances < dist)
+
+        # Create edge indices (source, target) for the graph
+        edge_index = []
+        for i, valid in enumerate(valid_edges):
+            valid_neighbors = indices[i, valid]
+            for neighbor in valid_neighbors:
+                if neighbor != i:  # Exclude self-loops if not needed
+                    edge_index.append([i, neighbor])
+
+        edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+
+        # Store the result in a class attribute for later use
+        self.tx_tx_edge_index = edge_index
+
+        print(f"Precomputed tx-tx graph with {edge_index.shape[1]} edges.")
+
+        return edge_index
+
+
+    def generate_and_scale_polygons(
+        self,
+        boundaries_df: pd.DataFrame,
+        scale_factor: float
+    ) -> List[Polygon]:
+        """
+        Generate polygons from boundary coordinates and scale them.
+
+        Parameters:
+        -----------
+        boundaries_df : pd.DataFrame
+            DataFrame containing boundary coordinates.
+        scale_factor : float
+            The factor by which to scale the polygons.
+
+        Returns:
+        --------
+        List[Polygon]
+            A list of scaled Polygon objects.
+        """
+        polygons = []
+        
+        for _, row in boundaries_df.iterrows():
+            x_coords = row[self.keys.BOUNDARIES_VERTEX_X.value]
+            y_coords = row[self.keys.BOUNDARIES_VERTEX_Y.value]
+            
+            if isinstance(x_coords, list) and isinstance(y_coords, list):
+                polygon = Polygon(zip(x_coords, y_coords))
+                # Handle degenerate polygons
+                if polygon.is_empty or not polygon.is_valid:
+                    continue
+                scaled_polygon = scale(polygon, xfact=scale_factor, yfact=scale_factor, origin='centroid')
+                if not scaled_polygon.is_empty and scaled_polygon.is_valid:
+                    polygons.append(scaled_polygon)
+        
+        return polygons
+    
+
+    def compute_transcript_overlap_with_boundaries(
+        self,
+        transcripts_df: pd.DataFrame,
+        boundaries_df: pd.DataFrame,
+        scale_factor: float
+    ) -> pd.DataFrame:
+        """
+        Computes the overlap of transcript locations with scaled boundary polygons
+        and assigns corresponding cell IDs to the transcripts.
+
+        Parameters:
+        -----------
+        transcripts_df : pd.DataFrame
+            DataFrame containing transcript data.
+        boundaries_df : pd.DataFrame
+            DataFrame containing boundary data.
+        scale_factor : float
+            The factor by which to scale the boundary polygons.
+
+        Returns:
+        --------
+        pd.DataFrame
+            The updated DataFrame with overlap information (True for overlap, False for no overlap)
+            and assigned cell IDs.
+        """
+        # Generate and scale polygons from boundaries_df
+        polygons = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+
+        if not polygons:
+            raise ValueError("No valid polygons were generated.")
+
+        overlaps = []
+        cell_ids = []
+
+        for _, transcript in transcripts_df.iterrows():
+            x = transcript[self.keys.TRANSCRIPTS_X.value]
+            y = transcript[self.keys.TRANSCRIPTS_Y.value]
+            point = Point(x, y)
+            
+            overlap = False
+            cell_id = None
+            for i, polygon in enumerate(polygons):
+                if polygon.contains(point):
+                    overlap = True
+                    cell_id = boundaries_df.iloc[i][self.keys.CELL_ID.value]
+                    break
+            
+            overlaps.append(overlap)
+            cell_ids.append(cell_id)
+        
+        transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = overlaps
+        transcripts_df[self.keys.CELL_ID.value] = cell_ids
+        
+        return transcripts_df
+
+
+
+    def compute_boundaries_geometries(
+        self,
+        boundaries_df: pd.DataFrame,
+        scale_factor: float = 1.0,
+        area: bool = True,
+        convexity: bool = True,
+        elongation: bool = True,
+        circularity: bool = True,
+    ) -> gpd.GeoDataFrame:
+        """
+        Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe.
+
+        Parameters:
+        -----------
+        boundaries_df : pd.DataFrame
+            The dataframe containing boundaries data.
+        scale_factor : float, optional
+            The factor by which to scale the polygons (default is 1.0, no scaling).
+        area : bool, optional
+            Whether to compute area.
+        convexity : bool, optional
+            Whether to compute convexity.
+        elongation : bool, optional
+            Whether to compute elongation.
+        circularity : bool, optional
+            Whether to compute circularity.
+
+        Returns:
+        --------
+        gpd.GeoDataFrame
+            A geodataframe containing computed geometries.
+        """
+        # Generate and scale polygons
+        polygons = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+
+        valid_cells = []
+        if not polygons:
+            raise ValueError("No valid polygons were generated.")
+
+        for cell_id, polygon in zip(boundaries_df[self.keys.CELL_ID.value], polygons):
+            if not polygon.is_empty and polygon.is_valid:
+                valid_cells.append((cell_id, polygon))
+        
+        if not valid_cells:
+            raise ValueError("No valid boundary polygons available after scaling.")
+
+        gdf = gpd.GeoDataFrame(valid_cells, columns=['cell_id', 'geometry'])
+        
+        if area:
+            gdf['area'] = gdf['geometry'].area
+        if convexity:
+            gdf['convexity'] = gdf['geometry'].convex_hull.area / gdf['area']
+        if elongation:
+            gdf['elongation'] = (gdf['geometry'].bounds[2] - gdf['geometry'].bounds[0]) / (gdf['geometry'].bounds[3] - gdf['geometry'].bounds[1])
+        if circularity:
+            gdf['circularity'] = (4 * 3.14159 * gdf['area']) / (gdf['geometry'].length ** 2)
+        
+        print(f"Processed {len(gdf)} valid cells.")
+        return gdf
 
     def _validate_bbox(self, x_min: float, y_min: float, x_max: float, y_max: float) -> Tuple[float, float, float, float]:
         """Validates and sets default values for bounding box coordinates."""
@@ -325,6 +566,7 @@ class SpatialTranscriptomicsSample(ABC):
         margin_y: float = None,
         compute_labels: bool = True,
         r_tx: float = 5,
+        k_tx: int = 3,  # New parameter for k_tx
         val_prob: float = 0.1,
         test_prob: float = 0.2,
         neg_sampling_ratio_approx: float = 5,
@@ -338,7 +580,8 @@ class SpatialTranscriptomicsSample(ABC):
         },
         method: str = 'kd_tree',
         gpu: bool = False,
-        workers: int = 1
+        workers: int = 1,
+        use_precomputed: bool = False  # New argument
     ) -> None:
         """
         Saves the dataset for Segger in a processed format.
@@ -363,6 +606,8 @@ class SpatialTranscriptomicsSample(ABC):
             Whether to compute edge labels for tx_belongs_bd edges.
         r_tx : float, optional
             Radius for building the transcript-to-transcript graph.
+        k_tx : int, optional
+            Number of nearest neighbors for the tx-tx graph (default is 3).
         val_prob : float, optional
             Probability of assigning a tile to the validation set.
         test_prob : float, optional
@@ -381,20 +626,28 @@ class SpatialTranscriptomicsSample(ABC):
             Whether to use GPU acceleration for edge index computation.
         workers : int, optional
             Number of workers to use to compute the neighborhood graph (per tile).
+        use_precomputed : bool, optional
+            Whether to use precomputed graphs for tx-tx edges.
 
         Returns:
         --------
         None
         """
+        # Check if precomputed tx-tx graph is requested but not available
+        if use_precomputed and self.tx_tx_edge_index is None:
+            warnings.warn("tx_tx_edge_index is not precomputed. Automatically computing the tx-tx graph now.")
+            self.precompute_tx_tx_graph(r_tx=r_tx, k_tx=k_tx, workers=workers)
+
         self._prepare_directories(processed_dir)
         x_range, y_range = self._get_ranges(d_x, d_y)
 
         tile_params = self._generate_tile_params(
-            x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, r_tx, val_prob, 
-            test_prob, neg_sampling_ratio_approx, sampling_rate, processed_dir, receptive_field, method, gpu, workers
+            x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, r_tx, k_tx, val_prob, 
+            test_prob, neg_sampling_ratio_approx, sampling_rate, processed_dir, receptive_field, method, gpu, workers, use_precomputed
         )
         
         self._process_tiles(tile_params, num_workers)
+
 
     def _prepare_directories(self, processed_dir: Path) -> None:
         """Prepares directories for saving tiles."""
@@ -408,7 +661,7 @@ class SpatialTranscriptomicsSample(ABC):
         x_range = np.arange(self.x_min // 1000 * 1000, self.x_max, d_x)
         y_range = np.arange(self.y_min // 1000 * 1000, self.y_max, d_y)
         return x_range, y_range
-
+    
     def _generate_tile_params(
         self,
         x_range: np.ndarray,
@@ -419,6 +672,7 @@ class SpatialTranscriptomicsSample(ABC):
         margin_y: float,
         compute_labels: bool,
         r_tx: float,
+        k_tx: int,
         val_prob: float,
         test_prob: float,
         neg_sampling_ratio_approx: float,
@@ -427,11 +681,60 @@ class SpatialTranscriptomicsSample(ABC):
         receptive_field: Dict[str, float],
         method: str,
         gpu: bool,
-        workers: int
+        workers: int,
+        use_precomputed: bool  # New argument
     ) -> List[Tuple]:
-        """Generates parameters for processing tiles."""
-        margin_x = margin_x if margin_x is not None else d_x // 10
-        margin_y = margin_y if margin_y is not None else d_y // 10
+        """
+        Generates parameters for processing tiles.
+
+        Parameters:
+        -----------
+        x_range : np.ndarray
+            Array of x-coordinate ranges for the tiles.
+        y_range : np.ndarray
+            Array of y-coordinate ranges for the tiles.
+        x_size : float
+            Width of each tile.
+        y_size : float
+            Height of each tile.
+        margin_x : float
+            Margin in the x direction to include transcripts.
+        margin_y : float
+            Margin in the y direction to include transcripts.
+        compute_labels : bool
+            Whether to compute edge labels for tx_belongs_bd edges.
+        r_tx : float
+            Radius for building the transcript-to-transcript graph.
+        k_tx : int
+            Number of nearest neighbors for the tx-tx graph.
+        val_prob : float
+            Probability of assigning a tile to the validation set.
+        test_prob : float
+            Probability of assigning a tile to the test set.
+        neg_sampling_ratio_approx : float
+            Approximate ratio of negative samples.
+        sampling_rate : float
+            Rate of sampling tiles.
+        processed_dir : Path
+            Directory to save the processed tiles.
+        receptive_field : Dict[str, float]
+            Dictionary containing the values for 'k_bd', 'dist_bd', 'k_tx', and 'dist_tx'.
+        method : str
+            Method for computing edge indices (e.g., 'kd_tree', 'faiss').
+        gpu : bool
+            Whether to use GPU acceleration for edge index computation.
+        workers : int
+            Number of workers to use for parallel processing.
+        use_precomputed : bool
+            Whether to use precomputed graphs for tx-tx edges.
+
+        Returns:
+        --------
+        List[Tuple]
+            List of parameters for processing each tile.
+        """
+        margin_x = margin_x if margin_x is not None else x_size // 10
+        margin_y = margin_y if margin_y is not None else y_size // 10
 
         x_masks_bd = [
             (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] > x) & 
@@ -457,12 +760,13 @@ class SpatialTranscriptomicsSample(ABC):
         tile_params = [
             (
                 i, j, x_masks_bd, y_masks_bd, x_masks_tx, y_masks_tx, x_size, y_size, x_range[i], y_range[j], 
-                compute_labels, r_tx, neg_sampling_ratio_approx, val_prob, test_prob, 
-                processed_dir, receptive_field, sampling_rate, method, gpu, workers
+                compute_labels, r_tx, k_tx, neg_sampling_ratio_approx, val_prob, test_prob, 
+                processed_dir, receptive_field, sampling_rate, method, gpu, workers, use_precomputed
             )
             for i, j in product(range(len(x_range)), range(len(y_range)))
         ]
         return tile_params
+
 
     def _process_tiles(self, tile_params: List[Tuple], num_workers: int) -> None:
         """Processes the tiles using the specified number of workers."""
@@ -488,8 +792,8 @@ class SpatialTranscriptomicsSample(ABC):
         None
         """
         (
-            i, j, x_masks_bd, y_masks_bd, x_masks_tx, y_masks_tx, x_size, y_size, x_loc, y_loc, compute_labels, r_tx, 
-            neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, receptive_field, sampling_rate, method, gpu, workers
+            i, j, x_masks_bd, y_masks_bd, x_masks_tx, y_masks_tx, x_size, y_size, x_loc, y_loc, compute_labels, r_tx, k_tx, 
+            neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, receptive_field, sampling_rate, method, gpu, workers, use_precomputed
         ) = tile_params
 
         if random.random() > sampling_rate:
@@ -511,10 +815,8 @@ class SpatialTranscriptomicsSample(ABC):
             return
 
         data = self.build_pyg_data_from_tile(
-            bd_df, transcripts_df, compute_labels=compute_labels, method=method, gpu=gpu,
-            workers=workers
+            bd_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers, use_precomputed=use_precomputed
         )
-        data = BuildTxGraph(r=r_tx)(data)
 
         try:
             # probability to assign to train-val-test split
@@ -548,19 +850,27 @@ class SpatialTranscriptomicsSample(ABC):
 
             coords_bd = data['bd'].pos
             coords_tx = data['tx'].pos[:, :2]
-            data['tx'].tx_field = get_edge_index(
-                coords_tx, coords_tx, k=receptive_field["k_tx"], dist=receptive_field["dist_tx"], method=method,
-                gpu=gpu,
-                workers=workers
-            )
+
+            # Use precomputed tx-tx edges if available and subset based on current tile
+            if use_precomputed and self.tx_tx_edge_index is not None:
+                tx_indices = torch.as_tensor(transcripts_df.index.values)
+                edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
+                data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
+            else:
+                if use_precomputed:
+                    warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
+                data['tx', 'neighbors', 'tx'].edge_index = get_edge_index(
+                    coords_tx, coords_tx, k=k_tx, dist=r_tx, method=method,
+                    gpu=gpu, workers=workers
+                )
+
+            # Compute bd-tx edges using the precomputed boundary geometries
             data['tx'].bd_field = get_edge_index(
                 coords_bd, coords_tx, k=receptive_field["k_bd"], dist=receptive_field["dist_bd"], method=method,
-                gpu=gpu,
-                workers=workers
+                gpu=gpu, workers=workers
             )
 
             filename = f"tiles_x{int(x_loc)}_y{int(y_loc)}_{x_size}_{y_size}.pt"
-            # prob = random.random()
             if prob > val_prob + test_prob:
                 torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
             elif prob > val_prob:
@@ -570,77 +880,8 @@ class SpatialTranscriptomicsSample(ABC):
         except Exception as e:
             print(f"Error processing tile {i}, {j}: {e}")
 
-    def compute_boundaries_geometries(
-        self,
-        boundaries_df: pd.DataFrame,
-        area: bool = True,
-        convexity: bool = True,
-        elongation: bool = True,
-        circularity: bool = True,
-    ) -> gpd.GeoDataFrame:
-        """
-        Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe.
-
-        Parameters:
-        -----------
-        boundaries_df : pd.DataFrame
-            The dataframe containing boundaries data.
-        area : bool, optional
-            Whether to compute area.
-        convexity : bool, optional
-            Whether to compute convexity.
-        elongation : bool, optional
-            Whether to compute elongation.
-        circularity : bool, optional
-            Whether to compute circularity.
-
-        Returns:
-        --------
-        gpd.GeoDataFrame
-            A geodataframe containing computed geometries.
-        """
-        grouped = boundaries_df.groupby(self.keys.CELL_ID.value)
-        # Counter for skipped cells
-        skipped_count = 0
-
-        # List to store valid polygons
-        polygons = []
-        valid_cells = []
-
-        for cell_id, group_data in grouped:
-            x_coords = group_data[self.keys.BOUNDARIES_VERTEX_X.value]
-            y_coords = group_data[self.keys.BOUNDARIES_VERTEX_Y.value]
-            
-            if len(x_coords) >= 4 and len(x_coords) == len(y_coords):
-                coords = list(zip(x_coords, y_coords))
-                # Ensure the first and last coordinates are the same
-                if coords[0] != coords[-1]:
-                    coords.append(coords[0])
-                polygons.append(Polygon(coords))
-                valid_cells.append(cell_id)
-            else:
-                skipped_count += 1
-
-        # Print the number of skipped cells
-        print(f"Skipped {skipped_count} out of {len(grouped)} cells due to insufficient or invalid coordinates, probably due to edge cases.")
-        polygons = gpd.GeoSeries(polygons)
-        gdf = gpd.GeoDataFrame(geometry=polygons, crs='EPSG:4326')
-        gdf[self.keys.CELL_ID.value] = valid_cells
-        gdf[['x', 'y']] = gdf.centroid.get_coordinates()
-        if area:
-            gdf['area'] = polygons.area
-        if convexity:
-            gdf['convexity'] = polygons.convex_hull.area / polygons.area
-        if elongation:
-            r = polygons.minimum_rotated_rectangle()
-            gdf['elongation'] = (r.length * r.length) / r.area
-        if circularity:
-            r = gdf.minimum_bounding_radius()
-            gdf['circularity'] = polygons.area / (r * r)
-        return gdf
-
     def build_pyg_data_from_tile(
-        self, boundaries_df: pd.DataFrame, transcripts_df: pd.DataFrame, compute_labels: bool = True, method: str = 'kd_tree', gpu: bool = False, workers: int = 1
+        self, boundaries_df: pd.DataFrame, transcripts_df: pd.DataFrame, r_tx: float = 5.0, k_tx: int = 3, method: str = 'kd_tree', gpu: bool = False, workers: int = 1, use_precomputed: bool = False
     ) -> HeteroData:
         """
         Builds PyG data from a tile of boundaries and transcripts data.
@@ -651,12 +892,16 @@ class SpatialTranscriptomicsSample(ABC):
             Dataframe containing boundaries data (e.g., nucleus, cell).
         transcripts_df : pd.DataFrame
             Dataframe containing transcripts data.
-        compute_labels : bool, optional
-            Whether to compute labels.
+        r_tx : float
+            Radius for building the transcript-to-transcript graph.
+        k_tx : int
+            Number of nearest neighbors for the tx-tx graph.
         method : str, optional
             Method for computing edge indices (e.g., 'kd_tree', 'faiss').
         gpu : bool, optional
             Whether to use GPU acceleration for edge index computation.
+        use_precomputed : bool, optional
+            Whether to use precomputed graphs for tx-tx edges.
 
         Returns:
         --------
@@ -677,21 +922,33 @@ class SpatialTranscriptomicsSample(ABC):
         x_features = torch.as_tensor(self.embeddings_dict[self.current_embedding]).float()
         data['tx'].x = x_features.to_sparse()
 
-        # Compute edge indices using the chosen method
-        tx_edge_index = get_edge_index(
-            bd_gdf[['x', 'y']].values,
-            transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].values,
-            k=3,
-            dist=np.sqrt(max_area) * 10,
-            method=method,
-            gpu=gpu,
-            workers=workers
-        )
-        data['tx', 'neighbors', 'bd'].edge_index = tx_edge_index
+        # Use precomputed tx-tx edges if available, otherwise compute
+        if use_precomputed and self.tx_tx_edge_index is not None:
+            tx_indices = torch.as_tensor(transcripts_df.index.values)
+            edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
+            data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
+        else:
+            if use_precomputed:
+                warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
+            tx_edge_index = get_edge_index(
+                data['tx'].pos.cpu().numpy(),
+                data['tx'].pos.cpu().numpy(),
+                k=k_tx,
+                dist=r_tx,
+                method=method,
+                gpu=gpu,
+                workers=workers
+            )
+            data['tx', 'neighbors', 'tx'].edge_index = tx_edge_index
+
+        # Check if the overlap column exists, if not, compute it
+        if self.keys.OVERLAPS_BOUNDARY.value not in transcripts_df.columns:
+            warnings.warn(f"Column '{self.keys.OVERLAPS_BOUNDARY.value}' not found in transcripts_df. Computing overlaps.")
+            transcripts_df = self.compute_transcript_overlap_with_boundaries(transcripts_df, boundaries_df, scale_factor=1.0)
 
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
         ind = np.where(
-            (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] == 1) & (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
+            (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value]) & (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
         )[0]
         tx_bd_edge_index = np.column_stack(
             (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
@@ -703,6 +960,8 @@ class SpatialTranscriptomicsSample(ABC):
         data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T).long()
 
         return data
+
+
 
 
 class XeniumSample(SpatialTranscriptomicsSample):
