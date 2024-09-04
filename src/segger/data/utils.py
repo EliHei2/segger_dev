@@ -443,9 +443,9 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
 
     for idx, valid in enumerate(valid_mask):
         valid_indices = I[idx][valid]
-        if valid_indices size > 0:
+        if valid_indices.size > 0:
             edges.append(
-                np.vstack((np.full(valid_indices shape, idx), valid_indices)).T
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
             )
 
     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()

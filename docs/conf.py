@@ -17,6 +17,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'autoapi.extension',   
     'sphinx_click',
     'sphinx_autodoc_typehints',
     'sphinx_copybutton',
@@ -24,7 +25,10 @@ extensions = [
     'sphinxcontrib.bibtex',
     'myst_parser',
     'sphinx_book_theme',
+    'myst_parser',  
 ]
+
+bibtex_bibfiles = ['references.bib'] 
 
 # Paths for templates and static files
 templates_path = ['_templates']
@@ -33,13 +37,31 @@ html_static_path = ['_static']
 # The master toctree document
 master_doc = 'index'
 
-# Autodoc settings
-autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
-    'private-members': True,
-    'show-inheritance': True,
-}
+
+# autoapi_type = 'python'
+# autodoc_dirs = ['../src']       # Ensure this points to the folder containing your code
+# # autoapi_root = 'api'            # Auto-generated API docs will be placed in docs/api
+# autoapi_keep_files = True   
+# # Autodoc settings
+# autodoc_default_options = {
+#     'members': True,
+#     'undoc-members': True,
+#     'private-members': True,
+#     'show-inheritance': True,
+# }
+
+autoapi_type = 'python'
+autoapi_dirs = ['../src']       # Ensure this points to the folder containing your code
+autoapi_root = 'api'            # Auto-generated API docs will be placed in docs/api
+autoapi_keep_files = True       # Keep the generated files
+autoapi_options = [
+    'members',
+    'undoc-members',
+    'private-members',
+    'show-inheritance',
+]
+
+
 
 # Theming
 html_theme = 'sphinx_book_theme'
