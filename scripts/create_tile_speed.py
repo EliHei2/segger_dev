@@ -43,12 +43,13 @@ xenium_sample.set_embedding("cell_type_abundance")
 # Load nuclei data
 xenium_sample.load_boundaries(path=nuclei_path, file_format='parquet')
 
-# xenium_sample.get_bounding_box(x_min = 1000, y_min = 1000, x_max=2000, y_max=2000, in_place=True)
+# xenium_sample.get_bounding_box(x_min = 1000, y_min = 1000, x_max=1360, y_max=1360, in_place=True)
 
 
-xenium_sample.precompute_tx_tx_graph(k=5, dist=10, workers = 10)
+# xenium_sample.precompute_tx_tx_graph(k=5, dist=10, workers = 8)
 
-
+import time
+t0 = time.time()
 data = xenium_sample.build_pyg_data_from_tile(
             boundaries_df=xenium_sample.boundaries_df,
             transcripts_df=xenium_sample.transcripts_df,
@@ -57,55 +58,83 @@ data = xenium_sample.build_pyg_data_from_tile(
             use_precomputed=True,
             workers=1
         )
+t1 = time.time()
 
-
+t0 = time.time()
+xenium_sample.save_dataset_for_segger(
+        processed_dir = Path('data_tidy/pyg_datasets/embedding'),
+        x_size = 360,
+        y_size = 360,
+        d_x = 180,
+        d_y = 180,
+        margin_x = 10,
+        margin_y =  10,
+        compute_labels = False,
+        r_tx = 5,
+        k_tx  = 5,  # New parameter for k_tx
+        val_prob = 0.1,
+        test_prob = 0.2,
+        neg_sampling_ratio_approx = 5,
+        sampling_rate = 1,
+        num_workers = 1,
+        receptive_field = {
+            "k_bd": 4,
+            "dist_bd": 15,
+            "k_tx": 5,
+            "dist_tx": 5,
+        },
+        # gpu: bool = False,
+        # workers: int = 1,
+        use_precomputed = False  # New argument
+    )
+t1 = time.time()
 # Crop to a smaller bounding box to speed up the comparison
 
 
-# Compare the speed of different methods
-methods = ['kd_tree', 'hnsw', 'faiss_cpu', 'faiss_gpu']
+# # Compare the speed of different methods
+# methods = ['kd_tree', 'hnsw', 'faiss_cpu', 'faiss_gpu']
 
-# methods = ['faiss_cpu', 'kd_tree']
-timings = {}
+# # methods = ['faiss_cpu', 'kd_tree']
+# timings = {}
 
-# Measure the time taken by each method
-for method in methods:
-    base_method = method
-    if 'faiss' in method:
-        gpu = 'gpu' in method  # Determine if GPU should be used for FAISS
-        base_method = method.split('_')[0] 
-    else:
-        gpu = False  # RAPIDS and cuGraph always use GPU, no need for the flag
+# # Measure the time taken by each method
+# for method in methods:
+#     base_method = method
+#     if 'faiss' in method:
+#         gpu = 'gpu' in method  # Determine if GPU should be used for FAISS
+#         base_method = method.split('_')[0] 
+#     else:
+#         gpu = False  # RAPIDS and cuGraph always use GPU, no need for the flag
     
-     # Extract the base method (e.g., 'faiss', 'rapids', etc.)
+#      # Extract the base method (e.g., 'faiss', 'rapids', etc.)
     
-    start_time = time.time()
-    data = xenium_sample.build_pyg_data_from_tile(
-        boundaries_df=xenium_sample.boundaries_df,
-        transcripts_df=xenium_sample.transcripts_df,
-        compute_labels=True,
-        method=base_method,
-        gpu=gpu,
-        workers=1
-    )
-    elapsed_time = time.time() - start_time
-    timings[method] = elapsed_time
-    print(f"{method} method took {elapsed_time:.4f} seconds")
+#     start_time = time.time()
+#     data = xenium_sample.build_pyg_data_from_tile(
+#         boundaries_df=xenium_sample.boundaries_df,
+#         transcripts_df=xenium_sample.transcripts_df,
+#         compute_labels=True,
+#         method=base_method,
+#         gpu=gpu,
+#         workers=1
+#     )
+#     elapsed_time = time.time() - start_time
+#     timings[method] = elapsed_time
+#     print(f"{method} method took {elapsed_time:.4f} seconds")
 
-# Save timings to a CSV file
-timings_df = pd.DataFrame(list(timings.items()), columns=['Method', 'Time'])
-timings_df.to_csv('timings_results.csv', index=False)
+# # Save timings to a CSV file
+# timings_df = pd.DataFrame(list(timings.items()), columns=['Method', 'Time'])
+# timings_df.to_csv('timings_results.csv', index=False)
 
-# Generate a bar plot of the timings
-plt.figure(figsize=(10, 6))
-plt.bar(timings_df['Method'], timings_df['Time'], color='skyblue')
-plt.xlabel('Method')
-plt.ylabel('Time (seconds)')
-plt.title('Timing Comparison of Different Methods')
-plt.xticks(rotation=45)
-plt.tight_layout()
+# # Generate a bar plot of the timings
+# plt.figure(figsize=(10, 6))
+# plt.bar(timings_df['Method'], timings_df['Time'], color='skyblue')
+# plt.xlabel('Method')
+# plt.ylabel('Time (seconds)')
+# plt.title('Timing Comparison of Different Methods')
+# plt.xticks(rotation=45)
+# plt.tight_layout()
 
-# Save the plot as an image file
-plt.savefig('timings_comparison_plot.png')
+# # Save the plot as an image file
+# plt.savefig('timings_comparison_plot.png')
 
-print("Results saved to 'timings_results.csv' and 'timings_comparison_plot.png'.")
+# print("Results saved to 'timings_results.csv' and 'timings_comparison_plot.png'.")

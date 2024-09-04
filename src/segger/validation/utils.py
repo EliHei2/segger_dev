@@ -744,30 +744,26 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
         'Segmentation Method': [],
         'Counts per Cell (log2)': []
     })
-
     for method, adata in segmentations_dict.items():
-        method_counts = np.log2(adata.obs['transcripts'] + 1)
+        method_counts = adata.obs['transcripts'] + 1
         method_df = pd.DataFrame({
             'Segmentation Method': [method] * len(method_counts),
             'Counts per Cell (log2)': method_counts.values
         })
         violin_data = pd.concat([violin_data, method_df], axis=0)
-
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
     ax = sns.violinplot(x='Segmentation Method', y='Counts per Cell (log2)', data=violin_data, palette=palette)
-
+    ax.set(ylim=(5, 300))
     # Add a dashed line for the 10X-nucleus median
     if '10X-nucleus' in segmentations_dict:
-        median_10X_nucleus = np.median(np.log2(segmentations_dict['10X-nucleus'].obs['transcripts'] + 1))
+        median_10X_nucleus = np.median(segmentations_dict['10X-nucleus'].obs['transcripts'] + 1)
         ax.axhline(y=median_10X_nucleus, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
-
     # Set plot titles and labels
     plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Counts per Cell (log2)')
     plt.xticks(rotation=0)
-
     # Save the figure as a PDF
     plt.savefig(output_path / 'counts_per_cell_violin_plot.pdf', bbox_inches='tight')
     plt.show()
@@ -788,7 +784,7 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
 
     for method in segmentations_dict.keys():
         if 'cell_area' in segmentations_dict[method].obs.columns:
-            method_area = np.log2(segmentations_dict[method].obs['cell_area'] + 1)
+            method_area = segmentations_dict[method].obs['cell_area'] + 1
             method_df = pd.DataFrame({
                 'Segmentation Method': [method] * len(method_area),
                 'Cell Area (log2)': method_area.values
@@ -798,10 +794,10 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
     ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=palette)
-
+    ax.set(ylim=(5, 100))
     # Add a dashed line for the 10X-nucleus median
     if '10X-nucleus' in segmentations_dict:
-        median_10X_nucleus_area = np.median(np.log2(segmentations_dict['10X-nucleus'].obs['cell_area'] + 1))
+        median_10X_nucleus_area = np.median(segmentations_dict['10X-nucleus'].obs['cell_area'] + 1)
         ax.axhline(y=median_10X_nucleus_area, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
 
     # Set plot titles and labels

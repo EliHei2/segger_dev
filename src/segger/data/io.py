@@ -864,23 +864,23 @@ class SpatialTranscriptomicsSample(ABC):
             coords_tx = data['tx'].pos[:, :2]
 
             # Use precomputed tx-tx edges if available and subset based on current tile
-            if use_precomputed and self.tx_tx_edge_index is not None:
-                tx_indices = torch.as_tensor(transcripts_df.index.values)
-                edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
-                data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
-            else:
-                if use_precomputed:
-                    warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
-                data['tx', 'neighbors', 'tx'].edge_index = get_edge_index(
-                    coords_tx, coords_tx, k=k_tx, dist=r_tx, method=method,
-                    gpu=gpu, workers=workers
-                )
+            # if use_precomputed and self.tx_tx_edge_index is not None:
+            #     tx_indices = torch.as_tensor(transcripts_df.index.values)
+            #     edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
+            #     data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
+            # else:
+            #     if use_precomputed:
+            #         warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
+            #     data['tx', 'neighbors', 'tx'].edge_index = get_edge_index(
+            #         coords_tx, coords_tx, k=k_tx, dist=r_tx, method=method,
+            #         gpu=gpu, workers=workers
+            #     )
 
             # Compute bd-tx edges using the precomputed boundary geometries
-            data['tx'].bd_field = get_edge_index(
-                coords_bd, coords_tx, k=receptive_field["k_bd"], dist=receptive_field["dist_bd"], method=method,
-                gpu=gpu, workers=workers
-            )
+            # data['tx'].bd_field = get_edge_index(
+            #     coords_bd, coords_tx, k=receptive_field["k_bd"], dist=receptive_field["dist_bd"], method=method,
+            #     gpu=gpu, workers=workers
+            # )
 
             filename = f"tiles_x{int(x_loc)}_y{int(y_loc)}_{x_size}_{y_size}.pt"
             if prob > val_prob + test_prob:
