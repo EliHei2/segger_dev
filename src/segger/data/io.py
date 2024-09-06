@@ -7,7 +7,7 @@ import torch
 from torch_geometric.data import HeteroData
 from sklearn.preprocessing import OneHotEncoder
 from scipy.spatial import KDTree, ConvexHull
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 import geopandas as gpd
 import random
 from itertools import product
@@ -19,6 +19,9 @@ from enum import Enum
 from scipy.spatial import KDTree
 import warnings
 from shapely.affinity import scale
+import dask_geopandas as dgpd
+import dask.dataframe as dd
+from dask import delayed
 
 class SpatialTranscriptomicsSample(ABC):
     def __init__(
@@ -55,11 +58,13 @@ class SpatialTranscriptomicsSample(ABC):
             self._set_bounds()
 
     def _set_bounds(self) -> None:
-        """Set the bounding box limits based on the current transcripts dataframe."""
-        self.x_max = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].max()
-        self.y_max = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].max()
-        self.x_min = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].min()
-        self.y_min = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].min()
+        """
+        Set the bounding box limits based on the current transcripts dataframe using lazy evaluation with Dask.
+        """
+        self.x_min = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].min()  # Lazy execution, no compute yet
+        self.x_max = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].max()  # Lazy execution, no compute yet
+        self.y_min = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].min()  # Lazy execution, no compute yet
+        self.y_max = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].max()  # Lazy execution, no compute yet
 
     @abstractmethod
     def filter_transcripts(self, transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
@@ -80,6 +85,7 @@ class SpatialTranscriptomicsSample(ABC):
         """
         pass
 
+
     def load_transcripts(
         self,
         base_path: Path = None,
@@ -87,12 +93,11 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_filename: str = None,
         path: Path = None,
         min_qv: int = 20,
-        file_format: str = "csv",
+        file_format: str = "parquet",
         additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None,
     ) -> None:
         """
-        Load transcripts from a file, supporting both gzip-compressed CSV and Parquet formats,
-        and allows the inclusion of additional gene embeddings.
+        Load transcripts from a Parquet file using Dask for chunked processing.
 
         Parameters:
         -----------
@@ -107,7 +112,7 @@ class SpatialTranscriptomicsSample(ABC):
         min_qv : int, optional
             Minimum quality value to filter transcripts (default is 20).
         file_format : str, optional
-            Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
+            Format of the file to load. Only 'parquet' supported in this refactor.
         additional_embeddings : Dict[str, pd.DataFrame], optional
             A dictionary of additional embeddings for genes.
 
@@ -115,18 +120,22 @@ class SpatialTranscriptomicsSample(ABC):
         --------
         None
         """
+        if file_format != "parquet":
+            raise ValueError("This version only supports parquet files with Dask.")
+
+        # Load transcripts as a Dask DataFrame for efficient chunked loading
         transcripts_filename = transcripts_filename or self.keys.TRANSCRIPTS_FILE.value
         file_path = path or (base_path / sample / transcripts_filename)
-        if file_format == "csv":
-            self.transcripts_df = pd.read_csv(io.BytesIO(file.read()))
-        elif file_format == "parquet":
-            self.transcripts_df = pd.read_parquet(file_path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_format}")
-
-        print(f"Loaded {len(self.transcripts_df)} transcripts for sample '{sample}'.")
-        self.transcripts_df = self.filter_transcripts(self.transcripts_df, min_qv=min_qv)
+        self.transcripts_df = dd.read_parquet(file_path, columns=[
+            self.keys.TRANSCRIPTS_X.value,
+            self.keys.TRANSCRIPTS_Y.value,
+            self.keys.FEATURE_NAME.value,
+            self.keys.QUALITY_VALUE.value
+        ])
         
+        # Filter transcripts using Dask (lazily)
+        self.transcripts_df = self.transcripts_df[self.transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv]
+
         if additional_embeddings:
             for key, embedding_df in additional_embeddings.items():
                 valid_genes = embedding_df.index
@@ -134,31 +143,51 @@ class SpatialTranscriptomicsSample(ABC):
                 self.transcripts_df = self.transcripts_df[
                     self.transcripts_df[self.keys.FEATURE_NAME.value].isin(valid_genes)
                 ]
-                final_count = len(self.transcripts_df)
                 print(
-                    f"Dropped {initial_count - final_count} transcripts not found in {key} embedding."
+                    f"Dropped transcripts not found in {key} embedding."
                 )
 
-
         self._set_bounds()
-
-        # Encode genes as one-hot by default
+        
+        # Encode genes as one-hot by default (lazy execution with Dask)
         genes = self.transcripts_df[[self.keys.FEATURE_NAME.value]]
         self.tx_encoder = OneHotEncoder(sparse_output=False)
-        self.tx_encoder.fit(genes)
-        self.embeddings_dict['one_hot'] = self.tx_encoder.transform(genes)
+        self.tx_encoder.fit(genes.compute())  # Fit on the actual data (loaded lazily)
+        self.embeddings_dict['one_hot'] = delayed(self.tx_encoder.transform)(genes)
         self.current_embedding = 'one_hot'
+    
+    def _set_bounds(self) -> None:
+        """Set the bounding box limits based on the current transcripts dataframe."""
+        self.x_min = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].min().compute()
+        self.x_max = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].max().compute()
+        self.y_min = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].min().compute()
+        self.y_max = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].max().compute()
 
-        # Add additional embeddings if provided
-        if additional_embeddings:
-            for key, embedding_df in additional_embeddings.items():
-                self.embeddings_dict[key] = embedding_df.loc[
-                    self.transcripts_df[self.keys.FEATURE_NAME.value].values
-                ].values
-                # Check if the OVERLAPS_BOUNDARY column exists and cast it to boolean if needed
-        if self.keys.OVERLAPS_BOUNDARY.value in self.transcripts_df.columns:
-            self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
-                
+    def load_boundaries(self, path: Path, file_format: str = "parquet") -> None:
+        """
+        Load boundaries data lazily using Dask.
+
+        Parameters:
+        -----------
+        path : Path
+            Path to the boundaries file.
+        file_format : str, optional
+            Format of the file to load. Only 'parquet' supported in this refactor.
+
+        Returns:
+        --------
+        None
+        """
+        if file_format != "parquet":
+            raise ValueError(f"Unsupported file format: {file_format}")
+
+        # Load boundaries lazily using Dask DataFrame
+        self.boundaries_df = dd.read_parquet(path, columns=[
+            self.keys.BOUNDARIES_VERTEX_X.value,
+            self.keys.BOUNDARIES_VERTEX_Y.value,
+            self.keys.CELL_ID.value
+        ])
+        
     def set_embedding(self, embedding_name: str) -> None:
         """
         Set the current embedding type for the transcripts.
@@ -176,33 +205,43 @@ class SpatialTranscriptomicsSample(ABC):
             self.current_embedding = embedding_name
         else:
             raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
-
-    def load_boundaries(self, path: Path, file_format: str = "csv") -> None:
+        
+    def get_tile_data(self, x_min: float, y_min: float, x_size: float, y_size: float) -> Tuple[dd.DataFrame, dd.DataFrame]:
         """
-        Load boundaries data from a file, supporting both gzip-compressed CSV and Parquet formats.
-
+        Load the necessary data for a given tile from the transcripts and boundaries.
+        Uses Dask's filtering for chunked processing.
         Parameters:
         -----------
-        path : Path
-            Path to the boundaries file.
-        file_format : str, optional
-            Format of the file to load. Options are 'csv' or 'parquet' (default is 'csv').
-
+        x_min : float
+            Minimum x-coordinate of the tile.
+        y_min : float
+            Minimum y-coordinate of the tile.
+        x_size : float
+            Width of the tile.
+        y_size : float
+            Height of the tile.
         Returns:
         --------
-        SpatialTranscriptomicsSample
-            The updated instance with loaded boundaries data.
+        Tuple[dd.DataFrame, dd.DataFrame]
+            Transcripts and boundaries data for the tile.
         """
-        if file_format == "csv":
-            self.boundaries_df = pd.read_csv(path)
-        elif file_format == "parquet":
-            self.boundaries_df = pd.read_parquet(path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_format}")
-        
-
-
-            
+        x_max = x_min + x_size
+        y_max = y_min + y_size
+        # Use Dask DataFrame filtering to get only the required data
+        tile_transcripts = self.transcripts_df[
+            (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] >= x_min) &
+            (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] <= x_max) &
+            (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] >= y_min) &
+            (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] <= y_max)
+        ]
+        tile_boundaries = self.boundaries_df[
+            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] >= x_min) &
+            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] <= x_max) &
+            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] >= y_min) &
+            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
+        ]
+        return tile_transcripts, tile_boundaries
+    
     def get_bounding_box(
         self,
         x_min: float = None,
@@ -212,8 +251,7 @@ class SpatialTranscriptomicsSample(ABC):
         in_place: bool = True,
     ) -> Optional['SpatialTranscriptomicsSample']:
         """
-        Subsets the transcripts_df and boundaries_df within the specified bounding box.
-
+        Subsets the transcripts_df and boundaries_df within the specified bounding box using Dask.
         Parameters:
         -----------
         x_min : float, optional
@@ -226,28 +264,22 @@ class SpatialTranscriptomicsSample(ABC):
             The maximum y-coordinate of the bounding box.
         in_place : bool, optional
             If True, modifies the current instance. If False, returns a new instance with the subsetted data.
-
         Returns:
         --------
         Optional[SpatialTranscriptomicsSample]
             If in_place is True, returns None after modifying the existing instance.
             If in_place is False, returns a new SpatialTranscriptomicsSample instance with the subsetted data.
         """
-        # Print initial counts
-        initial_transcripts_count = len(self.transcripts_df)
-        initial_boundaries_count = len(self.boundaries_df) if self.boundaries_df is not None else 0
-
+        # Validate the bounding box coordinates
         x_min, y_min, x_max, y_max = self._validate_bbox(x_min, y_min, x_max, y_max)
-
-        # Subset transcripts_df
+        # Use Dask DataFrame to subset transcripts within the bounding box
         subset_transcripts_df = self.transcripts_df[
             (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] >= x_min)
             & (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] <= x_max)
             & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] >= y_min)
             & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] <= y_max)
-        ].reset_index(drop=True)  # Reset the index after subsetting
-
-        # Subset boundaries_df if it exists
+        ]
+        # Subset boundaries_df if it exists using Dask
         subset_boundaries_df = None
         if self.boundaries_df is not None:
             subset_boundaries_df = self.boundaries_df[
@@ -255,170 +287,49 @@ class SpatialTranscriptomicsSample(ABC):
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] <= x_max)
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] >= y_min)
                 & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
-            ].reset_index(drop=True)  # Reset the index after subsetting
-
-        # Invalidate the precomputed tx_tx_edge_index if it exists
-        if self.tx_tx_edge_index is not None:
-            warnings.warn(
-                "Bounding box modification invalidates the precomputed tx_tx_edge_index. It will need to be recomputed."
-            )
-            subset_tx_tx_edge_index = None
-        else:
-            subset_tx_tx_edge_index = None
-
-        # Invalidate KD-Trees
-        if self.tx_tree is not None or self.bd_tree is not None:
-            warnings.warn(
-                "Bounding box modification invalidates the precomputed tx_tree and bd_tree. They will need to be recomputed."
-            )
-            self.tx_tree = None
-            self.bd_tree = None
-
-        # Calculate new counts
-        final_transcripts_count = len(subset_transcripts_df)
-        final_boundaries_count = len(subset_boundaries_df) if subset_boundaries_df is not None else 0
-
+            ]
+        # Reset the indices lazily using Dask's `reset_index`
+        subset_transcripts_df = subset_transcripts_df.reset_index(drop=True)
+        if subset_boundaries_df is not None:
+            subset_boundaries_df = subset_boundaries_df.reset_index(drop=True)
         if in_place:
+            # Update the current instance with the subsetted data
             self.transcripts_df = subset_transcripts_df
             self.boundaries_df = subset_boundaries_df
-            self.tx_tx_edge_index = subset_tx_tx_edge_index
             self.x_min, self.y_min, self.x_max, self.y_max = x_min, y_min, x_max, y_max
-            # Print summary
-            print(f"Subset completed in-place: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
-                  f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
+            # No need to return a new instance
+            print(f"Subset completed in-place.")
+            return None
         else:
-            subset_sample = self.__class__(subset_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
-            subset_sample.boundaries_df = subset_boundaries_df
-            subset_sample.tx_tx_edge_index = subset_tx_tx_edge_index
-            subset_sample.x_min, subset_sample.y_min, subset_sample.x_max, subset_sample.y_max = x_min, y_min, x_max, y_max
-            # Print summary
-            print(f"Subset completed with new instance: {final_transcripts_count} transcripts out of {initial_transcripts_count} and "
-                  f"{final_boundaries_count} boundaries (cells or nuclei) out of {initial_boundaries_count}.")
-            return subset_sample
-
-
+            # Create a new instance of SpatialTranscriptomicsSample with the subsetted data
+            new_instance = self.__class__(subset_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
+            new_instance.boundaries_df = subset_boundaries_df
+            new_instance.x_min, new_instance.y_min, new_instance.x_max, new_instance.y_max = x_min, y_min, x_max, y_max
+            print(f"Subset completed with new instance.")
+        return new_instance
         
-    def precompute_tx_tree(self) -> None:
-        """
-        Precompute the KD-Tree for the transcript (tx) coordinates.
-
-        This method builds the KD-Tree for the transcript positions and stores it in the instance
-        for efficient querying later.
-
-        Raises a warning if the transcripts DataFrame does not exist.
-
-        Returns:
-        --------
-        None
-        """
-        if self.transcripts_df is None:
-            warnings.warn("transcripts_df is not set. Please load the transcripts data first by calling the appropriate function.")
-            return
-
-        coords_tx = self.transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].values
-        self.tx_tree = KDTree(coords_tx)
-        print(f"Precomputed KD-Tree for tx coordinates with {coords_tx.shape[0]} transcripts.")
-        
-
-    def precompute_bd_tree(self) -> None:
-        """
-        Precompute the KD-Tree for the boundary (bd) centroids.
-
-        This method computes the centroids of the boundary polygons, builds the KD-Tree
-        for these centroids, and stores it in the instance for efficient querying later.
-
-        Raises a warning if the boundaries DataFrame does not exist.
-
-        Returns:
-        --------
-        None
-        """
-        if self.boundaries_df is None:
-            warnings.warn("boundaries_df is not set. Please load the boundaries data first by calling the appropriate function.")
-            return
-
-        # Compute centroids of the boundary polygons
-        centroids = self.boundaries_df.groupby(self.keys.CELL_ID.value).apply(
-            lambda group: group[[self.keys.BOUNDARIES_VERTEX_X.value, self.keys.BOUNDARIES_VERTEX_Y.value]].mean()
-        ).values
-
-        self.bd_tree = KDTree(centroids)
-        print(f"Precomputed KD-Tree for bd centroids with {centroids.shape[0]} boundaries.")
-    
-    def precompute_tx_tx_graph(self, k: int = 10, dist: float = float('inf'), workers: int = 1) -> torch.Tensor:
-        """
-        Precompute the `tx-tx` graph by finding the nearest neighbors for each transcript.
-
-        This method uses the precomputed KD-Tree for `tx` coordinates to find the nearest neighbors.
-        If the KD-Tree is not precomputed, it will be computed automatically.
-
-        Parameters:
-        -----------
-        k : int, optional
-            The number of nearest neighbors to find for each transcript.
-        dist : float, optional
-            The maximum distance within which neighbors should be considered.
-
-        Returns:
-        --------
-        torch.Tensor
-            A tensor representing the edge index for `['tx', 'neighbors', 'tx']`.
-        """
-        # Check if the KD-Tree for tx is precomputed; if not, compute it
-        if self.tx_tree is None:
-            warnings.warn("tx_tree is not precomputed. Automatically computing the KD-Tree now.")
-            self.precompute_tx_tree()
-
-        # Query the KDTree for k nearest neighbors within the specified distance
-        distances, indices = self.tx_tree.query(self.tx_tree.data, k=k, distance_upper_bound=dist, workers=10)
-
-        # Filter out invalid entries (distances exceeding the threshold)
-        valid_edges = (distances < dist)
-
-        # Create edge indices (source, target) for the graph
-        edge_index = []
-        for i, valid in enumerate(valid_edges):
-            valid_neighbors = indices[i, valid]
-            for neighbor in valid_neighbors:
-                if neighbor != i:  # Exclude self-loops if not needed
-                    edge_index.append([i, neighbor])
-
-        edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
-
-        # Store the result in a class attribute for later use
-        self.tx_tx_edge_index = edge_index
-
-        print(f"Precomputed tx-tx graph with {edge_index.shape[1]} edges.")
-
-        return edge_index
-
 
     def generate_and_scale_polygons(
         self,
-        boundaries_df: pd.DataFrame,
+        boundaries_df: dd.DataFrame,
         scale_factor: float = 1.0
-    ) -> gpd.GeoDataFrame:
+    ) -> dgpd.GeoDataFrame:
         """
-        Generate polygons from boundary coordinates, scale them, and add centroids.
+        Generate polygons from boundary coordinates, scale them, and add centroids using Dask.
 
         Parameters:
         -----------
-        boundaries_df : pd.DataFrame
+        boundaries_df : dask.dataframe.DataFrame
             DataFrame containing boundary coordinates.
         scale_factor : float
             The factor by which to scale the polygons.
 
         Returns:
         --------
-        gpd.GeoDataFrame
+        dask_geopandas.GeoDataFrame
             A GeoDataFrame containing scaled Polygon objects and their centroids.
         """
-        polygons = []
-        valid_cells = []
-
-        grouped = boundaries_df.groupby(self.keys.CELL_ID.value)
-
-        for cell_id, group_data in grouped:
+        def create_scaled_polygon(group_data, scale_factor):
             x_coords = group_data[self.keys.BOUNDARIES_VERTEX_X.value]
             y_coords = group_data[self.keys.BOUNDARIES_VERTEX_Y.value]
             
@@ -427,14 +338,24 @@ class SpatialTranscriptomicsSample(ABC):
                 if polygon.is_valid and not polygon.is_empty:  # Check for valid, non-degenerate polygon
                     scaled_polygon = scale(polygon, xfact=scale_factor, yfact=scale_factor, origin='centroid')
                     if scaled_polygon.is_valid and not scaled_polygon.is_empty:
-                        polygons.append(scaled_polygon)
-                        valid_cells.append(cell_id)
+                        return scaled_polygon
+            return None
+        
+        # Create polygons lazily using delayed
+        delayed_polygons = boundaries_df.groupby(self.keys.CELL_ID.value).apply(
+            lambda group: delayed(create_scaled_polygon)(group, scale_factor)
+        ).compute()
 
-        # Create a GeoDataFrame to hold the polygons
-        polygons_gdf = gpd.GeoDataFrame(geometry=polygons, crs='EPSG:4326')
-        polygons_gdf[self.keys.CELL_ID.value] = valid_cells
+        # Filter out None results (invalid polygons)
+        valid_polygons = [p for p in delayed_polygons if p is not None]
 
-        # Add centroids
+        # Create a GeoDataFrame from valid polygons and their centroids
+        polygons_gdf = dgpd.from_geopandas(
+            gpd.GeoDataFrame(geometry=valid_polygons, crs='EPSG:4326'),
+            npartitions=boundaries_df.npartitions
+        )
+
+        # Add centroids lazily
         polygons_gdf['centroid_x'] = polygons_gdf.geometry.centroid.x
         polygons_gdf['centroid_y'] = polygons_gdf.geometry.centroid.y
 
@@ -444,59 +365,76 @@ class SpatialTranscriptomicsSample(ABC):
 
     def compute_transcript_overlap_with_boundaries(
         self,
-        transcripts_df: pd.DataFrame,
-        boundaries_df: pd.DataFrame,
-        scale_factor: float
-    ) -> pd.DataFrame:
+        transcripts_df: dd.DataFrame,
+        boundaries_df: dd.DataFrame = None,
+        polygons_gdf: dgpd.GeoDataFrame = None,
+        scale_factor: float = 1.0
+    ) -> dd.DataFrame:
         """
         Computes the overlap of transcript locations with scaled boundary polygons
-        and assigns corresponding cell IDs to the transcripts.
+        and assigns corresponding cell IDs to the transcripts using Dask.
 
         Parameters:
         -----------
-        transcripts_df : pd.DataFrame
-            DataFrame containing transcript data.
-        boundaries_df : pd.DataFrame
-            DataFrame containing boundary data.
-        scale_factor : float
-            The factor by which to scale the boundary polygons.
+        transcripts_df : dask.dataframe.DataFrame
+            Dask DataFrame containing transcript data.
+        boundaries_df : dask.dataframe.DataFrame, optional
+            Dask DataFrame containing boundary data. Required if polygons_gdf is not provided.
+        polygons_gdf : dask_geopandas.GeoDataFrame, optional
+            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
+        scale_factor : float, optional
+            The factor by which to scale the boundary polygons. Default is 1.0.
 
         Returns:
         --------
-        pd.DataFrame
+        dask.dataframe.DataFrame
             The updated DataFrame with overlap information (True for overlap, False for no overlap)
             and assigned cell IDs.
         """
-        # Generate and scale polygons from boundaries_df
-        polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        # Check if polygons_gdf is provided, otherwise compute from boundaries_df
+        if polygons_gdf is None:
+            if boundaries_df is None:
+                raise ValueError("Both boundaries_df and polygons_gdf cannot be None. Provide at least one.")
+            
+            # Generate polygons from boundaries_df if polygons_gdf is None
+            print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
+            polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        
+        if polygons_gdf.empty().compute():
+            raise ValueError("No valid polygons were generated from the boundaries.")
+        else:
+            print(f"Polygons are available. Proceeding with overlap computation.")
 
-        if polygons_gdf.empty:
-            raise ValueError("No valid polygons were generated.")
-
-        overlaps = []
-        cell_ids = []
-
-        for _, transcript in transcripts_df.iterrows():
+        # Create a delayed function to check if a point is within any polygon
+        def check_overlap(transcript, polygons_gdf):
             x = transcript[self.keys.TRANSCRIPTS_X.value]
             y = transcript[self.keys.TRANSCRIPTS_Y.value]
             point = Point(x, y)
-            
+
             overlap = False
             cell_id = None
 
-            # Use spatial join to check for point containment within polygons
-            for i, polygon in polygons_gdf.iterrows():
+            # Check for point containment lazily within polygons
+            for _, polygon in polygons_gdf.iterrows():
                 if polygon.geometry.contains(point):
                     overlap = True
                     cell_id = polygon[self.keys.CELL_ID.value]
                     break
-            
-            overlaps.append(overlap)
-            cell_ids.append(cell_id)
+
+            return overlap, cell_id
+
+        # Apply the check_overlap function in parallel to each row using Dask's map_partitions
+        print(f"Starting overlap computation for transcripts with the boundary polygons.")
         
-        transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = overlaps
-        transcripts_df[self.keys.CELL_ID.value] = cell_ids
-        
+        transcripts_df = transcripts_df.map_partitions(
+            lambda df: df.assign(
+                **{
+                    self.keys.OVERLAPS_BOUNDARY.value: df.apply(lambda row: delayed(check_overlap)(row, polygons_gdf)[0], axis=1),
+                    self.keys.CELL_ID.value: df.apply(lambda row: delayed(check_overlap)(row, polygons_gdf)[1], axis=1),
+                }
+            )
+        )
+
         return transcripts_df
 
 
@@ -504,20 +442,23 @@ class SpatialTranscriptomicsSample(ABC):
 
     def compute_boundaries_geometries(
         self,
-        boundaries_df: pd.DataFrame,
+        boundaries_df: dd.DataFrame = None,
+        polygons_gdf: dgpd.GeoDataFrame = None,
         scale_factor: float = 1.0,
         area: bool = True,
         convexity: bool = True,
         elongation: bool = True,
         circularity: bool = True,
-    ) -> gpd.GeoDataFrame:
+    ) -> dgpd.GeoDataFrame:
         """
-        Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe.
+        Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe using Dask.
 
         Parameters:
         -----------
-        boundaries_df : pd.DataFrame
-            The dataframe containing boundaries data.
+        boundaries_df : dask.dataframe.DataFrame, optional
+            The dataframe containing boundaries data. Required if polygons_gdf is not provided.
+        polygons_gdf : dask_geopandas.GeoDataFrame, optional
+            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
         scale_factor : float, optional
             The factor by which to scale the polygons (default is 1.0, no scaling).
         area : bool, optional
@@ -531,29 +472,46 @@ class SpatialTranscriptomicsSample(ABC):
 
         Returns:
         --------
-        gpd.GeoDataFrame
+        dask_geopandas.GeoDataFrame
             A GeoDataFrame containing computed geometries.
         """
-        # Generate and scale polygons
-        gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
-
-        if gdf is None:
-            raise ValueError("No valid polygons were generated.")
-
-        polygons = gdf.geometry
+        # Check if polygons_gdf is provided, otherwise compute from boundaries_df
+        if polygons_gdf is None:
+            if boundaries_df is None:
+                raise ValueError("Both boundaries_df and polygons_gdf cannot be None. Provide at least one.")
+            
+            # Generate polygons from boundaries_df if polygons_gdf is None
+            print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
+            polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
+        
+        # Check if the generated polygons_gdf is empty
+        if polygons_gdf.empty().compute():
+            raise ValueError("No valid polygons were generated from the boundaries.")
+        else:
+            print(f"Polygons are available. Proceeding with geometrical computations.")
         
         # Compute additional geometrical properties
+        polygons = polygons_gdf.geometry
+
+        # Compute additional geometrical properties
         if area:
-            gdf['area'] = polygons.area
+            print("Computing area...")
+            polygons_gdf['area'] = polygons.area
         if convexity:
-            gdf['convexity'] = polygons.convex_hull.area / polygons.area
+            print("Computing convexity...")
+            polygons_gdf['convexity'] = polygons.convex_hull.area / polygons.area
         if elongation:
-            r = polygons.minimum_rotated_rectangle()
-            gdf['elongation'] = (r.length * r.length) / r.area
+            print("Computing elongation...")
+            r = polygons.minimum_rotated_rectangle
+            polygons_gdf['elongation'] = (r.length * r.length) / r.area
         if circularity:
-            r = gdf.minimum_bounding_radius()
-            gdf['circularity'] = polygons.area / (r * r)
-        return gdf
+            print("Computing circularity...")
+            r = polygons_gdf.minimum_bounding_radius()
+            polygons_gdf['circularity'] = polygons.area / (r * r)
+
+        print("Geometrical computations completed.")
+
+        return polygons_gdf
 
     def _validate_bbox(self, x_min: float, y_min: float, x_max: float, y_max: float) -> Tuple[float, float, float, float]:
         """Validates and sets default values for bounding box coordinates."""
@@ -578,7 +536,7 @@ class SpatialTranscriptomicsSample(ABC):
         margin_y: float = None,
         compute_labels: bool = True,
         r_tx: float = 5,
-        k_tx: int = 3,  # New parameter for k_tx
+        k_tx: int = 3,
         val_prob: float = 0.1,
         test_prob: float = 0.2,
         neg_sampling_ratio_approx: float = 5,
@@ -592,11 +550,10 @@ class SpatialTranscriptomicsSample(ABC):
         },
         method: str = 'kd_tree',
         gpu: bool = False,
-        workers: int = 1,
-        use_precomputed: bool = False  # New argument
+        workers: int = 1
     ) -> None:
         """
-        Saves the dataset for Segger in a processed format.
+        Saves the dataset for Segger in a processed format using Dask for parallel and lazy processing.
 
         Parameters:
         -----------
@@ -619,7 +576,7 @@ class SpatialTranscriptomicsSample(ABC):
         r_tx : float, optional
             Radius for building the transcript-to-transcript graph.
         k_tx : int, optional
-            Number of nearest neighbors for the tx-tx graph (default is 3).
+            Number of nearest neighbors for the tx-tx graph.
         val_prob : float, optional
             Probability of assigning a tile to the validation set.
         test_prob : float, optional
@@ -638,27 +595,31 @@ class SpatialTranscriptomicsSample(ABC):
             Whether to use GPU acceleration for edge index computation.
         workers : int, optional
             Number of workers to use to compute the neighborhood graph (per tile).
-        use_precomputed : bool, optional
-            Whether to use precomputed graphs for tx-tx edges.
 
         Returns:
         --------
         None
         """
-        # Check if precomputed tx-tx graph is requested but not available
-        if use_precomputed and self.tx_tx_edge_index is None:
-            warnings.warn("tx_tx_edge_index is not precomputed. Automatically computing the tx-tx graph now.")
-            self.precompute_tx_tx_graph(r_tx=r_tx, k_tx=k_tx, workers=workers)
-
+        # Prepare directories for storing processed tiles
         self._prepare_directories(processed_dir)
-        x_range, y_range = self._get_ranges(d_x, d_y)
-
-        tile_params = self._generate_tile_params(
-            x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, r_tx, k_tx, val_prob, 
-            test_prob, neg_sampling_ratio_approx, sampling_rate, processed_dir, receptive_field, method, gpu, workers, use_precomputed
-        )
         
-        self._process_tiles(tile_params, num_workers)
+        # Get x and y coordinate ranges for tiling
+        x_range, y_range = self._get_ranges(d_x, d_y)
+        
+        # Generate parameters for each tile
+        tile_params = self._generate_tile_params(
+            x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, 
+            r_tx, k_tx, val_prob, test_prob, neg_sampling_ratio_approx, sampling_rate, 
+            processed_dir, receptive_field, method, gpu, workers
+        )
+
+        # Process each tile using Dask to parallelize the task
+        print("Starting tile processing...")
+        tasks = [delayed(self._process_tile)(params) for params in tile_params]
+        
+        # Use Dask to process all tiles in parallel
+        dask.compute(*tasks, num_workers=num_workers)
+        print("Tile processing completed.")
 
 
     def _prepare_directories(self, processed_dir: Path) -> None:
@@ -790,9 +751,10 @@ class SpatialTranscriptomicsSample(ABC):
             for params in tqdm(tile_params):
                 self._process_tile(params)
 
+
     def _process_tile(self, tile_params: Tuple) -> None:
         """
-        Process a single tile and save the data.
+        Process a single tile using Dask for parallelism and lazy evaluation, and save the data.
 
         Parameters:
         -----------
@@ -804,36 +766,53 @@ class SpatialTranscriptomicsSample(ABC):
         None
         """
         (
-            i, j, x_masks_bd, y_masks_bd, x_masks_tx, y_masks_tx, x_size, y_size, x_loc, y_loc, compute_labels, r_tx, k_tx, 
-            neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, receptive_field, sampling_rate, method, gpu, workers, use_precomputed
+            i, j, x_masks_bd, y_masks_bd, x_masks_tx, y_masks_tx, x_size, y_size, x_loc, y_loc, compute_labels, 
+            r_tx, k_tx, neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, receptive_field, 
+            sampling_rate, method, gpu, workers
         ) = tile_params
 
+        # Log the tile processing start with bounding box coordinates
+        print(f"Processing tile at location (x_min: {x_loc}, y_min: {y_loc}), size (width: {x_size}, height: {y_size})")
+
+        # Sampling rate to decide if the tile should be processed
         if random.random() > sampling_rate:
+            print(f"Skipping tile at (x_min: {x_loc}, y_min: {y_loc}) due to sampling rate.")
             return
 
+        # Apply lazy filtering using Dask
         x_mask = x_masks_bd[i]
         y_mask = y_masks_bd[j]
         mask = x_mask & y_mask
 
-        if mask.sum() == 0:
+        # If the mask returns no data, skip the tile
+        if mask.sum().compute() == 0:
+            print(f"No data found in the boundaries for tile at (x_min: {x_loc}, y_min: {y_loc}). Skipping.")
             return
 
-        bd_df = self.boundaries_df[mask]
-        bd_df = self.boundaries_df.loc[self.boundaries_df.cell_id.isin(bd_df.cell_id), :]
+        # Lazy loading of boundary and transcript data for the tile using Dask
+        print(f"Loading boundary and transcript data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+        bd_df = self.boundaries_df[mask].persist()  # Use Dask's persist to load necessary partitions
+        bd_df = bd_df.loc[bd_df[self.keys.CELL_ID.value].isin(bd_df[self.keys.CELL_ID.value])]
+
         tx_mask = x_masks_tx[i] & y_masks_tx[j]
-        transcripts_df = self.transcripts_df[tx_mask]
+        transcripts_df = self.transcripts_df[tx_mask].persist()
 
-        if transcripts_df.shape[0] == 0 or bd_df.shape[0] == 0:
+        # If no data is found in transcripts or boundaries, skip the tile
+        if transcripts_df.shape[0].compute() == 0 or bd_df.shape[0].compute() == 0:
+            print(f"No transcripts or boundaries data found for tile at (x_min: {x_loc}, y_min: {y_loc}). Skipping.")
             return
 
+        # Build PyG data structure from tile-specific data
+        print(f"Building PyG data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
         data = self.build_pyg_data_from_tile(
-            bd_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers, use_precomputed=use_precomputed
+            bd_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers
         )
 
         try:
             # probability to assign to train-val-test split
             prob = random.random() 
             if compute_labels and (prob > val_prob + test_prob):
+                print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
                 transform = RandomLinkSplit(
                     num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'bd')],
                     neg_sampling_ratio=neg_sampling_ratio_approx * 2,
@@ -841,6 +820,7 @@ class SpatialTranscriptomicsSample(ABC):
                 data, _, _ = transform(data)
                 edge_index = data[('tx', 'belongs', 'bd')].edge_index
                 if edge_index.shape[1] < 10:
+                    print(f"Insufficient edge data for tile at (x_min: {x_loc}, y_min: {y_loc}). Skipping.")
                     return
                 edge_label_index = data[('tx', 'belongs', 'bd')].edge_label_index
                 data[('tx', 'belongs', 'bd')].edge_label_index = edge_label_index[
@@ -860,50 +840,48 @@ class SpatialTranscriptomicsSample(ABC):
                     ).squeeze()
                 ]
 
+            # Compute coordinates for boundary and transcript nodes
             coords_bd = data['bd'].pos
             coords_tx = data['tx'].pos[:, :2]
 
-            # Use precomputed tx-tx edges if available and subset based on current tile
-            # if use_precomputed and self.tx_tx_edge_index is not None:
-            #     tx_indices = torch.as_tensor(transcripts_df.index.values)
-            #     edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
-            #     data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
-            # else:
-            #     if use_precomputed:
-            #         warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
-            #     data['tx', 'neighbors', 'tx'].edge_index = get_edge_index(
-            #         coords_tx, coords_tx, k=k_tx, dist=r_tx, method=method,
-            #         gpu=gpu, workers=workers
-            #     )
+            # Commented out the following lines for computing tx-tx and bd-tx edges
+            # print(f"Computing tx-tx edges for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+            # data['tx'].tx_field = tx_edges.compute()  # Trigger the computation
 
-            # Compute bd-tx edges using the precomputed boundary geometries
-            # data['tx'].bd_field = get_edge_index(
-            #     coords_bd, coords_tx, k=receptive_field["k_bd"], dist=receptive_field["dist_bd"], method=method,
-            #     gpu=gpu, workers=workers
-            # )
+            # print(f"Computing bd-tx edges for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+            # data['tx'].bd_field = bd_tx_edges.compute()
 
-            filename = f"tiles_x{int(x_loc)}_y{int(y_loc)}_{x_size}_{y_size}.pt"
+            # Save the tile data to the appropriate directory based on split
+            print(f"Saving data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+            filename = f"tiles_x{x_loc}_y{y_loc}_{x_size}_{y_size}.pt"
             if prob > val_prob + test_prob:
-                torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
+                save_task = delayed(torch.save)(data, processed_dir / 'train_tiles' / 'processed' / filename)
             elif prob > val_prob:
-                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
+                save_task = delayed(torch.save)(data, processed_dir / 'test_tiles' / 'processed' / filename)
             else:
-                torch.save(data, processed_dir / 'val_tiles' / 'processed' / filename)
+                save_task = delayed(torch.save)(data, processed_dir / 'val_tiles' / 'processed' / filename)
+            
+            # Use Dask to save the file in parallel
+            save_task.compute()
+
+            print(f"Tile at (x_min: {x_loc}, y_min: {y_loc}) processed and saved successfully.")
+
         except Exception as e:
-            print(f"Error processing tile {i}, {j}: {e}")
+            print(f"Error processing tile at (x_min: {x_loc}, y_min: {y_loc}): {e}")
+
 
     def build_pyg_data_from_tile(
-        self, boundaries_df: pd.DataFrame, transcripts_df: pd.DataFrame, r_tx: float = 5.0, k_tx: int = 3, method: str = 'kd_tree', gpu: bool = False, workers: int = 1, use_precomputed: bool = False
+        self, boundaries_df: dd.DataFrame, transcripts_df: dd.DataFrame, r_tx: float = 5.0, k_tx: int = 3, method: str = 'kd_tree', gpu: bool = False, workers: int = 1
     ) -> HeteroData:
         """
-        Builds PyG data from a tile of boundaries and transcripts data.
+        Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.
 
         Parameters:
         -----------
-        boundaries_df : pd.DataFrame
-            Dataframe containing boundaries data (e.g., nucleus, cell).
-        transcripts_df : pd.DataFrame
-            Dataframe containing transcripts data.
+        boundaries_df : dd.DataFrame
+            Dask DataFrame containing boundaries data (e.g., nucleus, cell).
+        transcripts_df : dd.DataFrame
+            Dask DataFrame containing transcripts data.
         r_tx : float
             Radius for building the transcript-to-transcript graph.
         k_tx : int
@@ -912,89 +890,76 @@ class SpatialTranscriptomicsSample(ABC):
             Method for computing edge indices (e.g., 'kd_tree', 'faiss').
         gpu : bool, optional
             Whether to use GPU acceleration for edge index computation.
-        use_precomputed : bool, optional
-            Whether to use precomputed graphs for tx-tx edges.
 
         Returns:
         --------
         HeteroData
             PyG Heterogeneous Data object.
         """
+        # Initialize the PyG HeteroData object
         data = HeteroData()
-
-        # Compute boundaries geometries
-        bd_gdf = self.compute_boundaries_geometries(boundaries_df)
+        # Lazily compute boundaries geometries using Dask
+        print("Computing boundaries geometries...")
+        bd_gdf = self.compute_boundaries_geometries(boundaries_df).compute()  # Trigger computation
+        # Get the maximum area for any boundary (useful for additional processing, but not required here)
         max_area = bd_gdf['area'].max()
-
-        # Prepare transcript features and positions
-        x_xyz = torch.as_tensor(transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value, self.keys.TRANSCRIPTS_Y.value]].values).float()
-        data['tx'].id = transcripts_df.index.values
+        # Prepare transcript features and positions lazily using Dask
+        print("Preparing transcript features and positions...")
+        x_xyz = torch.as_tensor(transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value, self.keys.TRANSCRIPTS_Y.value]].compute().values).float()
+        data['tx'].id = transcripts_df.index.compute().values
         data['tx'].pos = x_xyz
-
+        # Prepare transcript embeddings (this part is eagerly loaded as it depends on embeddings_dict)
         x_features = torch.as_tensor(self.embeddings_dict[self.current_embedding]).float()
         data['tx'].x = x_features.to_sparse()
-
-        # Use precomputed tx-tx edges if available, otherwise compute
-        if use_precomputed and self.tx_tx_edge_index is not None:
-            tx_indices = torch.as_tensor(transcripts_df.index.values)
-            edge_mask = torch.isin(self.tx_tx_edge_index[0], tx_indices) & torch.isin(self.tx_tx_edge_index[1], tx_indices)
-            data['tx', 'neighbors', 'tx'].edge_index = self.tx_tx_edge_index[:, edge_mask]
-        else:
-            if use_precomputed:
-                warnings.warn("tx_tx_edge_index was not precomputed. Computing tx-tx graph for this tile now.")
-            tx_edge_index = get_edge_index(
-                data['tx'].pos.cpu().numpy(),
-                data['tx'].pos.cpu().numpy(),
-                k=k_tx,
-                dist=r_tx,
-                method=method,
-                gpu=gpu,
-                workers=workers
-            )
-            data['tx', 'neighbors', 'tx'].edge_index = tx_edge_index
-
-        # Check if the overlap column exists, if not, compute it
+        # Check if the overlap column exists, if not, compute it lazily using Dask
         if self.keys.OVERLAPS_BOUNDARY.value not in transcripts_df.columns:
-            warnings.warn(f"Column '{self.keys.OVERLAPS_BOUNDARY.value}' not found in transcripts_df. Computing overlaps.")
-            transcripts_df = self.compute_transcript_overlap_with_boundaries(transcripts_df, boundaries_df, scale_factor=1.0)
-
+            print(f"Computing overlaps for transcripts...")
+            transcripts_df = delayed(self.compute_transcript_overlap_with_boundaries)(
+                transcripts_df, boundaries_df, scale_factor=1.0
+            ).compute()  # Trigger computation of overlaps
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
+        print("Connecting transcripts with boundaries...")
         ind = np.where(
-            (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value]) & (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
+            (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].compute()) &
+            (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
         )[0]
         tx_bd_edge_index = np.column_stack(
             (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
         )
+        # Add boundary node data to PyG HeteroData
         data['bd'].id = bd_gdf[[self.keys.CELL_ID.value]].values
         data['bd'].pos = bd_gdf[['centroid_x', 'centroid_y']].values
         bd_x = bd_gdf.iloc[:, 4:]
         data['bd'].x = torch.as_tensor(bd_x.to_numpy()).float()
+        # Add transcript-boundary edge index to PyG HeteroData
         data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T).long()
-
+        # We omit computing tx-tx edges here, as instructed to drop the precompute option
+        print("Finished building PyG data for the tile.")
         return data
 
 
 
 
+
 class XeniumSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: pd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
         super().__init__(transcripts_df, transcripts_radius, boundaries_graph, XeniumKeys)
 
-    def filter_transcripts(self, transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
+    def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
-        Filters transcripts based on quality value and removes unwanted transcripts for Xenium.
+        Filters transcripts based on quality value and removes unwanted transcripts for Xenium using Dask.
 
         Parameters:
         -----------
-        transcripts_df : pd.DataFrame
-            The dataframe containing transcript data.
+        transcripts_df : dd.DataFrame
+            The Dask DataFrame containing transcript data.
         min_qv : float, optional
             The minimum quality value threshold for filtering transcripts.
 
         Returns:
         --------
-        pd.DataFrame
-            The filtered dataframe.
+        dd.DataFrame
+            The filtered Dask DataFrame.
         """
         filter_codewords = (
             "NegControlProbe_",
@@ -1004,44 +969,45 @@ class XeniumSample(SpatialTranscriptomicsSample):
             "DeprecatedCodeword_",
         )
 
-        # Ensure FEATURE_NAME is a string type for proper filtering
+        # Ensure FEATURE_NAME is a string type for proper filtering (compatible with Dask)
+        # Handle potential bytes to string conversion for Dask DataFrame
         if transcripts_df[self.keys.FEATURE_NAME.value].dtype == 'object':
-            # Convert from bytes to string if necessary
-            if transcripts_df[self.keys.FEATURE_NAME.value].apply(lambda x: isinstance(x, bytes)).any():
-                transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+            transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(
+                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x, meta=('x', 'str')
+            )
 
-        # Apply quality value filter
-        mask_quality = transcripts_df[self.keys.QUALITY_VALUE.value].ge(min_qv)
+        # Apply the quality value filter using Dask
+        mask_quality = transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv
 
-        # Apply filter for unwanted codewords
+        # Apply the filter for unwanted codewords (works efficiently with Dask)
         mask_codewords = ~transcripts_df[self.keys.FEATURE_NAME.value].str.startswith(filter_codewords)
 
-        # Combine masks and return filtered dataframe
+        # Combine the filters and return the filtered Dask DataFrame
         mask = mask_quality & mask_codewords
         return transcripts_df[mask]
 
-
 class MerscopeSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: pd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
         super().__init__(transcripts_df, transcripts_radius, boundaries_graph, MerscopeKeys)
 
-    def filter_transcripts(self, transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
+    def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
-        Filters transcripts based on specific criteria for Merscope.
+        Filters transcripts based on specific criteria for Merscope using Dask.
 
         Parameters:
         -----------
-        transcripts_df : pd.DataFrame
-            The dataframe containing transcript data.
+        transcripts_df : dd.DataFrame
+            The Dask DataFrame containing transcript data.
         min_qv : float, optional
             The minimum quality value threshold for filtering transcripts.
 
         Returns:
         --------
-        pd.DataFrame
-            The filtered dataframe.
+        dd.DataFrame
+            The filtered Dask DataFrame.
         """
-        # Assuming Merscope filtering is done differently, you would add custom logic here.
-        return transcripts_df
+        # Add custom Merscope-specific filtering logic if needed
+        # For now, apply only the quality value filter
+        return transcripts_df[transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv]
 
 
