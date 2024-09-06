@@ -47,6 +47,8 @@ These classes inherit from `SpatialTranscriptomicsSample` and implement dataset-
 
 - **`XeniumSample`**: Tailored for **Xenium** datasets, it includes specific filtering rules to exclude unwanted transcripts based on naming patterns (e.g., `NegControlProbe_`, `BLANK_`).
 - **`MerscopeSample`**: Designed for **Merscope** datasets, allowing for custom filtering and processing logic as needed.
+
+
 ## Workflow
 
 The dataset creation and processing workflow involves several key steps, each ensuring that the spatial transcriptomics data is appropriately prepared for downstream machine learning tasks.
@@ -58,62 +60,62 @@ The dataset creation and processing workflow involves several key steps, each en
 
 ### Step 2: Tiling
 
-- **Spatial Segmentation**: The dataset is divided into smaller, manageable tiles of size \( x_{\text{size}} \times y_{\text{size}} \), defined by their top-left corner coordinates \( (x_i, y_j) \).
+- **Spatial Segmentation**: The dataset is divided into smaller, manageable tiles of size $$x_{\text{size}} \times y_{\text{size}}$$, defined by their top-left corner coordinates $$(x_i, y_j)$$.
   
-  \[
+  $$
   n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
-  \]
+  $$
   
   Where:
-  - \( x_{\text{min}}, y_{\text{min}} \): Minimum spatial coordinates.
-  - \( x_{\text{max}}, y_{\text{max}} \): Maximum spatial coordinates.
-  - \( d_x, d_y \): Step sizes along the \( x \)- and \( y \)-axes, respectively.
+  - $$x_{\text{min}}, y_{\text{min}}$$: Minimum spatial coordinates.
+  - $$x_{\text{max}}, y_{\text{max}}$$: Maximum spatial coordinates.
+  - $$d_x, d_y$$: Step sizes along the $$x$$- and $$y$$-axes, respectively.
 
 - **Transcript and Boundary Inclusion**: For each tile, transcripts and boundaries within the spatial bounds (with optional margins) are included:
   
-  \[
+  $$
   x_i - \text{margin}_x \leq x_t < x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t < y_j + y_{\text{size}} + \text{margin}_y
-  \]
+  $$
   
   Where:
-  - \( x_t, y_t \): Transcript coordinates.
-  - \( \text{margin}_x, \text{margin}_y \): Optional margins to include contextual data.
+  - $$x_t, y_t$$: Transcript coordinates.
+  - $$\text{margin}_x, \text{margin}_y$$: Optional margins to include contextual data.
 
 ### Step 3: Graph Construction
 
-For each tile, a graph \( G \) is constructed with:
+For each tile, a graph $$G$$ is constructed with:
 
-- **Nodes (\( V \))**:
-  - **Transcripts**: Represented by their spatial coordinates \( (x_t, y_t) \) and feature vectors \( \mathbf{f}_t \).
-  - **Boundaries**: Represented by centroid coordinates \( (x_b, y_b) \) and associated properties (e.g., area).
+- **Nodes ($$V$$)**:
+  - **Transcripts**: Represented by their spatial coordinates $$(x_t, y_t)$$ and feature vectors $$\mathbf{f}_t$$.
+  - **Boundaries**: Represented by centroid coordinates $$(x_b, y_b)$$ and associated properties (e.g., area).
 
-- **Edges (\( E \))**:
+- **Edges ($$E$$)**:
   - Created based on spatial proximity using methods like KD-Tree or FAISS.
-  - Defined by a distance threshold \( d \) and the number of nearest neighbors \( k \):
+  - Defined by a distance threshold $$d$$ and the number of nearest neighbors $$k$$:
     
-    \[
+    $$
     E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) < d, \, v_i \in V, \, v_j \in V \}
-    \]
+    $$
 
 ### Step 4: Label Computation (Optional)
 
 If enabled, edges can be labeled based on relationships, such as whether a transcript belongs to a boundary:
 
-\[
+$$
 \text{label}(t, b) = 
 \begin{cases}
 1 & \text{if } t \text{ belongs to } b \\
 0 & \text{otherwise}
 \end{cases}
-\]
+$$
 
 ### Step 5: Dataset Splitting
 
-The dataset is partitioned into training, validation, and test sets based on predefined probabilities \( p_{\text{train}}, p_{\text{val}}, p_{\text{test}} \):
+The dataset is partitioned into training, validation, and test sets based on predefined probabilities $$p_{\text{train}}, p_{\text{val}}, p_{\text{test}}$$:
 
-\[
+$$
 p_{\text{train}} + p_{\text{val}} + p_{\text{test}} = 1
-\]
+$$
 
 Each tile is randomly assigned to one of these sets according to the specified probabilities.
 
@@ -121,13 +123,6 @@ Each tile is randomly assigned to one of these sets according to the specified p
 
 The final output consists of a set of tiles, each containing a graph representation of the spatial transcriptomics data. These tiles are stored in designated directories (`train_tiles`, `val_tiles`, `test_tiles`) and are ready for integration into machine learning pipelines.
 
-## Key Benefits
-
-- **Scalability**: Leveraging **Dask** allows the module to efficiently handle large spatial transcriptomics datasets, mitigating memory constraints and optimizing processing times.
-- **Modularity**: The abstract `SpatialTranscriptomicsSample` class provides a flexible and extensible framework that can be easily adapted to support new spatial transcriptomics datasets.
-- **Compatibility with GNNs**: By outputting graph-structured data compatible with **PyTorch Geometric**, the module seamlessly integrates with graph neural network models for advanced learning tasks.
-- **Unified and Extensible API**: A consistent interface for multiple datasets (Xenium and Merscope) simplifies the workflow and facilitates future extensions to support additional technologies.
-- **Efficient Data Processing**: Combining **Dask** with **Geopandas** and **Shapely** ensures efficient handling of both tabular and spatial data, crucial for accurate and meaningful downstream analyses.
 
 ## Example Usage
 
