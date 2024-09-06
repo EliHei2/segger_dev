@@ -26,7 +26,38 @@ extensions = [
     'myst_parser',
     'sphinx_book_theme',
     'myst_parser',  
+    'sphinx_design',  # Add sphinx-design for UI components
+    'sphinx_copybutton'
 ]
+
+html_theme_options = {
+    "logo": {
+        "text": "Segger",  # Customize with your project's name
+    },
+    "external_links": [
+        {"name": "GitHub", "url": "https://github.com/EliHei2/segger_dev"},
+        {"name": "Documentation", "url": "https://github.com/EliHei2/segger_dev#readme"},
+    ],
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/EliHei2/segger_dev",
+            "icon": "fab fa-github-square",
+        },
+    ],
+    "navbar_start": ["navbar-logo"],
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["navbar-icon-links"],
+    "footer_items": ["copyright"],
+    "show_nav_level": 2,  # Adjust how many levels of the sidebar are shown
+    "navbar_align": "content",  # Center align the navigation bar
+    "footer_items": ["copyright"],
+}
+
+# Static files (e.g., custom CSS, images)
+html_static_path = ['_static']
+
+
 
 bibtex_bibfiles = ['references.bib'] 
 
@@ -64,15 +95,15 @@ autoapi_options = [
 
 
 # Theming
-html_theme = 'sphinx_book_theme'
-html_theme_options = {
-    "repository_url": "https://github.com/EliHei2/segger_dev",
-    "use_repository_button": True,
-    "use_issues_button": True,
-    "use_edit_page_button": True,
-    "use_download_button": False,
-    "home_page_in_toc": True,
-}
+# html_theme = 'sphinx_book_theme'
+# html_theme_options = {
+#     "repository_url": "https://github.com/EliHei2/segger_dev",
+#     "use_repository_button": True,
+#     "use_issues_button": True,
+#     "use_edit_page_button": True,
+#     "use_download_button": False,
+#     "home_page_in_toc": True,
+# }
 
 # Source file suffixes
 source_suffix = {
