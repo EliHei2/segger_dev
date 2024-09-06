@@ -47,7 +47,6 @@ These classes inherit from `SpatialTranscriptomicsSample` and implement dataset-
 
 - **`XeniumSample`**: Tailored for **Xenium** datasets, it includes specific filtering rules to exclude unwanted transcripts based on naming patterns (e.g., `NegControlProbe_`, `BLANK_`).
 - **`MerscopeSample`**: Designed for **Merscope** datasets, allowing for custom filtering and processing logic as needed.
-
 ## Workflow
 
 The dataset creation and processing workflow involves several key steps, each ensuring that the spatial transcriptomics data is appropriately prepared for downstream machine learning tasks.
@@ -129,7 +128,6 @@ The final output consists of a set of tiles, each containing a graph representat
 - **Compatibility with GNNs**: By outputting graph-structured data compatible with **PyTorch Geometric**, the module seamlessly integrates with graph neural network models for advanced learning tasks.
 - **Unified and Extensible API**: A consistent interface for multiple datasets (Xenium and Merscope) simplifies the workflow and facilitates future extensions to support additional technologies.
 - **Efficient Data Processing**: Combining **Dask** with **Geopandas** and **Shapely** ensures efficient handling of both tabular and spatial data, crucial for accurate and meaningful downstream analyses.
-
 
 ## Example Usage
 
