@@ -10,14 +10,11 @@ from argparse import Namespace
 data_yml = Path(__file__).parent / 'configs' / 'create_dataset' / 'default.yaml'
 
 # CLI command to create a Segger dataset
-help_msg = "Create Segger dataset from spatial transcriptomics data (Xenium or MERSCOPE)"
+help_msg = "Create Segger dataset from spatial transcriptomics data"
 @click.command(name="create_dataset", help=help_msg)
+#@click.option('--foo', default="bar")  # add more options above, not below
 @add_options(config_path=data_yml)
-@click.option('--x_min', type=float, default=None, help='Minimum x-coordinate for bounding box.')
-@click.option('--y_min', type=float, default=None, help='Minimum y-coordinate for bounding box.')
-@click.option('--x_max', type=float, default=None, help='Maximum x-coordinate for bounding box.')
-@click.option('--y_max', type=float, default=None, help='Maximum y-coordinate for bounding box.')
-def create_dataset(args: Namespace, x_min: float, y_min: float, x_max: float, y_max: float):
+def create_dataset(args: Namespace):
 
     # Setup logging
     ch = logging.StreamHandler()
@@ -27,39 +24,18 @@ def create_dataset(args: Namespace, x_min: float, y_min: float, x_max: float, y_
 
     # Import necessary packages based on the dataset type
     logging.info("Importing packages...")
-    if args.dataset_type == 'xenium':
-        sample = XeniumSample()
-    elif args.dataset_type == 'merscope':
-        sample = MerscopeSample()
-    else:
-        raise ValueError("Unsupported dataset type. Please choose 'xenium' or 'merscope'.")
+    from segger.data.xenium_sample_parquet import XeniumSampleParquet
     logging.info("Done.")
 
-    # Load the dataset (Xenium or MERSCOPE)
-    logging.info(f"Loading data from {args.dataset_type} sample...")
-    dataset_dir = Path(args.dataset_dir)
-
-    # Load transcripts
-    sample.load_transcripts(
-        base_path=dataset_dir,
-        sample=args.sample_tag,
-        transcripts_filename=args.transcripts_file,
-        min_qv=args.min_qv,
-        file_format=args.file_format,
-    )
-
-    # Load boundaries (nucleus boundaries for Xenium, cell boundaries for MERSCOPE)
-    sample.load_boundaries(dataset_dir / args.boundaries_file, file_format=args.file_format)
+    # Load Xenium data
+    logging.info("Loading data from Xenium sample...")
+    sample = XeniumSampleParquet(args.xenium_dir, args.n_workers)
     logging.info("Done.")
-
-    # Set the bounding box if specified
-    if all(v is not None for v in [x_min, y_min, x_max, y_max]):
-        sample.get_bounding_box(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max, in_place=True)
 
     # Save Segger dataset
     logging.info("Saving dataset for Segger...")
     data_dir = Path(args.data_dir)
-    sample.save_dataset_for_segger(
+    sample.to_pyg_dataset(
         processed_dir=data_dir,
         x_size=args.x_size,
         y_size=args.y_size,
@@ -74,12 +50,10 @@ def create_dataset(args: Namespace, x_min: float, y_min: float, x_max: float, y_
         sampling_rate=args.sampling_rate,
         num_workers=args.workers,
         receptive_field={
-            "k_bd": args.k_bd,
-            "dist_bd": args.dist_bd,
+            "k_nc": args.k_nc,
+            "dist_nc": args.dist_nc,
             "k_tx": args.k_tx,
             "dist_tx": args.dist_tx,
         },
-        method=args.method,
-        gpu=args.gpu
     )
     logging.info("Done.")

@@ -14,17 +14,20 @@ from scipy.spatial import KDTree, Rectangle
 from segger.data._ndtree import NDTree
 from multiprocessing import Pool
 from functools import cached_property
-from typing import List, Tuple, Optional, TYPE_CHECKING
+from typing import List, Tuple, Optional, Callable, TYPE_CHECKING
 import inspect
 import logging
 from itertools import compress
 import psutil
 from pqdm.processes import pqdm
 from itertools import repeat
+from joblib import Parallel, delayed
+import glob
 
 
 #if TYPE_CHECKING: # False at runtime
-from torch_geometric.data import HeteroData
+from torch_geometric.data import HeteroData, InMemoryDataset, Data
+from torch_geometric.transforms import RandomLinkSplit
 import torch
 
 
@@ -147,6 +150,60 @@ class XeniumSampleParquet:
 
         return ndtree.boxes
 
+    # TODO: Add documentation
+    @staticmethod
+    def _setup_directory(
+        data_dir: os.PathLike,
+    ):
+        data_dir = Path(data_dir)  # by default, convert to Path object
+        for dt in ['train', 'test', 'val']:
+            tile_dir = data_dir / dt / 'processed'
+            tile_dir.mkdir(parents=True, exist_ok=True)
+            if os.listdir(tile_dir):
+                msg = f"Directory '{tile_dir}' must be empty."
+                raise AssertionError(msg)
+
+
+    # TODO: Add documentation
+    def save(
+        self,
+        data_dir: os.PathLike,
+        max_size: int = 1e5,
+        k_bd: int = 4,
+        dist_bd: float = 20,
+        k_tx: int = 4,
+        dist_tx: float = 20,
+        neg_sampling_ratio: float = 5,
+    ):
+        # Setup directory structure to save tiles
+        data_dir = Path(data_dir)
+        XeniumSampleParquet._setup_directory(data_dir)
+
+        # Function to parallelize over workers
+        def func(region):
+            xm = XeniumInMemoryDataset(sample=self, extents=region)
+            tiles = xm.tile(max_size=max_size)
+            for tile in tiles:
+                dt = np.random.choice(  # Choose training, test, or validation
+                    a=['train', 'test', 'val'],
+                    p=[0.7, 0.2, 0.1],  # hard-coded for now
+                )
+                xt = XeniumTile(dataset=xm, extents=tile)
+                pyg_data = xt.to_pyg_dataset(
+                    train=(dt == 'train'),
+                    k_bd=k_bd,
+                    dist_bd=dist_bd,
+                    k_tx=k_tx,
+                    dist_tx=dist_tx,
+                    neg_sampling_ratio=neg_sampling_ratio,
+                )
+                filepath = data_dir / dt / 'processed' / f'{xt.uid}.pt'
+                torch.save(pyg_data, filepath)
+
+        # TODO: Add Dask backend
+        jobs = [delayed(func)(r) for r in self._get_balanced_regions()]
+        _ = Parallel(n_jobs=self.n_workers)(jobs)
+
 
 class XeniumInMemoryDataset():
     # TODO: Add documentation
@@ -168,7 +225,7 @@ class XeniumInMemoryDataset():
 
         # Pre-load KDTrees
         enums = TranscriptColumns
-        # self.kdtree_tx = KDTree(self.transcripts[enums.xy], leafsize=100)
+        self.kdtree_tx = KDTree(self.transcripts[enums.xy], leafsize=100)
 
 
     # TODO: Add documentation
@@ -266,10 +323,10 @@ class XeniumInMemoryDataset():
      ) -> List[shapely.Polygon]:
         # Square tiling kwargs provided
         if not max_size and (width and height):
-            return self._get_rectangular_bounds(width, height)
+            return self._get_rectangular_tile_bounds(width, height)
         # Balanced tiling kwargs provided or None
         elif not (width or height):
-            return self._get_balanced_bounds(max_size)
+            return self._get_balanced_tile_bounds(max_size)
         # Bad set of kwargs
         else:
             args = list(compress(locals().keys(), locals().values()))
@@ -334,6 +391,14 @@ class XeniumTile:
         # Internal caches for filtered data
         self._boundaries = None
         self._transcripts = None
+
+
+    # TODO: Add documentation
+    @property
+    def uid(self):
+        x_min, y_min, x_max, y_max = map(int, self.extents.bounds)
+        uid = f'x={x_min}_y={y_min}_w={x_max-x_min}_h={y_max-y_min}'
+        return uid
 
 
     @cached_property
@@ -445,6 +510,8 @@ class XeniumTile:
         encoder = self.dataset.tx_encoder  # typically, a one-hot encoder
         encoding = encoder.transform(self.transcripts[[enums.label]]).toarray()
         props = torch.as_tensor(encoding).float().to_sparse()
+        dim = encoding.shape[0], len(encoder.categories_[0])
+        props = props.sparse_resize_(dim)
 
         return props
 
@@ -570,7 +637,7 @@ class XeniumTile:
         Notes
         -----
         The intention is for this function to simplify testing new strategies 
-        for 'nc' node representations. You can just change the function body to
+        for 'bd' node representations. You can just change the function body to
         return another torch.Tensor without worrying about changes to the rest 
         of the code.
         """
@@ -587,8 +654,10 @@ class XeniumTile:
 
     def to_pyg_dataset(
         self,
-        k_nc: int = 4,
-        dist_nc: float = 20,
+        train: bool,
+        neg_sampling_ratio: float = 5,
+        k_bd: int = 4,
+        dist_bd: float = 20,
         k_tx: int = 4,
         dist_tx: float = 20,
         area: bool = True,
@@ -602,10 +671,13 @@ class XeniumTile:
 
         Parameters
         ----------
-        k_nc : int, optional
-            The number of nearest neighbors for the 'nc' nodes (default is 4).
-        dist_nc : float, optional
-            The maximum distance for neighbors of 'nc' nodes (default is 20).
+        train: bool
+            Whether a sample is part of the training dataset. If True, add 
+            negative edges to dataset.
+        k_bd : int, optional
+            The number of nearest neighbors for the 'bd' nodes (default is 4).
+        dist_bd : float, optional
+            The maximum distance for neighbors of 'bd' nodes (default is 20).
         k_tx : int, optional
             The number of nearest neighbors for the 'tx' nodes (default is 4).
         dist_tx : float, optional
@@ -630,8 +702,8 @@ class XeniumTile:
 
         Node Types
         ----------
-        1. Nucleus ("nc")
-            Represents nuclei in the Xenium dataset.
+        1. Boundary ("bd")
+            Represents boundaries (typically cells) in the Xenium dataset.
 
             Attributes
             ----------
@@ -657,33 +729,42 @@ class XeniumTile:
 
         Edge Types
         ----------
-        1. ("tx", "belongs", "nc")
+        1. ("tx", "belongs", "bd")
             Represents the relationship where a transcript is contained within
-            a nucleus.
+            a boundary.
 
             Attributes
             ----------
             edge_index : torch.Tensor
                 Edge indices in COO format between transcripts and nuclei
 
-        2. ("tx", "neighbors", "nc")
-            Represents the relationship where a transcripts is nearby but not
-            within a nucleus
+        2. ("tx", "neighbors", "bd")
+            Represents the relationship where a transcript is nearby but not
+            within a boundary.
 
             Attributes
             ----------
             edge_index : torch.Tensor
-                Edge indices in COO format between transcripts and nuclei
+                Edge indices in COO format between transcripts and boundaries
+
+        3. ("tx", "neighbors", "tx")
+            Represents the relationship where a transcript is nearby another 
+            transcript.
+
+            Attributes
+            ----------
+            edge_index : torch.Tensor
+                Edge indices in COO format between transcripts and transcripts
         """
         # Initialize an empty HeteroData object
         pyg_data = HeteroData()
 
-        # Set up Nucleus nodes
+        # Set up Boundary nodes
         polygons = get_polygons_from_xy(self.boundaries)
         centroids = polygons.centroid.get_coordinates()
-        pyg_data['nc'].id = polygons.index.to_numpy()
-        pyg_data['nc'].pos = centroids.values
-        pyg_data['nc'].x = self.get_boundary_props(
+        pyg_data['bd'].id = polygons.index.to_numpy()
+        pyg_data['bd'].pos = centroids.values
+        pyg_data['bd'].x = self.get_boundary_props(
             area, convexity, elongation, circularity
         )
 
@@ -692,18 +773,25 @@ class XeniumTile:
         pyg_data['tx'].id = self.transcripts[enums.id].values
         pyg_data['tx'].pos = self.transcripts[enums.xyz].values
         pyg_data['tx'].x = self.get_transcript_props()
-        #TODO: Add pyg_data['tx'].nc_field
-        #TODO: Add pyg_data['tx'].tx_field
 
-        # Set up neighbor edges
+        # Set up Boundary-Transcript neighbor edges
         dist = np.sqrt(polygons.area.max()) * 10  # heuristic distance
         nbrs_edge_idx = self.get_kdtree_edge_index(
             centroids,
             self.transcripts[enums.xy],
-            k=k_nc,
+            k=k_bd,
             max_distance=dist,
         )
-        pyg_data["tx", "neighbors", "nc"].edge_index = nbrs_edge_idx
+        pyg_data["tx", "neighbors", "bd"].edge_index = nbrs_edge_idx
+
+        # Set up Transcript-Transcript neighbor edges
+        nbrs_edge_idx = self.get_kdtree_edge_index(
+            self.transcripts[enums.xy],
+            self.transcripts[enums.xy],
+            k=k_tx,
+            max_distance=dist_tx,
+        )
+        pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
 
         # Find nuclear transcripts
         tx_cell_ids = self.transcripts[BoundaryColumns.id]
@@ -715,6 +803,104 @@ class XeniumTile:
         row_idx = np.where(is_nuclear)[0]
         col_idx = tx_cell_ids.iloc[row_idx].map(cell_ids_map)
         blng_edge_idx = torch.tensor(np.stack([row_idx, col_idx])).long()
-        pyg_data["tx", "belongs", "nc"].edge_index = blng_edge_idx
+        pyg_data["tx", "belongs", "bd"].edge_index = blng_edge_idx
+
+        # Add negative edges if sample is a training sample
+        if train:
+            # transform just to introduce negative edges
+            # Note: no clean alternative exists using PyTorch geometric
+            e = ('tx', 'belongs', 'bd')
+            transform = RandomLinkSplit(
+                num_val=0,
+                num_test=0,
+                is_undirected=True,
+                edge_types=[e],
+                neg_sampling_ratio=0.2,
+            )
+            pyg_data = transform(pyg_data)[0]  # extract just training set
+            # Refilter negative nucleus-transcript edges to include only edges
+            # which include a transcript in the original "positive" edges.
+            # Note: need a more memory-efficient solution
+            in_pos = pyg_data[e].edge_label_index[0].unsqueeze(1) == \
+                     pyg_data[e].edge_index[0].unsqueeze(0)
+            mask = torch.nonzero(torch.any(in_pos, 1)).squeeze()
+            pyg_data[e].edge_label_index = pyg_data[e].edge_label_index[:, mask]
+            pyg_data[e].edge_label = pyg_data[e].edge_label[mask]
 
         return pyg_data
+
+
+class XeniumPyGDataset(InMemoryDataset):
+    """
+    A dataset class for handling SpatialTranscriptomics spatial transcriptomics 
+    data.
+
+    Attributes
+    ----------
+    root : str
+        The root directory where the dataset is stored.
+    transform : callable
+        A function/transform that takes in a Data object and returns a 
+        transformed version.
+    pre_transform : callable
+        A function/transform that takes in a Data object and returns a 
+        transformed version.
+    pre_filter : callable
+        A function that takes in a Data object and returns a boolean indicating 
+        whether to keep it.
+    """
+    def __init__(
+        self,
+        root: str,
+        transform: Optional[Callable] = None,
+        pre_transform: Optional[Callable] = None,
+        pre_filter: Optional[Callable] = None
+    ):
+        super().__init__(root, transform, pre_transform, pre_filter)
+        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
+
+    @property
+    def raw_file_names(self) -> List[str]:
+        """
+        Return a list of raw file names in the raw directory.
+
+        Returns:
+            List[str]: List of raw file names.
+        """
+        return os.listdir(self.raw_dir)
+
+    @property
+    def processed_file_names(self) -> List[str]:
+        """
+        Return a list of processed file names in the processed directory.
+
+        Returns:
+            List[str]: List of processed file names.
+        """
+        paths = glob.glob(f'{self.processed_dir}/x=*_y=*_w=*_h=*.pt')
+        file_names = list(map(os.path.basename, paths))
+        return file_names
+
+    def len(self) -> int:
+        """
+        Return the number of processed files.
+
+        Returns:
+            int: Number of processed files.
+        """
+        return len(self.processed_file_names)
+
+    def get(self, idx: int) -> Data:
+        """
+        Get a processed data object.
+
+        Args:
+            idx (int): Index of the data object to retrieve.
+
+        Returns:
+            Data: The processed data object.
+        """
+        filepath = Path(self.processed_dir) / self.processed_file_names[idx]
+        data = torch.load(filepath)
+        data['tx'].x = data['tx'].x.to_dense()
+        return data

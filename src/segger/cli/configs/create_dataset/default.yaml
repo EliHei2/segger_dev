@@ -8,6 +8,26 @@ xenium_dir:
   required: true
   help: "Path to Xenium dataset."
 
+x_min:
+  type: float
+  default: null
+  help: "Minimum x-coordinate for bounding box to read."
+
+y_min:
+  type: float
+  default: null
+  help: "Minimum y-coordinate for bounding box to read."
+
+x_max:
+  type: float
+  default: null
+  help: "Maximum x-coordinate for bounding box to read."
+
+y_max:
+  type: float
+  default: null
+  help: "Maximum y-coordinate for bounding box to read."
+
 min_qv: 
   type: int
   default: 30
@@ -88,7 +108,7 @@ sampling_rate:
   default: 1
   help: "Rate of sampling tiles."
 
-workers: 
+n_workers: 
   type: int
-  default: 4
+  default: 1
   help: "Number of workers for parallel processing."
