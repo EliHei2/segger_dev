@@ -11,22 +11,19 @@ import numpy as np
 import anndata as ad
 from scipy.spatial import ConvexHull
 from typing import Dict, Any, Optional, List, Callable, Tuple
-from tqdm import tqdm
-from pathlib import Path
-import gzip
-import io
-import random
-from itertools import product
 from shapely.geometry import Polygon
 import geopandas as gpd
 import torch
 from sklearn.preprocessing import OneHotEncoder
 from torch_geometric.data import HeteroData, InMemoryDataset, Data
-from torch_geometric.transforms import BaseTransform, RandomLinkSplit
+from torch_geometric.transforms import BaseTransform
 from torch_geometric.nn import radius_graph
 import os
 from scipy.spatial import cKDTree
 import hnswlib
+from shapely.geometry import Polygon
+from shapely.affinity import scale
+import dask.dataframe as dd
 
 # Attempt to import specific modules with try_import function
 try_import('multiprocessing')
@@ -683,3 +680,60 @@ def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, 
 
     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
     return edge_index
+
+
+# def create_scaled_polygon(group, scale_factor, keys):
+#     """
+#     Helper function to create and scale a polygon from boundary vertices.
+
+#     Parameters:
+#     -----------
+#     group : pd.DataFrame
+#         Group of boundary coordinates (for a specific cell).
+#     scale_factor : float
+#         The factor by which to scale the polygons.
+#     keys : dict
+#         Dictionary containing the relevant key mappings as strings.
+
+#     Returns:
+#     --------
+#     pd.Series
+#         A Series containing the scaled Polygon and cell_id.
+#     """
+#     x_coords = group[keys['vertex_x']]
+#     y_coords = group[keys['vertex_y']]
+#     if len(x_coords) >= 3:  # Ensure there are at least 3 points to form a polygon
+#         polygon = Polygon(zip(x_coords, y_coords))
+#         if polygon.is_valid and not polygon.is_empty:
+#             # Scale the polygon by the provided factor
+#             scaled_polygon = polygon.buffer(scale_factor)  # Buffer can be used to mimic scaling
+#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:
+#                 return pd.Series({
+#                     'geometry': scaled_polygon, 
+#                     keys['cell_id']: group[keys['cell_id']].iloc[0]
+#                 })
+#     return pd.Series({'geometry': None, keys['cell_id']: group[keys['cell_id']].iloc[0]})
+
+
+# def create_scaled_polygon(group, scale_factor, keys):
+#     x_coords = group[keys['vertex_x']]
+#     y_coords = group[keys['vertex_y']]
+
+#     # Ensure at least 3 points for the polygon
+#     if len(x_coords) >= 3:
+#         polygon = Polygon(zip(x_coords, y_coords))
+        
+#         # Check if the polygon is valid (requires computation)
+#         if polygon.is_valid and not polygon.is_empty:
+#             # Scale the polygon and check its validity after scaling
+#             scaled_polygon = polygon.buffer(scale_factor)
+            
+#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:
+#                 # Return the scaled polygon and the corresponding cell_id
+#                 return pd.Series({
+#                     'geometry': scaled_polygon, 
+#                     keys['cell_id']: group[keys['cell_id']].iloc[0]
+#                 })
+
+#     # Return a default result when no valid polygon is created
+#     return pd.Series({'geometry': None, keys['cell_id']: group[keys['cell_id']].iloc[0]})

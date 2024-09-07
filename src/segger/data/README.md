@@ -62,9 +62,9 @@ The dataset creation and processing workflow involves several key steps, each en
 
 - **Spatial Segmentation**: The dataset is divided into smaller, manageable tiles of size $$x_{\text{size}} \times y_{\text{size}}$$, defined by their top-left corner coordinates $$(x_i, y_j)$$.
   
-  $$
-  n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
-  $$
+$$
+n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
+$$
   
   Where:
   - $$x_{\text{min}}, y_{\text{min}}$$: Minimum spatial coordinates.
@@ -73,9 +73,9 @@ The dataset creation and processing workflow involves several key steps, each en
 
 - **Transcript and Boundary Inclusion**: For each tile, transcripts and boundaries within the spatial bounds (with optional margins) are included:
   
-  $$
-  x_i - \text{margin}_x \leq x_t < x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t < y_j + y_{\text{size}} + \text{margin}_y
-  $$
+$$ 
+x_i - \text{margin}_x \leq x_t < x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t < y_j + y_{\text{size}} + \text{margin}_y 
+$$
   
   Where:
   - $$x_t, y_t$$: Transcript coordinates.
@@ -93,9 +93,9 @@ For each tile, a graph $$G$$ is constructed with:
   - Created based on spatial proximity using methods like KD-Tree or FAISS.
   - Defined by a distance threshold $$d$$ and the number of nearest neighbors $$k$$:
     
-    $$
-    E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) < d, \, v_i \in V, \, v_j \in V \}
-    $$
+$$ 
+E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) < d, \, v_i \in V, \, v_j \in V \}
+$$
 
 ### Step 4: Label Computation (Optional)
 

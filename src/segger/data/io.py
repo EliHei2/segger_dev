@@ -92,12 +92,12 @@ class SpatialTranscriptomicsSample(ABC):
         sample: str = None,
         transcripts_filename: str = None,
         path: Path = None,
-        min_qv: int = 20,
         file_format: str = "parquet",
         additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None,
     ) -> None:
         """
-        Load transcripts from a Parquet file using Dask for chunked processing.
+        Load transcripts from a Parquet file using Dask for efficient chunked processing.
+        This method calls `filter_transcripts` for dataset-specific filtering.
 
         Parameters:
         -----------
@@ -109,10 +109,8 @@ class SpatialTranscriptomicsSample(ABC):
             The filename of the transcripts file (default is derived from the dataset keys).
         path : Path, optional
             Specific path to the transcripts file.
-        min_qv : int, optional
-            Minimum quality value to filter transcripts (default is 20).
         file_format : str, optional
-            Format of the file to load. Only 'parquet' supported in this refactor.
+            Format of the file to load (default is 'parquet').
         additional_embeddings : Dict[str, pd.DataFrame], optional
             A dictionary of additional embeddings for genes.
 
@@ -123,38 +121,73 @@ class SpatialTranscriptomicsSample(ABC):
         if file_format != "parquet":
             raise ValueError("This version only supports parquet files with Dask.")
 
-        # Load transcripts as a Dask DataFrame for efficient chunked loading
+        # Set the file path for transcripts
         transcripts_filename = transcripts_filename or self.keys.TRANSCRIPTS_FILE.value
         file_path = path or (base_path / sample / transcripts_filename)
-        self.transcripts_df = dd.read_parquet(file_path, columns=[
+
+        # Check for available columns in the file's metadata (without loading the data)
+        parquet_metadata = dd.read_parquet(file_path, meta_only=True)
+        available_columns = parquet_metadata.columns
+
+        # Define the list of columns to read
+        columns_to_read = [
             self.keys.TRANSCRIPTS_X.value,
             self.keys.TRANSCRIPTS_Y.value,
             self.keys.FEATURE_NAME.value,
-            self.keys.QUALITY_VALUE.value
-        ])
-        
-        # Filter transcripts using Dask (lazily)
-        self.transcripts_df = self.transcripts_df[self.transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv]
+            self.keys.CELL_ID.value  # Include cell ID
+        ]
 
+        # Check if the QUALITY_VALUE key exists in the dataset, and add it to the columns list if present
+        if self.keys.QUALITY_VALUE.value in available_columns:
+            columns_to_read.append(self.keys.QUALITY_VALUE.value)
+
+        # Read the full dataset with the appropriate columns
+        self.transcripts_df = dd.read_parquet(file_path, columns=columns_to_read)
+
+        # Convert feature names from bytes to strings if necessary
+        if pd.api.types.is_object_dtype(self.transcripts_df[self.keys.FEATURE_NAME.value]):
+            self.transcripts_df[self.keys.FEATURE_NAME.value] = self.transcripts_df[self.keys.FEATURE_NAME.value].astype(str)
+
+        print(f"Loaded transcripts for sample '{sample}' from {file_path}.")
+
+        # Call the filter_transcripts function to apply dataset-specific filtering (e.g., quality for Xenium)
+        self.transcripts_df = self.filter_transcripts(self.transcripts_df)
+
+        # Additional embeddings handling
         if additional_embeddings:
             for key, embedding_df in additional_embeddings.items():
                 valid_genes = embedding_df.index
-                initial_count = len(self.transcripts_df)
+                initial_count = self.transcripts_df.shape[0].compute()
                 self.transcripts_df = self.transcripts_df[
                     self.transcripts_df[self.keys.FEATURE_NAME.value].isin(valid_genes)
                 ]
-                print(
-                    f"Dropped transcripts not found in {key} embedding."
-                )
+                final_count = self.transcripts_df.shape[0].compute()
+                print(f"Dropped {initial_count - final_count} transcripts not found in {key} embedding.")
 
+        # Call the _set_bounds method to set spatial boundaries
         self._set_bounds()
-        
-        # Encode genes as one-hot by default (lazy execution with Dask)
+
+        # Lazily encode genes as one-hot
         genes = self.transcripts_df[[self.keys.FEATURE_NAME.value]]
         self.tx_encoder = OneHotEncoder(sparse_output=False)
-        self.tx_encoder.fit(genes.compute())  # Fit on the actual data (loaded lazily)
-        self.embeddings_dict['one_hot'] = delayed(self.tx_encoder.transform)(genes)
+        self.tx_encoder.fit(genes.compute())  # Fit the encoder with actual data
+        encoder = self.tx_encoder
+# Pass only the encoder and data, not self
+        self.embeddings_dict['one_hot'] = delayed(encoder.transform)(genes)
+        # self.embeddings_dict['one_hot'] = delayed(self.tx_encoder.transform)(genes)
         self.current_embedding = 'one_hot'
+
+        # Additional embeddings stored as part of the embeddings dictionary
+        if additional_embeddings:
+            for key, embedding_df in additional_embeddings.items():
+                self.embeddings_dict[key] = embedding_df.loc[
+                    self.transcripts_df[self.keys.FEATURE_NAME.value].compute().values
+                ].values
+
+        # Ensure that the 'OVERLAPS_BOUNDARY' column is boolean if it exists
+        if self.keys.OVERLAPS_BOUNDARY.value in self.transcripts_df.columns:
+            self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = self.transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
+
     
     def _set_bounds(self) -> None:
         """Set the bounding box limits based on the current transcripts dataframe."""
@@ -307,59 +340,102 @@ class SpatialTranscriptomicsSample(ABC):
             new_instance.x_min, new_instance.y_min, new_instance.x_max, new_instance.y_max = x_min, y_min, x_max, y_max
             print(f"Subset completed with new instance.")
         return new_instance
-        
+    
+    @staticmethod
+    def create_scaled_polygon(group: pd.DataFrame, scale_factor: float, keys) -> gpd.GeoDataFrame:
+        """
+        Static method to create and scale a polygon from boundary vertices and return a GeoDataFrame.
 
+        This method ensures that the polygon scaling happens efficiently without requiring
+        an instance of the class. Keys should be passed to avoid Dask tokenization issues.
+
+        Parameters:
+        -----------
+        group : pd.DataFrame
+            Group of boundary coordinates (for a specific cell).
+        scale_factor : float
+            The factor by which to scale the polygons.
+        keys : Enum or dict-like
+            A collection of keys to access column names for 'cell_id', 'vertex_x', and 'vertex_y'.
+
+        Returns:
+        --------
+        gpd.GeoDataFrame
+            A GeoDataFrame containing the scaled Polygon and cell_id.
+        """
+        # Extract coordinates and cell ID from the group using keys
+        x_coords = group[keys['vertex_x']]
+        y_coords = group[keys['vertex_y']]
+        cell_id = group[keys['cell_id']].iloc[0]
+
+        # Ensure there are at least 3 points to form a polygon
+        if len(x_coords) >= 3:
+            polygon = Polygon(zip(x_coords, y_coords))
+            if polygon.is_valid and not polygon.is_empty:
+                # Scale the polygon by the provided factor
+                scaled_polygon = polygon.buffer(scale_factor)
+                if scaled_polygon.is_valid and not scaled_polygon.is_empty:
+                    return gpd.GeoDataFrame({
+                        'geometry': [scaled_polygon], 
+                        keys['cell_id']: [cell_id]
+                    }, geometry='geometry', crs="EPSG:4326")
+        
+        # Return an empty GeoDataFrame if no valid polygon is created
+        return gpd.GeoDataFrame({
+            'geometry': [None], 
+            keys['cell_id']: [cell_id]
+        }, geometry='geometry', crs="EPSG:4326")
+        
     def generate_and_scale_polygons(
-        self,
-        boundaries_df: dd.DataFrame,
-        scale_factor: float = 1.0
+        self, boundaries_df: dd.DataFrame, scale_factor: float = 1.0
     ) -> dgpd.GeoDataFrame:
         """
-        Generate polygons from boundary coordinates, scale them, and add centroids using Dask.
+        Generate and scale polygons from boundary coordinates using Dask.
+        Keeps class structure intact by using static method for the core polygon generation.
 
         Parameters:
         -----------
         boundaries_df : dask.dataframe.DataFrame
             DataFrame containing boundary coordinates.
-        scale_factor : float
-            The factor by which to scale the polygons.
+        scale_factor : float, optional
+            The factor by which to scale the polygons (default is 1.0).
 
         Returns:
         --------
         dask_geopandas.GeoDataFrame
             A GeoDataFrame containing scaled Polygon objects and their centroids.
         """
-        def create_scaled_polygon(group_data, scale_factor):
-            x_coords = group_data[self.keys.BOUNDARIES_VERTEX_X.value]
-            y_coords = group_data[self.keys.BOUNDARIES_VERTEX_Y.value]
-            
-            if len(x_coords) >= 3:  # Ensure there are at least 3 points to form a polygon
-                polygon = Polygon(list(zip(x_coords, y_coords)))
-                if polygon.is_valid and not polygon.is_empty:  # Check for valid, non-degenerate polygon
-                    scaled_polygon = scale(polygon, xfact=scale_factor, yfact=scale_factor, origin='centroid')
-                    if scaled_polygon.is_valid and not scaled_polygon.is_empty:
-                        return scaled_polygon
-            return None
-        
-        # Create polygons lazily using delayed
-        delayed_polygons = boundaries_df.groupby(self.keys.CELL_ID.value).apply(
-            lambda group: delayed(create_scaled_polygon)(group, scale_factor)
-        ).compute()
+        print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
 
-        # Filter out None results (invalid polygons)
-        valid_polygons = [p for p in delayed_polygons if p is not None]
+        # Extract required columns from self.keys
+        cell_id_column = self.keys.CELL_ID.value
+        vertex_x_column = self.keys.BOUNDARIES_VERTEX_X.value
+        vertex_y_column = self.keys.BOUNDARIES_VERTEX_Y.value
 
-        # Create a GeoDataFrame from valid polygons and their centroids
-        polygons_gdf = dgpd.from_geopandas(
-            gpd.GeoDataFrame(geometry=valid_polygons, crs='EPSG:4326'),
-            npartitions=boundaries_df.npartitions
+        create_polygon = self.create_scaled_polygon
+        # Use a lambda to wrap the static method call and avoid passing the function object directly to Dask
+        polygons_ddf = boundaries_df.groupby(cell_id_column).apply(
+            lambda group: create_polygon(
+                group=group, scale_factor=scale_factor,
+                keys={  # Pass keys as a dict for the lambda function
+                    'vertex_x': vertex_x_column,
+                    'vertex_y': vertex_y_column,
+                    'cell_id': cell_id_column
+                }
+            ),
+            meta={'geometry': 'object', cell_id_column: 'str'}
         )
 
-        # Add centroids lazily
+        # Convert to a Dask GeoDataFrame
+        polygons_gdf = dgpd.from_dask_dataframe(polygons_ddf)
+
+        # Lazily compute centroids for each polygon
+        print("Adding centroids to the polygons...")
         polygons_gdf['centroid_x'] = polygons_gdf.geometry.centroid.x
         polygons_gdf['centroid_y'] = polygons_gdf.geometry.centroid.y
 
         return polygons_gdf
+
 
     
 
@@ -890,6 +966,8 @@ class SpatialTranscriptomicsSample(ABC):
             Method for computing edge indices (e.g., 'kd_tree', 'faiss').
         gpu : bool, optional
             Whether to use GPU acceleration for edge index computation.
+        workers : int, optional
+            Number of workers to use for parallel processing.
 
         Returns:
         --------
@@ -898,42 +976,71 @@ class SpatialTranscriptomicsSample(ABC):
         """
         # Initialize the PyG HeteroData object
         data = HeteroData()
+
         # Lazily compute boundaries geometries using Dask
         print("Computing boundaries geometries...")
-        bd_gdf = self.compute_boundaries_geometries(boundaries_df).compute()  # Trigger computation
+        bd_gdf = self.compute_boundaries_geometries(boundaries_df)
+
         # Get the maximum area for any boundary (useful for additional processing, but not required here)
-        max_area = bd_gdf['area'].max()
+        max_area = bd_gdf['area'].max().compute()  # Trigger computation only for the max area
+        
         # Prepare transcript features and positions lazily using Dask
         print("Preparing transcript features and positions...")
-        x_xyz = torch.as_tensor(transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value, self.keys.TRANSCRIPTS_Y.value]].compute().values).float()
+        # Fetch transcript coordinates
+        x_xyz = transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].compute().values
         data['tx'].id = transcripts_df.index.compute().values
-        data['tx'].pos = x_xyz
-        # Prepare transcript embeddings (this part is eagerly loaded as it depends on embeddings_dict)
+        data['tx'].pos = torch.tensor(x_xyz, dtype=torch.float32)
+
+        # Prepare transcript embeddings (if available) lazily
         x_features = torch.as_tensor(self.embeddings_dict[self.current_embedding]).float()
         data['tx'].x = x_features.to_sparse()
+
         # Check if the overlap column exists, if not, compute it lazily using Dask
         if self.keys.OVERLAPS_BOUNDARY.value not in transcripts_df.columns:
             print(f"Computing overlaps for transcripts...")
             transcripts_df = delayed(self.compute_transcript_overlap_with_boundaries)(
                 transcripts_df, boundaries_df, scale_factor=1.0
             ).compute()  # Trigger computation of overlaps
+
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
         print("Connecting transcripts with boundaries...")
         ind = np.where(
             (transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].compute()) &
-            (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value]))
+            (transcripts_df[self.keys.CELL_ID.value].isin(bd_gdf[self.keys.CELL_ID.value].compute()))
         )[0]
         tx_bd_edge_index = np.column_stack(
-            (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].values, transcripts_df.iloc[ind][self.keys.CELL_ID.value].values))
+            (ind, np.searchsorted(bd_gdf[self.keys.CELL_ID.value].compute(), transcripts_df.iloc[ind][self.keys.CELL_ID.value].compute()))
         )
+
         # Add boundary node data to PyG HeteroData
-        data['bd'].id = bd_gdf[[self.keys.CELL_ID.value]].values
-        data['bd'].pos = bd_gdf[['centroid_x', 'centroid_y']].values
-        bd_x = bd_gdf.iloc[:, 4:]
+        data['bd'].id = bd_gdf[[self.keys.CELL_ID.value]].compute().values
+        data['bd'].pos = bd_gdf[['centroid_x', 'centroid_y']].compute().values
+        bd_x = bd_gdf.iloc[:, 4:].compute()
         data['bd'].x = torch.as_tensor(bd_x.to_numpy()).float()
+
         # Add transcript-boundary edge index to PyG HeteroData
         data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T).long()
-        # We omit computing tx-tx edges here, as instructed to drop the precompute option
+
+        # Compute transcript-to-transcript (tx-tx) edges using Dask (lazy computation)
+        print("Computing tx-tx edges...")
+        
+        # Get transcript positions
+        tx_positions = transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].compute().values
+        
+        # Use Dask to parallelize the tx-tx edge computation
+        delayed_tx_edge_index = delayed(get_edge_index)(
+            tx_positions,
+            tx_positions,
+            k=k_tx,
+            dist=r_tx,
+            method=method,
+            gpu=gpu,
+            workers=workers
+        )
+        tx_edge_index = delayed_tx_edge_index.compute()  # Trigger the computation
+
+        # Add the tx-tx edge index to the PyG HeteroData object
+        data['tx', 'neighbors', 'tx'].edge_index = torch.as_tensor(tx_edge_index.T).long()
         print("Finished building PyG data for the tile.")
         return data
 
