@@ -166,7 +166,7 @@ class LitSegger(LightningModule):
             The output tensor resulting from the forward pass.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['nc'].t())  # Example for bipartite graph output
+        output = torch.matmul(z['tx'], z['bd'].t())  # Example for bipartite graph output
         return output
         
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -189,10 +189,10 @@ class LitSegger(LightningModule):
             The loss value for the current training step.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['nc'].t()) 
-        edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
+        output = torch.matmul(z['tx'], z['bd'].t()) 
+        edge_label_index = batch.edge_label_index_dict['tx', 'belongs', 'bd']
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'nc'].edge_label
+        edge_label = batch.edge_label_dict['tx', 'belongs', 'bd']
         loss = self.criterion(out_values, edge_label)
         
         self.log("train_loss", loss, prog_bar=True, batch_size=batch.transcripts.shape[0])
@@ -218,10 +218,10 @@ class LitSegger(LightningModule):
             The loss value for the current validation step.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['nc'].t()) 
-        edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
+        output = torch.matmul(z['tx'], z['bd'].t()) 
+        edge_label_index = batch.edge_label_index_dict['tx', 'belongs', 'bd']
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'nc'].edge_label
+        edge_label = batch.edge_label_dict['tx', 'belongs', 'bd']
         loss = self.criterion(out_values, edge_label)
 
         # Compute metrics
