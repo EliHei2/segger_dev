@@ -682,10 +682,10 @@ class XeniumTile:
         self,
         #train: bool,
         neg_sampling_ratio: float = 5,
-        k_bd: int = 4,
-        dist_bd: float = 20,
-        k_tx: int = 4,
-        dist_tx: float = 20,
+        k_bd: int = 3,
+        dist_bd: float = 15,
+        k_tx: int = 3,
+        dist_tx: float = 5,
         area: bool = True,
         convexity: bool = True,
         elongation: bool = True,
@@ -788,7 +788,7 @@ class XeniumTile:
         # Set up Boundary nodes
         polygons = get_polygons_from_xy(self.boundaries)
         centroids = polygons.centroid.get_coordinates()
-        pyg_data['bd'].id = polygons.index.to_numpy()
+        pyg_data['bd'].id = polygons.index.to_numpy().reshape(-1, 1)
         pyg_data['bd'].pos = centroids.values
         pyg_data['bd'].x = self.get_boundary_props(
             area, convexity, elongation, circularity
@@ -796,7 +796,7 @@ class XeniumTile:
 
         # Set up Transcript nodes
         enums = TranscriptColumns
-        pyg_data['tx'].id = self.transcripts[enums.id].values
+        pyg_data['tx'].id = self.transcripts[[enums.id]].values
         pyg_data['tx'].pos = self.transcripts[enums.xyz].values
         pyg_data['tx'].x = self.get_transcript_props()
 
@@ -902,7 +902,7 @@ class XeniumPyGDataset(InMemoryDataset):
         Returns:
             List[str]: List of processed file names.
         """
-        paths = glob.glob(f'{self.processed_dir}/x=*_y=*_w=*_h=*.pt')
+        paths = glob.glob(f'{self.processed_dir}/*.pt')
         file_names = list(map(os.path.basename, paths))
         return file_names
 
