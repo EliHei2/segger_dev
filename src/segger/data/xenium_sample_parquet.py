@@ -214,7 +214,7 @@ class XeniumSampleParquet:
                 )
                 xt = XeniumTile(dataset=xm, extents=tile)
                 pyg_data = xt.to_pyg_dataset(
-                    train=(data_type == 'train'),
+                    #train=(data_type == 'train'),
                     k_bd=k_bd,
                     dist_bd=dist_bd,
                     k_tx=k_tx,
@@ -680,7 +680,7 @@ class XeniumTile:
 
     def to_pyg_dataset(
         self,
-        train: bool,
+        #train: bool,
         neg_sampling_ratio: float = 5,
         k_bd: int = 4,
         dist_bd: float = 20,
@@ -832,26 +832,25 @@ class XeniumTile:
         pyg_data["tx", "belongs", "bd"].edge_index = blng_edge_idx
 
         # Add negative edges for training
-        if train:
-            # Need more time-efficient solution than this
-            edge_type = ('tx', 'belongs', 'bd')
-            transform = RandomLinkSplit(
-                num_val=0,
-                num_test=0,
-                is_undirected=True,
-                edge_types=[edge_type],
-                neg_sampling_ratio=0.2,
-            )
-            pyg_data, _, _ = transform(pyg_data)
+        # Need more time-efficient solution than this
+        edge_type = ('tx', 'belongs', 'bd')
+        transform = RandomLinkSplit(
+            num_val=0,
+            num_test=0,
+            is_undirected=True,
+            edge_types=[edge_type],
+            neg_sampling_ratio=0.2,
+        )
+        pyg_data, _, _ = transform(pyg_data)
 
-            # Refilter negative edges to include only transcripts in the 
-            # original positive edges (still need a memory-efficient solution)
-            edges = pyg_data[edge_type]
-            mask = edges.edge_label_index[0].unsqueeze(1) == \
-                   edges.edge_index[0].unsqueeze(0)
-            mask = torch.nonzero(torch.any(mask, 1)).squeeze()
-            edges.edge_label_index = edges.edge_label_index[:, mask]
-            edges.edge_label = edges.edge_label[mask]
+        # Refilter negative edges to include only transcripts in the 
+        # original positive edges (still need a memory-efficient solution)
+        edges = pyg_data[edge_type]
+        mask = edges.edge_label_index[0].unsqueeze(1) == \
+                edges.edge_index[0].unsqueeze(0)
+        mask = torch.nonzero(torch.any(mask, 1)).squeeze()
+        edges.edge_label_index = edges.edge_label_index[:, mask]
+        edges.edge_label = edges.edge_label[mask]
 
         return pyg_data
 

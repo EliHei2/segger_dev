@@ -195,7 +195,8 @@ class LitSegger(LightningModule):
         edge_label = batch.edge_label_dict['tx', 'belongs', 'bd']
         loss = self.criterion(out_values, edge_label)
         
-        self.log("train_loss", loss, prog_bar=True, batch_size=batch.transcripts.shape[0])
+        batch_size = len(batch['tx'].id)
+        self.log("train_loss", loss, prog_bar=True, batch_size=batch_size)
         return loss
     
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -232,9 +233,10 @@ class LitSegger(LightningModule):
         f1_res = f1(out_values, edge_label)
         
         # Log metrics
-        self.log("validation_loss", loss, batch_size=batch.transcripts.shape[0])
-        self.log("validation_auroc", auroc_res, prog_bar=True, batch_size=batch.transcripts.shape[0])
-        self.log("validation_f1", f1_res, prog_bar=True, batch_size=batch.transcripts.shape[0])
+        batch_size = len(batch['tx'].id)
+        self.log("validation_loss", loss, batch_size=batch_size)
+        self.log("validation_auroc", auroc_res, prog_bar=True, batch_size=batch_size)
+        self.log("validation_f1", f1_res, prog_bar=True, batch_size=batch_size)
 
         return loss
     
