@@ -6,7 +6,7 @@ from torchmetrics import AUROC, F1Score
 from pytorch_lightning import LightningModule
 from torch_geometric.nn import to_hetero
 from segger.models.segger_model import Segger
-from segger.data.utils import SpatialTranscriptomicsDataset
+from segger.data.xenium_sample_parquet import XeniumPyGDataset
 from typing import Any, Union, Tuple
 import inspect
 
@@ -148,7 +148,7 @@ class LitSegger(LightningModule):
         """
         self.model = model
 
-    def forward(self, batch: SpatialTranscriptomicsDataset) -> torch.Tensor:
+    def forward(self, batch: XeniumPyGDataset) -> torch.Tensor:
         """
         Forward pass for the batch of data.
 
@@ -165,7 +165,7 @@ class LitSegger(LightningModule):
         torch.Tensor
             The output tensor resulting from the forward pass.
         """
-        z = self.model(batch.transcripts, batch.boundaries)
+        z = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z['tx'], z['nc'].t())  # Example for bipartite graph output
         return output
         
@@ -188,7 +188,7 @@ class LitSegger(LightningModule):
         torch.Tensor
             The loss value for the current training step.
         """
-        z = self.model(batch.transcripts, batch.boundaries)
+        z = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z['tx'], z['nc'].t()) 
         edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
@@ -217,7 +217,7 @@ class LitSegger(LightningModule):
         torch.Tensor
             The loss value for the current validation step.
         """
-        z = self.model(batch.transcripts, batch.boundaries)
+        z = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z['tx'], z['nc'].t()) 
         edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
