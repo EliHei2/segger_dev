@@ -165,7 +165,7 @@ class LitSegger(LightningModule):
         torch.Tensor
             The output tensor resulting from the forward pass.
         """
-        z = self.model(batch.transcripts_df, batch.boundaries_df)
+        z = self.model(batch.transcripts, batch.boundaries)
         output = torch.matmul(z['tx'], z['nc'].t())  # Example for bipartite graph output
         return output
         
@@ -188,14 +188,14 @@ class LitSegger(LightningModule):
         torch.Tensor
             The loss value for the current training step.
         """
-        z = self.model(batch.transcripts_df, batch.boundaries_df)
+        z = self.model(batch.transcripts, batch.boundaries)
         output = torch.matmul(z['tx'], z['nc'].t()) 
         edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
         edge_label = batch['tx', 'belongs', 'nc'].edge_label
         loss = self.criterion(out_values, edge_label)
         
-        self.log("train_loss", loss, prog_bar=True, batch_size=batch.transcripts_df.shape[0])
+        self.log("train_loss", loss, prog_bar=True, batch_size=batch.transcripts.shape[0])
         return loss
     
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -217,7 +217,7 @@ class LitSegger(LightningModule):
         torch.Tensor
             The loss value for the current validation step.
         """
-        z = self.model(batch.transcripts_df, batch.boundaries_df)
+        z = self.model(batch.transcripts, batch.boundaries)
         output = torch.matmul(z['tx'], z['nc'].t()) 
         edge_label_index = batch['tx', 'belongs', 'nc'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
@@ -232,9 +232,9 @@ class LitSegger(LightningModule):
         f1_res = f1(out_values, edge_label)
         
         # Log metrics
-        self.log("validation_loss", loss, batch_size=batch.transcripts_df.shape[0])
-        self.log("validation_auroc", auroc_res, prog_bar=True, batch_size=batch.transcripts_df.shape[0])
-        self.log("validation_f1", f1_res, prog_bar=True, batch_size=batch.transcripts_df.shape[0])
+        self.log("validation_loss", loss, batch_size=batch.transcripts.shape[0])
+        self.log("validation_auroc", auroc_res, prog_bar=True, batch_size=batch.transcripts.shape[0])
+        self.log("validation_f1", f1_res, prog_bar=True, batch_size=batch.transcripts.shape[0])
 
         return loss
     

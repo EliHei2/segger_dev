@@ -61,4 +61,4 @@ class Segger(torch.nn.Module):
         Returns:
             Tensor: Predicted edge values.
         """
-        return (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
+        return (z[edge_index[0]] * z[edge_index[1]]).sum(dim=-1)

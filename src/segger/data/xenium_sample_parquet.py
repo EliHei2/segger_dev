@@ -17,20 +17,19 @@ from functools import cached_property
 from typing import List, Tuple, Optional, Callable, TYPE_CHECKING
 import inspect
 import logging
+import json
 from itertools import compress
 import psutil
 from pqdm.processes import pqdm
 from itertools import repeat
 from joblib import Parallel, delayed
 import glob
-
-
-#if TYPE_CHECKING: # False at runtime
 from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import RandomLinkSplit
 import torch
 
 
+# TODO: Add documentation
 class XeniumFilename:
     transcripts = "transcripts.parquet"
     boundaries = "nucleus_boundaries.parquet"
@@ -45,20 +44,10 @@ class XeniumSampleParquet:
         n_workers: Optional[int] = 1,
     ):
         # Setup paths and resource constraints
-        base_dir = Path(base_dir)  # TODO: check that Xenium directory is valid
+        self._base_dir = Path(base_dir)  # TODO: check that directory is valid
         self._transcripts_filepath = base_dir / XeniumFilename.transcripts
         self._boundaries_filepath = base_dir / XeniumFilename.boundaries
         self.n_workers = n_workers
-
-        # Collect file metadata
-        self._transcripts_metadata = XeniumSampleParquet._get_parquet_metadata(
-            filepath=self._transcripts_filepath,
-            columns=TranscriptColumns.columns,
-        )
-        self._boundaries_metadata = XeniumSampleParquet._get_parquet_metadata(
-            filepath=self._boundaries_filepath,
-            columns=BoundaryColumns.columns,
-        )
 
         # Setup logging
         logging.basicConfig(level=logging.INFO)
@@ -66,6 +55,8 @@ class XeniumSampleParquet:
 
         # Internal caches
         self._extents = None
+        self._transcripts_metadata = None
+        self._boundaries_metadata = None
 
 
     # TODO: Add documentation
@@ -110,6 +101,39 @@ class XeniumSampleParquet:
             summary['column_sizes'][c] = size_map[dtype]
 
         return summary
+
+
+    # TODO: Add documentation
+    @cached_property
+    def transcripts_metadata(self) -> dict:
+        if self._transcripts_metadata is None:
+            # Base metadata
+            metadata = XeniumSampleParquet._get_parquet_metadata(
+                self._transcripts_filepath,
+                TranscriptColumns.columns,
+            )
+            # Gene panel names
+            with open(self._base_dir / 'gene_panel.json', 'r') as file:
+                targets = json.load(file)['payload']['targets']
+            filter_names = tuple(e.value for e in XeniumFilterCodewords)
+            names = [t['type']['data']['name'] for t in targets]
+            names = filter(lambda n: not n.startswith(filter_names), names)
+            metadata['feature_names'] = list(names)
+            self._transcripts_metadata = metadata
+
+        return self._transcripts_metadata
+
+
+    # TODO: Add documentation
+    @cached_property
+    def boundaries_metadata(self) -> dict:
+        if self._boundaries_metadata is None:
+            metadata = XeniumSampleParquet._get_parquet_metadata(
+                self._boundaries_filepath,
+                BoundaryColumns.columns,
+            )
+            self._boundaries_metadata = metadata
+        return self._boundaries_metadata
 
 
     # TODO: Add documentation
@@ -184,20 +208,20 @@ class XeniumSampleParquet:
             xm = XeniumInMemoryDataset(sample=self, extents=region)
             tiles = xm.tile(max_size=max_size)
             for tile in tiles:
-                dt = np.random.choice(  # Choose training, test, or validation
+                data_type = np.random.choice(  # Choose train, test, validation
                     a=['train', 'test', 'val'],
                     p=[0.7, 0.2, 0.1],  # hard-coded for now
                 )
                 xt = XeniumTile(dataset=xm, extents=tile)
                 pyg_data = xt.to_pyg_dataset(
-                    train=(dt == 'train'),
+                    train=(data_type == 'train'),
                     k_bd=k_bd,
                     dist_bd=dist_bd,
                     k_tx=k_tx,
                     dist_tx=dist_tx,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
-                filepath = data_dir / dt / 'processed' / f'{xt.uid}.pt'
+                filepath = data_dir / data_type / 'processed' / f'{xt.uid}.pt'
                 torch.save(pyg_data, filepath)
 
         # TODO: Add Dask backend
@@ -244,7 +268,11 @@ class XeniumInMemoryDataset():
 
         # Transcript latent is one hot encoding of names
         genes = transcripts[[enums.label]]
-        encoder = OneHotEncoder()
+        categories = self.sample.transcripts_metadata['feature_names']
+        encoder = OneHotEncoder(
+            categories=[categories],
+            sparse_output=False,
+        )
         encoder.fit(genes)
         
         # Only set object properties once everything finishes successfully
@@ -508,10 +536,8 @@ class XeniumTile:
         # Encode transcript features in sparse format
         enums = TranscriptColumns
         encoder = self.dataset.tx_encoder  # typically, a one-hot encoder
-        encoding = encoder.transform(self.transcripts[[enums.label]]).toarray()
+        encoding = encoder.transform(self.transcripts[[enums.label]])
         props = torch.as_tensor(encoding).float().to_sparse()
-        dim = encoding.shape[0], len(encoder.categories_[0])
-        props = props.sparse_resize_(dim)
 
         return props
 
@@ -805,27 +831,27 @@ class XeniumTile:
         blng_edge_idx = torch.tensor(np.stack([row_idx, col_idx])).long()
         pyg_data["tx", "belongs", "bd"].edge_index = blng_edge_idx
 
-        # Add negative edges if sample is a training sample
+        # Add negative edges for training
         if train:
-            # transform just to introduce negative edges
-            # Note: no clean alternative exists using PyTorch geometric
-            e = ('tx', 'belongs', 'bd')
+            # Need more time-efficient solution than this
+            edge_type = ('tx', 'belongs', 'bd')
             transform = RandomLinkSplit(
                 num_val=0,
                 num_test=0,
                 is_undirected=True,
-                edge_types=[e],
+                edge_types=[edge_type],
                 neg_sampling_ratio=0.2,
             )
-            pyg_data = transform(pyg_data)[0]  # extract just training set
-            # Refilter negative nucleus-transcript edges to include only edges
-            # which include a transcript in the original "positive" edges.
-            # Note: need a more memory-efficient solution
-            in_pos = pyg_data[e].edge_label_index[0].unsqueeze(1) == \
-                     pyg_data[e].edge_index[0].unsqueeze(0)
-            mask = torch.nonzero(torch.any(in_pos, 1)).squeeze()
-            pyg_data[e].edge_label_index = pyg_data[e].edge_label_index[:, mask]
-            pyg_data[e].edge_label = pyg_data[e].edge_label[mask]
+            pyg_data, _, _ = transform(pyg_data)
+
+            # Refilter negative edges to include only transcripts in the 
+            # original positive edges (still need a memory-efficient solution)
+            edges = pyg_data[edge_type]
+            mask = edges.edge_label_index[0].unsqueeze(1) == \
+                   edges.edge_index[0].unsqueeze(0)
+            mask = torch.nonzero(torch.any(mask, 1)).squeeze()
+            edges.edge_label_index = edges.edge_label_index[:, mask]
+            edges.edge_label = edges.edge_label[mask]
 
         return pyg_data
 

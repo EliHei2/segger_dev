@@ -8,6 +8,7 @@ from typing import Optional, List, Any, TYPE_CHECKING
 import sys
 import os
 from itertools import cycle
+from enum import StrEnum, auto
 
 
 if TYPE_CHECKING: # False at runtime
@@ -65,6 +66,17 @@ class BoundaryColumns():
     label = 'cell_id'
     xy = [x, y]
     columns = [x, y, id]
+
+
+# TODO: Add documentation
+class XeniumFilterCodewords(StrEnum):
+
+    NegControlProbe_ = 'NegControlProbe_'
+    antisense_ = 'antisense_'
+    NegControlCodeword_ = 'NegControlCodeword'
+    BLANK_ = 'BLANK_'
+    DeprecatedCodeword_ = 'DeprecatedCodeword_'
+    UnassignedCodeword_ = 'UnassignedCodeword_'
 
 
 # TODO: Add documentation
@@ -335,13 +347,7 @@ def filter_transcripts(
     Returns:
     pd.DataFrame: The filtered dataframe.
     """
-    filter_codewords = (
-        "NegControlProbe_",
-        "antisense_",
-        "NegControlCodeword_",
-        "BLANK_",
-        "DeprecatedCodeword_",
-    )
+    filter_codewords = tuple(e.value for e in XeniumFilterCodewords)
     mask = transcripts_df["qv"].ge(min_qv)
     mask &= ~transcripts_df["feature_name"].str.startswith(filter_codewords)
     return transcripts_df[mask]
