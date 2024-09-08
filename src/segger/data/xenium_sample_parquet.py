@@ -839,7 +839,7 @@ class XeniumTile:
             num_test=0,
             is_undirected=True,
             edge_types=[edge_type],
-            neg_sampling_ratio=0.2,
+            neg_sampling_ratio=neg_sampling_ratio * 2,
         )
         pyg_data, _, _ = transform(pyg_data)
 
