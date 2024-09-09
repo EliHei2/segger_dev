@@ -13,7 +13,7 @@ python ../segger_dev/scripts/train_model.py \
   --val_dir data_tidy/pyg_datasets/clean2/val_tiles \
   --batch_size_train 4 \
   --batch_size_val 4 \
-  --num_tx_tokens 500 \
+  --num_tx_tokens 1000 \
   --init_emb 8 \
   --hidden_channels 64 \
   --out_channels 16 \

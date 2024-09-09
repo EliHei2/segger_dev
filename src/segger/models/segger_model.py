@@ -54,26 +54,23 @@ class Segger(torch.nn.Module):
         Returns:
             Tensor: Output node embeddings.
         """
-        # Check if x has dimension 1, apply embedding if needed
-        is_one_dim = torch.tensor(x.ndim == 1).float().view(-1, 1)
-        # if self.tx_embedding is not None:  # Check if the embedding layer exists
-        x = self.tx_embedding(x) * is_one_dim + x * (1 - is_one_dim)
-        
-        x = self.lin0(x)
-
+        x = torch.nan_to_num(x, nan = 0)
+        is_one_dim = (x.ndim == 1) * 1
+        x = x[:, None]    
+        x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float())  * (1 - is_one_dim) 
         # First layer
         x = x.relu()
-        x = self.conv_first(x, edge_index) + self.lin_first(x)
+        x = self.conv_first(x, edge_index) # + self.lin_first(x)
         x = x.relu()
 
         # Middle layers
         if self.num_mid_layers > 0:
             for conv_mid, lin_mid in zip(self.conv_mid_layers, self.lin_mid_layers):
-                x = conv_mid(x, edge_index) + lin_mid(x)
+                x = conv_mid(x, edge_index) # + lin_mid(x)
                 x = x.relu()
 
         # Last layer
-        x = self.conv_last(x, edge_index) + self.lin_last(x)
+        x = self.conv_last(x, edge_index) # + self.lin_last(x)
         x = x / x.norm(dim=-1, keepdim=True)  # Normalize to L2 norm of 1
 
         return x
