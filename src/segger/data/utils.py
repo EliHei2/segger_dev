@@ -20,7 +20,7 @@ from torch_geometric.transforms import BaseTransform
 from torch_geometric.nn import radius_graph
 import os
 from scipy.spatial import cKDTree
-import hnswlib
+# import hnswlib
 from shapely.geometry import Polygon
 from shapely.affinity import scale
 import dask.dataframe as dd
@@ -33,6 +33,7 @@ try_import('cuml')
 try_import('cudf')
 try_import('cugraph')
 try_import('cuspatial')
+try_import('hnswlib')
 
 
 

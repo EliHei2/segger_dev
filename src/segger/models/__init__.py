@@ -8,4 +8,4 @@ __all__ = [
     "Segger"
     ]
 
-from .segger_model import Segger
+from .segger_model import *

@@ -10,10 +10,13 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.stats import entropy
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+import dask
+dask.config.set({'dataframe.query-planning': False})
 import squidpy as sq
 from sklearn.metrics import calinski_harabasz_score, silhouette_score, f1_score
 from pathlib import Path
 import seaborn as sns
+
 
 
 
@@ -781,7 +784,6 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
         'Segmentation Method': [],
         'Cell Area (log2)': []
     })
-
     for method in segmentations_dict.keys():
         if 'cell_area' in segmentations_dict[method].obs.columns:
             method_area = segmentations_dict[method].obs['cell_area'] + 1
@@ -790,7 +792,6 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
                 'Cell Area (log2)': method_area.values
             })
             violin_data = pd.concat([violin_data, method_df], axis=0)
-
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
     ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=palette)
@@ -799,13 +800,11 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
     if '10X-nucleus' in segmentations_dict:
         median_10X_nucleus_area = np.median(segmentations_dict['10X-nucleus'].obs['cell_area'] + 1)
         ax.axhline(y=median_10X_nucleus_area, color='gray', linestyle='--', linewidth=1.5, label='10X-nucleus Median')
-
     # Set plot titles and labels
     plt.title('')
     plt.xlabel('Segmentation Method')
     plt.ylabel('Cell Area (log2)')
     plt.xticks(rotation=0)
-
     # Save the figure as a PDF
     plt.savefig(output_path / 'cell_area_log2_violin_plot.pdf', bbox_inches='tight')
     plt.show()
