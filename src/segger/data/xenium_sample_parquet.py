@@ -27,6 +27,8 @@ import glob
 from torch_geometric.data import HeteroData, InMemoryDataset, Data
 from torch_geometric.transforms import RandomLinkSplit
 import torch
+from pqdm.threads import pqdm
+import random
 
 
 # TODO: Add documentation
@@ -135,6 +137,11 @@ class XeniumSampleParquet:
             self._boundaries_metadata = metadata
         return self._boundaries_metadata
 
+    # TODO: Add documentation
+    @property
+    def n_transcripts(self) -> int:
+        return self.transcripts_metadata['n_rows']
+
 
     # TODO: Add documentation
     @cached_property
@@ -174,6 +181,7 @@ class XeniumSampleParquet:
 
         return ndtree.boxes
 
+
     # TODO: Add documentation
     @staticmethod
     def _setup_directory(
@@ -193,12 +201,27 @@ class XeniumSampleParquet:
         self,
         data_dir: os.PathLike,
         max_size: int = 1e5,
-        k_bd: int = 4,
-        dist_bd: float = 20,
-        k_tx: int = 4,
-        dist_tx: float = 20,
-        neg_sampling_ratio: float = 5,
+        k_bd: int = 3,
+        dist_bd: float = 15.,
+        k_tx: int = 3,
+        dist_tx: float = 5.,
+        neg_sampling_ratio: float = 5.,
+        frac: float = 1.,
     ):
+        # Check inputs
+        try:
+            if frac > 1:
+                msg = f"Arg 'frac' should be <= 1.0, but got {frac}."
+                raise ValueError(msg)
+            n_tiles = self.n_transcripts / max_size / self.n_workers * frac
+            if int(n_tiles) == 0:
+                msg = f"Sampling parameters would yield 0 total tiles."
+                raise ValueError(msg)
+        # Propagate errors to logging
+        except Exception as e:
+            self.logger.error(str(e), exc_info=True)
+            raise e
+
         # Setup directory structure to save tiles
         data_dir = Path(data_dir)
         XeniumSampleParquet._setup_directory(data_dir)
@@ -206,15 +229,17 @@ class XeniumSampleParquet:
         # Function to parallelize over workers
         def func(region):
             xm = XeniumInMemoryDataset(sample=self, extents=region)
-            tiles = xm.tile(max_size=max_size)
+            tiles = xm._tile(max_size=max_size)
+            if frac < 1:
+                tiles = random.sample(tiles, int(len(tiles) * frac))
             for tile in tiles:
-                data_type = np.random.choice(  # Choose train, test, validation
+                # Choose training, test, or validation datasets
+                data_type = np.random.choice(
                     a=['train', 'test', 'val'],
                     p=[0.7, 0.2, 0.1],  # hard-coded for now
                 )
                 xt = XeniumTile(dataset=xm, extents=tile)
                 pyg_data = xt.to_pyg_dataset(
-                    #train=(data_type == 'train'),
                     k_bd=k_bd,
                     dist_bd=dist_bd,
                     k_tx=k_tx,
@@ -225,8 +250,8 @@ class XeniumSampleParquet:
                 torch.save(pyg_data, filepath)
 
         # TODO: Add Dask backend
-        jobs = [delayed(func)(r) for r in self._get_balanced_regions()]
-        _ = Parallel(n_jobs=self.n_workers)(jobs)
+        regions = self._get_balanced_regions()
+        outs = pqdm(regions, func, n_jobs=self.n_workers)
 
 
 class XeniumInMemoryDataset():
@@ -344,7 +369,7 @@ class XeniumInMemoryDataset():
 
 
     # TODO: Add documentation
-    def tile(self,
+    def _tile(self,
         width: Optional[float] = None,
         height: Optional[float] = None,
         max_size: Optional[int] = None,
@@ -839,7 +864,7 @@ class XeniumTile:
             num_test=0,
             is_undirected=True,
             edge_types=[edge_type],
-            neg_sampling_ratio=neg_sampling_ratio * 2,
+            neg_sampling_ratio=neg_sampling_ratio,
         )
         pyg_data, _, _ = transform(pyg_data)
 

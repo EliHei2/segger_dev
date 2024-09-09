@@ -31,7 +31,7 @@ torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str) -> LitSegger:
+def load_model(checkpoint_path: os.PathLike) -> LitSegger:
     """
     Load a LitSegger model from a checkpoint.
 
@@ -109,7 +109,11 @@ def get_similarity_scores(
     y_hat = model(batch.x_dict, batch.edge_index_dict)
 
     # Similarity of each 'from_type' to 'to_type' neighbors in embedding
-    nbr_idx = batch[from_type][f'{to_type}_field']
+    nbr_idx = batch[from_type, 'neighbors', to_type].edge_index
+    counts = torch.unique(nbr_idx[0], sorted=False, return_counts=True)[1]
+    n_cols = counts[0].item()
+    n_rows = int(nbr_idx[1].shape[0] / n_cols)
+    nbr_idx = nbr_idx[1].reshape(n_rows, n_cols)
     m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
     similarity = torch.bmm(
         m(y_hat[to_type])[nbr_idx],    # 'to' x 'from' neighbors x embed
@@ -170,16 +174,16 @@ def predict_batch(
 
         # Assignments of cells to nuclei
         assignments = pd.DataFrame()
-        assignments['transcript_id'] = batch['tx'].id[0].flatten()
+        assignments['transcript_id'] = np.concatenate(batch['tx'].id).flatten()
 
         # Transcript-cell similarity scores, filtered by neighbors
-        scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
+        scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
 
         # 1. Get direct assignments from similarity matrix
         belongs = scores.max(1)
         assignments['score'] = belongs.values.cpu()
         mask = assignments['score'] > score_cut
-        all_ids = batch['nc'].id[0].flatten()[belongs.indices]
+        all_ids = np.concatenate(batch['bd'].id).flatten()[belongs.indices]
         assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
         if use_cc:

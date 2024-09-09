@@ -190,9 +190,9 @@ class LitSegger(LightningModule):
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z['tx'], z['bd'].t()) 
-        edge_label_index = batch.edge_label_index_dict['tx', 'belongs', 'bd']
+        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch.edge_label_dict['tx', 'belongs', 'bd']
+        edge_label = batch['tx', 'belongs', 'bd'].edge_label
         loss = self.criterion(out_values, edge_label)
         
         batch_size = len(batch['tx'].id)
