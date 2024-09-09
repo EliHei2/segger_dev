@@ -28,20 +28,20 @@ class Segger(torch.nn.Module):
 
         # First GATv2Conv layer
         self.conv_first = GATv2Conv((-1, -1), hidden_channels, heads=heads, add_self_loops=False)
-        self.lin_first = Linear(-1, hidden_channels * heads)
+        # self.lin_first = Linear(-1, hidden_channels * heads)
 
         # Middle GATv2Conv layers
         self.num_mid_layers = num_mid_layers
         if num_mid_layers > 0:
             self.conv_mid_layers = torch.nn.ModuleList()
-            self.lin_mid_layers = torch.nn.ModuleList()
+            # self.lin_mid_layers = torch.nn.ModuleList()
             for _ in range(num_mid_layers):
                 self.conv_mid_layers.append(GATv2Conv((-1, -1), hidden_channels, heads=heads, add_self_loops=False))
-                self.lin_mid_layers.append(Linear(-1, hidden_channels * heads))
+                # self.lin_mid_layers.append(Linear(-1, hidden_channels * heads))
 
         # Last GATv2Conv layer
         self.conv_last = GATv2Conv((-1, -1), out_channels, heads=heads, add_self_loops=False)
-        self.lin_last = Linear(-1, out_channels * heads)
+        # self.lin_last = Linear(-1, out_channels * heads)
 
     def forward(self, x: Tensor, edge_index: Tensor) -> Tensor:
         """
@@ -65,7 +65,8 @@ class Segger(torch.nn.Module):
 
         # Middle layers
         if self.num_mid_layers > 0:
-            for conv_mid, lin_mid in zip(self.conv_mid_layers, self.lin_mid_layers):
+            # for conv_mid, lin_mid in zip(self.conv_mid_layers, self.lin_mid_layers):
+            for conv_mid in self.conv_mid_layers:   
                 x = conv_mid(x, edge_index) # + lin_mid(x)
                 x = x.relu()
 
