@@ -10,6 +10,7 @@ class SpatialTranscriptomicsKeys(Enum):
     
     # Cell identifiers
     CELL_ID = auto()
+    TRANSCRIPTS_ID = auto()
     
     # Coordinates and locations
     TRANSCRIPTS_X = auto()
@@ -39,6 +40,7 @@ class XeniumKeys(Enum):
 
     # Cell identifiers
     CELL_ID = "cell_id"
+    TRANSCRIPTS_ID = "transcript_id"
 
     # Coordinates and locations
     TRANSCRIPTS_X = "x_location"
@@ -66,6 +68,7 @@ class MerscopeKeys(Enum):
 
     # Cell identifiers
     CELL_ID = "EntityID"
+    TRANSCRIPTS_ID = "transcript_id"
 
     # Coordinates and locations
     TRANSCRIPTS_X = "global_x"
