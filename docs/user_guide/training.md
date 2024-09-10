@@ -7,7 +7,7 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
 ### Model Architecture
 
 1. **Input Node Features**:  
-   For input node features $x $, the model distinguishes between one-dimensional (transcript) nodes and multi-dimensional (boundary or nucleus) nodes by checking the dimension of $\mathbf{x}$.
+   For input node features $x$, the model distinguishes between one-dimensional (transcript) nodes and multi-dimensional (boundary or nucleus) nodes by checking the dimension of $\mathbf{x}$.
 
    - **Transcript Nodes**: If $\mathbf{x}$ is 1-dimensional (e.g., for tokenized transcript data), the model applies an embedding layer:
 

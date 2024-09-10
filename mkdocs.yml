@@ -72,7 +72,13 @@ plugins:
       include_source: True
 
 markdown_extensions:
-  # - mdx_math
+  - pymdownx.tabbed:
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - admonition
   - attr_list
   - md_in_html
