@@ -24,6 +24,8 @@ from scipy.spatial import cKDTree
 from shapely.geometry import Polygon
 from shapely.affinity import scale
 import dask.dataframe as dd
+from pyarrow import parquet as pq
+import sys
 
 # Attempt to import specific modules with try_import function
 try_import('multiprocessing')
@@ -573,3 +575,41 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
         return data
 
 
+def get_xy_extents(
+    filepath,
+    x: str,
+    y: str,
+) -> Tuple[int]:
+    """
+    Get the bounding box of the x and y coordinates from a Parquet file.
+
+    Parameters
+    ----------
+    filepath : str
+        The path to the Parquet file.
+    x : str
+        The name of the column representing the x-coordinate.
+    y : str
+        The name of the column representing the y-coordinate.
+
+    Returns
+    -------
+    shapely.Polygon
+        A polygon representing the bounding box of the x and y coordinates.
+    """
+    # Get index of columns of parquet file
+    metadata = pq.read_metadata(filepath)
+    schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
+
+    # Find min and max values across all row groups
+    x_max = -1
+    x_min = sys.maxsize
+    y_max = -1
+    y_min = sys.maxsize
+    for i in range(metadata.num_row_groups):
+        group = metadata.row_group(i)
+        x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
+        x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
+        y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
+        y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
+    return x_min, y_min, x_max, y_max

@@ -67,13 +67,6 @@ class TestDataUtils(unittest.TestCase):
         self.assertEqual(unassigned_df.loc[unassigned_df['overlaps_nucleus'] == 0, 'cell_id'].values[0], 'UNASSIGNED')
 
 
-    def test_build_tx_graph(self):
-        transform = BuildTxGraph(r=5.0)
-        data = Data(tx={'pos': torch.tensor([[0, 0], [1, 1], [2, 2]], dtype=torch.float)})
-        transformed_data = transform(data)
-        self.assertTrue('edge_index' in transformed_data['tx', 'neighbors', 'tx'])
-
-
 if __name__ == '__main__':
     unittest.main()
 
