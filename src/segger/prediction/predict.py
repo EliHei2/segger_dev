@@ -9,8 +9,8 @@ from torch_geometric.data import Batch
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import XeniumDataset
-from segger.data.utils import XeniumSample
+from segger.data.utils import SpatialTranscriptomicsDataset
+from segger.data.io import XeniumSample
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
 from lightning import LightningModule

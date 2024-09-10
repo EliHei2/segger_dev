@@ -10,37 +10,15 @@ from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
 
 
-def uint32_to_str(cell_id_uint32: int, dataset_suffix: int) -> str:
-    """
-    Convert a uint32 cell ID to a string format.
-
-    Parameters:
-    cell_id_uint32 (int): The cell ID in uint32 format.
-    dataset_suffix (int): The dataset suffix to append to the cell ID.
-
-    Returns:
-    str: The cell ID in string format.
-    """
-    hex_prefix = hex(cell_id_uint32)[2:].zfill(8)
-    hex_to_str_mapping = {
-        '0': 'a', '1': 'b', '2': 'c', '3': 'd',
-        '4': 'e', '5': 'f', '6': 'g', '7': 'h',
-        '8': 'i', '9': 'j', 'a': 'k', 'b': 'l',
-        'c': 'm', 'd': 'n', 'e': 'o', 'f': 'p'
-    }
-    str_prefix = ''.join([hex_to_str_mapping[char] for char in hex_prefix])
-    cell_id_str = f"{str_prefix}-{dataset_suffix}"
-    return cell_id_str
 
 def str_to_uint32(cell_id_str: str) -> Tuple[int, int]:
-    """
-    Convert a string cell ID back to uint32 format.
+    """Convert a string cell ID back to uint32 format.
 
-    Parameters:
-    cell_id_str (str): The cell ID in string format.
+    Args:
+        cell_id_str (str): The cell ID in string format.
 
     Returns:
-    Tuple[int, int]: The cell ID in uint32 format and the dataset suffix.
+        Tuple[int, int]: The cell ID in uint32 format and the dataset suffix.
     """
     prefix, suffix = cell_id_str.split('-')
     str_to_hex_mapping = {
@@ -55,14 +33,13 @@ def str_to_uint32(cell_id_str: str) -> Tuple[int, int]:
     return cell_id_uint32, dataset_suffix
 
 def get_indices_indptr(input_array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Get the indices and indptr arrays for sparse matrix representation.
+    """Get the indices and indptr arrays for sparse matrix representation.
 
-    Parameters:
-    input_array (np.ndarray): The input array containing cluster labels.
+    Args:
+        input_array (np.ndarray): The input array containing cluster labels.
 
     Returns:
-    Tuple[np.ndarray, np.ndarray]: The indices and indptr arrays.
+        Tuple[np.ndarray, np.ndarray]: The indices and indptr arrays.
     """
     clusters = sorted(np.unique(input_array[input_array != 0]))
     indptr = np.zeros(len(clusters), dtype=np.uint32)
@@ -78,13 +55,12 @@ def get_indices_indptr(input_array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]
     return indices, indptr
 
 def save_cell_clustering(merged: pd.DataFrame, zarr_path: str, columns: List[str]) -> None:
-    """
-    Save cell clustering information to a Zarr file.
+    """Save cell clustering information to a Zarr file.
 
-    Parameters:
-    merged (pd.DataFrame): The merged dataframe containing cell clustering information.
-    zarr_path (str): The path to the Zarr file.
-    columns (List[str]): The list of columns to save.
+    Args:
+        merged (pd.DataFrame): The merged dataframe containing cell clustering information.
+        zarr_path (str): The path to the Zarr file.
+        columns (List[str]): The list of columns to save.
     """
     import zarr
 
@@ -117,12 +93,11 @@ def save_cell_clustering(merged: pd.DataFrame, zarr_path: str, columns: List[str
     new_zarr.store.close()
 
 def draw_umap(adata, column: str = 'leiden') -> None:
-    """
-    Draw UMAP plots for the given AnnData object.
+    """Draw UMAP plots for the given AnnData object.
 
-    Parameters:
-    adata (AnnData): The AnnData object containing the data.
-    column (str): The column to color the UMAP plot by.
+    Args:
+        adata (AnnData): The AnnData object containing the data.
+        column (str): The column to color the UMAP plot by.
     """
     sc.pl.umap(adata, color=[column])
     plt.show()
@@ -134,15 +109,14 @@ def draw_umap(adata, column: str = 'leiden') -> None:
     plt.show()
 
 def get_leiden_umap(adata, draw: bool = False):
-    """
-    Perform Leiden clustering and UMAP visualization on the given AnnData object.
+    """Perform Leiden clustering and UMAP visualization on the given AnnData object.
 
-    Parameters:
-    adata (AnnData): The AnnData object containing the data.
-    draw (bool): Whether to draw the UMAP plots.
+    Args:
+        adata (AnnData): The AnnData object containing the data.
+        draw (bool): Whether to draw the UMAP plots.
 
     Returns:
-    AnnData: The AnnData object with Leiden clustering and UMAP results.
+        AnnData: The AnnData object with Leiden clustering and UMAP results.
     """
     sc.pp.filter_cells(adata, min_genes=5)
     sc.pp.filter_genes(adata, min_cells=5)
@@ -168,15 +142,14 @@ def get_leiden_umap(adata, draw: bool = False):
     return adata
 
 def get_median_expression_table(adata, column: str = 'leiden') -> pd.DataFrame:
-    """
-    Get the median expression table for the given AnnData object.
+    """Get the median expression table for the given AnnData object.
 
-    Parameters:
-    adata (AnnData): The AnnData object containing the data.
-    column (str): The column to group by.
+    Args:
+        adata (AnnData): The AnnData object containing the data.
+        column (str): The column to group by.
 
     Returns:
-    pd.DataFrame: The median expression table.
+        pd.DataFrame: The median expression table.
     """
     top_genes = ['GATA3', 'ACTA2', 'KRT7', 'KRT8', 'KRT5', 'AQP1', 'SERPINA3', 'PTGDS', 'CXCR4', 'SFRP1', 'ENAH', 'MYH11', 'SVIL', 'KRT14', 'CD4']
     top_gene_indices = [adata.var_names.get_loc(gene) for gene in top_genes]
@@ -208,21 +181,20 @@ def seg2explorer(
     area_low: float = 10,
     area_high: float = 100
 ) -> None:
-    """
-    Convert seg output to a format compatible with Xenium explorer.
+    """Convert seg output to a format compatible with Xenium explorer.
 
-    Parameters:
-    seg_df (pd.DataFrame): The seg DataFrame.
-    source_path (str): The source path.
-    output_dir (str): The output directory.
-    cells_filename (str): The filename for cells.
-    analysis_filename (str): The filename for analysis.
-    xenium_filename (str): The filename for Xenium.
-    analysis_df (Optional[pd.DataFrame]): The analysis DataFrame.
-    draw (bool): Whether to draw the plots.
-    cell_id_columns (str): The cell ID columns.
-    area_low (float): The lower area threshold.
-    area_high (float): The upper area threshold.
+    Args:
+        seg_df (pd.DataFrame): The seg DataFrame.
+        source_path (str): The source path.
+        output_dir (str): The output directory.
+        cells_filename (str): The filename for cells.
+        analysis_filename (str): The filename for analysis.
+        xenium_filename (str): The filename for Xenium.
+        analysis_df (Optional[pd.DataFrame]): The analysis DataFrame.
+        draw (bool): Whether to draw the plots.
+        cell_id_columns (str): The cell ID columns.
+        area_low (float): The lower area threshold.
+        area_high (float): The upper area threshold.
     """
     import zarr
     import json
@@ -340,15 +312,14 @@ def seg2explorer(
     )
 
 def get_flatten_version(polygons: List[np.ndarray], max_value: int = 21) -> np.ndarray:
-    """
-    Get the flattened version of polygon vertices.
+    """Get the flattened version of polygon vertices.
 
-    Parameters:
-    polygons (List[np.ndarray]): List of polygon vertices.
-    max_value (int): The maximum number of vertices to keep.
+    Args:
+        polygons (List[np.ndarray]): List of polygon vertices.
+        max_value (int): The maximum number of vertices to keep.
 
     Returns:
-    np.ndarray: The flattened array of polygon vertices.
+        np.ndarray: The flattened array of polygon vertices.
     """
     n = max_value + 1
     result = np.zeros((len(polygons), n * 2))
@@ -373,14 +344,13 @@ def generate_experiment_file(
     cells_name: str = "seg_cells",
     analysis_name: str = 'seg_analysis'
 ) -> None:
-    """
-    Generate the experiment file for Xenium.
+    """Generate the experiment file for Xenium.
 
-    Parameters:
-    template_path (str): The path to the template file.
-    output_path (str): The path to the output file.
-    cells_name (str): The name of the cells file.
-    analysis_name (str): The name of the analysis file.
+    Args:
+        template_path (str): The path to the template file.
+        output_path (str): The path to the output file.
+        cells_name (str): The name of the cells file.
+        analysis_name (str): The name of the analysis file.
     """
     import json
 

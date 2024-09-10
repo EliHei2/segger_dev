@@ -39,7 +39,7 @@ major_colors = {
 
 # Define segmentation file paths
 segmentation_paths = {
-    'segger': benchmarks_path / 'adata_segger+.h5ad',
+    'segger': benchmarks_path / 'adata_segger.h5ad',
     'Baysor': benchmarks_path / 'adata_baysor.h5ad',
     '10X': benchmarks_path / 'adata_10X.h5ad',
     '10X-nucleus': benchmarks_path / 'adata_10X_nuc.h5ad',

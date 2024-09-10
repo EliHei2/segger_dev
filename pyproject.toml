@@ -5,22 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "segger"
 version = "0.1.0"
-description = "A Python package for segmentation development"
+description = "Fast and accurate cell segmentation for single-molecule spatial omics"
 authors = [
     { name = "Elyas Heidari", email = "elyas.heidari@dkfz-heidelberg.de" }
 ]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
 keywords = ["segmentation", "deep learning", "pytorch", "geometric deep learning"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-]
-requires-python = ">=3.9"
+
 dependencies = [
     "torch>=2.0.0",
     "numpy>=1.21.0",
@@ -33,27 +26,31 @@ dependencies = [
     "lightning>=1.9.0",
     "torchmetrics>=0.5.0",
     "scanpy>=1.9.3",
-    "squidpy>=1.1.0",
+    "squidpy=1.2.0",
     "adjustText>=0.8",
     "scikit-learn>=0.24.0",
     "geopandas>=0.9.0",
     "shapely>=1.7.0",
     "path>=17.0.0",
     "pyarrow>=17.0.0"
-#     "torch-geometric>=2.2.0",
-#    "torch_scatter>=2.1.2",
-#    "torch_sparse>=0.6.18",
-#   "torch_cluster>=1.6.3"
 ]
 
-[project.urls]
-bug_tracker = "https://github.com/EliHei2/segger_dev/issues"
-documentation = "https://github.com/EliHei2/segger_dev#readme"
-source_code = "https://github.com/EliHei2/segger_dev"
-homepage = "https://github.com/EliHei2/segger_dev"
-repository = "https://github.com/EliHei2/segger_dev"
-
 [project.optional-dependencies]
+gpu = [
+    "cuml>=21.08",
+    "cudf>=21.08",
+    "cugraph>=21.08",
+    "cuspatial>=21.08",
+    "faiss-cpu>=1.7.0",
+    "faiss-gpu>=1.7.0"
+]
+torch-geometric = [
+    "torch-scatter>=2.1.2",
+    "torch-sparse>=0.6.18",
+    "torch-cluster>=1.6.3",
+    "torch-geometric>=2.2.0"
+]
+multiprocessing = ["multiprocessing"]
 dev = [
     "pytest",
     "black",
@@ -83,7 +80,13 @@ tests = [
     "coverage",
 ]
 
+[project.urls]
+bug_tracker = "https://github.com/EliHei2/segger_dev/issues"
+documentation = "https://github.com/EliHei2/segger_dev#readme"
+source_code = "https://github.com/EliHei2/segger_dev"
+homepage = "https://github.com/EliHei2/segger_dev"
+repository = "https://github.com/EliHei2/segger_dev"
+
 [tool.setuptools]
 packages = ["segger"]
 package-dir = {"" = "src"}
-
