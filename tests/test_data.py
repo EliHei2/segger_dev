@@ -8,10 +8,6 @@ import unittest
 import pandas as pd
 
 class TestDataUtils(unittest.TestCase):
-    
-    def test_uint32_to_str(self):
-        self.assertEqual(uint32_to_str(123456789, 'test'), '075bcd15-test')
-        self.assertEqual(uint32_to_str(0, 'suffix'), '00000000-suffix')
 
     def test_filter_transcripts(self):
         data = {

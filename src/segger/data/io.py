@@ -118,6 +118,10 @@ class SpatialTranscriptomicsSample(ABC):
         # Set the file path for transcripts
         transcripts_filename = transcripts_filename or self.keys.TRANSCRIPTS_FILE.value
         file_path = path or (base_path / sample / transcripts_filename)
+        self.transcripts_path = file_path
+
+        # Set metadata
+        self.set_metadata()
 
         # Use bounding box values from set_metadata if not explicitly provided
         x_min = x_min or self.x_min
@@ -213,6 +217,8 @@ class SpatialTranscriptomicsSample(ABC):
         """
         if file_format != "parquet":
             raise ValueError(f"Unsupported file format: {file_format}")
+        
+        self.boundaries_path = path
 
         # Use bounding box values from set_metadata if not explicitly provided
         x_min = x_min or self.x_min
@@ -249,7 +255,7 @@ class SpatialTranscriptomicsSample(ABC):
 
 
 
-    def set_metadata(self) -> None:
+    def set_metadata(self, verbose: bool = True) -> None:
         """
         Set metadata for the transcript dataset, including bounding box limits and unique gene names,
         without reading the entire Parquet file. Additionally, return integer tokens for unique gene names 
@@ -323,12 +329,14 @@ class SpatialTranscriptomicsSample(ABC):
         # Store the integer tokens mapping to gene names
         self.gene_to_token_map = dict(zip(self.tx_encoder.classes_, self.tx_encoder.transform(self.tx_encoder.classes_)))
 
-        print("Integer tokens have been computed and stored based on unique gene names.")
+        if verbose:
+            print("Integer tokens have been computed and stored based on unique gene names.")
 
         # Optional: Create a reverse mapping for lookup purposes (token to gene)
         self.token_to_gene_map = {v: k for k, v in self.gene_to_token_map.items()}
 
-        print("Lookup tables (gene_to_token_map and token_to_gene_map) have been created.")
+        if verbose:
+            print("Lookup tables (gene_to_token_map and token_to_gene_map) have been created.")
 
         
     def set_embedding(self, embedding_name: str) -> None:
