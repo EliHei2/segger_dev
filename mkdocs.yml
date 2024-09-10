@@ -40,14 +40,14 @@ nav:
   - Home: index.md
   - User Guide:
       - Overview: user_guide/index.md
-      - Installation: user_guide/installation.md
-      - Usage: user_guide/usage.md
-      - Examples: user_guide/examples.md
+      - Dataset Creation: user_guide/data_creation.md
+      - Training: user_guide/training.md
+      # - Examples: user_guide/examples.md
   - CLI: api/cli/index.md
   - API Reference:
       - Overview: api/index.md
       - Segger:
-          # - Core: api/segger.md
+
           - Models: api/models/index.md
           - Data: api/data/index.md
           - Training: api/training/index.md
@@ -72,6 +72,7 @@ plugins:
       include_source: True
 
 markdown_extensions:
+  # - mdx_math
   - admonition
   - attr_list
   - md_in_html
@@ -91,9 +92,17 @@ markdown_extensions:
   - codehilite        # Syntax highlighting for code
   - toc               # Table of contents for better navigation
   - pymdownx.superfences  # Handles complex nested code blocks or fenced content
-  - pymdownx.details    
+  - pymdownx.details   
+  - pymdownx.arithmatex:
+      generic: true
   - toc:
       permalink: true
 
 extra_css:
   - css/extra.css
+  - https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css
+
+extra_javascript:
+  - javascripts/config.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
