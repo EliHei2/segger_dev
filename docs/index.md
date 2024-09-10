@@ -11,9 +11,9 @@ For installation instructions, visit the [Installation Guide](installation.md).
 ## Quick Links
 
 - **[Installation Guide](installation.md)**: Get started with installing Segger on your machine.
-- **[User Guide](user_guide/index.rst)**: Learn how to use Segger for cell segmentation tasks.
+- **[User Guide](user_guide/index.md)**: Learn how to use Segger for cell segmentation tasks.
 - **[Command-Line Interface (CLI)](cli.md)**: Explore the CLI options for working with Segger.
-- **[API Reference](api/index.rst)**: Dive into the detailed API documentation for advanced usage.
+- **[API Reference](api/index.md)**: Dive into the detailed API documentation for advanced usage.
 
 ---
 

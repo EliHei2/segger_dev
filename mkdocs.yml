@@ -1,0 +1,66 @@
+site_name: Segger Documentation
+site_description: "Fast and accurate cell segmentation for single-molecule spatial omics"
+site_author: Elyas Heidari
+repo_url: https://github.com/EliHei2/segger_dev
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.instant
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.tabs.link
+    - navigation.tracking
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+
+nav:
+  - Home: index.md
+  - User Guide:
+      - Overview: user_guide/index.md
+      - Installation: user_guide/installation.md
+      - Usage: user_guide/usage.md
+      - Examples: user_guide/examples.md
+  - CLI: cli.md
+  - API Reference:
+      - Overview: api/index.md
+      - Segger:
+          - Core: api/segger.md
+          - Models: api/models.md
+          - Data: api/data.md
+          - Training: api/train.md
+          - Validation: api/validation.md
+          - Prediction: api/prediction.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            search_path: ["src"]
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  # - pymdownx.tabs
+  - pymdownx.critic
+  - pymdownx.tasklist
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.betterem
+  - pymdownx.tilde
+  - toc:
+      permalink: true
