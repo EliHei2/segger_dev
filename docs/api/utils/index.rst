@@ -54,7 +54,7 @@ Module Contents
    ```
 
 
-.. py:class:: CustomFormatter(fmt=None, datefmt=None, style='%', validate=True)
+.. py:class:: CustomFormatter(fmt=None, datefmt=None, style='%', validate=True, *, defaults=None)
 
    Bases: :py:obj:`logging.Formatter`
 

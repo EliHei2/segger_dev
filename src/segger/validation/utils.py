@@ -28,10 +28,9 @@ def find_markers(
     neg_percentile: float = 10, 
     percentage: float = 50
 ) -> Dict[str, Dict[str, List[str]]]:
-    """
-    Identify positive and negative markers for each cell type based on gene expression and filter by expression percentage.
+    """Identify positive and negative markers for each cell type based on gene expression and filter by expression percentage.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - cell_type_column: str
@@ -75,10 +74,9 @@ def find_mutually_exclusive_genes(
     markers: Dict[str, Dict[str, List[str]]], 
     cell_type_column: str
 ) -> List[Tuple[str, str]]:
-    """
-    Identify mutually exclusive genes based on expression criteria.
+    """Identify mutually exclusive genes based on expression criteria.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - markers: dict
@@ -120,10 +118,9 @@ def compute_MECR(
     adata: ad.AnnData, 
     gene_pairs: List[Tuple[str, str]]
 ) -> Dict[Tuple[str, str], float]:
-    """
-    Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.
+    """Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - gene_pairs: List[Tuple[str, str]]
@@ -150,10 +147,9 @@ def compute_quantized_mecr_area(
     gene_pairs: List[Tuple[str, str]], 
     quantiles: int = 10
 ) -> pd.DataFrame:
-    """
-    Compute the average MECR, variance of MECR, and average cell area for quantiles of cell areas.
+    """Compute the average MECR, variance of MECR, and average cell area for quantiles of cell areas.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - gene_pairs: List[Tuple[str, str]]
@@ -188,10 +184,9 @@ def compute_quantized_mecr_counts(
     gene_pairs: List[Tuple[str, str]], 
     quantiles: int = 10
 ) -> pd.DataFrame:
-    """
-    Compute the average MECR, variance of MECR, and average transcript counts for quantiles of transcript counts.
+    """Compute the average MECR, variance of MECR, and average transcript counts for quantiles of transcript counts.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - gene_pairs: List[Tuple[str, str]]
@@ -226,10 +221,9 @@ def annotate_query_with_reference(
     query_adata: ad.AnnData, 
     transfer_column: str
 ) -> ad.AnnData:
-    """
-    Annotate query AnnData object using a scRNA-seq reference atlas.
+    """Annotate query AnnData object using a scRNA-seq reference atlas.
 
-    Parameters:
+    Args:
     - reference_adata: ad.AnnData
         Reference AnnData object containing the scRNA-seq atlas data.
     - query_adata: ad.AnnData
@@ -264,10 +258,9 @@ def calculate_contamination(
     celltype_column: str = 'celltype_major', 
     num_cells: int = 10000
 ) -> pd.DataFrame:
-    """
-    Calculate normalized contamination from neighboring cells of different cell types based on positive markers.
+    """Calculate normalized contamination from neighboring cells of different cell types based on positive markers.
 
-    Parameters:
+    Args:
     - adata: ad.AnnData
         Annotated data object with raw counts and cell type information.
     - markers: dict
@@ -330,10 +323,9 @@ def calculate_sensitivity(
     purified_markers: Dict[str, List[str]], 
     max_cells_per_type: int = 1000
 ) -> Dict[str, List[float]]:
-    """
-    Calculate the sensitivity of the purified markers for each cell type.
+    """Calculate the sensitivity of the purified markers for each cell type.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data.
     - purified_markers: dict
@@ -364,10 +356,9 @@ def compute_clustering_scores(
     cell_type_column: str = 'celltype_major', 
     use_pca: bool = True
 ) -> Tuple[float, float]:
-    """
-    Compute the Calinski-Harabasz and Silhouette scores for an AnnData object based on the assigned cell types.
+    """Compute the Calinski-Harabasz and Silhouette scores for an AnnData object based on the assigned cell types.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing gene expression data and cell type assignments.
     - cell_type_column: str, default='celltype_major'
@@ -399,10 +390,9 @@ def compute_neighborhood_metrics(
     n_neighs: int = 20,
     subset_size: int = 10000
 ) -> None:
-    """
-    Compute neighborhood entropy and number of neighbors for each cell in the AnnData object.
+    """Compute neighborhood entropy and number of neighbors for each cell in the AnnData object.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing spatial information and cell type assignments.
     - radius: int, default=10
@@ -413,7 +403,7 @@ def compute_neighborhood_metrics(
     """
     Compute neighborhood entropy and number of neighbors for a random subset of cells in the AnnData object.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing spatial information and cell type assignments.
     - radius: int, default=10
@@ -456,10 +446,9 @@ def compute_neighborhood_metrics(
 
 
 def compute_transcript_density(adata: ad.AnnData) -> None:
-    """
-    Compute the transcript density for each cell in the AnnData object.
+    """Compute the transcript density for each cell in the AnnData object.
 
-    Parameters:
+    Args:
     - adata: AnnData
         Annotated data object containing transcript and cell area information.
     """
@@ -478,7 +467,7 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
 #     """
 #     Compute the purity F1 score for each cell type based on marker genes.
 
-#     Parameters:
+#     Args:
 #     - adata: AnnData
 #         Annotated data object containing gene expression data.
 #     - marker_genes: dict
@@ -514,7 +503,7 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
 #     """
 #     Compute the average log-normalized expression for each cell type.
 
-#     Parameters:
+#     Args:
 #     - adata: AnnData
 #         Annotated data object containing gene expression data.
 #     - celltype_column: str
@@ -539,10 +528,9 @@ def plot_metric_comparison(
     method1: str, 
     method2: str
 ) -> None:
-    """
-    Plot a comparison of a specific metric between two methods.
+    """Plot a comparison of a specific metric between two methods.
 
-    Parameters:
+    Args:
     - ax: plt.Axes
         Matplotlib axis to plot on.
     - data: pd.DataFrame
@@ -572,10 +560,9 @@ def plot_metric_comparison(
 
 
 def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnData]:
-    """
-    Load segmentation data from provided paths and handle special cases like separating 'segger' into 'segger_n0' and 'segger_n1'.
+    """Load segmentation data from provided paths and handle special cases like separating 'segger' into 'segger_n0' and 'segger_n1'.
 
-    Parameters:
+    Args:
     segmentation_paths (Dict[str, Path]): Dictionary mapping segmentation method names to their file paths.
 
     Returns:
@@ -596,10 +583,9 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
 
 
 def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str] ) -> None:
-    """
-    Plot the number of cells per segmentation method.
+    """Plot the number of cells per segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -628,10 +614,9 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     plt.show()
 
 def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the percentage of assigned transcripts (normalized) for each segmentation method.
+    """Plot the percentage of assigned transcripts (normalized) for each segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -682,10 +667,9 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
     plt.show()
 
 def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the normalized gene counts for each segmentation method.
+    """Plot the normalized gene counts for each segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -735,10 +719,9 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     plt.show()
 
 def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the counts per cell (log2) for each segmentation method.
+    """Plot the counts per cell (log2) for each segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -772,10 +755,9 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
     plt.show()
 
 def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the cell area (log2) for each segmentation method.
+    """Plot the cell area (log2) for each segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -810,10 +792,9 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
     plt.show()
 
 def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the transcript density (log2) for each segmentation method.
+    """Plot the transcript density (log2) for each segmentation method.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the plot will be saved.
     """
@@ -853,10 +834,9 @@ def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_pa
     plt.show()
 
 def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Create a summary plot with all the general statistics subplots.
+    """Create a summary plot with all the general statistics subplots.
 
-    Parameters:
+    Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
     output_path (Path): Path to the directory where the summary plot will be saved.
     """
@@ -885,10 +865,9 @@ def plot_general_statistics_plots(segmentations_dict: Dict[str, sc.AnnData], out
 
 
 def plot_mecr_results(mecr_results: Dict[str, Dict[Tuple[str, str], float]], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the MECR (Mutually Exclusive Co-expression Rate) results for each segmentation method.
+    """Plot the MECR (Mutually Exclusive Co-expression Rate) results for each segmentation method.
 
-    Parameters:
+    Args:
     mecr_results (Dict[str, Dict[Tuple[str, str], float]]): Dictionary of MECR results for each segmentation method.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -916,10 +895,9 @@ def plot_mecr_results(mecr_results: Dict[str, Dict[Tuple[str, str], float]], out
 
 
 def plot_quantized_mecr_counts(quantized_mecr_counts: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.
+    """Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.
 
-    Parameters:
+    Args:
     quantized_mecr_counts (Dict[str, pd.DataFrame]): Dictionary of quantized MECR count data for each segmentation method.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -955,10 +933,9 @@ def plot_quantized_mecr_counts(quantized_mecr_counts: Dict[str, pd.DataFrame], o
     
     
 def plot_quantized_mecr_area(quantized_mecr_area: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot the quantized MECR values against cell areas for each segmentation method, with point size proportional to the variance of MECR.
+    """Plot the quantized MECR values against cell areas for each segmentation method, with point size proportional to the variance of MECR.
 
-    Parameters:
+    Args:
     quantized_mecr_area (Dict[str, pd.DataFrame]): Dictionary of quantized MECR area data for each segmentation method.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -996,10 +973,9 @@ def plot_quantized_mecr_area(quantized_mecr_area: Dict[str, pd.DataFrame], outpu
 
 
 def plot_contamination_results(contamination_results: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot contamination results for each segmentation method.
+    """Plot contamination results for each segmentation method.
 
-    Parameters:
+    Args:
     contamination_results (Dict[str, pd.DataFrame]): Dictionary of contamination data for each segmentation method.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -1016,10 +992,9 @@ def plot_contamination_results(contamination_results: Dict[str, pd.DataFrame], o
         
         
 def plot_contamination_boxplots(boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot boxplots for contamination values across different segmentation methods.
+    """Plot boxplots for contamination values across different segmentation methods.
 
-    Parameters:
+    Args:
     boxplot_data (pd.DataFrame): DataFrame containing contamination data for all segmentation methods.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -1049,9 +1024,8 @@ def plot_umaps_with_scores(
     output_path: Path, 
     palette: Dict[str, str]
 ) -> None:
-    """
-    Plot UMAPs colored by cell type for each segmentation method and display clustering scores in the title.
-    Parameters:
+    """Plot UMAPs colored by cell type for each segmentation method and display clustering scores in the title.
+    Args:
     segmentations_dict (Dict[str, AnnData]): Dictionary of AnnData objects for each segmentation method.
     clustering_scores (Dict[str, Tuple[float, float]]): Dictionary of clustering scores for each method.
     output_path (Path): Path to the directory where the plots will be saved.
@@ -1078,10 +1052,9 @@ def plot_umaps_with_scores(
 
 
 def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot boxplots for neighborhood entropy across different segmentation methods by cell type.
+    """Plot boxplots for neighborhood entropy across different segmentation methods by cell type.
 
-    Parameters:
+    Args:
     entropy_boxplot_data (pd.DataFrame): DataFrame containing neighborhood entropy data for all segmentation methods.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
@@ -1107,9 +1080,8 @@ def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path,
 
 
 def plot_sensitivity_boxplots(sensitivity_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
-    """
-    Plot boxplots for sensitivity across different segmentation methods by cell type.
-    Parameters:
+    """Plot boxplots for sensitivity across different segmentation methods by cell type.
+    Args:
     sensitivity_boxplot_data (pd.DataFrame): DataFrame containing sensitivity data for all segmentation methods.
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.

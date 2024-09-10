@@ -30,29 +30,29 @@ extensions = [
     'sphinx_copybutton'
 ]
 
-html_theme_options = {
-    "logo": {
-        "text": "Segger",  # Customize with your project's name
-    },
-    "external_links": [
-        {"name": "GitHub", "url": "https://github.com/EliHei2/segger_dev"},
-        {"name": "Documentation", "url": "https://github.com/EliHei2/segger_dev#readme"},
-    ],
-    "icon_links": [
-        {
-            "name": "GitHub",
-            "url": "https://github.com/EliHei2/segger_dev",
-            "icon": "fab fa-github-square",
-        },
-    ],
-    "navbar_start": ["navbar-logo"],
-    "navbar_center": ["navbar-nav"],
-    "navbar_end": ["navbar-icon-links"],
-    "footer_items": ["copyright"],
-    "show_nav_level": 2,  # Adjust how many levels of the sidebar are shown
-    "navbar_align": "content",  # Center align the navigation bar
-    "footer_items": ["copyright"],
-}
+# html_theme_options = {
+#     "logo": {
+#         "text": "Segger",  # Customize with your project's name
+#     },
+#     "external_links": [
+#         {"name": "GitHub", "url": "https://github.com/EliHei2/segger_dev"},
+#         {"name": "Documentation", "url": "https://github.com/EliHei2/segger_dev#readme"},
+#     ],
+#     "icon_links": [
+#         {
+#             "name": "GitHub",
+#             "url": "https://github.com/EliHei2/segger_dev",
+#             "icon": "fab fa-github-square",
+#         },
+#     ],
+#     "navbar_start": ["navbar-logo"],
+#     "navbar_center": ["navbar-nav"],
+#     "navbar_end": ["navbar-icon-links"],
+#     "footer_items": ["copyright"],
+#     "show_nav_level": 2,  # Adjust how many levels of the sidebar are shown
+#     "navbar_align": "content",  # Center align the navigation bar
+#     "footer_items": ["copyright"],
+# }
 
 # Static files (e.g., custom CSS, images)
 html_static_path = ['_static']
@@ -111,7 +111,7 @@ autoapi_options = [
 #     '.md': 'markdown',
 # }
 
-source_suffix = ['.rst', '.md']
+source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 
 # Intersphinx configuration to link to other projects' documentation
 intersphinx_mapping = {

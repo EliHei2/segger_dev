@@ -37,27 +37,6 @@ try_import('hnswlib')
 
 
 
-def uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str:
-    """
-    Convert a 32-bit unsigned integer cell ID to a string with a specific suffix.
-
-    Parameters:
-    cell_id_uint32 (int): The 32-bit unsigned integer cell ID.
-    dataset_suffix (str): The suffix to append to the string representation of the cell ID.
-
-    Returns:
-    str: The string representation of the cell ID with the appended suffix.
-    """
-    hex_prefix = hex(cell_id_uint32)[2:].zfill(8)
-    hex_to_str_mapping = {
-        '0': 'a', '1': 'b', '2': 'c', '3': 'd',
-        '4': 'e', '5': 'f', '6': 'g', '7': 'h',
-        '8': 'i', '9': 'j', 'a': 'k', 'b': 'l',
-        'c': 'm', 'd': 'n', 'e': 'o', 'f': 'p'
-    }
-    str_prefix = ''.join([hex_to_str_mapping[char] for char in hex_prefix])
-    return f"{str_prefix}-{dataset_suffix}"
-
 
 def filter_transcripts(
     transcripts_df: pd.DataFrame,
@@ -67,11 +46,11 @@ def filter_transcripts(
     Filters transcripts based on quality value and removes unwanted transcripts.
 
     Parameters:
-    transcripts_df (pd.DataFrame): The dataframe containing transcript data.
-    min_qv (float): The minimum quality value threshold for filtering transcripts.
+        transcripts_df (pd.DataFrame): The dataframe containing transcript data.
+        min_qv (float): The minimum quality value threshold for filtering transcripts.
 
     Returns:
-    pd.DataFrame: The filtered dataframe.
+        pd.DataFrame: The filtered dataframe.
     """
     filter_codewords = (
         "NegControlProbe_",
@@ -94,20 +73,17 @@ def compute_transcript_metrics(
     Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.
 
     Parameters:
-    df (pd.DataFrame): The dataframe containing transcript data.
-    qv_threshold (float): The quality value threshold for filtering transcripts.
-    cell_id_col (str): The name of the column representing the cell ID.
+        df (pd.DataFrame): The dataframe containing transcript data.
+        qv_threshold (float): The quality value threshold for filtering transcripts.
+        cell_id_col (str): The name of the column representing the cell ID.
 
     Returns:
-    Dict[str, Any]: A dictionary containing:
-        - 'percent_assigned' (float): The percentage of assigned transcripts.
-        - 'percent_cytoplasmic' (float): The percentage of cytoplasmic transcripts among assigned transcripts.
-        - 'percent_nucleus' (float): The percentage of nucleus transcripts among assigned transcripts.
-        - 'percent_non_assigned_cytoplasmic' (float): The percentage of non-assigned cytoplasmic transcripts among all non-assigned transcripts.
-        - 'gene_metrics' (pd.DataFrame): A dataframe containing gene-level metrics:
-            - 'feature_name': The gene name.
-            - 'percent_assigned': The percentage of assigned transcripts for each gene.
-            - 'percent_cytoplasmic': The percentage of cytoplasmic transcripts for each gene.
+        Dict[str, Any]: A dictionary containing various transcript metrics:
+            - 'percent_assigned' (float): The percentage of assigned transcripts.
+            - 'percent_cytoplasmic' (float): The percentage of cytoplasmic transcripts among assigned transcripts.
+            - 'percent_nucleus' (float): The percentage of nucleus transcripts among assigned transcripts.
+            - 'percent_non_assigned_cytoplasmic' (float): The percentage of non-assigned cytoplasmic transcripts.
+            - 'gene_metrics' (pd.DataFrame): A dataframe containing gene-level metrics.
     """
     df_filtered = df[df['qv'] > qv_threshold]
     total_transcripts = len(df_filtered)
@@ -150,16 +126,16 @@ def create_anndata(
     Generates an AnnData object from a dataframe of segmented transcriptomics data.
     
     Parameters:
-    df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
-    panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
-    min_transcripts (int): The minimum number of transcripts required for a cell to be included.
-    cell_id_col (str): The column name representing the cell ID in the input dataframe.
-    qv_threshold (float): The quality value threshold for filtering transcripts.
-    min_cell_area (float): The minimum cell area to include a cell.
-    max_cell_area (float): The maximum cell area to include a cell.
+        df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
+        panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
+        min_transcripts (int): The minimum number of transcripts required for a cell to be included.
+        cell_id_col (str): The column name representing the cell ID in the input dataframe.
+        qv_threshold (float): The quality value threshold for filtering transcripts.
+        min_cell_area (float): The minimum cell area to include a cell.
+        max_cell_area (float): The maximum cell area to include a cell.
     
     Returns:
-    ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
+        ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
     """
     df_filtered = filter_transcripts(df, min_qv=qv_threshold)
     metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
@@ -234,50 +210,25 @@ def create_anndata(
     }
     return adata
 
-
-class BuildTxGraph(BaseTransform):
-    def __init__(self, r: float, loop: bool = False, max_num_neighbors: int = 32, flow: str = 'source_to_target', num_workers: int = 5) -> None:
-        self.r = r
-        self.loop = loop
-        self.max_num_neighbors = max_num_neighbors
-        self.flow = flow
-        self.num_workers = num_workers
-
-    def forward(self, data: HeteroData) -> HeteroData:
-        assert data['tx'].pos is not None
-        data['tx', 'neighbors', 'tx'].edge_index = radius_graph(
-            data['tx'].pos, self.r, max_num_neighbors=self.max_num_neighbors, num_workers=self.num_workers
-        )
-        return data
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(r={self.r})'
     
 
 def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_column: str) -> pd.DataFrame:
-    """
-    Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type 
+    """Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type 
     that express the gene (non-zero expression).
 
     Parameters:
-    -----------
-    adata : AnnData
-        An AnnData object containing gene expression data and cell type information.
-    celltype_column : str
-        The column name in `adata.obs` that contains the cell type information.
+        adata (ad.AnnData): An AnnData object containing gene expression data and cell type information.
+        celltype_column (str): The column name in `adata.obs` that contains the cell type information.
 
     Returns:
-    --------
-    pd.DataFrame
-        A DataFrame where rows are genes and columns are cell types, with each value representing 
-        the percentage of cells in that cell type expressing the gene.
-
+        pd.DataFrame: A DataFrame where rows are genes and columns are cell types, with each value representing 
+            the percentage of cells in that cell type expressing the gene.
+            
     Example:
-    --------
-    >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
-    >>> celltype_column = 'celltype_major'
-    >>> abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)
-    >>> abundance_df.head()
+        >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
+        >>> celltype_column = 'celltype_major'
+        >>> abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)
+        >>> abundance_df.head()
     """
     # Extract expression data (cells x genes) and cell type information (cells)
     expression_data = adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X
@@ -309,24 +260,15 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
     Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
-    method : str, optional
-        The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph', 'cuspatial').
-    gpu : bool, optional
-        Whether to use GPU acceleration (applicable for FAISS).
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
+        method (str, optional): The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph', 'cuspatial').
+        gpu (bool, optional): Whether to use GPU acceleration (applicable for FAISS).
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     if method == 'kd_tree':
         return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist, workers=workers)
@@ -350,20 +292,13 @@ def get_edge_index_kdtree(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
     Computes edge indices using KDTree.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     tree = cKDTree(coords_1)
     d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist, workers=workers)
@@ -386,22 +321,14 @@ def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5,
     Computes edge indices using FAISS.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
-    gpu : bool, optional
-        Whether to use GPU acceleration.
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
+        gpu (bool, optional): Whether to use GPU acceleration.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     coords_1 = np.ascontiguousarray(coords_1, dtype=np.float32)
     coords_2 = np.ascontiguousarray(coords_2, dtype=np.float32)
@@ -434,20 +361,13 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
     Computes edge indices using RAPIDS cuML.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     index = cuml.neighbors.NearestNeighbors(n_neighbors=k, algorithm='brute', metric='euclidean')
     index.fit(coords_1)
@@ -473,20 +393,13 @@ def get_edge_index_cugraph(
     Computes edge indices using RAPIDS cuGraph.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     gdf_1 = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
     gdf_2 = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
@@ -509,20 +422,13 @@ def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int 
     Computes edge indices using cuSpatial's spatial join functionality.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates (2D).
-    coords_2 : np.ndarray
-        Second set of coordinates (2D).
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
+        coords_1 (np.ndarray): First set of coordinates (2D).
+        coords_2 (np.ndarray): Second set of coordinates (2D).
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     # Convert numpy arrays to cuDF DataFrames
     coords_1_df = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
@@ -555,105 +461,19 @@ def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int 
 
 
 
-class SpatialTranscriptomicsDataset(InMemoryDataset):
-    """
-    A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.
-
-    Attributes:
-        root (str): The root directory where the dataset is stored.
-        transform (callable): A function/transform that takes in a Data object and returns a transformed version.
-        pre_transform (callable): A function/transform that takes in a Data object and returns a transformed version.
-        pre_filter (callable): A function that takes in a Data object and returns a boolean indicating whether to keep it.
-    """
-    def __init__(self, root: str, transform: Callable = None, pre_transform: Callable = None, pre_filter: Callable = None):
-        """
-        Initialize the SpatialTranscriptomicsDataset.
-
-        Args:
-            root (str): Root directory where the dataset is stored.
-            transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
-            pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
-            pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
-        """
-        super().__init__(root, transform, pre_transform, pre_filter)
-        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
-
-    @property
-    def raw_file_names(self) -> List[str]:
-        """
-        Return a list of raw file names in the raw directory.
-
-        Returns:
-            List[str]: List of raw file names.
-        """
-        return os.listdir(self.raw_dir)
-
-    @property
-    def processed_file_names(self) -> List[str]:
-        """
-        Return a list of processed file names in the processed directory.
-
-        Returns:
-            List[str]: List of processed file names.
-        """
-        return [x for x in os.listdir(self.processed_dir) if 'tiles' in x]
-
-    def download(self) -> None:
-        """
-        Download the raw data. This method should be overridden if you need to download the data.
-        """
-        pass
-
-    def process(self) -> None:
-        """
-        Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.
-        """
-        pass
-
-    def len(self) -> int:
-        """
-        Return the number of processed files.
-
-        Returns:
-            int: Number of processed files.
-        """
-        return len(self.processed_file_names)
-
-    def get(self, idx: int) -> Data:
-        """
-        Get a processed data object.
-
-        Args:
-            idx (int): Index of the data object to retrieve.
-
-        Returns:
-            Data: The processed data object.
-        """
-        data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
-        data['tx'].x = data['tx'].x.to_dense()
-        return data
-
-
 
 def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
     """
     Computes edge indices using the HNSW algorithm.
 
     Parameters:
-    -----------
-    coords_1 : np.ndarray
-        First set of coordinates.
-    coords_2 : np.ndarray
-        Second set of coordinates.
-    k : int, optional
-        Number of nearest neighbors.
-    dist : int, optional
-        Distance threshold.
+        coords_1 (np.ndarray): First set of coordinates.
+        coords_2 (np.ndarray): Second set of coordinates.
+        k (int, optional): Number of nearest neighbors.
+        dist (int, optional): Distance threshold.
 
     Returns:
-    --------
-    torch.Tensor
-        Edge indices.
+        torch.Tensor: Edge indices.
     """
     num_elements = coords_1.shape[0]
     dim = coords_1.shape[1]
@@ -682,59 +502,74 @@ def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, 
     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
     return edge_index
 
+class SpatialTranscriptomicsDataset(InMemoryDataset):
+    """A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.
 
-# def create_scaled_polygon(group, scale_factor, keys):
-#     """
-#     Helper function to create and scale a polygon from boundary vertices.
+    Attributes:
+        root (str): The root directory where the dataset is stored.
+        transform (callable): A function/transform that takes in a Data object and returns a transformed version.
+        pre_transform (callable): A function/transform that takes in a Data object and returns a transformed version.
+        pre_filter (callable): A function that takes in a Data object and returns a boolean indicating whether to keep it.
+    """
+    def __init__(self, root: str, transform: Callable = None, pre_transform: Callable = None, pre_filter: Callable = None):
+        """Initialize the SpatialTranscriptomicsDataset.
 
-#     Parameters:
-#     -----------
-#     group : pd.DataFrame
-#         Group of boundary coordinates (for a specific cell).
-#     scale_factor : float
-#         The factor by which to scale the polygons.
-#     keys : dict
-#         Dictionary containing the relevant key mappings as strings.
+        Args:
+            root (str): Root directory where the dataset is stored.
+            transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
+            pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.
+            pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
+        """
+        super().__init__(root, transform, pre_transform, pre_filter)
+        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
 
-#     Returns:
-#     --------
-#     pd.Series
-#         A Series containing the scaled Polygon and cell_id.
-#     """
-#     x_coords = group[keys['vertex_x']]
-#     y_coords = group[keys['vertex_y']]
-#     if len(x_coords) >= 3:  # Ensure there are at least 3 points to form a polygon
-#         polygon = Polygon(zip(x_coords, y_coords))
-#         if polygon.is_valid and not polygon.is_empty:
-#             # Scale the polygon by the provided factor
-#             scaled_polygon = polygon.buffer(scale_factor)  # Buffer can be used to mimic scaling
-#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:
-#                 return pd.Series({
-#                     'geometry': scaled_polygon, 
-#                     keys['cell_id']: group[keys['cell_id']].iloc[0]
-#                 })
-#     return pd.Series({'geometry': None, keys['cell_id']: group[keys['cell_id']].iloc[0]})
+    @property
+    def raw_file_names(self) -> List[str]:
+        """Return a list of raw file names in the raw directory.
+
+        Returns:
+            List[str]: List of raw file names.
+        """
+        return os.listdir(self.raw_dir)
+
+    @property
+    def processed_file_names(self) -> List[str]:
+        """Return a list of processed file names in the processed directory.
+
+        Returns:
+            List[str]: List of processed file names.
+        """
+        return [x for x in os.listdir(self.processed_dir) if 'tiles' in x]
+
+    def download(self) -> None:
+        """Download the raw data. This method should be overridden if you need to download the data.
+        """
+        pass
+
+    def process(self) -> None:
+        """Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.
+        """
+        pass
+
+    def len(self) -> int:
+        """Return the number of processed files.
+
+        Returns:
+            int: Number of processed files.
+        """
+        return len(self.processed_file_names)
+
+    def get(self, idx: int) -> Data:
+        """Get a processed data object.
+
+        Args:
+            idx (int): Index of the data object to retrieve.
+
+        Returns:
+            Data: The processed data object.
+        """
+        data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
+        data['tx'].x = data['tx'].x.to_dense()
+        return data
 
 
-# def create_scaled_polygon(group, scale_factor, keys):
-#     x_coords = group[keys['vertex_x']]
-#     y_coords = group[keys['vertex_y']]
-
-#     # Ensure at least 3 points for the polygon
-#     if len(x_coords) >= 3:
-#         polygon = Polygon(zip(x_coords, y_coords))
-        
-#         # Check if the polygon is valid (requires computation)
-#         if polygon.is_valid and not polygon.is_empty:
-#             # Scale the polygon and check its validity after scaling
-#             scaled_polygon = polygon.buffer(scale_factor)
-            
-#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:
-#                 # Return the scaled polygon and the corresponding cell_id
-#                 return pd.Series({
-#                     'geometry': scaled_polygon, 
-#                     keys['cell_id']: group[keys['cell_id']].iloc[0]
-#                 })
-
-#     # Return a default result when no valid polygon is created
-#     return pd.Series({'geometry': None, keys['cell_id']: group[keys['cell_id']].iloc[0]})

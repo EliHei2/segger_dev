@@ -6,6 +6,12 @@ theme:
   name: material
   features:
     - navigation.tabs
+  logo: images/logo.png
+  favicon: images/logo.png
+  font:
+    text: ubuntu
+  features:
+    - navigation.tabs
     - navigation.sections
     - navigation.instant
     - toc.integrate
@@ -17,12 +23,18 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: amber
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to system preference
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: amber
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
 
 nav:
   - Home: index.md
@@ -31,26 +43,39 @@ nav:
       - Installation: user_guide/installation.md
       - Usage: user_guide/usage.md
       - Examples: user_guide/examples.md
-  - CLI: cli.md
+  - CLI: api/cli/index.md
   - API Reference:
       - Overview: api/index.md
       - Segger:
-          - Core: api/segger.md
-          - Models: api/models.md
-          - Data: api/data.md
-          - Training: api/train.md
-          - Validation: api/validation.md
-          - Prediction: api/prediction.md
+          # - Core: api/segger.md
+          - Models: api/models/index.md
+          - Data: api/data/index.md
+          - Training: api/training/index.md
+          - Validation: api/validation/index.md
+          - Prediction: api/prediction/index.md
 
 plugins:
   - search
+  - autorefs
   - mkdocstrings:
       handlers:
         python:
           options:
+            headings: true          # Add structured headings for sections like Parameters
+            show_signature: true    
             show_source: true
+            paths:
             search_path: ["src"]
+            show_root_heading: true
+            heading_level: 3
+  - mkdocs-jupyter:
+      include_source: True
+
 markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
   - pymdownx.superfences
   - pymdownx.details
   - pymdownx.inlinehilite
@@ -62,5 +87,13 @@ markdown_extensions:
   - pymdownx.smartsymbols
   - pymdownx.betterem
   - pymdownx.tilde
+  - admonition        # Adds better note formatting for parameters, warnings, etc.
+  - codehilite        # Syntax highlighting for code
+  - toc               # Table of contents for better navigation
+  - pymdownx.superfences  # Handles complex nested code blocks or fenced content
+  - pymdownx.details    
   - toc:
       permalink: true
+
+extra_css:
+  - css/extra.css

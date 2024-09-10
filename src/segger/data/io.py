@@ -36,19 +36,13 @@ class SpatialTranscriptomicsSample(ABC):
         boundaries_graph: bool = False,
         keys: Dict = None
     ):
-        """
-        Initialize the SpatialTranscriptomicsSample class.
+        """Initialize the SpatialTranscriptomicsSample class.
 
-        Parameters:
-        -----------
-        transcripts_df : pd.DataFrame, optional
-            A DataFrame containing transcript data.
-        transcripts_radius : int, optional
-            Radius for transcripts in the analysis.
-        boundaries_graph : bool, optional
-            Whether to include boundaries (e.g., nucleus, cell) graph information.
-        keys : Enum, optional
-            The enum class containing key mappings specific to the dataset.
+        Args:
+            transcripts_df (pd.DataFrame, optional): A DataFrame containing transcript data.
+            transcripts_radius (int, optional): Radius for transcripts in the analysis.
+            boundaries_graph (bool, optional): Whether to include boundaries (e.g., nucleus, cell) graph information.
+            keys (Dict, optional): The enum class containing key mappings specific to the dataset.
         """
         self.transcripts_df = transcripts_df
         self.transcripts_radius = transcripts_radius
@@ -57,17 +51,6 @@ class SpatialTranscriptomicsSample(ABC):
         self.embedding_df = None
         self.current_embedding = 'one_hot'
 
-        # if self.transcripts_df is not None:
-        #     self._set_bounds()
-
-    def _set_bounds(self) -> None:
-        """
-        Set the bounding box limits based on the current transcripts dataframe using lazy evaluation with Dask.
-        """
-        self.x_min = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].min()  # Lazy execution, no compute yet
-        self.x_max = self.transcripts_df[self.keys.TRANSCRIPTS_X.value].max()  # Lazy execution, no compute yet
-        self.y_min = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].min()  # Lazy execution, no compute yet
-        self.y_max = self.transcripts_df[self.keys.TRANSCRIPTS_Y.value].max()  # Lazy execution, no compute yet
 
     @abstractmethod
     def filter_transcripts(self, transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
@@ -75,29 +58,22 @@ class SpatialTranscriptomicsSample(ABC):
         Abstract method to filter transcripts based on dataset-specific criteria.
 
         Parameters:
-        -----------
-        transcripts_df : pd.DataFrame
-            The dataframe containing transcript data.
-        min_qv : float, optional
-            The minimum quality value threshold for filtering transcripts.
+            transcripts_df (pd.DataFrame): The dataframe containing transcript data.
+            min_qv (float, optional): The minimum quality value threshold for filtering transcripts.
 
         Returns:
-        --------
-        pd.DataFrame
-            The filtered dataframe.
+            pd.DataFrame: The filtered dataframe.
         """
         pass
+    
     
     def set_file_paths(self, transcripts_path: Path, boundaries_path: Path) -> None:
         """
         Set the paths for the transcript and boundary files.
 
         Parameters:
-        -----------
-        transcripts_path : Path
-            Path to the Parquet file containing transcripts data.
-        boundaries_path : Path
-            Path to the Parquet file containing boundaries data.
+            transcripts_path (Path): Path to the Parquet file containing transcripts data.
+            boundaries_path (Path): Path to the Parquet file containing boundaries data.
         """
         self.transcripts_path = transcripts_path
         self.boundaries_path = boundaries_path
@@ -123,32 +99,18 @@ class SpatialTranscriptomicsSample(ABC):
         only within the specified bounding box, and return the filtered DataFrame with integer token embeddings.
 
         Parameters:
-        -----------
-        base_path : Path, optional
-            The base directory path where samples are stored.
-        sample : str, optional
-            The sample name or identifier.
-        transcripts_filename : str, optional
-            The filename of the transcripts file (default is derived from the dataset keys).
-        path : Path, optional
-            Specific path to the transcripts file.
-        file_format : str, optional
-            Format of the file to load (default is 'parquet').
-        x_min : float, optional
-            Minimum X-coordinate for the bounding box.
-        x_max : float, optional
-            Maximum X-coordinate for the bounding box.
-        y_min : float, optional
-            Minimum Y-coordinate for the bounding box.
-        y_max : float, optional
-            Maximum Y-coordinate for the bounding box.
-        additional_embeddings : Dict[str, pd.DataFrame], optional
-            A dictionary of additional embeddings for genes.
+            base_path (Path, optional): The base directory path where samples are stored.
+            sample (str, optional): The sample name or identifier.
+            transcripts_filename (str, optional): The filename of the transcripts file (default is derived from the dataset keys).
+            path (Path, optional): Specific path to the transcripts file.
+            file_format (str, optional): Format of the file to load (default is 'parquet').
+            x_min (float, optional): Minimum X-coordinate for the bounding box.
+            x_max (float, optional): Maximum X-coordinate for the bounding box.
+            y_min (float, optional): Minimum Y-coordinate for the bounding box.
+            y_max (float, optional): Maximum Y-coordinate for the bounding box.
 
         Returns:
-        --------
-        dd.DataFrame
-            The filtered transcripts DataFrame.
+            dd.DataFrame: The filtered transcripts DataFrame.
         """
         if file_format != "parquet":
             raise ValueError("This version only supports parquet files with Dask.")
@@ -219,21 +181,6 @@ class SpatialTranscriptomicsSample(ABC):
             final_count = delayed(lambda df: df.shape[0])(transcripts_df)
             print(f"Dropped {initial_count - final_count} transcripts not found in {key} embedding.")
 
-        # Set spatial boundaries for the transcripts dataframe (based on the loaded data)
-        # self._set_bounds()
-
-        # # Use the pre-computed tx_encoder to produce integer tokens for the genes
-        # if hasattr(self, 'tx_encoder'):
-        #     token_encoding = self.tx_encoder.transform(transcripts_df[self.keys.FEATURE_NAME.value])
-        #     transcripts_df['one_hot'] = token_encoding  # Store the integer tokens in the 'one_hot' column
-
-        # # Handle additional embeddings lazily as well
-        # if additional_embeddings:
-        #     for key, embedding_df in additional_embeddings.items():
-        #         self.embeddings_dict[key] = delayed(lambda df: embedding_df.loc[
-        #             df[self.keys.FEATURE_NAME.value].values
-        #         ].values)(transcripts_df)
-
         # Ensure that the 'OVERLAPS_BOUNDARY' column is boolean if it exists
         if self.keys.OVERLAPS_BOUNDARY.value in transcripts_df.columns:
             transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
@@ -254,24 +201,15 @@ class SpatialTranscriptomicsSample(ABC):
         Load boundaries data lazily using Dask, filtering by the specified bounding box.
 
         Parameters:
-        -----------
-        path : Path
-            Path to the boundaries file.
-        file_format : str, optional
-            Format of the file to load. Only 'parquet' is supported in this refactor.
-        x_min : float, optional
-            Minimum X-coordinate for the bounding box.
-        x_max : float, optional
-            Maximum X-coordinate for the bounding box.
-        y_min : float, optional
-            Minimum Y-coordinate for the bounding box.
-        y_max : float, optional
-            Maximum Y-coordinate for the bounding box.
+            path (Path): Path to the boundaries file.
+            file_format (str, optional): Format of the file to load. Only 'parquet' is supported in this refactor.
+            x_min (float, optional): Minimum X-coordinate for the bounding box.
+            x_max (float, optional): Maximum X-coordinate for the bounding box.
+            y_min (float, optional): Minimum Y-coordinate for the bounding box.
+            y_max (float, optional): Maximum Y-coordinate for the bounding box.
 
         Returns:
-        --------
-        dd.DataFrame
-            The filtered boundaries DataFrame.
+            dd.DataFrame: The filtered boundaries DataFrame.
         """
         if file_format != "parquet":
             raise ValueError(f"Unsupported file format: {file_format}")
@@ -398,143 +336,28 @@ class SpatialTranscriptomicsSample(ABC):
         Set the current embedding type for the transcripts.
 
         Parameters:
-        -----------
-        embedding_name : str
-            The name of the embedding to use.
+            embedding_name : str
+                The name of the embedding to use.
 
-        Returns:
-        --------
-        None
         """
         if embedding_name in self.embeddings_dict:
             self.current_embedding = embedding_name
         else:
             raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
         
-        
-    def get_tile_data(self, x_min: float, y_min: float, x_size: float, y_size: float) -> Tuple[dd.DataFrame, dd.DataFrame]:
-        """
-        Load the necessary data for a given tile from the transcripts and boundaries.
-        Uses Dask's filtering for chunked processing.
-        Parameters:
-        -----------
-        x_min : float
-            Minimum x-coordinate of the tile.
-        y_min : float
-            Minimum y-coordinate of the tile.
-        x_size : float
-            Width of the tile.
-        y_size : float
-            Height of the tile.
-        Returns:
-        --------
-        Tuple[dd.DataFrame, dd.DataFrame]
-            Transcripts and boundaries data for the tile.
-        """
-        x_max = x_min + x_size
-        y_max = y_min + y_size
-        # Use Dask DataFrame filtering to get only the required data
-        tile_transcripts = self.transcripts_df[
-            (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] >= x_min) &
-            (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] <= x_max) &
-            (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] >= y_min) &
-            (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] <= y_max)
-        ]
-        tile_boundaries = self.boundaries_df[
-            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] >= x_min) &
-            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] <= x_max) &
-            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] >= y_min) &
-            (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
-        ]
-        return tile_transcripts, tile_boundaries
-    
-    def get_bounding_box(
-        self,
-        x_min: float = None,
-        y_min: float = None,
-        x_max: float = None,
-        y_max: float = None,
-        in_place: bool = True,
-    ) -> Optional['SpatialTranscriptomicsSample']:
-        """
-        Subsets the transcripts_df and boundaries_df within the specified bounding box using Dask.
-        Parameters:
-        -----------
-        x_min : float, optional
-            The minimum x-coordinate of the bounding box.
-        y_min : float, optional
-            The minimum y-coordinate of the bounding box.
-        x_max : float, optional
-            The maximum x-coordinate of the bounding box.
-        y_max : float, optional
-            The maximum y-coordinate of the bounding box.
-        in_place : bool, optional
-            If True, modifies the current instance. If False, returns a new instance with the subsetted data.
-        Returns:
-        --------
-        Optional[SpatialTranscriptomicsSample]
-            If in_place is True, returns None after modifying the existing instance.
-            If in_place is False, returns a new SpatialTranscriptomicsSample instance with the subsetted data.
-        """
-        # Validate the bounding box coordinates
-        x_min, y_min, x_max, y_max = self._validate_bbox(x_min, y_min, x_max, y_max)
-        # Use Dask DataFrame to subset transcripts within the bounding box
-        subset_transcripts_df = self.transcripts_df[
-            (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] >= x_min)
-            & (self.transcripts_df[self.keys.TRANSCRIPTS_X.value] <= x_max)
-            & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] >= y_min)
-            & (self.transcripts_df[self.keys.TRANSCRIPTS_Y.value] <= y_max)
-        ]
-        # Subset boundaries_df if it exists using Dask
-        subset_boundaries_df = None
-        if self.boundaries_df is not None:
-            subset_boundaries_df = self.boundaries_df[
-                (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] >= x_min)
-                & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_X.value] <= x_max)
-                & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] >= y_min)
-                & (self.boundaries_df[self.keys.BOUNDARIES_VERTEX_Y.value] <= y_max)
-            ]
-        # Reset the indices lazily using Dask's `reset_index`
-        subset_transcripts_df = subset_transcripts_df.reset_index(drop=True)
-        if subset_boundaries_df is not None:
-            subset_boundaries_df = subset_boundaries_df.reset_index(drop=True)
-        if in_place:
-            # Update the current instance with the subsetted data
-            self.transcripts_df = subset_transcripts_df
-            self.boundaries_df = subset_boundaries_df
-            self.x_min, self.y_min, self.x_max, self.y_max = x_min, y_min, x_max, y_max
-            # No need to return a new instance
-            print(f"Subset completed in-place.")
-            return None
-        else:
-            # Create a new instance of SpatialTranscriptomicsSample with the subsetted data
-            new_instance = self.__class__(subset_transcripts_df, self.transcripts_radius, self.boundaries_graph, self.keys)
-            new_instance.boundaries_df = subset_boundaries_df
-            new_instance.x_min, new_instance.y_min, new_instance.x_max, new_instance.y_max = x_min, y_min, x_max, y_max
-            print(f"Subset completed with new instance.")
-        return new_instance
     
     @staticmethod
     def create_scaled_polygon(group: pd.DataFrame, scale_factor: float, keys) -> gpd.GeoDataFrame:
         """
         Static method to create and scale a polygon from boundary vertices and return a GeoDataFrame.
 
-        This method ensures that the polygon scaling happens efficiently without requiring
-        an instance of the class. Keys should be passed to avoid Dask tokenization issues.
-
         Parameters:
-        -----------
-        group : pd.DataFrame
-            Group of boundary coordinates (for a specific cell).
-        scale_factor : float
-            The factor by which to scale the polygons.
-        keys : Enum or dict-like
-            A collection of keys to access column names for 'cell_id', 'vertex_x', and 'vertex_y'.
+            group (pd.DataFrame): Group of boundary coordinates (for a specific cell).
+            scale_factor (float): The factor by which to scale the polygons.
+            keys (Dict or Enum): A collection of keys to access column names for 'cell_id', 'vertex_x', and 'vertex_y'.
 
         Returns:
-        --------
-        gpd.GeoDataFrame
-            A GeoDataFrame containing the scaled Polygon and cell_id.
+            gpd.GeoDataFrame: A GeoDataFrame containing the scaled Polygon and cell_id.
         """
         # Extract coordinates and cell ID from the group using keys
         x_coords = group[keys['vertex_x']]
@@ -567,16 +390,11 @@ class SpatialTranscriptomicsSample(ABC):
         Keeps class structure intact by using static method for the core polygon generation.
 
         Parameters:
-        -----------
-        boundaries_df : dask.dataframe.DataFrame
-            DataFrame containing boundary coordinates.
-        scale_factor : float, optional
-            The factor by which to scale the polygons (default is 1.0).
+            boundaries_df (dd.DataFrame): DataFrame containing boundary coordinates.
+            scale_factor (float, optional): The factor by which to scale the polygons (default is 1.0).
 
         Returns:
-        --------
-        dask_geopandas.GeoDataFrame
-            A GeoDataFrame containing scaled Polygon objects and their centroids.
+            dgpd.GeoDataFrame: A GeoDataFrame containing scaled Polygon objects and their centroids.
         """
         # print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
 
@@ -598,10 +416,6 @@ class SpatialTranscriptomicsSample(ABC):
             )
         )
         
-
-        # Convert to a Dask GeoDataFrame
-        # polygons_gdf = dgpd.from_dask_dataframe(polygons_ddf)
-        # print(polygons_ddf)
         # Lazily compute centroids for each polygon
         print("Adding centroids to the polygons...")
         polygons_ddf['centroid_x'] = polygons_ddf.geometry.centroid.x
@@ -627,21 +441,13 @@ class SpatialTranscriptomicsSample(ABC):
         and assigns corresponding cell IDs to the transcripts using Dask.
 
         Parameters:
-        -----------
-        transcripts_df : dask.dataframe.DataFrame
-            Dask DataFrame containing transcript data.
-        boundaries_df : dask.dataframe.DataFrame, optional
-            Dask DataFrame containing boundary data. Required if polygons_gdf is not provided.
-        polygons_gdf : dask_geopandas.GeoDataFrame, optional
-            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
-        scale_factor : float, optional
-            The factor by which to scale the boundary polygons. Default is 1.0.
+            transcripts_df (dd.DataFrame): Dask DataFrame containing transcript data.
+            boundaries_df (dd.DataFrame, optional): Dask DataFrame containing boundary data. Required if polygons_gdf is not provided.
+            polygons_gdf (dgpd.GeoDataFrame, optional): Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
+            scale_factor (float, optional): The factor by which to scale the boundary polygons. Default is 1.0.
 
         Returns:
-        --------
-        dask.dataframe.DataFrame
-            The updated DataFrame with overlap information (True for overlap, False for no overlap)
-            and assigned cell IDs.
+            dd.DataFrame: The updated DataFrame with overlap information and assigned cell IDs.
         """
         # Check if polygons_gdf is provided, otherwise compute from boundaries_df
         if polygons_gdf is None:
@@ -706,26 +512,16 @@ class SpatialTranscriptomicsSample(ABC):
         Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe using Dask.
 
         Parameters:
-        -----------
-        boundaries_df : dask.dataframe.DataFrame, optional
-            The dataframe containing boundaries data. Required if polygons_gdf is not provided.
-        polygons_gdf : dask_geopandas.GeoDataFrame, optional
-            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
-        scale_factor : float, optional
-            The factor by which to scale the polygons (default is 1.0, no scaling).
-        area : bool, optional
-            Whether to compute area.
-        convexity : bool, optional
-            Whether to compute convexity.
-        elongation : bool, optional
-            Whether to compute elongation.
-        circularity : bool, optional
-            Whether to compute circularity.
+            boundaries_df (dd.DataFrame, optional): The dataframe containing boundaries data. Required if polygons_gdf is not provided.
+            polygons_gdf (dgpd.GeoDataFrame, optional): Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.
+            scale_factor (float, optional): The factor by which to scale the polygons (default is 1.0).
+            area (bool, optional): Whether to compute area.
+            convexity (bool, optional): Whether to compute convexity.
+            elongation (bool, optional): Whether to compute elongation.
+            circularity (bool, optional): Whether to compute circularity.
 
         Returns:
-        --------
-        dask_geopandas.GeoDataFrame
-            A GeoDataFrame containing computed geometries.
+            dgpd.GeoDataFrame: A GeoDataFrame containing computed geometries.
         """
         # Check if polygons_gdf is provided, otherwise compute from boundaries_df
         if polygons_gdf is None:
@@ -765,18 +561,6 @@ class SpatialTranscriptomicsSample(ABC):
         
         return polygons_gdf.reset_index(drop=True)
 
-    def _validate_bbox(self, x_min: float, y_min: float, x_max: float, y_max: float) -> Tuple[float, float, float, float]:
-        """Validates and sets default values for bounding box coordinates."""
-        if x_min is None:
-            x_min = self.x_min
-        if y_min is None:
-            y_min = self.y_min
-        if x_max is None:
-            x_max = self.x_max
-        if y_max is None:
-            y_max = self.y_max
-        return x_min, y_min, x_max, y_max
-
     def save_dataset_for_segger(
         self,
         processed_dir: Path,
@@ -808,49 +592,25 @@ class SpatialTranscriptomicsSample(ABC):
         Saves the dataset for Segger in a processed format using Dask for parallel and lazy processing.
 
         Parameters:
-        -----------
-        processed_dir : Path
-            Directory to save the processed dataset.
-        x_size : float, optional
-            Width of each tile.
-        y_size : float, optional
-            Height of each tile.
-        d_x : float, optional
-            Step size in the x direction for tiles.
-        d_y : float, optional
-            Step size in the y direction for tiles.
-        margin_x : float, optional
-            Margin in the x direction to include transcripts.
-        margin_y : float, optional
-            Margin in the y direction to include transcripts.
-        compute_labels : bool, optional
-            Whether to compute edge labels for tx_belongs_bd edges.
-        r_tx : float, optional
-            Radius for building the transcript-to-transcript graph.
-        k_tx : int, optional
-            Number of nearest neighbors for the tx-tx graph.
-        val_prob : float, optional
-            Probability of assigning a tile to the validation set.
-        test_prob : float, optional
-            Probability of assigning a tile to the test set.
-        neg_sampling_ratio_approx : float, optional
-            Approximate ratio of negative samples.
-        sampling_rate : float, optional
-            Rate of sampling tiles.
-        num_workers : int, optional
-            Number of workers to use for parallel processing.
-        receptive_field : dict, optional
-            Dictionary containing the values for 'k_bd', 'dist_bd', 'k_tx', and 'dist_tx'.
-        method : str, optional
-            Method for computing edge indices (e.g., 'kd_tree', 'faiss').
-        gpu : bool, optional
-            Whether to use GPU acceleration for edge index computation.
-        workers : int, optional
-            Number of workers to use to compute the neighborhood graph (per tile).
-
-        Returns:
-        --------
-        None
+            processed_dir (Path): Directory to save the processed dataset.
+            x_size (float, optional): Width of each tile.
+            y_size (float, optional): Height of each tile.
+            d_x (float, optional): Step size in the x direction for tiles.
+            d_y (float, optional): Step size in the y direction for tiles.
+            margin_x (float, optional): Margin in the x direction to include transcripts.
+            margin_y (float, optional): Margin in the y direction to include transcripts.
+            compute_labels (bool, optional): Whether to compute edge labels for tx_belongs_bd edges.
+            r_tx (float, optional): Radius for building the transcript-to-transcript graph.
+            k_tx (int, optional): Number of nearest neighbors for the tx-tx graph.
+            val_prob (float, optional): Probability of assigning a tile to the validation set.
+            test_prob (float, optional): Probability of assigning a tile to the test set.
+            neg_sampling_ratio_approx (float, optional): Approximate ratio of negative samples.
+            sampling_rate (float, optional): Rate of sampling tiles.
+            num_workers (int, optional): Number of workers to use for parallel processing.
+            receptive_field (Dict[str, float], optional): Dictionary containing the values for 'k_bd', 'dist_bd', 'k_tx', and 'dist_tx'.
+            method (str, optional): Method for computing edge indices (e.g., 'kd_tree', 'faiss').
+            gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
+            workers (int, optional): Number of workers to use to compute the neighborhood graph (per tile).
         """
         # Prepare directories for storing processed tiles
         self._prepare_directories(processed_dir)
@@ -961,13 +721,8 @@ class SpatialTranscriptomicsSample(ABC):
         Process a single tile using Dask for parallelism and lazy evaluation, and save the data.
 
         Parameters:
-        -----------
-        tile_params : tuple
-            Parameters for the tile processing.
-
-        Returns:
-        --------
-        None
+            tile_params : tuple
+                Parameters for the tile processing.
         """
         (
             i, j, x_size, y_size, x_loc, y_loc, margin_x, margin_y, compute_labels, 
@@ -1066,26 +821,16 @@ class SpatialTranscriptomicsSample(ABC):
         Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.
 
         Parameters:
-        -----------
-        boundaries_df : dd.DataFrame
-            Dask DataFrame containing boundaries data (e.g., nucleus, cell).
-        transcripts_df : dd.DataFrame
-            Dask DataFrame containing transcripts data.
-        r_tx : float
-            Radius for building the transcript-to-transcript graph.
-        k_tx : int
-            Number of nearest neighbors for the tx-tx graph.
-        method : str, optional
-            Method for computing edge indices (e.g., 'kd_tree', 'faiss').
-        gpu : bool, optional
-            Whether to use GPU acceleration for edge index computation.
-        workers : int, optional
-            Number of workers to use for parallel processing.
+            boundaries_df (dd.DataFrame): Dask DataFrame containing boundaries data (e.g., nucleus, cell).
+            transcripts_df (dd.DataFrame): Dask DataFrame containing transcripts data.
+            r_tx (float): Radius for building the transcript-to-transcript graph.
+            k_tx (int): Number of nearest neighbors for the tx-tx graph.
+            method (str, optional): Method for computing edge indices (e.g., 'kd_tree', 'faiss').
+            gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
+            workers (int, optional): Number of workers to use for parallel processing.
 
         Returns:
-        --------
-        HeteroData
-            PyG Heterogeneous Data object.
+            HeteroData: PyG Heterogeneous Data object.
         """
         # Initialize the PyG HeteroData object
         data = HeteroData()
@@ -1185,16 +930,11 @@ class XeniumSample(SpatialTranscriptomicsSample):
         Filters transcripts based on quality value and removes unwanted transcripts for Xenium using Dask.
 
         Parameters:
-        -----------
-        transcripts_df : dd.DataFrame
-            The Dask DataFrame containing transcript data.
-        min_qv : float, optional
-            The minimum quality value threshold for filtering transcripts.
+            transcripts_df (dd.DataFrame): The Dask DataFrame containing transcript data.
+            min_qv (float, optional): The minimum quality value threshold for filtering transcripts.
 
         Returns:
-        --------
-        dd.DataFrame
-            The filtered Dask DataFrame.
+            dd.DataFrame: The filtered Dask DataFrame.
         """
         filter_codewords = (
             "NegControlProbe_",
@@ -1233,16 +973,14 @@ class MerscopeSample(SpatialTranscriptomicsSample):
         Filters transcripts based on specific criteria for Merscope using Dask.
 
         Parameters:
-        -----------
-        transcripts_df : dd.DataFrame
-            The Dask DataFrame containing transcript data.
-        min_qv : float, optional
-            The minimum quality value threshold for filtering transcripts.
+            transcripts_df : dd.DataFrame
+                The Dask DataFrame containing transcript data.
+            min_qv : float, optional
+                The minimum quality value threshold for filtering transcripts.
 
         Returns:
-        --------
-        dd.DataFrame
-            The filtered Dask DataFrame.
+            dd.DataFrame
+                The filtered Dask DataFrame.
         """
         # Add custom Merscope-specific filtering logic if needed
         # For now, apply only the quality value filter
