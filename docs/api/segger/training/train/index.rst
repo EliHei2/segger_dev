@@ -11,18 +11,14 @@ Module Contents
 
 .. py:class:: LitSegger(**kwargs)
 
-   Bases: :py:obj:`pytorch_lightning.LightningModule`
+   Bases: :py:obj:`lightning.LightningModule`
 
 
    LitSegger is a PyTorch Lightning module for training and validating the Segger model.
 
-   This class handles the training loop, validation loop, and optimizer configuration
-   for the Segger model, which is designed for heterogeneous graph data. The model is
-   compatible with large-scale datasets and leverages PyTorch Geometric for graph-related operations.
-
    .. attribute:: model
 
-      The Segger model wrapped with PyTorch Geometric's `to_hetero` for heterogeneous graph support.
+      The Segger model wrapped with PyTorch Geometric's to_hetero for heterogeneous graph support.
 
       :type: Segger
 
@@ -34,26 +30,9 @@ Module Contents
 
    .. attribute:: criterion
 
-      The loss function used for training, specifically `BCEWithLogitsLoss`.
+      The loss function used for training, specifically BCEWithLogitsLoss.
 
       :type: torch.nn.Module
-
-   .. method:: forward(batch: SpatialTranscriptomicsSample) -> torch.Tensor
-
-      Forward pass for the batch of data.
-
-   .. method:: training_step(batch: Any, batch_idx: int) -> torch.Tensor
-
-      Defines a single training step.
-
-   .. method:: validation_step(batch: Any, batch_idx: int) -> torch.Tensor
-
-      Defines a single validation step.
-
-   .. method:: configure_optimizers() -> torch.optim.Optimizer
-
-      Configures the optimizer and learning rate scheduler.
-
 
 
    .. py:attribute:: new_args
@@ -70,55 +49,44 @@ Module Contents
    .. py:attribute:: criterion
 
 
-   .. py:method:: from_new(init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str, metadata: Union[Tuple, torch_geometric.typing.Metadata])
+   .. py:method:: from_new(num_tx_tokens: int, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str, metadata: Union[Tuple, torch_geometric.typing.Metadata])
 
       Initializes the LitSegger module with new parameters.
 
+      :param num_tx_tokens: Number of unique 'tx' tokens for embedding (this must be passed here).
+      :type num_tx_tokens: int
       :param init_emb: Initial embedding size.
       :type init_emb: int
       :param hidden_channels: Number of hidden channels.
       :type hidden_channels: int
       :param out_channels: Number of output channels.
       :type out_channels: int
-      :param heads: Number of attention heads in GAT layers.
+      :param heads: Number of attention heads.
       :type heads: int
-      :param aggr: Aggregation method for the `to_hetero` conversion.
+      :param aggr: Aggregation method for heterogeneous graph conversion.
       :type aggr: str
-      :param metadata: Metadata for the heterogeneous graph, used to define the node and edge types.
+      :param metadata: Metadata for heterogeneous graph structure.
       :type metadata: Union[Tuple, Metadata]
 
-      .. rubric:: Notes
-
-      This method creates a new Segger model with the specified parameters and
-      wraps it in a `to_hetero` call to handle heterogeneous graph structures.
 
 
+   .. py:method:: from_components(model: Segger)
 
-   .. py:method:: from_components(model: segger.models.segger_model.Segger)
-
-      Initializes the LitSegger module with existing components for testing.
+      Initializes the LitSegger module with existing Segger components.
 
       :param model: The Segger model to be used.
       :type model: Segger
 
-      .. rubric:: Notes
-
-      This method directly assigns the provided Segger model to the LitSegger
-      module, which can be useful for testing or reusing pre-trained models.
 
 
-
-   .. py:method:: forward(batch: segger.data.utils.SpatialTranscriptomicsSample) -> torch.Tensor
+   .. py:method:: forward(batch: segger.data.utils.SpatialTranscriptomicsDataset) -> torch.Tensor
 
       Forward pass for the batch of data.
 
-      This method computes the forward pass of the model for a batch of data, producing
-      output tensors based on the input features and edge indices.
+      :param batch: The batch of data, including node features and edge indices.
+      :type batch: SpatialTranscriptomicsDataset
 
-      :param batch: Batch of data, including node features and edge indices.
-      :type batch: SpatialTranscriptomicsSample
-
-      :returns: The output tensor resulting from the forward pass.
+      :returns: The output of the model.
       :rtype: torch.Tensor
 
 
@@ -126,9 +94,6 @@ Module Contents
    .. py:method:: training_step(batch: Any, batch_idx: int) -> torch.Tensor
 
       Defines the training step.
-
-      This method computes the loss for a single batch during training, logs the
-      loss value, and returns it for backpropagation.
 
       :param batch: The batch of data.
       :type batch: Any
@@ -144,9 +109,6 @@ Module Contents
 
       Defines the validation step.
 
-      This method computes the loss for a single batch during validation, logs the
-      loss and other metrics (AUROC, F1 score), and returns the loss.
-
       :param batch: The batch of data.
       :type batch: Any
       :param batch_idx: The index of the batch.
@@ -159,12 +121,9 @@ Module Contents
 
    .. py:method:: configure_optimizers() -> torch.optim.Optimizer
 
-      Configures the optimizer.
+      Configures the optimizer for training.
 
-      This method defines and returns the optimizer to be used during training,
-      along with any learning rate schedulers if needed.
-
-      :returns: The optimizer used for training the model.
+      :returns: The optimizer for training.
       :rtype: torch.optim.Optimizer
 
 

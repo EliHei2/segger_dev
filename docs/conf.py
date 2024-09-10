@@ -106,10 +106,12 @@ autoapi_options = [
 # }
 
 # Source file suffixes
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
-}
+# source_suffix = {
+#     '.rst': 'reStructuredText',
+#     '.md': 'markdown',
+# }
+
+source_suffix = ['.rst', '.md']
 
 # Intersphinx configuration to link to other projects' documentation
 intersphinx_mapping = {

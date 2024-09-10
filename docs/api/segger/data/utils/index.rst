@@ -11,6 +11,8 @@ segger.data.utils
 Module Contents
 ---------------
 
+.. py:function:: try_import(module_name)
+
 .. py:function:: uint32_to_str(cell_id_uint32: int, dataset_suffix: str) -> str
 
    Convert a 32-bit unsigned integer cell ID to a string with a specific suffix.
@@ -147,7 +149,7 @@ Module Contents
    >>> abundance_df.head()
 
 
-.. py:function:: get_edge_index(coords_1: numpy.ndarray, coords_2: numpy.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree', gpu: bool = False) -> torch.Tensor
+.. py:function:: get_edge_index(coords_1: numpy.ndarray, coords_2: numpy.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree', gpu: bool = False, workers: int = 1) -> torch.Tensor
 
    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
 
@@ -173,7 +175,7 @@ Module Contents
        Edge indices.
 
 
-.. py:function:: get_edge_index_kdtree(coords_1: numpy.ndarray, coords_2: numpy.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor
+.. py:function:: get_edge_index_kdtree(coords_1: numpy.ndarray, coords_2: numpy.ndarray, k: int = 5, dist: int = 10, workers: int = 1) -> torch.Tensor
 
    Computes edge indices using KDTree.
 
@@ -366,5 +368,27 @@ Module Contents
       :returns: The processed data object.
       :rtype: Data
 
+
+
+.. py:function:: get_edge_index_hnsw(coords_1: numpy.ndarray, coords_2: numpy.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor
+
+   Computes edge indices using the HNSW algorithm.
+
+   Parameters:
+   -----------
+   coords_1 : np.ndarray
+       First set of coordinates.
+   coords_2 : np.ndarray
+       Second set of coordinates.
+   k : int, optional
+       Number of nearest neighbors.
+   dist : int, optional
+       Distance threshold.
+
+   Returns:
+   --------
+   :
+   torch.Tensor
+       Edge indices.
 
 
