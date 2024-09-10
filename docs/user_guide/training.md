@@ -2,17 +2,17 @@
 
 ## The Model
 
-The `segger` model is a graph neural network designed to handle heterogeneous graphs with two primary node types: **transcripts** and **nuclei or cell boundaries**. It leverages attention-based convolutional layers to compute node embeddings and relationships in spatial transcriptomics data. The architecture includes an initial embedding layer for node feature transformation, multiple graph attention layers (GATv2Conv), and residual linear connections.
+The `segger` model is a graph neural network designed to handle heterogeneous graphs with two primary node types: **transcripts** and **nuclei or cell boundaries**. It leverages attention-based graph convolutional layers to compute node embeddings and relationships in spatial transcriptomics data. The architecture includes an initial embedding layer for node feature transformation, multiple graph attention layers (GATv2Conv), and residual linear connections.
 
 ### Model Architecture
 
-1. **Input Node Features**:  
-   For input node features $x$, the model distinguishes between one-dimensional (transcript) nodes and multi-dimensional (boundary or nucleus) nodes by checking the dimension of $\mathbf{x}$.
+- **Input Node Features**:  
+   For input node features $\mathbf{x}$, the model distinguishes between transcript nodes and boundary (or nucleus) nodes.
 
    - **Transcript Nodes**: If $\mathbf{x}$ is 1-dimensional (e.g., for tokenized transcript data), the model applies an embedding layer:
 
 $$
-\mathbf{h}_{i}^{(0)} = \text{Embedding}(i)
+\mathbf{h}_{i}^{(0)} = \text{nn.Embedding}(i)
 $$
 
    where $i$ is the transcript token index.
@@ -25,7 +25,7 @@ $$
 
    where $\mathbf{W}$ is a learnable weight matrix.
 
-2. **Graph Attention Layers (GATv2Conv)**:  
+- **Graph Attention Layers (GATv2Conv)**:  
    The node embeddings are updated through multiple attention-based layers. The update for a node $i$ at layer $l+1$ is given by:
 
 $$
@@ -41,7 +41,7 @@ $$
 
    - $\mathbf{a}$ is a learnable attention vector.
 
-3. **Residual Linear Connections**:  
+- **Residual Linear Connections**:  
    After each attention layer, a residual connection is added via a linear transformation to stabilize learning:
 
 $$
@@ -50,7 +50,7 @@ $$
 
    where $\mathbf{W}_{res}$ is a residual weight matrix.
 
-4. **L2 Normalization**:  
+- **L2 Normalization**:  
    Finally, the embeddings are normalized using L2 normalization:
 
 $$
@@ -82,13 +82,10 @@ output = model(x, edge_index)
 
 Once transformed to a heterogeneous model and trained using PyTorch Lightning, the model can efficiently learn relationships between transcripts and nuclei or cell boundaries.
 
-## Training with `pytorch-lightning`
+## Training the heterogeneous GNN with `pytorch-lightning`
 
 The training module makes use of **PyTorch Lightning** for efficient and scalable training, alongside **PyTorch Geometric** for processing the graph-based data. The module is built to handle multi-GPU setups and allows the flexibility to adjust hyperparameters, aggregation methods, and embedding sizes.
 
-### Key Components
-
-1. **SpatialTranscriptomicsDataset**
 
 The `SpatialTranscriptomicsDataset` class is used to load and manage spatial transcriptomics data stored in the format of PyTorch Geometric `Data` objects. It inherits from `InMemoryDataset` to load preprocessed datasets, ensuring efficient in-memory data handling for training and validation phases.
 
@@ -115,5 +112,5 @@ python scripts/train_model.py \
   --default_root_dir ./models/clean2
 ```
 
-This example submits a job to train the `segger` model on four GPUs with a batch size of 4 for both training and validation, utilizing 16-bit mixed precision.
+The `scripts/train_model.py` file can be found on the github repo. This example submits a job to train the `segger` model on 4 GPUs with a batch size of 4 for both training and validation, utilizing 16-bit mixed precision.
 

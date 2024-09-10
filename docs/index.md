@@ -44,6 +44,8 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 # How segger Works
 
+![Segger Model](images/Segger_model_08_2024.png)
+
 ### :material-shape-outline: **Heterogeneous Graph Structure**
 
 segger models **nuclei and transcript relationships** using:
@@ -62,13 +64,17 @@ segger can effectively handle **nucleus-free cells**, improving transcript assig
 
 - :material-lightning-bolt-outline: **PyTorch Lightning & PyTorch Geometric**: Enables fast, efficient graph neural network (GNN) implementation for heterogeneous graphs.
 - :simple-dask: **Dask**: Scalable parallel processing and distributed task scheduling, ideal for handling large transcriptomic datasets.
+- :simple-geopandas: *Shapely & Geopandas*: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.
 - :octicons-cpu-16: **RAPIDS**: Provides GPU-accelerated computation for tasks like k-nearest neighbors (KNN) graph construction.
-- :material-table-multiple: **AnnData & Scanpy**: Efficient data integration and processing for large-scale datasets.
+- :material-table-multiple: **AnnData & Scanpy**: Efficient processing for single-cell datasets.
 - :material-calculator: **SciPy**: Facilitates spatial graph construction, including distance metrics and convex hull calculations for transcript clustering.
 
 ---
 
 # Contributions
+
+segger is **open-source** and welcomes contributions. Join us in advancing spatial omics segmentation!
+
 
 <div class="grid cards" markdown="1">
 
@@ -83,4 +89,3 @@ segger can effectively handle **nucleus-free cells**, improving transcript assig
 
 </div>
 
-segger is **open-source** and welcomes contributions. Join us in advancing spatial omics segmentation!
