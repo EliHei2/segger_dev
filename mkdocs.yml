@@ -38,8 +38,9 @@ theme:
 
 nav:
   - Home: index.md
-  - User Guide:
+  - Getting Started:
       - Overview: user_guide/index.md
+      - Installation: installation.md
       - Dataset Creation: user_guide/data_creation.md
       - Training: user_guide/training.md
       # - Examples: user_guide/examples.md

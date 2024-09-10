@@ -3,7 +3,7 @@
 # Installation Guide
 
 This guide provides the necessary steps to install the `segger` package for both `Micromamba` and `CPU` versions.
-`
+
 ## Installation Options
 
 Select the appropriate installation method based on your requirements.
