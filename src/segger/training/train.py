@@ -15,7 +15,7 @@ from pytorch_lightning import LightningModule
 import inspect
 
 
-class LitSegger(L.LightningModule):
+class LitSegger(LightningModule):
     """
     LitSegger is a PyTorch Lightning module for training and validating the Segger model.
 
@@ -60,7 +60,7 @@ class LitSegger(L.LightningModule):
         self.validation_step_outputs = []
         self.criterion = torch.nn.BCEWithLogitsLoss()
 
-    def from_new(self, num_tx_tokens: int, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str, metadata: Union[Tuple, Metadata]):
+    def from_new(self, num_tx_tokens: int, init_emb: int, hidden_channels: int, out_channels: int, heads: int, num_mid_layers: int, aggr: str, metadata: Union[Tuple, Metadata]):
         """
         Initializes the LitSegger module with new parameters.
 
@@ -78,6 +78,8 @@ class LitSegger(L.LightningModule):
             Number of attention heads.
         aggr : str
             Aggregation method for heterogeneous graph conversion.
+        num_mid_layers: int
+            Number of hidden layers (excluding first and last layers).
         metadata : Union[Tuple, Metadata]
             Metadata for heterogeneous graph structure.
         """
@@ -87,7 +89,8 @@ class LitSegger(L.LightningModule):
             init_emb=init_emb,
             hidden_channels=hidden_channels,
             out_channels=out_channels,
-            heads=heads
+            heads=heads,
+            num_mid_layers=num_mid_layers,
         )
         # Convert model to handle heterogeneous graphs
         model = to_hetero(model, metadata=metadata, aggr=aggr)
