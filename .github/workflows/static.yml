@@ -37,7 +37,7 @@ jobs:
       # Step 3: Install dependencies including MkDocs, themes, and plugins
       - name: Install dependencies
         run: |
-          pip install mkdocs mkdocs-material mkdocs-autorefs mkdocstrings mkdocs-jupyter pymdown-extensions termynal mkdocs-minify-plugin  # Add all necessary plugins
+          pip install mkdocs mkdocs-material mkdocs-autorefs mkdocstrings[python] mkdocs-jupyter pymdown-extensions termynal mkdocs-minify-plugin  # Add all necessary plugins
 
       # Step 4: Build the MkDocs site
       - name: Build MkDocs site
