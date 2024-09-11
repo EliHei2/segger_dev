@@ -1,10 +1,9 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Deploy MkDocs to GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
+    branches: ["main"]  # Change "main" to your default branch if necessary
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -15,29 +14,42 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Step 1: Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # Step 3: Install dependencies including MkDocs, themes, and plugins
+      - name: Install dependencies
+        run: |
+          pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-mkdocstrings[python] mkdocs-jupyter pymdown-extensions mkdocs-termynal mkdocs-minify-plugin  # Add all necessary plugins
+
+      # Step 4: Build the MkDocs site
+      - name: Build MkDocs site
+        run: mkdocs build --verbose
+
+      # Step 5: Upload the generated site directory as an artifact for GitHub Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: './site'  # Only upload the generated `site` folder
+
+      # Step 6: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
