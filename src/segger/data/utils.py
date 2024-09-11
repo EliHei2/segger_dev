@@ -616,7 +616,8 @@ def get_xy_extents(
 
 def coo_to_dense_adj(
     edge_index: torch.Tensor,
-    max_num_nodes: Optional[int] = None,
+    num_nodes: Optional[int] = None,
+    num_nbrs: Optional[int] = None,
 ) -> torch.Tensor:
 
     # Check COO format
@@ -629,12 +630,14 @@ def coo_to_dense_adj(
 
     # Get split points
     uniques, counts = torch.unique(edge_index[0], return_counts=True)
-    if max_num_nodes is None:
-        max_num_nodes = counts.max()
+    if num_nodes is None:
+        num_nodes = uniques.max() + 1
+    if num_nbrs is None:
+        num_nbrs = counts.max()
     counts = tuple(counts.cpu().tolist())
 
     # Fill matrix with neighbors
-    nbr_idx = torch.full((uniques.max() + 1, max_num_nodes), -1)
+    nbr_idx = torch.full((num_nodes, num_nbrs), -1)
     for i, nbrs in zip(uniques, torch.split(edge_index[1], counts)):
         nbr_idx[i, :len(nbrs)] = nbrs
 
