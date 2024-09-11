@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>utils &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">pydoc</span> <span class="kn">import</span> <span class="n">locate</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="add_options">
+<a class="viewcode-back" href="../api/utils/index.html#utils.add_options">[docs]</a>
+<span class="k">def</span> <span class="nf">add_options</span><span class="p">(</span>
+    <span class="n">config_path</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+    <span class="n">show_default</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A decorator to add command-line options to a Click command from a YAML </span>
+<span class="sd">    configuration file.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    config_path (os.PathLike): The path to the YAML configuration file </span>
+<span class="sd">    containing the options.</span>
+<span class="sd">    show_default (bool): Whether to show default values in help.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    function: A decorator function that adds the options to the Click command.</span>
+
+<span class="sd">    The YAML configuration file should have the following format:</span>
+<span class="sd">    ```</span>
+<span class="sd">    option_name:</span>
+<span class="sd">        type: &quot;type_name&quot;  # Optional, the type of the option </span>
+<span class="sd">        (e.g., &quot;str&quot;, &quot;int&quot;)</span>
+<span class="sd">        help: &quot;description&quot;  # Optional, the help text for the option</span>
+<span class="sd">        default: value  # Optional, the default value for the option</span>
+<span class="sd">        required: true/false  # Optional, whether the option is required</span>
+<span class="sd">        ...</span>
+<span class="sd">    ```</span>
+<span class="sd">    Example usage:</span>
+<span class="sd">    ```</span>
+<span class="sd">    # config.yaml</span>
+<span class="sd">    name:</span>
+<span class="sd">        type: &quot;str&quot;</span>
+<span class="sd">        help: &quot;Your name&quot;</span>
+<span class="sd">        required: true</span>
+<span class="sd">    age:</span>
+<span class="sd">        type: &quot;int&quot;</span>
+<span class="sd">        help: &quot;Your age&quot;</span>
+<span class="sd">        default: 30</span>
+
+<span class="sd">    # script.py</span>
+<span class="sd">    @add_options(&#39;config.yaml&#39;)</span>
+<span class="sd">    @click.command()</span>
+<span class="sd">    def greet(args):</span>
+<span class="sd">        click.echo(f&quot;Hello, {args.name}! You are {args.age} years old.&quot;)</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span>
+        <span class="n">function</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span>
+    <span class="p">):</span>
+        <span class="c1"># Wrap the original function to convert kwargs to a Namespace object</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">args_namespace</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="n">args_namespace</span><span class="p">)</span>
+        
+        <span class="c1"># Load the YAML configuration file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+        <span class="c1"># Decorate function with all options</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;show_default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show_default</span>
+            <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">locate</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+            <span class="n">wrapper</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;--</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)(</span><span class="n">wrapper</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+
+<div class="viewcode-block" id="CustomFormatter">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter">[docs]</a>
+<span class="k">class</span> <span class="nc">CustomFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Custom logging formatter to add color-coded log levels to the log messages.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">    grey (str): ANSI escape code for grey color.</span>
+<span class="sd">    yellow (str): ANSI escape code for yellow color.</span>
+<span class="sd">    red (str): ANSI escape code for red color.</span>
+<span class="sd">    bold_red (str): ANSI escape code for bold red color.</span>
+<span class="sd">    reset (str): ANSI escape code to reset color.</span>
+<span class="sd">    format (str): The format string for log messages.</span>
+<span class="sd">    FORMATS (dict): A dictionary mapping log levels to their respective </span>
+<span class="sd">    color-coded format strings.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">    format(record):</span>
+<span class="sd">        Format the specified record as text, applying color codes based on the </span>
+<span class="sd">        log level.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="CustomFormatter.grey">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.grey">[docs]</a>
+    <span class="n">grey</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[38;20m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.green">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.green">[docs]</a>
+    <span class="n">green</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[32;20m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.yellow">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.yellow">[docs]</a>
+    <span class="n">yellow</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[33;20m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.red">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.red">[docs]</a>
+    <span class="n">red</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[31;20m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.bold_red">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.bold_red">[docs]</a>
+    <span class="n">bold_red</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[31;1m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.reset">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.reset">[docs]</a>
+    <span class="n">reset</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\x1b</span><span class="s2">[0m&quot;</span></div>
+
+<div class="viewcode-block" id="CustomFormatter.format">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.format">[docs]</a>
+    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="CustomFormatter.FORMATS">
+<a class="viewcode-back" href="../api/utils/index.html#utils.CustomFormatter.FORMATS">[docs]</a>
+    <span class="n">FORMATS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span> <span class="n">grey</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="n">reset</span><span class="p">,</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">:</span> <span class="n">green</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="n">reset</span><span class="p">,</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">:</span> <span class="n">yellow</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="n">reset</span><span class="p">,</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">:</span> <span class="n">red</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="n">reset</span><span class="p">,</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">:</span> <span class="n">bold_red</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="n">reset</span>
+    <span class="p">}</span></div>
+
+
+    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">log_fmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FORMATS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">levelno</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">log_fmt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">formatter</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

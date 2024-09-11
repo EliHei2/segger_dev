@@ -2,6 +2,7 @@ site_name: segger Documentation
 site_description: "Fast and accurate cell segmentation for single-molecule spatial omics"
 site_author: Elyas Heidari
 repo_url: https://github.com/EliHei2/segger_dev
+site_url: https://EliHei2.github.io/segger_dev/
 theme:
   name: material
   features:

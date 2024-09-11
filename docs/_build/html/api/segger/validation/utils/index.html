@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>segger.validation.utils &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-segger.validation.utils">
+<span id="segger-validation-utils"></span><h1>segger.validation.utils<a class="headerlink" href="#module-segger.validation.utils" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.find_markers">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">find_markers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_type_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#find_markers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.find_markers" title="Link to this definition">¶</a></dt>
+<dd><p>Identify positive and negative markers for each cell type based on gene expression and filter by expression percentage.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>cell_type_column: str</dt><dd><p>Column name in <cite>adata.obs</cite> that specifies cell types.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>pos_percentile: float, default=5</dt><dd><p>Percentile threshold to determine top x% expressed genes.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>neg_percentile: float, default=10</dt><dd><p>Percentile threshold to determine top x% lowly expressed genes.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>percentage: float, default=50</dt><dd><p>Minimum percentage of cells expressing the marker within a cell type for it to be considered.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- markers: dict</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Dictionary where keys are cell types and values are dictionaries containing:</dt><dd><p>‘positive’: list of top x% highly expressed genes
+‘negative’: list of top x% lowly expressed genes.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.find_mutually_exclusive_genes">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">find_mutually_exclusive_genes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_type_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#find_mutually_exclusive_genes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.find_mutually_exclusive_genes" title="Link to this definition">¶</a></dt>
+<dd><p>Identify mutually exclusive genes based on expression criteria.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>markers: dict</dt><dd><dl class="simple">
+<dt>Dictionary where keys are cell types and values are dictionaries containing:</dt><dd><p>‘positive’: list of top x% highly expressed genes
+‘negative’: list of top x% lowly expressed genes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>cell_type_column: str</dt><dd><p>Column name in <cite>adata.obs</cite> that specifies cell types.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- exclusive_pairs: list</p>
+<blockquote>
+<div><p>List of mutually exclusive gene pairs.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_MECR">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_MECR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_MECR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_MECR" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>gene_pairs: List[Tuple[str, str]]</dt><dd><p>List of tuples representing gene pairs to evaluate.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- mecr_dict: Dict[Tuple[str, str], float]</p>
+<blockquote>
+<div><p>Dictionary where keys are gene pairs (tuples) and values are MECR values.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_quantized_mecr_area">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_quantized_mecr_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">scanpy.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_quantized_mecr_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_quantized_mecr_area" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the average MECR, variance of MECR, and average cell area for quantiles of cell areas.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>gene_pairs: List[Tuple[str, str]]</dt><dd><p>List of tuples representing gene pairs to evaluate.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>quantiles: int, default=10</dt><dd><p>Number of quantiles to divide the data into.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- quantized_data: pd.DataFrame</p>
+<blockquote>
+<div><p>DataFrame containing quantile information, average MECR, variance of MECR, average area, and number of cells.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_quantized_mecr_counts">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_quantized_mecr_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">scanpy.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_quantized_mecr_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_quantized_mecr_counts" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the average MECR, variance of MECR, and average transcript counts for quantiles of transcript counts.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>gene_pairs: List[Tuple[str, str]]</dt><dd><p>List of tuples representing gene pairs to evaluate.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>quantiles: int, default=10</dt><dd><p>Number of quantiles to divide the data into.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- quantized_data: pd.DataFrame</p>
+<blockquote>
+<div><p>DataFrame containing quantile information, average MECR, variance of MECR, average counts, and number of cells.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.annotate_query_with_reference">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">annotate_query_with_reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">anndata.AnnData</span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#annotate_query_with_reference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.annotate_query_with_reference" title="Link to this definition">¶</a></dt>
+<dd><p>Annotate query AnnData object using a scRNA-seq reference atlas.</p>
+<p>Parameters:
+- reference_adata: ad.AnnData</p>
+<blockquote>
+<div><p>Reference AnnData object containing the scRNA-seq atlas data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>query_adata: ad.AnnData</dt><dd><p>Query AnnData object containing the data to be annotated.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>transfer_column: str</dt><dd><p>The name of the column in the reference atlas’s <cite>obs</cite> to transfer to the query dataset.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- query_adata: ad.AnnData</p>
+<blockquote>
+<div><p>Annotated query AnnData object with transferred labels and UMAP coordinates from the reference.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.calculate_contamination">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">calculate_contamination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_neighs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">celltype_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'celltype_major'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_cells</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#calculate_contamination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.calculate_contamination" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate normalized contamination from neighboring cells of different cell types based on positive markers.</p>
+<p>Parameters:
+- adata: ad.AnnData</p>
+<blockquote>
+<div><p>Annotated data object with raw counts and cell type information.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>markers: dict</dt><dd><dl class="simple">
+<dt>Dictionary where keys are cell types and values are dictionaries containing:</dt><dd><p>‘positive’: list of top x% highly expressed genes
+‘negative’: list of top x% lowly expressed genes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>radius: float, default=15</dt><dd><p>Radius for spatial neighbor calculation.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>n_neighs: int, default=10</dt><dd><p>Maximum number of neighbors to consider.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>celltype_column: str, default=’celltype_major’</dt><dd><p>Column name in the AnnData object representing cell types.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>num_cells: int, default=10000</dt><dd><p>Number of cells to randomly select for the calculation.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- contamination_df: pd.DataFrame</p>
+<blockquote>
+<div><p>DataFrame containing the normalized level of contamination from each cell type to each other cell type.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.calculate_sensitivity">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">calculate_sensitivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purified_markers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cells_per_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#calculate_sensitivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.calculate_sensitivity" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the sensitivity of the purified markers for each cell type.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>purified_markers: dict</dt><dd><p>Dictionary where keys are cell types and values are lists of purified marker genes.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_cells_per_type: int, default=1000</dt><dd><p>Maximum number of cells to consider per cell type.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- sensitivity_results: dict</p>
+<blockquote>
+<div><p>Dictionary with cell types as keys and lists of sensitivity values for each cell.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_clustering_scores">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_clustering_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_type_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'celltype_major'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_pca</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_clustering_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_clustering_scores" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the Calinski-Harabasz and Silhouette scores for an AnnData object based on the assigned cell types.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing gene expression data and cell type assignments.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>cell_type_column: str, default=’celltype_major’</dt><dd><p>Column name in <cite>adata.obs</cite> that specifies cell types.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>use_pca: bool, default=True</dt><dd><p>Whether to use PCA components as features. If False, use the raw data.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- ch_score: float</p>
+<blockquote>
+<div><p>The Calinski-Harabasz score.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>sh_score: float</dt><dd><p>The Silhouette score.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_neighborhood_metrics">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_neighborhood_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">celltype_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'celltype_major'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_neighs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_neighborhood_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_neighborhood_metrics" title="Link to this definition">¶</a></dt>
+<dd><p>Compute neighborhood entropy and number of neighbors for each cell in the AnnData object.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing spatial information and cell type assignments.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>radius: int, default=10</dt><dd><p>Radius for spatial neighbor calculation.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>celltype_column: str, default=’celltype_major’</dt><dd><p>Column name in <cite>adata.obs</cite> that specifies cell types.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.compute_transcript_density">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_transcript_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#compute_transcript_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.compute_transcript_density" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the transcript density for each cell in the AnnData object.</p>
+<p>Parameters:
+- adata: AnnData</p>
+<blockquote>
+<div><p>Annotated data object containing transcript and cell area information.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_metric_comparison">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_metric_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">matplotlib.pyplot.Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">method1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">method2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_metric_comparison"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_metric_comparison" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a comparison of a specific metric between two methods.</p>
+<p>Parameters:
+- ax: plt.Axes</p>
+<blockquote>
+<div><p>Matplotlib axis to plot on.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>data: pd.DataFrame</dt><dd><p>DataFrame containing the data for plotting.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>metric: str</dt><dd><p>The metric to compare.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>label: str</dt><dd><p>Label for the metric.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>method1: str</dt><dd><p>The first method to compare.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>method2: str</dt><dd><p>The second method to compare.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.load_segmentations">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">load_segmentations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentation_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#load_segmentations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.load_segmentations" title="Link to this definition">¶</a></dt>
+<dd><p>Load segmentation data from provided paths and handle special cases like separating ‘segger’ into ‘segger_n0’ and ‘segger_n1’.</p>
+<p>Parameters:
+segmentation_paths (Dict[str, Path]): Dictionary mapping segmentation method names to their file paths.</p>
+<p>Returns:
+Dict[str, sc.AnnData]: Dictionary mapping segmentation method names to loaded AnnData objects.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_cell_counts">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_cell_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_cell_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_cell_counts" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the number of cells per segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_percent_assigned">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_percent_assigned</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_percent_assigned"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_percent_assigned" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the percentage of assigned transcripts (normalized) for each segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_gene_counts">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_gene_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_gene_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_gene_counts" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the normalized gene counts for each segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_counts_per_cell">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_counts_per_cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_counts_per_cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_counts_per_cell" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the counts per cell (log2) for each segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_cell_area">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_cell_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_cell_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_cell_area" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the cell area (log2) for each segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_transcript_density">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_transcript_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_transcript_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_transcript_density" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the transcript density (log2) for each segmentation method.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_general_statistics_plots">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_general_statistics_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_general_statistics_plots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_general_statistics_plots" title="Link to this definition">¶</a></dt>
+<dd><p>Create a summary plot with all the general statistics subplots.</p>
+<p>Parameters:
+segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
+output_path (Path): Path to the directory where the summary plot will be saved.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_mecr_results">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_mecr_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mecr_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_mecr_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_mecr_results" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the MECR (Mutually Exclusive Co-expression Rate) results for each segmentation method.</p>
+<p>Parameters:
+mecr_results (Dict[str, Dict[Tuple[str, str], float]]): Dictionary of MECR results for each segmentation method.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_quantized_mecr_counts">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_quantized_mecr_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantized_mecr_counts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_quantized_mecr_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_quantized_mecr_counts" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.</p>
+<p>Parameters:
+quantized_mecr_counts (Dict[str, pd.DataFrame]): Dictionary of quantized MECR count data for each segmentation method.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_quantized_mecr_area">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_quantized_mecr_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantized_mecr_area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_quantized_mecr_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_quantized_mecr_area" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the quantized MECR values against cell areas for each segmentation method, with point size proportional to the variance of MECR.</p>
+<p>Parameters:
+quantized_mecr_area (Dict[str, pd.DataFrame]): Dictionary of quantized MECR area data for each segmentation method.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_contamination_results">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_contamination_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contamination_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_contamination_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_contamination_results" title="Link to this definition">¶</a></dt>
+<dd><p>Plot contamination results for each segmentation method.</p>
+<p>Parameters:
+contamination_results (Dict[str, pd.DataFrame]): Dictionary of contamination data for each segmentation method.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_contamination_boxplots">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_contamination_boxplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxplot_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_contamination_boxplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_contamination_boxplots" title="Link to this definition">¶</a></dt>
+<dd><p>Plot boxplots for contamination values across different segmentation methods.</p>
+<p>Parameters:
+boxplot_data (pd.DataFrame): DataFrame containing contamination data for all segmentation methods.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_umaps_with_scores">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_umaps_with_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmentations_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">scanpy.AnnData</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clustering_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_umaps_with_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_umaps_with_scores" title="Link to this definition">¶</a></dt>
+<dd><p>Plot UMAPs colored by cell type for each segmentation method and display clustering scores in the title.
+Parameters:
+segmentations_dict (Dict[str, AnnData]): Dictionary of AnnData objects for each segmentation method.
+clustering_scores (Dict[str, Tuple[float, float]]): Dictionary of clustering scores for each method.
+output_path (Path): Path to the directory where the plots will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_entropy_boxplots">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_entropy_boxplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entropy_boxplot_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_entropy_boxplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_entropy_boxplots" title="Link to this definition">¶</a></dt>
+<dd><p>Plot boxplots for neighborhood entropy across different segmentation methods by cell type.</p>
+<p>Parameters:
+entropy_boxplot_data (pd.DataFrame): DataFrame containing neighborhood entropy data for all segmentation methods.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.validation.utils.plot_sensitivity_boxplots">
+<span class="sig-prename descclassname"><span class="pre">segger.validation.utils.</span></span><span class="sig-name descname"><span class="pre">plot_sensitivity_boxplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sensitivity_boxplot_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/validation/utils.html#plot_sensitivity_boxplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.validation.utils.plot_sensitivity_boxplots" title="Link to this definition">¶</a></dt>
+<dd><p>Plot boxplots for sensitivity across different segmentation methods by cell type.
+Parameters:
+sensitivity_boxplot_data (pd.DataFrame): DataFrame containing sensitivity data for all segmentation methods.
+output_path (Path): Path to the directory where the plot will be saved.
+palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../../_sources/api/segger/validation/utils/index.rst"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>create_dataset &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for create_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">segger.cli.utils</span> <span class="kn">import</span> <span class="n">add_options</span><span class="p">,</span> <span class="n">CustomFormatter</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+
+<span class="c1"># Path to default YAML configuration file</span>
+<div class="viewcode-block" id="data_yml">
+<a class="viewcode-back" href="../api/create_dataset/index.html#create_dataset.data_yml">[docs]</a>
+<span class="n">data_yml</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;create_dataset&#39;</span> <span class="o">/</span> <span class="s1">&#39;default.yaml&#39;</span></div>
+
+
+<span class="c1"># CLI command to create a Segger dataset</span>
+<div class="viewcode-block" id="help_msg">
+<a class="viewcode-back" href="../api/create_dataset/index.html#create_dataset.help_msg">[docs]</a>
+<span class="n">help_msg</span> <span class="o">=</span> <span class="s2">&quot;Create Segger dataset from spatial transcriptomics data (Xenium or MERSCOPE)&quot;</span></div>
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;create_dataset&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">help_msg</span><span class="p">)</span>
+<span class="nd">@add_options</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">data_yml</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--x_min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum x-coordinate for bounding box.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--y_min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum y-coordinate for bounding box.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--x_max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum x-coordinate for bounding box.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--y_max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum y-coordinate for bounding box.&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="create_dataset">
+<a class="viewcode-back" href="../api/create_dataset/index.html#create_dataset.create_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">create_dataset</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+
+    <span class="c1"># Setup logging</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">CustomFormatter</span><span class="p">())</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span>
+
+    <span class="c1"># Import necessary packages based on the dataset type</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Importing packages...&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_type</span> <span class="o">==</span> <span class="s1">&#39;xenium&#39;</span><span class="p">:</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">XeniumSample</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_type</span> <span class="o">==</span> <span class="s1">&#39;merscope&#39;</span><span class="p">:</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">MerscopeSample</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported dataset type. Please choose &#39;xenium&#39; or &#39;merscope&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load the dataset (Xenium or MERSCOPE)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading data from </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_type</span><span class="si">}</span><span class="s2"> sample...&quot;</span><span class="p">)</span>
+    <span class="n">dataset_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">)</span>
+
+    <span class="c1"># Load transcripts</span>
+    <span class="n">sample</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">(</span>
+        <span class="n">base_path</span><span class="o">=</span><span class="n">dataset_dir</span><span class="p">,</span>
+        <span class="n">sample</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sample_tag</span><span class="p">,</span>
+        <span class="n">transcripts_filename</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">transcripts_file</span><span class="p">,</span>
+        <span class="n">min_qv</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">min_qv</span><span class="p">,</span>
+        <span class="n">file_format</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">file_format</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Load boundaries (nucleus boundaries for Xenium, cell boundaries for MERSCOPE)</span>
+    <span class="n">sample</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">(</span><span class="n">dataset_dir</span> <span class="o">/</span> <span class="n">args</span><span class="o">.</span><span class="n">boundaries_file</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">file_format</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set the bounding box if specified</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span><span class="p">]):</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">get_bounding_box</span><span class="p">(</span><span class="n">x_min</span><span class="o">=</span><span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="o">=</span><span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="o">=</span><span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span><span class="o">=</span><span class="n">y_max</span><span class="p">,</span> <span class="n">in_place</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Save Segger dataset</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving dataset for Segger...&quot;</span><span class="p">)</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">data_dir</span><span class="p">)</span>
+    <span class="n">sample</span><span class="o">.</span><span class="n">save_dataset_for_segger</span><span class="p">(</span>
+        <span class="n">processed_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+        <span class="n">x_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">x_size</span><span class="p">,</span>
+        <span class="n">y_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">y_size</span><span class="p">,</span>
+        <span class="n">d_x</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">d_x</span><span class="p">,</span>
+        <span class="n">d_y</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">d_y</span><span class="p">,</span>
+        <span class="n">margin_x</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">margin_x</span><span class="p">,</span>
+        <span class="n">margin_y</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">margin_y</span><span class="p">,</span>
+        <span class="n">r_tx</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">r_tx</span><span class="p">,</span>
+        <span class="n">val_prob</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">val_prob</span><span class="p">,</span>
+        <span class="n">test_prob</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">test_prob</span><span class="p">,</span>
+        <span class="n">compute_labels</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">compute_labels</span><span class="p">,</span>
+        <span class="n">sampling_rate</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span>
+        <span class="n">num_workers</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
+        <span class="n">receptive_field</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;k_bd&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">k_bd</span><span class="p">,</span>
+            <span class="s2">&quot;dist_bd&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">dist_bd</span><span class="p">,</span>
+            <span class="s2">&quot;k_tx&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">k_tx</span><span class="p">,</span>
+            <span class="s2">&quot;dist_tx&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">dist_tx</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+        <span class="n">gpu</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">gpu</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation Guide &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=4ea706d9"></script>
+    <script src="_static/scripts/sphinx-book-theme.js"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="installation-guide">
+<h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Link to this heading">¶</a></h1>
+<p>This guide provides detailed instructions for installing the <code class="docutils literal notranslate"><span class="pre">segger</span></code> package. Whether you are installing for CPU or GPU, the instructions below will guide you through the process.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Ensure you are using <code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">&gt;=</span> <span class="pre">3.10</span></code> before starting the installation process.</p>
+</div>
+<section id="install-the-package">
+<h2>Install the Package<a class="headerlink" href="#install-the-package" title="Link to this heading">¶</a></h2>
+<section id="from-source">
+<h3>From Source<a class="headerlink" href="#from-source" title="Link to this heading">¶</a></h3>
+<p>To install <code class="docutils literal notranslate"><span class="pre">segger</span></code> from the source code:</p>
+<ol class="arabic">
+<li><p>Clone the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/EliHei2/segger_dev.git
+</pre></div>
+</div>
+</li>
+<li><p>Navigate to the project directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>segger_dev
+</pre></div>
+</div>
+</li>
+<li><p>Install the package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="cpu-and-gpu-installation-from-pypi">
+<h2>CPU and GPU Installation from PyPI<a class="headerlink" href="#cpu-and-gpu-installation-from-pypi" title="Link to this heading">¶</a></h2>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+CPU Installation</label><div class="sd-tab-content docutils">
+<p>If you only need CPU support, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger
+</pre></div>
+</div>
+</div>
+</div>
+<p>This will install the package without any GPU-related dependencies.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is ideal for environments where GPU support is not required or available.</p>
+</div>
+<div class="sd-tab-item docutils">
+<p class="sd-tab-label rubric">GPU Installation</p>
+<div class="sd-tab-content docutils">
+<p>For installations with GPU support, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger<span class="o">[</span>gpu<span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This includes the necessary dependencies for CUDA-enabled GPUs.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Ensure your machine has the appropriate CUDA drivers and NVIDIA libraries installed.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+
+## Optional Dependencies
+
+The following sections describe optional dependencies you can install for specific features.
+
+```{tab-set}
+```{tab-item} Torch Geometric
+
+To install `torch-geometric` related dependencies, run:
+
+```bash
+pip install segger[torch-geometric]
+</pre></div>
+</div>
+<p>Follow the additional steps on the <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html">PyTorch Geometric installation page</a> to ensure proper setup.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Ensure you install <code class="docutils literal notranslate"><span class="pre">torch-geometric</span></code> with the correct CUDA version for GPU support.</p>
+</div>
+<div class="sd-tab-item docutils">
+<p class="sd-tab-label rubric">Multiprocessing</p>
+<div class="sd-tab-content docutils">
+<p>To install <code class="docutils literal notranslate"><span class="pre">segger</span></code> with multiprocessing support, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger<span class="o">[</span>multiprocessing<span class="o">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This will enable multi-core parallel processing features.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+## Platform-Specific Installations
+
+Below are instructions for installing `segger` on different operating systems.
+
+```{tab-set}
+```{tab-item} Linux
+
+On Linux, use the following command to install the package:
+
+```bash
+pip install segger
+</pre></div>
+</div>
+<p>For GPU support on Linux, ensure you have the necessary CUDA drivers installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger<span class="o">[</span>gpu<span class="o">]</span>
+</pre></div>
+</div>
+<div class="sd-tab-item docutils">
+<p class="sd-tab-label rubric">macOS</p>
+<div class="sd-tab-content docutils">
+<p>To install on macOS, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger
+</pre></div>
+</div>
+</div>
+</div>
+<p>Note that macOS does not natively support CUDA, so GPU support is not available.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you require GPU support, we recommend using Linux or Windows.</p>
+</div>
+<div class="sd-tab-item docutils">
+<p class="sd-tab-label rubric">Windows</p>
+<div class="sd-tab-content docutils">
+<p>To install on Windows, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger
+</pre></div>
+</div>
+</div>
+</div>
+<p>For GPU support on Windows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>segger<span class="o">[</span>gpu<span class="o">]</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Ensure your CUDA drivers are installed on Windows by using <code class="docutils literal notranslate"><span class="pre">nvidia-smi</span></code>.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+## Installation for Developers
+
+For developers looking to contribute or work with `segger` in a development environment, you can install the package with development dependencies.
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/EliHei2/segger_dev.git
+    ```
+
+2. Navigate to the project directory:
+    ```bash
+    cd segger_dev
+    ```
+
+3. Install the package with development dependencies:
+    ```bash
+    pip install -e .[dev]
+    ```
+
+This will install additional dependencies such as `pytest`, `black`, `flake8`, and more.
+
+## Common Installation Issues
+
+```{tip}
+If you encounter installation issues, ensure that you are using the correct Python version (`&gt;= 3.10`) and that you have the necessary permissions to install packages on your system.
+</pre></div>
+</div>
+<p>Some common errors include:</p>
+<ul class="simple">
+<li><p><strong>Missing Python version</strong>: Ensure you are using <code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">&gt;=</span> <span class="pre">3.10</span></code>.</p></li>
+<li><p><strong>Insufficient permissions</strong>: Use <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--user</span></code> if you do not have admin permissions.</p></li>
+<li><p><strong>Conflicting CUDA drivers</strong>: Ensure you have compatible CUDA versions installed if using GPU support.</p></li>
+</ul>
+<p>For further troubleshooting, please refer to the <a class="reference external" href="https://github.com/EliHei2/segger_dev">official documentation</a>.</p>
+<p>For more information, visit the <a class="reference external" href="https://github.com/EliHei2/segger_dev">official GitHub repository</a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/installation.md"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
