@@ -792,9 +792,9 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df = delayed(self.load_transcripts)(
             path=self.transcripts_path,
             x_min=x_loc - margin_x,
-            x_max=x_loc + x_size + margin_x,
+            x_max=x_loc + x_size ,
             y_min=y_loc - margin_y,
-            y_max=y_loc + y_size + margin_y
+            y_max=y_loc + y_size 
         ).compute()
 
         # If no data is found in transcripts or boundaries, skip the tile
@@ -881,6 +881,7 @@ class SpatialTranscriptomicsSample(ABC):
         # Lazily compute boundaries geometries using Dask
         if self.verbose: print("Computing boundaries geometries...")
         bd_gdf = self.compute_boundaries_geometries(boundaries_df)
+        bd_gdf = bd_gdf[bd_gdf['geometry'].notnull()]
         
         # Add boundary node data to PyG HeteroData lazily
         data['bd'].id = bd_gdf[self.keys.CELL_ID.value].values

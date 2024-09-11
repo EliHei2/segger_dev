@@ -2,8 +2,6 @@
 
 # Installation Guide
 
-This guide provides the necessary steps to install the `segger` package for both `Micromamba` and `CPU` versions.
-
 ## Installation Options
 
 Select the appropriate installation method based on your requirements.
@@ -25,7 +23,6 @@ Select the appropriate installation method based on your requirements.
     pip install .
     ```
 
-This will install `segger` without GPU dependencies, ideal for environments where GPU support is not required.
 
 
 

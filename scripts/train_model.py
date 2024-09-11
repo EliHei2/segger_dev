@@ -9,17 +9,32 @@ from segger.data.utils import SpatialTranscriptomicsDataset  # Updated dataset c
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
 from torch_geometric.nn import to_hetero
+import warnings
+
+os.environ["USE_PYGEOS"] = "0"
+os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
+def check_and_create_raw_folder(directory):
+    raw_dir = directory / 'raw'
+    if not raw_dir.exists():
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        warnings.warn(f"'{raw_dir}' does not exist. Creating this dummy folder because SpatialTranscriptomicsDataset requires it.")
 
 def main(args):
     # CONFIG
-    os.environ["USE_PYGEOS"] = "0"
-    os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
-    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+    
+    
+   
     sys.path.insert(0, os.path.abspath('../..'))
 
     # Paths
     TRAIN_DIR = Path(args.train_dir)
     VAL_DIR = Path(args.val_dir)
+
+    # Ensure 'raw' directories exist or create them with a warning
+    check_and_create_raw_folder(TRAIN_DIR)
+    check_and_create_raw_folder(VAL_DIR)
 
     # Load datasets using the new SpatialTranscriptomicsDataset class
     train_ds = SpatialTranscriptomicsDataset(root=TRAIN_DIR)
@@ -39,7 +54,7 @@ def main(args):
     batch = train_ds[0]
     model.forward(batch.x_dict, batch.edge_index_dict)
     # Wrap the model in LitSegger
-    litsegger = torch.compile(LitSegger(model=model))
+    litsegger = LitSegger(model=model)
 
     # Initialize the PyTorch Lightning trainer
     trainer = L.Trainer(
