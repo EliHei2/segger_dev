@@ -4,8 +4,10 @@
 
 This section will simulate typing the `segger --help` command output.
 
-```console
-// Run the Segger CLI helper
+
+<!-- termynal -->
+
+```console 
 $ segger --help
 
 Usage: segger [OPTIONS] COMMAND [ARGS]...
@@ -22,6 +24,7 @@ Usage: segger [OPTIONS] COMMAND [ARGS]...
 
 The `create_dataset` command helps you build a dataset for spatial transcriptomics. Here’s a breakdown of the options available:
 
+<!-- termynal -->
 ```console
 // Example: Create a dataset for spatial transcriptomics
 $ segger create_dataset \
@@ -83,6 +86,7 @@ $ segger create_dataset \
 
 The `train` command initializes and trains a model using the dataset created. Here are the key parameters:
 
+<!-- termynal -->
 ```console
 // Example: Train the model using SLURM
 $ segger train slurm \
@@ -134,6 +138,7 @@ $ segger train slurm \
 
 After training the model, use the `predict` command to make predictions on new data.
 
+<!-- termynal -->
 ```console
 // Example: Make predictions using a trained model
 $ segger predict \
@@ -170,6 +175,7 @@ $ segger predict \
 
 Segger includes utility commands for checking dataset and model setup as well as generating reports.
 
+<!-- termynal -->
 ```console
 // Example: Check dataset and model setup
 $ segger check \

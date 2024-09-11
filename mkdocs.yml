@@ -25,16 +25,16 @@ theme:
       scheme: default
       primary: amber
       accent: deep orange
-      # toggle:
-      #   icon: material/brightness-7
-      #   name: Switch to system preference
+      toggle:
+        icon: material/brightness-7
+        name: Switch to system preference
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: amber
       accent: deep orange
-      # toggle:
-      #   icon: material/brightness-4
-      #   name: Switch to system preference
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
 
 nav:
   - Home: index.md
@@ -67,6 +67,10 @@ plugins:
             heading_level: 3
   - mkdocs-jupyter:
       include_source: True
+  - termynal:
+      prompt_literal_start:
+        - "$"
+        - ">"
 
 markdown_extensions:
   - pymdownx.tabbed:
@@ -111,8 +115,11 @@ markdown_extensions:
 extra_css:
   - css/extra.css
   - https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css
+  - https://unpkg.com/termynal@0.0.1/termynal.css
 
 extra_javascript:
   - javascripts/config.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://unpkg.com/termynal@0.0.1/termynal.js
+  
