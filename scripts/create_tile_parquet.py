@@ -46,7 +46,7 @@ xenium_sample.save_dataset_for_segger(
     test_prob=0.2,
     neg_sampling_ratio_approx=5,
     sampling_rate=1,
-    num_workers=2,
+    num_workers=1,
     # receptive_field={
     #     "k_bd": 4,
     #     "dist_bd": 15,

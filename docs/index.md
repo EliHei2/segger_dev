@@ -45,19 +45,6 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 # How segger Works
 
 ![Segger Model](images/Segger_model_08_2024.png)
-
-### :material-shape-outline: **Heterogeneous Graph Structure**
-
-segger models **nuclei and transcript relationships** using:
-
-- **Nodes** for nuclei and transcripts
-- **Edges** connecting spatially related elements
-- **GNN** to propagate information and refine cell borders
-
-### :material-ghost: **Nucleus-free transcripts**
-
-segger can effectively handle **nucleus-free cells**, improving transcript assignment in complex tissue environments.
-
 ---
 
 # Powered by

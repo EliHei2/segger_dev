@@ -44,7 +44,7 @@ nav:
       - Dataset Creation: user_guide/data_creation.md
       - Training: user_guide/training.md
       - Validation: user_guide/validation.md
-  - CLI: api/cli/index.md
+  - CLI: cli.md
   - API Reference:
       - Data: api/data/index.md
       - Models: api/models/index.md
@@ -105,6 +105,7 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.inlinehilite
+  - pymdownx.snippets
 
 
 extra_css:
