@@ -27,50 +27,57 @@ The `create_dataset` command helps you build a dataset for spatial transcriptomi
 <!-- termynal -->
 ```console
 // Example: Create a dataset for spatial transcriptomics
-$ segger create_dataset \
-    --dataset_type xenium \
-    --dataset_dir data_raw/xenium \
-    --sample_tag Xenium_FFPE_Human_Breast_Cancer_Rep1 \
+python create_dataset create_dataset \
+    --dataset_dir /path/to/dataset \
+    --data_dir /path/to/save/processed_data \
+    --sample_tag sample_name \
     --transcripts_file transcripts.parquet \
     --boundaries_file nucleus_boundaries.parquet \
-    --data_dir data_tidy/pyg_datasets \
-    --x_size 200 \
-    --y_size 200 \
-    --d_x 150 \
-    --d_y 150 \
-    --margin_x 20 \
-    --margin_y 20 \
+    --x_size 300 \
+    --y_size 300 \
+    --d_x 280 \
+    --d_y 280 \
+    --margin_x 10 \
+    --margin_y 10 \
     --r_tx 5 \
+    --k_tx 5 \
     --val_prob 0.1 \
     --test_prob 0.2 \
-    --compute_labels true \
+    --neg_sampling_ratio 5 \
     --sampling_rate 1 \
-    --workers 1 \
-    --method kd_tree \
-    --gpu false
+    --workers 4 \
+    --gpu
 ```
 
 #### Parameters
 
-| Parameter          | Description                                                                            | Default Value |
-|--------------------|----------------------------------------------------------------------------------------|---------------|
-| `dataset_type`      | Specifies the type of dataset (e.g., `xenium`, `merfish`).                             | `xenium`      |
-| `dataset_dir`       | Path to the directory where raw data is stored.                                        | None          |
-| `sample_tag`        | Tag to identify the dataset, useful for version control.                               | None          |
-| `transcripts_file`  | File path to the transcript data in Parquet format.                                    | None          |
-| `boundaries_file`   | File path to the nucleus boundaries data in Parquet format.                            | None          |
-| `data_dir`          | Directory to store processed datasets (used during model training).                    | None          |
-| `x_size`, `y_size`  | Size of the bounding box in the x and y directions.                                    | `200`         |
-| `d_x`, `d_y`        | Step size in the x and y directions for overlapping patches.                           | `150`         |
-| `margin_x`, `margin_y` | Additional margins added to the bounding box.                                       | `20`          |
-| `r_tx`              | Radius for transcript detection.                                                       | `5`           |
-| `val_prob`          | Proportion of the dataset used for validation.                                         | `0.1`         |
-| `test_prob`         | Proportion of the dataset used for testing.                                            | `0.2`         |
-| `compute_labels`    | Flag to enable or disable the computation of labels.                                   | `true`        |
-| `sampling_rate`     | Proportion of the dataset to sample (useful for large datasets).                       | `1` (no sampling) |
-| `workers`           | Number of CPU cores to use for parallel processing.                                    | `1`           |
-| `method`            | Method for creating the graph (e.g., `kd_tree`).                                       | `kd_tree`     |
-| `gpu`               | Whether to use a GPU for processing (`true` or `false`).                               | `false`       |
+| Parameter            | Description                                                                            | Default Value |
+|----------------------|----------------------------------------------------------------------------------------|---------------|
+| `dataset_type`        | Specifies the type of dataset (e.g., `xenium`, `merscope`).                            | `xenium`      |
+| `dataset_dir`         | Path to the directory where raw data is stored.                                        | None          |
+| `sample_tag`          | Tag to identify the dataset, useful for version control.                               | None          |
+| `transcripts_file`    | File path to the transcript data in Parquet format.                                    | None          |
+| `boundaries_file`     | File path to the nucleus or cell boundaries data in Parquet format.                    | None          |
+| `data_dir`            | Directory to store processed datasets (used during model training).                    | None          |
+| `x_size`, `y_size`    | Size of the tiles in the x and y directions.                                           | `300`         |
+| `d_x`, `d_y`          | Step size in the x and y directions for overlapping tiles.                             | `280`         |
+| `margin_x`, `margin_y`| Additional margins added to each tile in the x and y directions.                       | `10`          |
+| `r_tx`                | Radius for computing the neighborhood graph for transcripts.                           | `5`           |
+| `k_tx`                | Number of nearest neighbors for the neighborhood graph.                                | `5`           |
+| `val_prob`            | Proportion of the dataset used for validation.                                         | `0.1`         |
+| `test_prob`           | Proportion of the dataset used for testing.                                            | `0.2`         |
+| `compute_labels`      | Flag to enable or disable the computation of labels for segmentation.                  | `True`        |
+| `neg_sampling_ratio`  | Approximate ratio for negative sampling.                                               | `5`           |
+| `sampling_rate`       | Proportion of the dataset to sample (useful for large datasets).                       | `1` (no sampling) |
+| `workers`             | Number of CPU cores to use for parallel processing.                                    | `1`           |
+| `gpu`                 | Whether to use a GPU for processing.                                                   | `False`       |
+
+### Key Updates:
+- **Bounding box options (`x_min`, `y_min`, etc.)** were removed.
+- **`x_size`, `y_size`** now refer to tile sizes, not bounding boxes.
+- **`MerscopeSample`** is added as a supported dataset type alongside `XeniumSample`.
+- **`r_tx` and `k_tx`** refer to parameters for computing neighborhood graphs.
+- **`neg_sampling_ratio`** is included for negative sampling.
 
 !!! note "Customizing Your Dataset"
     - **dataset_type**: Defines the type of spatial transcriptomics data.

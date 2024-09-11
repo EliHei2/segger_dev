@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>segger.data.io &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-segger.data.io">
+<span id="segger-data-io"></span><h1>segger.data.io<a class="headerlink" href="#module-segger.data.io" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">segger.data.io.</span></span><span class="sig-name descname"><span class="pre">SpatialTranscriptomicsSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcripts_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.transcripts_df">
+<span class="sig-name descname"><span class="pre">transcripts_df</span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.transcripts_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.transcripts_df" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.transcripts_radius">
+<span class="sig-name descname"><span class="pre">transcripts_radius</span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.transcripts_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.transcripts_radius" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.boundaries_graph">
+<span class="sig-name descname"><span class="pre">boundaries_graph</span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.boundaries_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.boundaries_graph" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.keys" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.embedding_df">
+<span class="sig-name descname"><span class="pre">embedding_df</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.embedding_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.embedding_df" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.current_embedding">
+<span class="sig-name descname"><span class="pre">current_embedding</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'one_hot'</span></em><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.current_embedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.current_embedding" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._set_bounds">
+<span class="sig-name descname"><span class="pre">_set_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._set_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._set_bounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the bounding box limits based on the current transcripts dataframe using lazy evaluation with Dask.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.filter_transcripts">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_transcripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_qv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.filter_transcripts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.filter_transcripts" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract method to filter transcripts based on dataset-specific criteria.</p>
+<section id="parameters">
+<h3>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>transcripts_df<span class="classifier">pd.DataFrame</span></dt><dd><p>The dataframe containing transcript data.</p>
+</dd>
+<dt>min_qv<span class="classifier">float, optional</span></dt><dd><p>The minimum quality value threshold for filtering transcripts.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h3>Returns:<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
+<p>:
+pd.DataFrame</p>
+<blockquote>
+<div><p>The filtered dataframe.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.set_file_paths">
+<span class="sig-name descname"><span class="pre">set_file_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.set_file_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.set_file_paths" title="Link to this definition">¶</a></dt>
+<dd><p>Set the paths for the transcript and boundary files.</p>
+<section id="id1">
+<h3>Parameters:<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>transcripts_path<span class="classifier">Path</span></dt><dd><p>Path to the Parquet file containing transcripts data.</p>
+</dd>
+<dt>boundaries_path<span class="classifier">Path</span></dt><dd><p>Path to the Parquet file containing boundaries data.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.load_transcripts">
+<span class="sig-name descname"><span class="pre">load_transcripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcripts_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'parquet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask.dataframe.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.load_transcripts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.load_transcripts" title="Link to this definition">¶</a></dt>
+<dd><p>Load transcripts from a Parquet file using Dask for efficient chunked processing,
+only within the specified bounding box, and return the filtered DataFrame with integer token embeddings.</p>
+<section id="id2">
+<h3>Parameters:<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>base_path<span class="classifier">Path, optional</span></dt><dd><p>The base directory path where samples are stored.</p>
+</dd>
+<dt>sample<span class="classifier">str, optional</span></dt><dd><p>The sample name or identifier.</p>
+</dd>
+<dt>transcripts_filename<span class="classifier">str, optional</span></dt><dd><p>The filename of the transcripts file (default is derived from the dataset keys).</p>
+</dd>
+<dt>path<span class="classifier">Path, optional</span></dt><dd><p>Specific path to the transcripts file.</p>
+</dd>
+<dt>file_format<span class="classifier">str, optional</span></dt><dd><p>Format of the file to load (default is ‘parquet’).</p>
+</dd>
+<dt>x_min<span class="classifier">float, optional</span></dt><dd><p>Minimum X-coordinate for the bounding box.</p>
+</dd>
+<dt>x_max<span class="classifier">float, optional</span></dt><dd><p>Maximum X-coordinate for the bounding box.</p>
+</dd>
+<dt>y_min<span class="classifier">float, optional</span></dt><dd><p>Minimum Y-coordinate for the bounding box.</p>
+</dd>
+<dt>y_max<span class="classifier">float, optional</span></dt><dd><p>Maximum Y-coordinate for the bounding box.</p>
+</dd>
+<dt>additional_embeddings<span class="classifier">Dict[str, pd.DataFrame], optional</span></dt><dd><p>A dictionary of additional embeddings for genes.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h3>Returns:<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>:
+dd.DataFrame</p>
+<blockquote>
+<div><p>The filtered transcripts DataFrame.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.load_boundaries">
+<span class="sig-name descname"><span class="pre">load_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'parquet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask.dataframe.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.load_boundaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.load_boundaries" title="Link to this definition">¶</a></dt>
+<dd><p>Load boundaries data lazily using Dask, filtering by the specified bounding box.</p>
+<section id="id4">
+<h3>Parameters:<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>path<span class="classifier">Path</span></dt><dd><p>Path to the boundaries file.</p>
+</dd>
+<dt>file_format<span class="classifier">str, optional</span></dt><dd><p>Format of the file to load. Only ‘parquet’ is supported in this refactor.</p>
+</dd>
+<dt>x_min<span class="classifier">float, optional</span></dt><dd><p>Minimum X-coordinate for the bounding box.</p>
+</dd>
+<dt>x_max<span class="classifier">float, optional</span></dt><dd><p>Maximum X-coordinate for the bounding box.</p>
+</dd>
+<dt>y_min<span class="classifier">float, optional</span></dt><dd><p>Minimum Y-coordinate for the bounding box.</p>
+</dd>
+<dt>y_max<span class="classifier">float, optional</span></dt><dd><p>Maximum Y-coordinate for the bounding box.</p>
+</dd>
+</dl>
+</section>
+<section id="id5">
+<h3>Returns:<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>:
+dd.DataFrame</p>
+<blockquote>
+<div><p>The filtered boundaries DataFrame.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.set_metadata">
+<span class="sig-name descname"><span class="pre">set_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.set_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.set_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Set metadata for the transcript dataset, including bounding box limits and unique gene names,
+without reading the entire Parquet file. Additionally, return integer tokens for unique gene names
+instead of one-hot encodings and store the lookup table for later mapping.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.set_embedding">
+<span class="sig-name descname"><span class="pre">set_embedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.set_embedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.set_embedding" title="Link to this definition">¶</a></dt>
+<dd><p>Set the current embedding type for the transcripts.</p>
+<section id="id6">
+<h3>Parameters:<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>embedding_name<span class="classifier">str</span></dt><dd><p>The name of the embedding to use.</p>
+</dd>
+</dl>
+</section>
+<section id="id7">
+<h3>Returns:<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>:
+None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.get_tile_data">
+<span class="sig-name descname"><span class="pre">get_tile_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dask.dataframe.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dask.dataframe.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.get_tile_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.get_tile_data" title="Link to this definition">¶</a></dt>
+<dd><p>Load the necessary data for a given tile from the transcripts and boundaries.
+Uses Dask’s filtering for chunked processing.
+Parameters:
+———–
+x_min : float</p>
+<blockquote>
+<div><p>Minimum x-coordinate of the tile.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>y_min<span class="classifier">float</span></dt><dd><p>Minimum y-coordinate of the tile.</p>
+</dd>
+<dt>x_size<span class="classifier">float</span></dt><dd><p>Width of the tile.</p>
+</dd>
+<dt>y_size<span class="classifier">float</span></dt><dd><p>Height of the tile.</p>
+</dd>
+</dl>
+<section id="id8">
+<h3>Returns:<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>:
+Tuple[dd.DataFrame, dd.DataFrame]</p>
+<blockquote>
+<div><p>Transcripts and boundaries data for the tile.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.get_bounding_box">
+<span class="sig-name descname"><span class="pre">get_bounding_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#segger.data.io.SpatialTranscriptomicsSample" title="segger.data.io.SpatialTranscriptomicsSample"><span class="pre">SpatialTranscriptomicsSample</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.get_bounding_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.get_bounding_box" title="Link to this definition">¶</a></dt>
+<dd><p>Subsets the transcripts_df and boundaries_df within the specified bounding box using Dask.
+Parameters:
+———–
+x_min : float, optional</p>
+<blockquote>
+<div><p>The minimum x-coordinate of the bounding box.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>y_min<span class="classifier">float, optional</span></dt><dd><p>The minimum y-coordinate of the bounding box.</p>
+</dd>
+<dt>x_max<span class="classifier">float, optional</span></dt><dd><p>The maximum x-coordinate of the bounding box.</p>
+</dd>
+<dt>y_max<span class="classifier">float, optional</span></dt><dd><p>The maximum y-coordinate of the bounding box.</p>
+</dd>
+<dt>in_place<span class="classifier">bool, optional</span></dt><dd><p>If True, modifies the current instance. If False, returns a new instance with the subsetted data.</p>
+</dd>
+</dl>
+<section id="id9">
+<h3>Returns:<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>:
+Optional[SpatialTranscriptomicsSample]</p>
+<blockquote>
+<div><p>If in_place is True, returns None after modifying the existing instance.
+If in_place is False, returns a new SpatialTranscriptomicsSample instance with the subsetted data.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.create_scaled_polygon">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_scaled_polygon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.create_scaled_polygon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.create_scaled_polygon" title="Link to this definition">¶</a></dt>
+<dd><p>Static method to create and scale a polygon from boundary vertices and return a GeoDataFrame.</p>
+<p>This method ensures that the polygon scaling happens efficiently without requiring
+an instance of the class. Keys should be passed to avoid Dask tokenization issues.</p>
+<section id="id10">
+<h3>Parameters:<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>group<span class="classifier">pd.DataFrame</span></dt><dd><p>Group of boundary coordinates (for a specific cell).</p>
+</dd>
+<dt>scale_factor<span class="classifier">float</span></dt><dd><p>The factor by which to scale the polygons.</p>
+</dd>
+<dt>keys<span class="classifier">Enum or dict-like</span></dt><dd><p>A collection of keys to access column names for ‘cell_id’, ‘vertex_x’, and ‘vertex_y’.</p>
+</dd>
+</dl>
+</section>
+<section id="id11">
+<h3>Returns:<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>:
+gpd.GeoDataFrame</p>
+<blockquote>
+<div><p>A GeoDataFrame containing the scaled Polygon and cell_id.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.generate_and_scale_polygons">
+<span class="sig-name descname"><span class="pre">generate_and_scale_polygons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boundaries_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask_geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.generate_and_scale_polygons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.generate_and_scale_polygons" title="Link to this definition">¶</a></dt>
+<dd><p>Generate and scale polygons from boundary coordinates using Dask.
+Keeps class structure intact by using static method for the core polygon generation.</p>
+<section id="id12">
+<h3>Parameters:<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>boundaries_df<span class="classifier">dask.dataframe.DataFrame</span></dt><dd><p>DataFrame containing boundary coordinates.</p>
+</dd>
+<dt>scale_factor<span class="classifier">float, optional</span></dt><dd><p>The factor by which to scale the polygons (default is 1.0).</p>
+</dd>
+</dl>
+</section>
+<section id="id13">
+<h3>Returns:<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<p>:
+dask_geopandas.GeoDataFrame</p>
+<blockquote>
+<div><p>A GeoDataFrame containing scaled Polygon objects and their centroids.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.compute_transcript_overlap_with_boundaries">
+<span class="sig-name descname"><span class="pre">compute_transcript_overlap_with_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polygons_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask_geopandas.GeoDataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask.dataframe.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.compute_transcript_overlap_with_boundaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.compute_transcript_overlap_with_boundaries" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the overlap of transcript locations with scaled boundary polygons
+and assigns corresponding cell IDs to the transcripts using Dask.</p>
+<section id="id14">
+<h3>Parameters:<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>transcripts_df<span class="classifier">dask.dataframe.DataFrame</span></dt><dd><p>Dask DataFrame containing transcript data.</p>
+</dd>
+<dt>boundaries_df<span class="classifier">dask.dataframe.DataFrame, optional</span></dt><dd><p>Dask DataFrame containing boundary data. Required if polygons_gdf is not provided.</p>
+</dd>
+<dt>polygons_gdf<span class="classifier">dask_geopandas.GeoDataFrame, optional</span></dt><dd><p>Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.</p>
+</dd>
+<dt>scale_factor<span class="classifier">float, optional</span></dt><dd><p>The factor by which to scale the boundary polygons. Default is 1.0.</p>
+</dd>
+</dl>
+</section>
+<section id="id15">
+<h3>Returns:<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<p>:
+dask.dataframe.DataFrame</p>
+<blockquote>
+<div><p>The updated DataFrame with overlap information (True for overlap, False for no overlap)
+and assigned cell IDs.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.compute_boundaries_geometries">
+<span class="sig-name descname"><span class="pre">compute_boundaries_geometries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boundaries_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polygons_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask_geopandas.GeoDataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convexity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elongation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circularity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask_geopandas.GeoDataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.compute_boundaries_geometries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.compute_boundaries_geometries" title="Link to this definition">¶</a></dt>
+<dd><p>Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe using Dask.</p>
+<section id="id16">
+<h3>Parameters:<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>boundaries_df<span class="classifier">dask.dataframe.DataFrame, optional</span></dt><dd><p>The dataframe containing boundaries data. Required if polygons_gdf is not provided.</p>
+</dd>
+<dt>polygons_gdf<span class="classifier">dask_geopandas.GeoDataFrame, optional</span></dt><dd><p>Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.</p>
+</dd>
+<dt>scale_factor<span class="classifier">float, optional</span></dt><dd><p>The factor by which to scale the polygons (default is 1.0, no scaling).</p>
+</dd>
+<dt>area<span class="classifier">bool, optional</span></dt><dd><p>Whether to compute area.</p>
+</dd>
+<dt>convexity<span class="classifier">bool, optional</span></dt><dd><p>Whether to compute convexity.</p>
+</dd>
+<dt>elongation<span class="classifier">bool, optional</span></dt><dd><p>Whether to compute elongation.</p>
+</dd>
+<dt>circularity<span class="classifier">bool, optional</span></dt><dd><p>Whether to compute circularity.</p>
+</dd>
+</dl>
+</section>
+<section id="id17">
+<h3>Returns:<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>:
+dask_geopandas.GeoDataFrame</p>
+<blockquote>
+<div><p>A GeoDataFrame containing computed geometries.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._validate_bbox">
+<span class="sig-name descname"><span class="pre">_validate_bbox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._validate_bbox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._validate_bbox" title="Link to this definition">¶</a></dt>
+<dd><p>Validates and sets default values for bounding box coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.save_dataset_for_segger">
+<span class="sig-name descname"><span class="pre">save_dataset_for_segger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processed_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">900</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">900</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sampling_ratio_approx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receptive_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'k_bd':</span> <span class="pre">4,</span> <span class="pre">'dist_bd':</span> <span class="pre">20,</span> <span class="pre">'k_tx':</span> <span class="pre">5,</span> <span class="pre">'dist_tx':</span> <span class="pre">10}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'kd_tree'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.save_dataset_for_segger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.save_dataset_for_segger" title="Link to this definition">¶</a></dt>
+<dd><p>Saves the dataset for Segger in a processed format using Dask for parallel and lazy processing.</p>
+<section id="id18">
+<h3>Parameters:<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>processed_dir<span class="classifier">Path</span></dt><dd><p>Directory to save the processed dataset.</p>
+</dd>
+<dt>x_size<span class="classifier">float, optional</span></dt><dd><p>Width of each tile.</p>
+</dd>
+<dt>y_size<span class="classifier">float, optional</span></dt><dd><p>Height of each tile.</p>
+</dd>
+<dt>d_x<span class="classifier">float, optional</span></dt><dd><p>Step size in the x direction for tiles.</p>
+</dd>
+<dt>d_y<span class="classifier">float, optional</span></dt><dd><p>Step size in the y direction for tiles.</p>
+</dd>
+<dt>margin_x<span class="classifier">float, optional</span></dt><dd><p>Margin in the x direction to include transcripts.</p>
+</dd>
+<dt>margin_y<span class="classifier">float, optional</span></dt><dd><p>Margin in the y direction to include transcripts.</p>
+</dd>
+<dt>compute_labels<span class="classifier">bool, optional</span></dt><dd><p>Whether to compute edge labels for tx_belongs_bd edges.</p>
+</dd>
+<dt>r_tx<span class="classifier">float, optional</span></dt><dd><p>Radius for building the transcript-to-transcript graph.</p>
+</dd>
+<dt>k_tx<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors for the tx-tx graph.</p>
+</dd>
+<dt>val_prob<span class="classifier">float, optional</span></dt><dd><p>Probability of assigning a tile to the validation set.</p>
+</dd>
+<dt>test_prob<span class="classifier">float, optional</span></dt><dd><p>Probability of assigning a tile to the test set.</p>
+</dd>
+<dt>neg_sampling_ratio_approx<span class="classifier">float, optional</span></dt><dd><p>Approximate ratio of negative samples.</p>
+</dd>
+<dt>sampling_rate<span class="classifier">float, optional</span></dt><dd><p>Rate of sampling tiles.</p>
+</dd>
+<dt>num_workers<span class="classifier">int, optional</span></dt><dd><p>Number of workers to use for parallel processing.</p>
+</dd>
+<dt>receptive_field<span class="classifier">dict, optional</span></dt><dd><p>Dictionary containing the values for ‘k_bd’, ‘dist_bd’, ‘k_tx’, and ‘dist_tx’.</p>
+</dd>
+<dt>method<span class="classifier">str, optional</span></dt><dd><p>Method for computing edge indices (e.g., ‘kd_tree’, ‘faiss’).</p>
+</dd>
+<dt>gpu<span class="classifier">bool, optional</span></dt><dd><p>Whether to use GPU acceleration for edge index computation.</p>
+</dd>
+<dt>workers<span class="classifier">int, optional</span></dt><dd><p>Number of workers to use to compute the neighborhood graph (per tile).</p>
+</dd>
+</dl>
+</section>
+<section id="id19">
+<h3>Returns:<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p>:
+None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._prepare_directories">
+<span class="sig-name descname"><span class="pre">_prepare_directories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processed_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._prepare_directories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._prepare_directories" title="Link to this definition">¶</a></dt>
+<dd><p>Prepares directories for saving tiles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._get_ranges">
+<span class="sig-name descname"><span class="pre">_get_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._get_ranges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._get_ranges" title="Link to this definition">¶</a></dt>
+<dd><p>Generates ranges for tiling.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._generate_tile_params">
+<span class="sig-name descname"><span class="pre">_generate_tile_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_prob</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sampling_ratio_approx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.12)"><span class="pre">pathlib.Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">receptive_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._generate_tile_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._generate_tile_params" title="Link to this definition">¶</a></dt>
+<dd><p>Generates parameters for processing tiles using the bounding box approach.
+This version eliminates masks and directly uses the tile ranges and margins.</p>
+<p>Parameters are the same as the previous version.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample._process_tile">
+<span class="sig-name descname"><span class="pre">_process_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample._process_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample._process_tile" title="Link to this definition">¶</a></dt>
+<dd><p>Process a single tile using Dask for parallelism and lazy evaluation, and save the data.</p>
+<section id="id20">
+<h3>Parameters:<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>tile_params<span class="classifier">tuple</span></dt><dd><p>Parameters for the tile processing.</p>
+</dd>
+</dl>
+</section>
+<section id="id21">
+<h3>Returns:<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<p>:
+None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.SpatialTranscriptomicsSample.build_pyg_data_from_tile">
+<span class="sig-name descname"><span class="pre">build_pyg_data_from_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boundaries_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_tx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'kd_tree'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch_geometric.data.HeteroData</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#SpatialTranscriptomicsSample.build_pyg_data_from_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.SpatialTranscriptomicsSample.build_pyg_data_from_tile" title="Link to this definition">¶</a></dt>
+<dd><p>Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.</p>
+<section id="id22">
+<h3>Parameters:<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>boundaries_df<span class="classifier">dd.DataFrame</span></dt><dd><p>Dask DataFrame containing boundaries data (e.g., nucleus, cell).</p>
+</dd>
+<dt>transcripts_df<span class="classifier">dd.DataFrame</span></dt><dd><p>Dask DataFrame containing transcripts data.</p>
+</dd>
+<dt>r_tx<span class="classifier">float</span></dt><dd><p>Radius for building the transcript-to-transcript graph.</p>
+</dd>
+<dt>k_tx<span class="classifier">int</span></dt><dd><p>Number of nearest neighbors for the tx-tx graph.</p>
+</dd>
+<dt>method<span class="classifier">str, optional</span></dt><dd><p>Method for computing edge indices (e.g., ‘kd_tree’, ‘faiss’).</p>
+</dd>
+<dt>gpu<span class="classifier">bool, optional</span></dt><dd><p>Whether to use GPU acceleration for edge index computation.</p>
+</dd>
+<dt>workers<span class="classifier">int, optional</span></dt><dd><p>Number of workers to use for parallel processing.</p>
+</dd>
+</dl>
+</section>
+<section id="id23">
+<h3>Returns:<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<p>:
+HeteroData</p>
+<blockquote>
+<div><p>PyG Heterogeneous Data object.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="segger.data.io.XeniumSample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">segger.data.io.</span></span><span class="sig-name descname"><span class="pre">XeniumSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcripts_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/io.html#XeniumSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.XeniumSample" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#segger.data.io.SpatialTranscriptomicsSample" title="segger.data.io.SpatialTranscriptomicsSample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialTranscriptomicsSample</span></code></a></p>
+<p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.XeniumSample.filter_transcripts">
+<span class="sig-name descname"><span class="pre">filter_transcripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_qv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask.dataframe.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#XeniumSample.filter_transcripts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.XeniumSample.filter_transcripts" title="Link to this definition">¶</a></dt>
+<dd><p>Filters transcripts based on quality value and removes unwanted transcripts for Xenium using Dask.</p>
+<section id="id24">
+<h3>Parameters:<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>transcripts_df<span class="classifier">dd.DataFrame</span></dt><dd><p>The Dask DataFrame containing transcript data.</p>
+</dd>
+<dt>min_qv<span class="classifier">float, optional</span></dt><dd><p>The minimum quality value threshold for filtering transcripts.</p>
+</dd>
+</dl>
+</section>
+<section id="id25">
+<h3>Returns:<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<p>:
+dd.DataFrame</p>
+<blockquote>
+<div><p>The filtered Dask DataFrame.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="segger.data.io.MerscopeSample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">segger.data.io.</span></span><span class="sig-name descname"><span class="pre">MerscopeSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transcripts_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/io.html#MerscopeSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.MerscopeSample" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#segger.data.io.SpatialTranscriptomicsSample" title="segger.data.io.SpatialTranscriptomicsSample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialTranscriptomicsSample</span></code></a></p>
+<p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.io.MerscopeSample.filter_transcripts">
+<span class="sig-name descname"><span class="pre">filter_transcripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dask.dataframe.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_qv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dask.dataframe.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/io.html#MerscopeSample.filter_transcripts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.io.MerscopeSample.filter_transcripts" title="Link to this definition">¶</a></dt>
+<dd><p>Filters transcripts based on specific criteria for Merscope using Dask.</p>
+<section id="id26">
+<h3>Parameters:<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>transcripts_df<span class="classifier">dd.DataFrame</span></dt><dd><p>The Dask DataFrame containing transcript data.</p>
+</dd>
+<dt>min_qv<span class="classifier">float, optional</span></dt><dd><p>The minimum quality value threshold for filtering transcripts.</p>
+</dd>
+</dl>
+</section>
+<section id="id27">
+<h3>Returns:<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<p>:
+dd.DataFrame</p>
+<blockquote>
+<div><p>The filtered Dask DataFrame.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../../_sources/api/segger/data/io/index.rst"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -820,13 +820,13 @@ class SpatialTranscriptomicsSample(ABC):
         try:
             # Probability to assign to train-val-test split
             prob = random.random()
-            #if compute_labels and (prob > val_prob + test_prob):
-            if self.verbose: print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
-            transform = RandomLinkSplit(
-                num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'bd')],
-                neg_sampling_ratio=neg_sampling_ratio_approx * 2,
-            )
-            data = delayed(transform)(data).compute()[0]
+            if compute_labels and (prob > test_prob):
+                print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+                transform = RandomLinkSplit(
+                    num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'bd')],
+                    neg_sampling_ratio=neg_sampling_ratio_approx * 2,
+                )
+                data = delayed(transform)(data).compute()[0]
             
             # if self.verbose: print(data)
 

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>segger.prediction.predict &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for segger.prediction.predict</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">torch._dynamo</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.loader</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.data</span> <span class="kn">import</span> <span class="n">Batch</span>
+<span class="kn">from</span> <span class="nn">torchmetrics</span> <span class="kn">import</span> <span class="n">F1Score</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.csgraph</span> <span class="kn">import</span> <span class="n">connected_components</span> <span class="k">as</span> <span class="n">cc</span>
+
+<span class="kn">from</span> <span class="nn">segger.data.utils</span> <span class="kn">import</span> <span class="n">SpatialTranscriptomicsDataset</span>
+<span class="kn">from</span> <span class="nn">segger.data.io</span> <span class="kn">import</span> <span class="n">XeniumSample</span>
+<span class="kn">from</span> <span class="nn">segger.models.segger_model</span> <span class="kn">import</span> <span class="n">Segger</span>
+<span class="kn">from</span> <span class="nn">segger.training.train</span> <span class="kn">import</span> <span class="n">LitSegger</span>
+<span class="kn">from</span> <span class="nn">lightning</span> <span class="kn">import</span> <span class="n">LightningModule</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.nn</span> <span class="kn">import</span> <span class="n">to_hetero</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+
+<span class="c1"># CONFIG</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">_dynamo</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">suppress_errors</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PYTORCH_USE_CUDA_DSA&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_LAUNCH_BLOCKING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+
+<div class="viewcode-block" id="load_model">
+<a class="viewcode-back" href="../../../api/segger/prediction/predict/index.html#segger.prediction.predict.load_model">[docs]</a>
+<span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">init_emb</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LitSegger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load a LitSegger model from a checkpoint.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    checkpoint_path : os.Pathlike</span>
+<span class="sd">        Specific checkpoint file to load, or directory where the model </span>
+<span class="sd">        checkpoints are stored. If directory, the latest checkpoint is loaded.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    LitSegger</span>
+<span class="sd">        The loaded LitSegger model.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    FileNotFoundError</span>
+<span class="sd">        If the specified checkpoint file does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get last checkpoint if directory provided</span>
+    <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;No checkpoint found at </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">. Please make sure &quot;</span>
+        <span class="s2">&quot;you&#39;ve provided the correct path.&quot;</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
+        <span class="n">checkpoints</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">checkpoint_path</span> <span class="o">/</span> <span class="s1">&#39;*.ckpt&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoints</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">sort_order</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;.*epoch=(\d+)-step=(\d+).ckpt&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">checkpoints</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">checkpoint_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="c1"># Load model</span>
+    <span class="n">lit_segger</span> <span class="o">=</span> <span class="n">LitSegger</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
+        <span class="n">checkpoint_path</span><span class="o">=</span><span class="n">checkpoint_path</span><span class="p">,</span>
+        <span class="c1">#map_location=torch.device(&quot;cuda&quot;),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">lit_segger</span></div>
+
+
+
+<div class="viewcode-block" id="get_similarity_scores">
+<a class="viewcode-back" href="../../../api/segger/prediction/predict/index.html#segger.prediction.predict.get_similarity_scores">[docs]</a>
+<span class="k">def</span> <span class="nf">get_similarity_scores</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Segger</span><span class="p">,</span> 
+    <span class="n">batch</span><span class="p">:</span> <span class="n">Batch</span><span class="p">,</span>
+    <span class="n">from_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">to_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute similarity scores between &#39;from_type&#39; and &#39;to_type&#39; embeddings </span>
+<span class="sd">    within a batch.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Segger</span>
+<span class="sd">        The segmentation model used to generate embeddings.</span>
+<span class="sd">    batch : Batch</span>
+<span class="sd">        A batch of data containing input features and edge indices.</span>
+<span class="sd">    from_type : str</span>
+<span class="sd">        The type of node from which the similarity is computed.</span>
+<span class="sd">    to_type : str</span>
+<span class="sd">        The type of node to which the similarity is computed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        A dense tensor containing the similarity scores between &#39;from_type&#39; </span>
+<span class="sd">        and &#39;to_type&#39; nodes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get embedding spaces from model</span>
+    <span class="n">batch</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+    <span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+
+    <span class="c1"># Similarity of each &#39;from_type&#39; to &#39;to_type&#39; neighbors in embedding</span>
+    <span class="n">nbr_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="n">from_type</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">to_type</span><span class="si">}</span><span class="s1">_field&#39;</span><span class="p">]</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ZeroPad2d</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># pad bottom with zeros</span>
+    <span class="n">similarity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span>
+        <span class="n">m</span><span class="p">(</span><span class="n">y_hat</span><span class="p">[</span><span class="n">to_type</span><span class="p">])[</span><span class="n">nbr_idx</span><span class="p">],</span>    <span class="c1"># &#39;to&#39; x &#39;from&#39; neighbors x embed</span>
+        <span class="n">y_hat</span><span class="p">[</span><span class="n">from_type</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># &#39;to&#39; x embed x 1</span>
+    <span class="p">)</span>                                  <span class="c1"># -&gt; &#39;to&#39; x &#39;from&#39; neighbors x 1</span>
+
+    <span class="c1"># Sigmoid to get most similar &#39;to_type&#39; neighbor</span>
+    <span class="n">similarity</span><span class="p">[</span><span class="n">similarity</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">inf</span>  <span class="c1"># ensure zero stays zero</span>
+    <span class="n">similarity</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">similarity</span><span class="p">)</span>
+
+    <span class="c1"># Neighbor-filtered similarity scores</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="n">from_type</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">batch</span><span class="p">[</span><span class="n">to_type</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">indices</span> <span class="o">=</span>  <span class="n">torch</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">nbr_idx</span> <span class="o">!=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">nbr_idx</span><span class="p">[</span><span class="n">nbr_idx</span> <span class="o">!=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">similarity</span><span class="o">.</span><span class="n">to_sparse</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="n">sparse_sim</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sparse_coo_tensor</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+
+    <span class="c1"># Return in dense format for backwards compatibility</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">sparse_sim</span><span class="o">.</span><span class="n">to_dense</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">scores</span></div>
+
+
+
+<div class="viewcode-block" id="predict_batch">
+<a class="viewcode-back" href="../../../api/segger/prediction/predict/index.html#segger.prediction.predict.predict_batch">[docs]</a>
+<span class="k">def</span> <span class="nf">predict_batch</span><span class="p">(</span>
+    <span class="n">lit_segger</span><span class="p">:</span> <span class="n">LitSegger</span><span class="p">,</span>
+    <span class="n">batch</span><span class="p">:</span> <span class="n">Batch</span><span class="p">,</span>
+    <span class="n">score_cut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">use_cc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Predict cell assignments for a batch of transcript data using a </span>
+<span class="sd">    segmentation model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lit_segger : LitSegger</span>
+<span class="sd">        The lightning module wrapping the segmentation model.</span>
+<span class="sd">    batch : Batch</span>
+<span class="sd">        A batch of transcript and cell data.</span>
+<span class="sd">    score_cut : float</span>
+<span class="sd">        The threshold for assigning transcripts to cells based on similarity </span>
+<span class="sd">        scores.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        A DataFrame containing the transcript IDs, similarity scores, and </span>
+<span class="sd">        assigned cell IDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get random Xenium-style ID</span>
+    <span class="k">def</span> <span class="nf">_get_id</span><span class="p">():</span>
+        <span class="n">id_chars</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">id_chars</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-nx&#39;</span>
+    
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Assignments of cells to nuclei</span>
+        <span class="n">assignments</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="n">assignments</span><span class="p">[</span><span class="s1">&#39;transcript_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="c1"># Transcript-cell similarity scores, filtered by neighbors</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">get_similarity_scores</span><span class="p">(</span><span class="n">lit_segger</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;nc&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 1. Get direct assignments from similarity matrix</span>
+        <span class="n">belongs</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">assignments</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">belongs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">assignments</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">score_cut</span>
+        <span class="n">all_ids</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;nc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">belongs</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">assignments</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="s1">&#39;segger_cell_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_ids</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">use_cc</span><span class="p">:</span>
+            <span class="c1"># Transcript-transcript similarity scores, filtered by neighbors</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">get_similarity_scores</span><span class="p">(</span><span class="n">lit_segger</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;tx&quot;</span><span class="p">)</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">fill_diagonal_</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># ignore self-similarity</span>
+
+            <span class="c1"># 2. Assign remainder using connected components</span>
+            <span class="n">no_id</span> <span class="o">=</span> <span class="n">assignments</span><span class="p">[</span><span class="s1">&#39;segger_cell_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">no_id_scores</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">no_id</span><span class="p">][:,</span> <span class="n">no_id</span><span class="p">]</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">comps</span> <span class="o">=</span> <span class="n">cc</span><span class="p">(</span><span class="n">no_id_scores</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="s2">&quot;weak&quot;</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">new_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_get_id</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+            <span class="n">assignments</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">no_id</span><span class="p">,</span> <span class="s1">&#39;segger_cell_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_ids</span><span class="p">[</span><span class="n">comps</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">assignments</span></div>
+
+
+
+<div class="viewcode-block" id="predict">
+<a class="viewcode-back" href="../../../api/segger/prediction/predict/index.html#segger.prediction.predict.predict">[docs]</a>
+<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+    <span class="n">lit_segger</span><span class="p">:</span> <span class="n">LitSegger</span><span class="p">,</span>
+    <span class="n">data_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+    <span class="n">score_cut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">use_cc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Predict cell assignments for multiple batches of transcript data using </span>
+<span class="sd">    a segmentation model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lit_segger : LitSegger</span>
+<span class="sd">        The lightning module wrapping the segmentation model.</span>
+<span class="sd">    data_loader : DataLoader</span>
+<span class="sd">        A data loader providing batches of transcript and cell data.</span>
+<span class="sd">    score_cut : float</span>
+<span class="sd">        The threshold for assigning transcripts to cells based on similarity </span>
+<span class="sd">        scores.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        A DataFrame containing the transcript IDs, similarity scores, and </span>
+<span class="sd">        assigned cell IDs, consolidated across all batches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If data loader is empty, do nothing</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_loader</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="n">assignments</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Assign transcripts from each batch to nuclei</span>
+    <span class="c1"># TODO: parallelize this step</span>
+    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader</span><span class="p">):</span>
+        <span class="n">batch_assignments</span> <span class="o">=</span> <span class="n">predict_batch</span><span class="p">(</span><span class="n">lit_segger</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">score_cut</span><span class="p">,</span> <span class="n">use_cc</span><span class="p">)</span>
+        <span class="n">assignments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch_assignments</span><span class="p">)</span>
+
+    <span class="c1"># Join across batches and handle duplicates between batches</span>
+    <span class="n">assignments</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">assignments</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Handle duplicate assignments of transcripts</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">assignments</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;transcript_id&#39;</span><span class="p">)[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+    <span class="n">assignments</span> <span class="o">=</span> <span class="n">assignments</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">assignments</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
