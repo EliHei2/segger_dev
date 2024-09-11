@@ -523,7 +523,6 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
             pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
         """
         super().__init__(root, transform, pre_transform, pre_filter)
-        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
 
     @property
     def raw_file_names(self) -> List[str]:
