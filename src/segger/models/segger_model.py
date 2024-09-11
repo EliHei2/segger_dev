@@ -72,7 +72,8 @@ class Segger(torch.nn.Module):
 
         # Last layer
         x = self.conv_last(x, edge_index) # + self.lin_last(x)
-        x = x / x.norm(dim=-1, keepdim=True)  # Normalize to L2 norm of 1
+        #x = x / x.norm(dim=-1, keepdim=True)  # Normalize to L2 norm of 1
+        #x = x.relu()
 
         return x
 

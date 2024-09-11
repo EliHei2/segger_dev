@@ -886,10 +886,10 @@ class SpatialTranscriptomicsSample(ABC):
         # Add boundary node data to PyG HeteroData lazily
         data['bd'].id = bd_gdf[self.keys.CELL_ID.value].values
         data['bd'].pos = torch.as_tensor(bd_gdf[['centroid_x', 'centroid_y']].values.astype(float))
-        '''
+        
         if data['bd'].pos.isnan().any():
             raise ValueError(data['bd'].id[data['bd'].pos.isnan().any(1)])
-        '''
+        
         bd_x = bd_gdf.iloc[:, 4:]
         data['bd'].x = torch.as_tensor(bd_x.to_numpy(), dtype=torch.float32)
 

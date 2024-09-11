@@ -9,7 +9,11 @@ from torch_geometric.data import Batch
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import SpatialTranscriptomicsDataset
+from segger.data.utils import (
+    SpatialTranscriptomicsDataset,
+    get_edge_index,
+    coo_to_dense_adj,
+)
 from segger.data.io import XeniumSample
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
@@ -31,7 +35,7 @@ torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str) -> LitSegger:
+def load_model(checkpoint_path: str) -> LitSegger:
     """
     Load a LitSegger model from a checkpoint.
 
@@ -137,6 +141,7 @@ def predict_batch(
     lit_segger: LitSegger,
     batch: Batch,
     score_cut: float,
+    receptive_field: dict,
     use_cc: bool = True,
 ) -> pd.DataFrame:
     """
@@ -170,16 +175,23 @@ def predict_batch(
 
         # Assignments of cells to nuclei
         assignments = pd.DataFrame()
-        assignments['transcript_id'] = batch['tx'].id[0].flatten()
+        assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
         # Transcript-cell similarity scores, filtered by neighbors
-        scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
+        nbr_idx = get_edge_index(
+            batch['tx'].pos[:, :2],
+            batch['bd'].pos[:, :2],
+            k=receptive_field['k_bd'],
+            dist=receptive_field['dist_bd'],
+            method='kd_tree',
+        )
+        scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
 
         # 1. Get direct assignments from similarity matrix
         belongs = scores.max(1)
         assignments['score'] = belongs.values.cpu()
         mask = assignments['score'] > score_cut
-        all_ids = batch['nc'].id[0].flatten()[belongs.indices]
+        all_ids = batch['bd'].id[0].flatten()[belongs.indices]
         assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
         if use_cc:

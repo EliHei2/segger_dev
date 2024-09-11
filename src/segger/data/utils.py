@@ -612,3 +612,30 @@ def get_xy_extents(
         y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
         y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
     return x_min, y_min, x_max, y_max
+
+
+def coo_to_dense_adj(
+    edge_index: torch.Tensor,
+    max_num_nodes: Optional[int] = None,
+) -> torch.Tensor:
+
+    # Check COO format
+    if not edge_index.shape[0] == 2:
+        msg = (
+            "Edge index is not in COO format. First dimension should have "
+            f"size 2, but found {edge_index.shape[0]}."
+        )
+        raise ValueError(msg)
+
+    # Get split points
+    uniques, counts = torch.unique(edge_index[0], return_counts=True)
+    if max_num_nodes is None:
+        max_num_nodes = counts.max()
+    counts = tuple(counts.cpu().tolist())
+
+    # Fill matrix with neighbors
+    nbr_idx = torch.full((uniques.max() + 1, max_num_nodes), -1)
+    for i, nbrs in zip(uniques, torch.split(edge_index[1], counts)):
+        nbr_idx[i, :len(nbrs)] = nbrs
+
+    return nbr_idx
