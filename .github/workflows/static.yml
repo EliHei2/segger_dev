@@ -46,10 +46,12 @@ jobs:
         run: |
           python -m pip freeze
           python -m mkdocs --version
+          
 
       # Step 6: Build the MkDocs site with verbose output
       - name: Build MkDocs site
-        run: mkdocs build --verbose --strict
+        run: poetry run mkdocs gh-deploy --force
+        
 
       # Step 7: Upload the generated site directory as an artifact for GitHub Pages
       - name: Upload artifact
