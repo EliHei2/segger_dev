@@ -63,9 +63,6 @@ git clone https://github.com/EliHei2/segger_dev.git
 cd segger_dev
 pip install .
 ```
----
-
-
 
 ---
 
