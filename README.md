@@ -1,75 +1,94 @@
-# Segger
+# 🍳 Welcome to segger 
 
+**segger** is a cutting-edge tool for **cell segmentation** in **single-molecule spatial omics** datasets. By leveraging **graph neural networks (GNNs)** and heterogeneous graphs, segger offers unmatched accuracy and scalability.
 
-*Segger* is a cell segmentation model for single-molecule resolved datasets, addressing the challenges of accurate and fast single-cell segmentation in imaging-based spatial omics. By leveraging the co-occurrence of nucleic and cytoplasmic molecules (e.g., transcripts), Segger employs a heterogeneous graph structure integrating fixed-radius nearest neighbor graphs for nuclei and molecules, with edges connecting transcripts to nuclei based on spatial proximity. A graph neural network (GNN) propagates information across these edges to learn molecule-nuclei associations, refining cell borders post-training. Benchmarks on 10X Xenium and MERSCOPE demonstrate Segger's superior accuracy and efficiency over existing methods like Baysor and Cellpose, with faster training and easy adaptability to different datasets and technologies.
-
+# How segger Works
 
 ![Segger Model](docs/images/Segger_model_08_2024.png)
 
+---
 
-## Installation
+# Quick Links
 
-To install Segger, clone this repository and install the required dependencies:
+- 💾 **[Installation Guide](https://elihei2.github.io/segger_dev/installation/)**  
+  Get started with installing segger on your machine.
+
+- 📖 **[User Guide](https://elihei2.github.io/segger_dev/user_guide/)**  
+  Learn how to use segger for cell segmentation tasks.
+
+- 💻 **[Command-Line Interface (CLI)](https://elihei2.github.io/segger_dev/cli/)**  
+  Explore the CLI options for working with segger.
+
+- 📚 **[API Reference](https://elihei2.github.io/segger_dev/api/)**  
+  Dive into the detailed API documentation for advanced usage.
+
+---
+
+# Why segger?
+
+- ⚙️ **Highly parallelizable** – Optimized for multi-GPU environments
+- ⚡ **Fast and efficient** – Trains in a fraction of the time compared to alternatives
+- 🔄 **Transfer learning** – Easily adaptable to new datasets and technologies
+
+### Challenges in Segmentation
+
+Spatial omics segmentation faces issues like:
+
+- **Over/Under-segmentation**
+- **Transcript contamination**
+- **Scalability limitations**
+
+segger tackles these with a **graph-based approach**, achieving superior segmentation accuracy.
+
+---
+## Installation Options
+
+Choose the installation method that best suits your needs.
+
+### Micromamba Installation
+
+```bash
+micromamba create -n segger-rapids --channel-priority 1 \
+    -c rapidsai -c conda-forge -c nvidia -c pytorch -c pyg \
+    rapids=24.08 python=3.* 'cuda-version>=11.4,<=11.8' jupyterlab \
+    'pytorch=*=*cuda*' 'pyg=*=*cu118' pyg-lib pytorch-sparse
+micromamba install -n segger-rapids --channel-priority 1 --file mamba_environment.yml
+micromamba run -n segger-rapids pip install --no-deps ./
+```
+
+### GitHub Installation
 
 ```bash
 git clone https://github.com/EliHei2/segger_dev.git
 cd segger_dev
-pip install -r requirements.txt
+pip install .
 ```
+---
 
-Alternatively, you can create a conda environment using the provided `environment.yml` file:
 
-```bash
-conda env create -f environment.yml
-conda activate segger
-```
 
-## Download Pancreas Dataset
+---
 
-Download the Pancreas dataset from 10x Genomics:
+# Powered by
 
-1. Go to the [Xenium Human Pancreatic Dataset Explorer](https://www.10xgenomics.com/products/xenium-human-pancreatic-dataset-explorer).
-2. Download the `transcripts.csv.gz` and `nucleus_boundaries.csv.gz` files.
-3. Place these files in a directory, e.g., `data_raw/pancreas`.
+- ⚡ **PyTorch Lightning & PyTorch Geometric**: Enables fast, efficient graph neural network (GNN) implementation for heterogeneous graphs.
+- ⚙️ **Dask**: Scalable parallel processing and distributed task scheduling, ideal for handling large transcriptomic datasets.
+- 🗺️ **Shapely & Geopandas**: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.
+- 🖥️ **RAPIDS**: Provides GPU-accelerated computation for tasks like k-nearest neighbors (KNN) graph construction.
+- 📊 **AnnData & Scanpy**: Efficient processing for single-cell datasets.
+- 📐 **SciPy**: Facilitates spatial graph construction, including distance metrics and convex hull calculations for transcript clustering.
 
-## Creating Dataset
+---
 
-To create a dataset for Segger, use the `create_data.py` script. The script takes several arguments to customize the dataset creation process.
+# Contributions
 
-```bash
-python create_data.py --transcripts_path data_raw/pancreas/transcripts.csv.gz --nuclei_path data_raw/pancreas/nucleus_boundaries.csv.gz --output_dir data_tidy/pyg_datasets/pancreas --d_x 180 --d_y 180 --x_size 200 --y_size 200 --r 3 --val_prob 0.1 --test_prob 0.1 --k_nc 3 --dist_nc 10 --k_tx 5 --dist_tx 3 --compute_labels True --sampling_rate 1
-```
+segger is **open-source** and welcomes contributions. Join us in advancing spatial omics segmentation!
 
-This command will process the Pancreas dataset and save the processed data in the specified output directory.
+- 🛠️ **Source Code**  
+  [GitHub](https://github.com/EliHei2/segger_dev)
 
-## Training
+- 🐞 **Bug Tracker**  
+  [Report Issues](https://github.com/EliHei2/segger_dev/issues)
 
-To train the Segger model, use the `train.py` script. The script takes several arguments to customize the training process.
-
-```bash
-python train.py --train_dir data_tidy/pyg_datasets/pancreas/train_tiles/processed --val_dir data_tidy/pyg_datasets/pancreas/val_tiles/processed --test_dir data_tidy/pyg_datasets/pancreas/test_tiles/processed --epochs 100 --batch_size_train 4 --batch_size_val 4 --learning_rate 1e-3 --init_emb 8 --hidden_channels 64 --out_channels 16 --heads 4 --aggr sum --accelerator cuda --strategy auto --precision 16-mixed --devices 4 --default_root_dir ./models/pancreas
-```
-
-This command will train the Segger model on the processed Pancreas dataset and save the trained model in the specified output directory.
-
-## Prediction
-
-To make predictions using a trained Segger model, use the `predict.py` script. The script takes several arguments to customize the prediction process.
-
-```bash
-python predict.py --train_dir data_tidy/pyg_datasets/pancreas/train_tiles/processed --val_dir data_tidy/pyg_datasets/pancreas/val_tiles/processed --test_dir data_tidy/pyg_datasets/pancreas/test_tiles/processed --checkpoint_path ./models/pancreas/lightning_logs/version_0/checkpoints/epoch=99-step=100.ckpt --batch_size 1 --init_emb 8 --hidden_channels 64 --out_channels 16 --heads 4 --aggr sum --accelerator cuda --devices 1 --default_root_dir ./log_final --score_cut 0.5 --k_nc 4 --dist_nc 20 --k_tx 5 --dist_tx 10
-```
-
-This command will use the trained Segger model to make predictions on the Pancreas dataset and save the predictions in the specified output directory.
-
-## Benchmarking
-
-Benchmarking utilities are provided to evaluate the performance of the Segger model. You can find these utilities in the `benchmark` directory.
-
-## Visualization
-
-Visualization scripts are also provided to help visualize the results. You can find these scripts in the `benchmark` directory.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- 📚 **Full Documentation**  
+  [API Reference](https://elihei2.github.io/segger_dev/api/)
