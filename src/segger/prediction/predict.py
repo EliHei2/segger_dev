@@ -9,7 +9,11 @@ from torch_geometric.data import Batch
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import SpatialTranscriptomicsDataset
+from segger.data.utils import (
+    SpatialTranscriptomicsDataset,
+    get_edge_index,
+    coo_to_dense_adj,
+)
 from segger.data.io import XeniumSample
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
@@ -31,7 +35,7 @@ torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-def load_model(checkpoint_path: str, init_emb: int, hidden_channels: int, out_channels: int, heads: int, aggr: str) -> LitSegger:
+def load_model(checkpoint_path: str) -> LitSegger:
     """
     Load a LitSegger model from a checkpoint.
 
@@ -122,9 +126,9 @@ def get_similarity_scores(
 
     # Neighbor-filtered similarity scores
     shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-    indices =  torch.argwhere(nbr_idx != shape[1]).T
-    indices[1] = nbr_idx[nbr_idx != shape[1]]
-    values = similarity.to_sparse().values()
+    indices =  torch.argwhere(nbr_idx != -1).T
+    indices[1] = nbr_idx[nbr_idx != -1]
+    values = similarity[nbr_idx != -1].flatten()
     sparse_sim = torch.sparse_coo_tensor(indices, values, shape)
 
     # Return in dense format for backwards compatibility
@@ -137,6 +141,7 @@ def predict_batch(
     lit_segger: LitSegger,
     batch: Batch,
     score_cut: float,
+    receptive_field: dict,
     use_cc: bool = True,
 ) -> pd.DataFrame:
     """
@@ -170,29 +175,47 @@ def predict_batch(
 
         # Assignments of cells to nuclei
         assignments = pd.DataFrame()
-        assignments['transcript_id'] = batch['tx'].id[0].flatten()
+        assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
-        # Transcript-cell similarity scores, filtered by neighbors
-        scores = get_similarity_scores(lit_segger.model, batch, "tx", "nc")
+        if len(batch['bd'].id[0]) > 0:
+            # Transcript-cell similarity scores, filtered by neighbors
+            edge_index = get_edge_index(
+                batch['bd'].pos[:, :2].cpu(),
+                batch['tx'].pos[:, :2].cpu(),
+                k=receptive_field['k_bd'],
+                dist=receptive_field['dist_bd'],
+                method='kd_tree',
+            ).T
+            batch['tx']['bd_field'] = coo_to_dense_adj(
+                edge_index,
+                num_nodes=batch['tx'].id.shape[0],
+                num_nbrs=receptive_field['k_bd'],
+            )
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
+            # 1. Get direct assignments from similarity matrix
+            belongs = scores.max(1)
+            assignments['score'] = belongs.values.cpu()
+            mask = assignments['score'] > score_cut
+            all_ids = np.concatenate(batch['bd'].id)[belongs.indices.cpu()]
+            assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
-        # 1. Get direct assignments from similarity matrix
-        belongs = scores.max(1)
-        assignments['score'] = belongs.values.cpu()
-        mask = assignments['score'] > score_cut
-        all_ids = batch['nc'].id[0].flatten()[belongs.indices]
-        assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
+            if use_cc:
+                # Transcript-transcript similarity scores, filtered by neighbors
+                edge_index = batch['tx', 'neighbors', 'tx'].edge_index
+                batch['tx']['tx_field'] = coo_to_dense_adj(
+                    edge_index,
+                    num_nodes=batch['tx'].id.shape[0],
+                )
+                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = scores.fill_diagonal_(0)  # ignore self-similarity
 
-        if use_cc:
-            # Transcript-transcript similarity scores, filtered by neighbors
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
-            scores = scores.fill_diagonal_(0)  # ignore self-similarity
-
-            # 2. Assign remainder using connected components
-            no_id = assignments['segger_cell_id'].isna().values
-            no_id_scores = scores[no_id][:, no_id]
-            n, comps = cc(no_id_scores, connection="weak", directed=False)
-            new_ids = np.array([_get_id() for _ in range(n)])
-            assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
+                # 2. Assign remainder using connected components
+                no_id = assignments['segger_cell_id'].isna().values
+                no_id_scores = scores[no_id][:, no_id]
+                print('here')
+                n, comps = cc(no_id_scores, connection="weak", directed=False)
+                new_ids = np.array([_get_id() for _ in range(n)])
+                assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
 
         return assignments
 
@@ -201,6 +224,7 @@ def predict(
     lit_segger: LitSegger,
     data_loader: DataLoader,
     score_cut: float,
+    receptive_field: dict,
     use_cc: bool = True,
 ) -> pd.DataFrame:
     """
@@ -232,7 +256,9 @@ def predict(
     # Assign transcripts from each batch to nuclei
     # TODO: parallelize this step
     for batch in tqdm(data_loader):
-        batch_assignments = predict_batch(lit_segger, batch, score_cut, use_cc)
+        batch_assignments = predict_batch(
+            lit_segger, batch, score_cut, receptive_field, use_cc
+        )
         assignments.append(batch_assignments)
 
     # Join across batches and handle duplicates between batches

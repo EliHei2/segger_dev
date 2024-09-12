@@ -3,7 +3,7 @@ from torch_geometric.nn import GATv2Conv, Linear
 from torch.nn import Embedding
 from torch import Tensor
 from typing import Union
-from torch_sparse import SparseTensor
+#from torch_sparse import SparseTensor
 
 class Segger(torch.nn.Module):
     def __init__(self, num_tx_tokens: int, init_emb: int = 16, hidden_channels: int = 32, num_mid_layers: int = 3, out_channels: int = 32, heads: int = 3):
@@ -78,7 +78,7 @@ class Segger(torch.nn.Module):
         return x
 
     
-    def decode(self, z: Tensor, edge_index: Union[Tensor, SparseTensor]) -> Tensor:
+    def decode(self, z: Tensor, edge_index: Union[Tensor]) -> Tensor:
         """
         Decode the node embeddings to predict edge values.
 

@@ -24,6 +24,8 @@ from scipy.spatial import cKDTree
 from shapely.geometry import Polygon
 from shapely.affinity import scale
 import dask.dataframe as dd
+from pyarrow import parquet as pq
+import sys
 
 # Attempt to import specific modules with try_import function
 try_import('multiprocessing')
@@ -521,7 +523,6 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
             pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.
         """
         super().__init__(root, transform, pre_transform, pre_filter)
-        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
 
     @property
     def raw_file_names(self) -> List[str]:
@@ -573,3 +574,71 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
         return data
 
 
+def get_xy_extents(
+    filepath,
+    x: str,
+    y: str,
+) -> Tuple[int]:
+    """
+    Get the bounding box of the x and y coordinates from a Parquet file.
+
+    Parameters
+    ----------
+    filepath : str
+        The path to the Parquet file.
+    x : str
+        The name of the column representing the x-coordinate.
+    y : str
+        The name of the column representing the y-coordinate.
+
+    Returns
+    -------
+    shapely.Polygon
+        A polygon representing the bounding box of the x and y coordinates.
+    """
+    # Get index of columns of parquet file
+    metadata = pq.read_metadata(filepath)
+    schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
+
+    # Find min and max values across all row groups
+    x_max = -1
+    x_min = sys.maxsize
+    y_max = -1
+    y_min = sys.maxsize
+    for i in range(metadata.num_row_groups):
+        group = metadata.row_group(i)
+        x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
+        x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
+        y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
+        y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
+    return x_min, y_min, x_max, y_max
+
+
+def coo_to_dense_adj(
+    edge_index: torch.Tensor,
+    num_nodes: Optional[int] = None,
+    num_nbrs: Optional[int] = None,
+) -> torch.Tensor:
+
+    # Check COO format
+    if not edge_index.shape[0] == 2:
+        msg = (
+            "Edge index is not in COO format. First dimension should have "
+            f"size 2, but found {edge_index.shape[0]}."
+        )
+        raise ValueError(msg)
+
+    # Get split points
+    uniques, counts = torch.unique(edge_index[0], return_counts=True)
+    if num_nodes is None:
+        num_nodes = uniques.max() + 1
+    if num_nbrs is None:
+        num_nbrs = counts.max()
+    counts = tuple(counts.cpu().tolist())
+
+    # Fill matrix with neighbors
+    nbr_idx = torch.full((num_nodes, num_nbrs), -1)
+    for i, nbrs in zip(uniques, torch.split(edge_index[1], counts)):
+        nbr_idx[i, :len(nbrs)] = nbrs
+
+    return nbr_idx

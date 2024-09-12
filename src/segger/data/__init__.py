@@ -13,7 +13,7 @@ __all__ = [
     "compute_transcript_metrics", 
     "SpatialTranscriptomicsSample",
     "calculate_gene_celltype_abundance_embedding",
-    "get_edge_index"
+    "get_edge_index",
 ]
 
 from .utils import (

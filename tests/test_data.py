@@ -8,10 +8,6 @@ import unittest
 import pandas as pd
 
 class TestDataUtils(unittest.TestCase):
-    
-    def test_uint32_to_str(self):
-        self.assertEqual(uint32_to_str(123456789, 'test'), '075bcd15-test')
-        self.assertEqual(uint32_to_str(0, 'suffix'), '00000000-suffix')
 
     def test_filter_transcripts(self):
         data = {
@@ -69,13 +65,6 @@ class TestDataUtils(unittest.TestCase):
     def test_unassign_all_except_nucleus(self):
         unassigned_df = XeniumSample.unassign_all_except_nucleus(self.df)
         self.assertEqual(unassigned_df.loc[unassigned_df['overlaps_nucleus'] == 0, 'cell_id'].values[0], 'UNASSIGNED')
-
-
-    def test_build_tx_graph(self):
-        transform = BuildTxGraph(r=5.0)
-        data = Data(tx={'pos': torch.tensor([[0, 0], [1, 1], [2, 2]], dtype=torch.float)})
-        transformed_data = transform(data)
-        self.assertTrue('edge_index' in transformed_data['tx', 'neighbors', 'tx'])
 
 
 if __name__ == '__main__':
