@@ -2,9 +2,8 @@ name: Deploy MkDocs to GitHub Pages
 
 on:
   push:
-    branches: ["main"]  # Change "main" to your default branch if necessary
+    branches: ["main"]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
@@ -31,27 +30,34 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Step 3: Install your package from the repository
-      - name: Install package
+      # Step 3: Install package and set PYTHONPATH
+      - name: Install package and documentation dependencies
         run: |
-          pip install .
-      
-      # Step 4: Install MkDocs and dependencies
-      - name: Install dependencies
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+          # pip install -e .
+
+      # Step 4: Install MkDocs and required plugins
+      - name: Install MkDocs and plugins
         run: |
           pip install mkdocs mkdocs-material mkdocs-autorefs mkdocstrings[python] mkdocs-jupyter pymdown-extensions termynal mkdocs-minify-plugin
 
-      # Step 5: Build the MkDocs site
-      - name: Build MkDocs site
-        run: mkdocs build --verbose
+      # Step 5: Debug environment to check installed packages
+      - name: Debug environment
+        run: |
+          python -m pip freeze
+          python -m mkdocs --version
 
-      # Step 6: Upload the generated site directory as an artifact for GitHub Pages
+      # Step 6: Build the MkDocs site with verbose output
+      - name: Build MkDocs site
+        run: mkdocs build --verbose --strict
+
+      # Step 7: Upload the generated site directory as an artifact for GitHub Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './site'  # Only upload the generated `site` folder
+          path: './site'
 
-      # Step 7: Deploy to GitHub Pages
+      # Step 8: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
