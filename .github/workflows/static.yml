@@ -34,7 +34,7 @@ jobs:
       # Step 3: Install your package from the repository
       - name: Install package
         run: |
-          export PYTHONPATH='./src/segger'
+          pip install .
       
       # Step 4: Install MkDocs and dependencies
       - name: Install dependencies
