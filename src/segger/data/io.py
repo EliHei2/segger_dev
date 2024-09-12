@@ -89,20 +89,6 @@ class SpatialTranscriptomicsSample(ABC):
         """
         self.transcripts_path = transcripts_path
         self.boundaries_path = boundaries_path
-        tx_extents = get_xy_extents(
-            self.transcripts_path,
-            self.keys.TRANSCRIPTS_X.value,
-            self.keys.TRANSCRIPTS_Y.value,
-        )
-        bd_extents = get_xy_extents(
-            self.boundaries_path,
-            self.keys.BOUNDARIES_VERTEX_X.value,
-            self.keys.BOUNDARIES_VERTEX_Y.value,
-        )
-        self.x_min = min(tx_extents[0], bd_extents[0])
-        self.y_min = min(tx_extents[1], bd_extents[1])
-        self.x_max = max(tx_extents[2], bd_extents[2])
-        self.y_max = max(tx_extents[3], bd_extents[3])
         
         if self.verbose: print(f"Set transcripts file path to {transcripts_path}")
         if self.verbose: print(f"Set boundaries file path to {boundaries_path}")
