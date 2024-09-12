@@ -51,7 +51,7 @@ jobs:
 
       # Step 6: Build the MkDocs site with verbose output
       - name: Build MkDocs site
-        run: mkdocs gh-deploy --force
+        run: mkdocs gh-deploy 
         
 
       # Step 7: Upload the generated site directory as an artifact for GitHub Pages
