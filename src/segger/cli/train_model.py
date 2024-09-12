@@ -4,6 +4,7 @@ import os
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging
+from pytorch_lightning.loggers import CSVLogger
 
 
 # Path to default yaml config file
@@ -62,6 +63,7 @@ def train_model(args):
         devices=args.devices,
         max_epochs=args.epochs,
         default_root_dir=args.model_dir,
+        logger=CSVLogger(args.model_dir),
     )
     logging.info("Done.")
 
