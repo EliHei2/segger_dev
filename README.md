@@ -22,6 +22,9 @@
 - 📚 **[API Reference](https://elihei2.github.io/segger_dev/api/)**  
   Dive into the detailed API documentation for advanced usage.
 
+- 📝 **[Sample Workflow](https://elihei2.github.io/segger_dev/notebooks/segger_tutorial/)**  
+  Check out a tutorial showcasing a sample workflow with segger.
+
 ---
 
 # Why segger?
