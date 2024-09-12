@@ -123,13 +123,12 @@ def get_similarity_scores(
     # Sigmoid to get most similar 'to_type' neighbor
     similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
     similarity = F.sigmoid(similarity)
-    return similarity[:, :, 0]
 
     # Neighbor-filtered similarity scores
     shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
     indices =  torch.argwhere(nbr_idx != -1).T
     indices[1] = nbr_idx[nbr_idx != -1]
-    values = similarity.to_sparse().values()
+    values = similarity[nbr_idx != -1].flatten()
     sparse_sim = torch.sparse_coo_tensor(indices, values, shape)
 
     # Return in dense format for backwards compatibility
@@ -178,44 +177,45 @@ def predict_batch(
         assignments = pd.DataFrame()
         assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
-        # Transcript-cell similarity scores, filtered by neighbors
-        edge_index = get_edge_index(
-            batch['bd'].pos[:, :2].cpu(),
-            batch['tx'].pos[:, :2].cpu(),
-            k=receptive_field['k_bd'],
-            dist=receptive_field['dist_bd'],
-            method='kd_tree',
-        ).T
-        batch['tx']['bd_field'] = coo_to_dense_adj(
-            edge_index,
-            num_nodes=batch['tx'].id.shape[0],
-            num_nbrs=receptive_field['k_bd'],
-        )
-        scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
-
-        # 1. Get direct assignments from similarity matrix
-        belongs = scores.max(1)
-        assignments['score'] = belongs.values.cpu()
-        mask = assignments['score'] > score_cut
-        all_ids = batch['bd'].id[0].flatten()[belongs.indices.cpu()]
-        assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
-
-        if use_cc:
-            # Transcript-transcript similarity scores, filtered by neighbors
-            edge_index = batch['tx', 'neighbors', 'tx'].edge_index
-            batch['tx']['tx_field'] = coo_to_dense_adj(
+        if len(batch['bd'].id[0]) > 0:
+            # Transcript-cell similarity scores, filtered by neighbors
+            edge_index = get_edge_index(
+                batch['bd'].pos[:, :2].cpu(),
+                batch['tx'].pos[:, :2].cpu(),
+                k=receptive_field['k_bd'],
+                dist=receptive_field['dist_bd'],
+                method='kd_tree',
+            ).T
+            batch['tx']['bd_field'] = coo_to_dense_adj(
                 edge_index,
                 num_nodes=batch['tx'].id.shape[0],
+                num_nbrs=receptive_field['k_bd'],
             )
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
-            scores = scores.fill_diagonal_(0)  # ignore self-similarity
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
+            # 1. Get direct assignments from similarity matrix
+            belongs = scores.max(1)
+            assignments['score'] = belongs.values.cpu()
+            mask = assignments['score'] > score_cut
+            all_ids = np.concatenate(batch['bd'].id)[belongs.indices.cpu()]
+            assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
-            # 2. Assign remainder using connected components
-            no_id = assignments['segger_cell_id'].isna().values
-            no_id_scores = scores[no_id][:, no_id]
-            n, comps = cc(no_id_scores, connection="weak", directed=False)
-            new_ids = np.array([_get_id() for _ in range(n)])
-            assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
+            if use_cc:
+                # Transcript-transcript similarity scores, filtered by neighbors
+                edge_index = batch['tx', 'neighbors', 'tx'].edge_index
+                batch['tx']['tx_field'] = coo_to_dense_adj(
+                    edge_index,
+                    num_nodes=batch['tx'].id.shape[0],
+                )
+                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = scores.fill_diagonal_(0)  # ignore self-similarity
+
+                # 2. Assign remainder using connected components
+                no_id = assignments['segger_cell_id'].isna().values
+                no_id_scores = scores[no_id][:, no_id]
+                print('here')
+                n, comps = cc(no_id_scores, connection="weak", directed=False)
+                new_ids = np.array([_get_id() for _ in range(n)])
+                assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
 
         return assignments
 

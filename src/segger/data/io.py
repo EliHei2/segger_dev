@@ -148,7 +148,7 @@ class SpatialTranscriptomicsSample(ABC):
         self.transcripts_path = file_path
 
         # Set metadata
-        self.set_metadata()
+        # self.set_metadata()
 
         # Use bounding box values from set_metadata if not explicitly provided
         x_min = x_min or self.x_min
@@ -821,7 +821,7 @@ class SpatialTranscriptomicsSample(ABC):
             # Probability to assign to train-val-test split
             prob = random.random()
             if compute_labels and (prob > test_prob):
-                print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+                if self.verbose: print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
                 transform = RandomLinkSplit(
                     num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'bd')],
                     neg_sampling_ratio=neg_sampling_ratio_approx * 2,
@@ -835,10 +835,10 @@ class SpatialTranscriptomicsSample(ABC):
             filename = f"tiles_x{x_loc}_y{y_loc}_{x_size}_{y_size}.pt"
             if prob > val_prob + test_prob:
                 torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
-            elif prob > val_prob:
-                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
-            else:
+            elif prob > test_prob:
                 torch.save(data, processed_dir / 'val_tiles' / 'processed' / filename)
+            else:
+                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
 
             # Use Dask to save the file in parallel
             # save_task.compute()
