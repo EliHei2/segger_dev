@@ -45,6 +45,8 @@ nav:
       - Dataset Creation: user_guide/data_creation.md
       - Training: user_guide/training.md
       - Validation: user_guide/validation.md
+  - Tutorials:
+    - Sample workflow: notebooks/segger_tutorial.md
   - CLI: cli.md
   - API Reference:
       - Data: api/data/index.md
