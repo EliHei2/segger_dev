@@ -34,8 +34,8 @@ jobs:
       # Step 3: Install package and set PYTHONPATH
       - name: Install package and documentation dependencies
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/src/segger
-          # pip install -e .
+          # export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pip install -e .
 
       # Step 4: Install MkDocs and required plugins
       - name: Install MkDocs and plugins
