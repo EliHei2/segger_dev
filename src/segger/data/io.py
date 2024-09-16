@@ -59,7 +59,7 @@ class SpatialTranscriptomicsSample(ABC):
         self.boundaries_graph = boundaries_graph
         self.keys = keys
         self.embedding_df = None
-        self.current_embedding = 'one_hot'
+        self.current_embedding = 'token'
         self.verbose = verbose
         
 
@@ -892,7 +892,7 @@ class SpatialTranscriptomicsSample(ABC):
         # Lazily prepare transcript embeddings (if available)
         if self.verbose: print("Preparing transcript embeddings..")
         token_encoding = self.tx_encoder.transform(transcripts_df[self.keys.FEATURE_NAME.value])
-        transcripts_df['one_hot'] = token_encoding  # Store the integer tokens in the 'one_hot' column
+        transcripts_df['token'] = token_encoding  # Store the integer tokens in the 'token' column
         data['tx'].token = torch.as_tensor(token_encoding).int()
         # Handle additional embeddings lazily as well
         if self.embedding_df:

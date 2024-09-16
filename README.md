@@ -23,7 +23,7 @@
   Dive into the detailed API documentation for advanced usage.
 
 - 📝 **[Sample Workflow](https://elihei2.github.io/segger_dev/notebooks/segger_tutorial/)**  
-  Check out a tutorial showcasing a sample workflow with segger.
+  Check out our tutorial showcasing a sample workflow with segger.
 
 ---
 
