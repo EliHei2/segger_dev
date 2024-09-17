@@ -83,9 +83,9 @@ tests = [
 
 [project.urls]
 bug_tracker = "https://github.com/EliHei2/segger_dev/issues"
-documentation = "https://github.com/EliHei2/segger_dev#readme"
+documentation = "https://EliHei2.github.io/segger_dev"
 source_code = "https://github.com/EliHei2/segger_dev"
-homepage = "https://github.com/EliHei2/segger_dev"
+homepage = "https://EliHei2.github.io/segger_dev"
 repository = "https://github.com/EliHei2/segger_dev"
 
 [tool.setuptools]

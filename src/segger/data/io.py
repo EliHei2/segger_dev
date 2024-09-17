@@ -602,12 +602,7 @@ class SpatialTranscriptomicsSample(ABC):
         neg_sampling_ratio_approx: float = 5,
         sampling_rate: float = 1,
         num_workers: int = 1,
-        receptive_field: Dict[str, float] = {
-            "k_bd": 4,
-            "dist_bd": 20,
-            "k_tx": 5,
-            "dist_tx": 10,
-        },
+        scale_boundaries: float = 1.0,
         method: str = 'kd_tree',
         gpu: bool = False,
         workers: int = 1
@@ -631,10 +626,11 @@ class SpatialTranscriptomicsSample(ABC):
             neg_sampling_ratio_approx (float, optional): Approximate ratio of negative samples.
             sampling_rate (float, optional): Rate of sampling tiles.
             num_workers (int, optional): Number of workers to use for parallel processing.
-            receptive_field (Dict[str, float], optional): Dictionary containing the values for 'k_bd', 'dist_bd', 'k_tx', and 'dist_tx'.
+            scale_boundaries (float, optional): The factor by which to scale the boundary polygons. Default is 1.0.
             method (str, optional): Method for computing edge indices (e.g., 'kd_tree', 'faiss').
             gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
             workers (int, optional): Number of workers to use to compute the neighborhood graph (per tile).
+            
         """
         # Prepare directories for storing processed tiles
         self._prepare_directories(processed_dir)
@@ -646,7 +642,7 @@ class SpatialTranscriptomicsSample(ABC):
         tile_params = self._generate_tile_params(
             x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, 
             r_tx, k_tx, val_prob, test_prob, neg_sampling_ratio_approx, sampling_rate, 
-            processed_dir, receptive_field, method, gpu, workers
+            processed_dir, scale_boundaries, method, gpu, workers
         )
 
         # Process each tile using Dask to parallelize the task
@@ -693,7 +689,7 @@ class SpatialTranscriptomicsSample(ABC):
         neg_sampling_ratio_approx: float,
         sampling_rate: float,
         processed_dir: Path,
-        receptive_field: Dict[str, float],
+        scale_boundaries: float,
         method: str,
         gpu: bool,
         workers: int
@@ -712,7 +708,7 @@ class SpatialTranscriptomicsSample(ABC):
             (
                 i, j, x_size, y_size, x_range[i], y_range[j], margin_x, margin_y, 
                 compute_labels, r_tx, k_tx, neg_sampling_ratio_approx, val_prob, 
-                test_prob, processed_dir, receptive_field, sampling_rate, 
+                test_prob, processed_dir, scale_boundaries, sampling_rate, 
                 method, gpu, workers
             )
             for i in range(len(x_range)) 
@@ -756,7 +752,7 @@ class SpatialTranscriptomicsSample(ABC):
         (
             i, j, x_size, y_size, x_loc, y_loc, margin_x, margin_y, compute_labels, 
             r_tx, k_tx, neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, 
-            receptive_field, sampling_rate, method, gpu, workers
+            scale_boundaries, sampling_rate, method, gpu, workers
         ) = tile_params
 
         if self.verbose: print(f"Processing tile at location (x_min: {x_loc}, y_min: {y_loc}), size (width: {x_size}, height: {y_size})")
@@ -797,7 +793,7 @@ class SpatialTranscriptomicsSample(ABC):
         # Build PyG data structure from tile-specific data
         if self.verbose: print(f"Building PyG data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
         data = delayed(self.build_pyg_data_from_tile)(
-            boundaries_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers
+            boundaries_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers, scale_boundaries=scale_boundaries
         )
         
         data = data.compute()
@@ -844,7 +840,9 @@ class SpatialTranscriptomicsSample(ABC):
         k_tx: int = 3, 
         method: str = 'kd_tree', 
         gpu: bool = False, 
-        workers: int = 1
+        workers: int = 1,
+        scale_boundaries: float = 1.0
+        
     ) -> HeteroData:
         """
         Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.
@@ -857,7 +855,8 @@ class SpatialTranscriptomicsSample(ABC):
             method (str, optional): Method for computing edge indices (e.g., 'kd_tree', 'faiss').
             gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
             workers (int, optional): Number of workers to use for parallel processing.
-
+            scale_boundaries (float, optional): The factor by which to scale the boundary polygons. Default is 1.0.
+            
         Returns:
             HeteroData: PyG Heterogeneous Data object.
         """
@@ -866,7 +865,7 @@ class SpatialTranscriptomicsSample(ABC):
 
         # Lazily compute boundaries geometries using Dask
         if self.verbose: print("Computing boundaries geometries...")
-        bd_gdf = self.compute_boundaries_geometries(boundaries_df)
+        bd_gdf = self.compute_boundaries_geometries(boundaries_df, scale_factor=scale_boundaries)
         bd_gdf = bd_gdf[bd_gdf['geometry'].notnull()]
         
         # Add boundary node data to PyG HeteroData lazily
