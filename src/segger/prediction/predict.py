@@ -1,66 +1,54 @@
 import os
 import torch
+import dask.dataframe as dd
 import pandas as pd
-import numpy as np
 import torch.nn.functional as F
-import torch._dynamo
+from dask import delayed
+from tqdm import tqdm
+from dask_cuda import LocalCUDACluster
+from dask.distributed import Client
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
-from torchmetrics import F1Score
+from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components as cc
+from torch_geometric.utils import to_scipy_sparse_matrix
 
 from segger.data.utils import (
     SpatialTranscriptomicsDataset,
     get_edge_index,
     coo_to_dense_adj,
 )
-from segger.data.io import XeniumSample
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
-from lightning import LightningModule
-from torch_geometric.nn import to_hetero
-import random
-import string
-import os
-import yaml
-from pathlib import Path
-import glob
-import typing
-import re
-from tqdm import tqdm
-
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
+# Set up Dask cluster for distributed GPU computation (optional)
+cluster = LocalCUDACluster()
+client = Client(cluster)
+
 def load_model(checkpoint_path: str) -> LitSegger:
     """
-    Load a LitSegger model from a checkpoint.
+    Load a LitSegger model from a checkpoint file.
 
-    Parameters
-    ----------
-    checkpoint_path : os.Pathlike
-        Specific checkpoint file to load, or directory where the model 
-        checkpoints are stored. If directory, the latest checkpoint is loaded.
+    Parameters:
+        checkpoint_path (str): 
+            The file path to a specific checkpoint file or a directory where 
+            model checkpoints are stored. If a directory, the latest checkpoint is loaded.
 
-    Returns
-    -------
-    LitSegger
-        The loaded LitSegger model.
+    Returns:
+        LitSegger: The loaded LitSegger model.
 
-    Raises
-    ------
-    FileNotFoundError
-        If the specified checkpoint file does not exist.
+    Raises:
+        FileNotFoundError: If no checkpoint is found in the given directory.
+        FileExistsError: If the given file path doesn't exist.
     """
-    # Get last checkpoint if directory provided
     checkpoint_path = Path(checkpoint_path)
-    msg = (
-        f"No checkpoint found at {checkpoint_path}. Please make sure "
-        "you've provided the correct path."
-    )
+    msg = f"No checkpoint found at {checkpoint_path}."
+
     if os.path.isdir(checkpoint_path):
         checkpoints = glob.glob(str(checkpoint_path / '*.ckpt'))
         if len(checkpoints) == 0:
@@ -72,43 +60,27 @@ def load_model(checkpoint_path: str) -> LitSegger:
     elif not checkpoint_path.exists():
         raise FileExistsError(msg)
 
-    # Load model
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
-        #map_location=torch.device("cuda"),
     )
 
     return lit_segger
 
 
-def get_similarity_scores(
-    model: Segger, 
-    batch: Batch,
-    from_type: str,
-    to_type: str,
-):
+def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: str) -> torch.Tensor:
     """
-    Compute similarity scores between 'from_type' and 'to_type' embeddings 
-    within a batch.
+    Compute similarity scores between 'from_type' and 'to_type' embeddings within a batch.
 
-    Parameters
-    ----------
-    model : Segger
-        The segmentation model used to generate embeddings.
-    batch : Batch
-        A batch of data containing input features and edge indices.
-    from_type : str
-        The type of node from which the similarity is computed.
-    to_type : str
-        The type of node to which the similarity is computed.
+    Parameters:
+        model (Segger): The segmentation model used to generate embeddings.
+        batch (Batch): A batch of data containing input features and edge indices.
+        from_type (str): The type of node from which the similarity is computed.
+        to_type (str): The type of node to which the similarity is computed.
 
-    Returns
-    -------
-    torch.Tensor
-        A dense tensor containing the similarity scores between 'from_type' 
-        and 'to_type' nodes.
+    Returns:
+        torch.Tensor: A dense tensor containing the similarity scores between 'from_type' 
+                      and 'to_type' nodes.
     """
-    # Get embedding spaces from model
     batch = batch.to("cuda")
     y_hat = model(batch.x_dict, batch.edge_index_dict)
 
@@ -118,7 +90,7 @@ def get_similarity_scores(
     similarity = torch.bmm(
         m(y_hat[to_type])[nbr_idx],    # 'to' x 'from' neighbors x embed
         y_hat[from_type].unsqueeze(-1) # 'to' x embed x 1
-    )                                  # -> 'to' x 'from' neighbors x 1
+    )
 
     # Sigmoid to get most similar 'to_type' neighbor
     similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
@@ -126,59 +98,53 @@ def get_similarity_scores(
 
     # Neighbor-filtered similarity scores
     shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-    indices =  torch.argwhere(nbr_idx != -1).T
+    indices = torch.argwhere(nbr_idx != -1).T
     indices[1] = nbr_idx[nbr_idx != -1]
     values = similarity[nbr_idx != -1].flatten()
     sparse_sim = torch.sparse_coo_tensor(indices, values, shape)
 
-    # Return in dense format for backwards compatibility
+    # Return in dense format
     scores = sparse_sim.to_dense().detach().cpu()
-
     return scores
 
 
 def predict_batch(
-    lit_segger: LitSegger,
-    batch: Batch,
-    score_cut: float,
-    receptive_field: dict,
-    use_cc: bool = True,
+    lit_segger: LitSegger, 
+    batch: Batch, 
+    score_cut: float, 
+    receptive_field: dict, 
+    use_cc: bool = True
 ) -> pd.DataFrame:
     """
-    Predict cell assignments for a batch of transcript data using a 
-    segmentation model.
+    Predict cell assignments for a batch of transcript data using a segmentation model.
 
-    Parameters
-    ----------
-    lit_segger : LitSegger
-        The lightning module wrapping the segmentation model.
-    batch : Batch
-        A batch of transcript and cell data.
-    score_cut : float
-        The threshold for assigning transcripts to cells based on similarity 
-        scores.
+    Parameters:
+        lit_segger (LitSegger): 
+            The lightning module wrapping the segmentation model.
+        batch (Batch): 
+            A batch of transcript and cell data.
+        score_cut (float): 
+            The threshold for assigning transcripts to cells based on similarity scores.
+        receptive_field (dict): 
+            A dictionary specifying the receptive field settings.
+        use_cc (bool, optional): 
+            Whether to use connected components for unassigned transcripts. Default is True.
 
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame containing the transcript IDs, similarity scores, and 
-        assigned cell IDs.
+    Returns:
+        pd.DataFrame: A DataFrame containing the transcript IDs, similarity scores, 
+                      and assigned cell IDs.
     """
-    # Get random Xenium-style ID
     def _get_id():
         id_chars = random.choices(string.ascii_lowercase, k=8)
         return ''.join(id_chars) + '-nx'
-    
+
     with torch.no_grad():
-
         batch = batch.to("cuda")
-
-        # Assignments of cells to nuclei
         assignments = pd.DataFrame()
         assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
         if len(batch['bd'].id[0]) > 0:
-            # Transcript-cell similarity scores, filtered by neighbors
+            # Transcript-cell similarity scores
             edge_index = get_edge_index(
                 batch['bd'].pos[:, :2].cpu(),
                 batch['tx'].pos[:, :2].cpu(),
@@ -192,7 +158,6 @@ def predict_batch(
                 num_nbrs=receptive_field['k_bd'],
             )
             scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
-            # 1. Get direct assignments from similarity matrix
             belongs = scores.max(1)
             assignments['score'] = belongs.values.cpu()
             mask = assignments['score'] > score_cut
@@ -200,20 +165,24 @@ def predict_batch(
             assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
             if use_cc:
-                # Transcript-transcript similarity scores, filtered by neighbors
+                # Transcript-transcript similarity scores
                 edge_index = batch['tx', 'neighbors', 'tx'].edge_index
                 batch['tx']['tx_field'] = coo_to_dense_adj(
                     edge_index,
                     num_nodes=batch['tx'].id.shape[0],
                 )
                 scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
-                scores = scores.fill_diagonal_(0)  # ignore self-similarity
+                scores = scores.fill_diagonal_(0)
 
-                # 2. Assign remainder using connected components
+                # Sparse connected components for unassigned transcripts using SciPy
                 no_id = assignments['segger_cell_id'].isna().values
                 no_id_scores = scores[no_id][:, no_id]
-                print('here')
-                n, comps = cc(no_id_scores, connection="weak", directed=False)
+                
+                # Convert the similarity scores to a sparse matrix for SciPy
+                sparse_matrix = csr_matrix(no_id_scores.numpy())
+                n, comps = cc(sparse_matrix, connection="weak", directed=False)
+                
+                # Assign new IDs based on connected components
                 new_ids = np.array([_get_id() for _ in range(n)])
                 assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
 
@@ -221,51 +190,48 @@ def predict_batch(
 
 
 def predict(
-    lit_segger: LitSegger,
-    data_loader: DataLoader,
-    score_cut: float,
-    receptive_field: dict,
-    use_cc: bool = True,
-) -> pd.DataFrame:
+    lit_segger: LitSegger, 
+    data_loader: DataLoader, 
+    score_cut: float, 
+    receptive_field: dict, 
+    use_cc: bool = True
+) -> dd.DataFrame:
     """
-    Predict cell assignments for multiple batches of transcript data using 
-    a segmentation model.
+    Predict cell assignments for multiple batches of transcript data using Dask.
 
-    Parameters
-    ----------
-    lit_segger : LitSegger
-        The lightning module wrapping the segmentation model.
-    data_loader : DataLoader
-        A data loader providing batches of transcript and cell data.
-    score_cut : float
-        The threshold for assigning transcripts to cells based on similarity 
-        scores.
+    Parameters:
+        lit_segger (LitSegger): 
+            The lightning module wrapping the segmentation model.
+        data_loader (DataLoader): 
+            A data loader providing batches of transcript and cell data.
+        score_cut (float): 
+            The threshold for assigning transcripts to cells based on similarity scores.
+        receptive_field (dict): 
+            A dictionary specifying the receptive field settings.
+        use_cc (bool, optional): 
+            Whether to use connected components for unassigned transcripts. Default is True.
 
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame containing the transcript IDs, similarity scores, and 
-        assigned cell IDs, consolidated across all batches.
+    Returns:
+        dd.DataFrame: A Dask DataFrame containing the transcript IDs, similarity scores, 
+                      and assigned cell IDs, consolidated across all batches.
     """
-    # If data loader is empty, do nothing
     if len(data_loader) == 0:
         return None
-    
-    assignments = []
 
-    # Assign transcripts from each batch to nuclei
-    # TODO: parallelize this step
+    delayed_batches = []
+    
+    # Process batches in parallel using Dask delayed
     for batch in tqdm(data_loader):
-        batch_assignments = predict_batch(
+        delayed_batch = delayed(predict_batch)(
             lit_segger, batch, score_cut, receptive_field, use_cc
         )
-        assignments.append(batch_assignments)
+        delayed_batches.append(delayed_batch)
 
-    # Join across batches and handle duplicates between batches
-    assignments = pd.concat(assignments).reset_index(drop=True)
+    # Combine all delayed results into a single Dask DataFrame
+    dask_assignments = dd.from_delayed(delayed_batches)
 
     # Handle duplicate assignments of transcripts
-    idx = assignments.groupby('transcript_id')['score'].idxmax()
-    assignments = assignments.loc[idx].reset_index(drop=True)
+    idx = dask_assignments.groupby('transcript_id')['score'].idxmax()
+    final_assignments = dask_assignments.loc[idx].compute()
 
-    return assignments
+    return final_assignments

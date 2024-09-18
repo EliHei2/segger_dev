@@ -35,7 +35,7 @@ try_import('cuml')
 try_import('cudf')
 try_import('cugraph')
 try_import('cuspatial')
-try_import('hnswlib')
+# try_import('hnswlib')
 
 
 
@@ -464,45 +464,45 @@ def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int 
 
 
 
-def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
-    """
-    Computes edge indices using the HNSW algorithm.
+# def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+#     """
+#     Computes edge indices using the HNSW algorithm.
 
-    Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
-        k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
+#     Parameters:
+#         coords_1 (np.ndarray): First set of coordinates.
+#         coords_2 (np.ndarray): Second set of coordinates.
+#         k (int, optional): Number of nearest neighbors.
+#         dist (int, optional): Distance threshold.
 
-    Returns:
-        torch.Tensor: Edge indices.
-    """
-    num_elements = coords_1.shape[0]
-    dim = coords_1.shape[1]
+#     Returns:
+#         torch.Tensor: Edge indices.
+#     """
+#     num_elements = coords_1.shape[0]
+#     dim = coords_1.shape[1]
 
-    # Initialize the HNSW index
-    p = hnswlib.Index(space='l2', dim=dim)  # l2 for Euclidean distance
-    p.init_index(max_elements=num_elements, ef_construction=200, M=16)
+#     # Initialize the HNSW index
+#     p = hnswlib.Index(space='l2', dim=dim)  # l2 for Euclidean distance
+#     p.init_index(max_elements=num_elements, ef_construction=200, M=16)
 
-    # Add points to the index
-    p.add_items(coords_1)
+#     # Add points to the index
+#     p.add_items(coords_1)
 
-    # Query the index for nearest neighbors
-    indices, distances = p.knn_query(coords_2, k=k)
+#     # Query the index for nearest neighbors
+#     indices, distances = p.knn_query(coords_2, k=k)
 
-    # Filter by distance threshold
-    valid_mask = distances < dist ** 2
-    edges = []
+#     # Filter by distance threshold
+#     valid_mask = distances < dist ** 2
+#     edges = []
 
-    for idx, valid in enumerate(valid_mask):
-        valid_indices = indices[idx][valid]
-        if valid_indices.size > 0:
-            edges.append(
-                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
-            )
+#     for idx, valid in enumerate(valid_mask):
+#         valid_indices = indices[idx][valid]
+#         if valid_indices.size > 0:
+#             edges.append(
+#                 np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+#             )
 
-    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
-    return edge_index
+#     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+#     return edge_index
 
 class SpatialTranscriptomicsDataset(InMemoryDataset):
     """A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.

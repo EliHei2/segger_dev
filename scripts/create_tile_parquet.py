@@ -41,9 +41,9 @@ xenium_sample.save_dataset_for_segger(
     margin_y=10,
     compute_labels=True,  # Set to True if you need to compute labels
     r_tx=5,
-    k_tx=5,
-    val_prob=0.1,
-    test_prob=0.2,
+    k_tx=10,
+    val_prob=0.4,
+    test_prob=0.1,
     neg_sampling_ratio_approx=5,
     sampling_rate=1,
     num_workers=1,
