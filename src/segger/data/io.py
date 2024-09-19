@@ -30,6 +30,7 @@ from dask.diagnostics import ProgressBar
 import logging
 import warnings
 
+
 for msg in [
     r".*Geometry is in a geographic CRS.*",
     r".*You did not provide metadata.*"
@@ -43,6 +44,7 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df: pd.DataFrame = None,
         transcripts_radius: int = 10,
         boundaries_graph: bool = False,
+        embedding_df: pd.DataFrame = pd.DataFrame(),
         keys: Dict = None,
         verbose: bool = True,
     ):
@@ -58,7 +60,7 @@ class SpatialTranscriptomicsSample(ABC):
         self.transcripts_radius = transcripts_radius
         self.boundaries_graph = boundaries_graph
         self.keys = keys
-        self.embedding_df = None
+        self.embedding_df = embedding_df
         self.current_embedding = 'token'
         self.verbose = verbose
         
@@ -189,7 +191,7 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df = self.filter_transcripts(transcripts_df)
 
         # Handle additional embeddings if provided
-        if self.embedding_df:
+        if not self.embedding_df.empty:
             valid_genes = self.embedding_df.index
             # Lazily count the number of rows in the DataFrame before filtering
             initial_count = delayed(lambda df: df.shape[0])(transcripts_df)
@@ -894,10 +896,10 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df['token'] = token_encoding  # Store the integer tokens in the 'token' column
         data['tx'].token = torch.as_tensor(token_encoding).int()
         # Handle additional embeddings lazily as well
-        if self.embedding_df:
+        if not self.embedding_df.empty:
             embeddings = delayed(lambda df: self.embedding_df.loc[
                 df[self.keys.FEATURE_NAME.value].values
-            ].values)(transcripts_df)
+            ].values)(transcripts_df).compute()
         else:  
             embeddings = token_encoding
         x_features = torch.as_tensor(embeddings).int()
@@ -955,8 +957,8 @@ class SpatialTranscriptomicsSample(ABC):
 
 
 class XeniumSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False, verbose: bool = True):
-        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, XeniumKeys, verbose=verbose)
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False, embedding_df: pd.DataFrame = pd.DataFrame(), verbose: bool = True):
+        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, XeniumKeys, verbose=verbose)
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
@@ -981,8 +983,9 @@ class XeniumSample(SpatialTranscriptomicsSample):
         # Handle potential bytes to string conversion for Dask DataFrame
         if pd.api.types.is_object_dtype(transcripts_df[self.keys.FEATURE_NAME.value]):
             transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(
-                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x,
-                meta=('feature_name', 'str'),
+                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
+                #,
+                #meta=('feature_name', 'str'),
             )
 
         # Apply the quality value filter using Dask
@@ -999,8 +1002,8 @@ class XeniumSample(SpatialTranscriptomicsSample):
 
 
 class MerscopeSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
-        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, MerscopeKeys)
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False, embedding_df: pd.DataFrame = pd.DataFrame(), verbose: bool = True):
+        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, MerscopeKeys, verbose=verbose)
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """

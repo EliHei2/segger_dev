@@ -96,15 +96,13 @@ def compute_transcript_metrics(
     percent_nucleus = 100 - percent_cytoplasmic
     non_assigned_transcripts = df_filtered[df_filtered[cell_id_col] == -1]
     non_assigned_cytoplasmic = non_assigned_transcripts[non_assigned_transcripts['overlaps_nucleus'] != 1]
-    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / len(non_assigned_transcripts) * 100
-
+    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / len(non_assigned_transcripts+1) * 100
     gene_group_assigned = assigned_transcripts.groupby('feature_name')
     gene_group_all = df_filtered.groupby('feature_name')
     gene_percent_assigned = (gene_group_assigned.size() / gene_group_all.size() * 100).reset_index(name='percent_assigned')
     cytoplasmic_gene_group = cytoplasmic_transcripts.groupby('feature_name')
-    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts) * 100).reset_index(name='percent_cytoplasmic')
+    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts+1) * 100).reset_index(name='percent_cytoplasmic')
     gene_metrics = pd.merge(gene_percent_assigned, gene_percent_cytoplasmic, on='feature_name', how='outer').fillna(0)
-
     results = {
         'percent_assigned': percent_assigned,
         'percent_cytoplasmic': percent_cytoplasmic,
@@ -139,8 +137,9 @@ def create_anndata(
     Returns:
         ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
     """
-    df_filtered = filter_transcripts(df, min_qv=qv_threshold)
-    metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
+    # df_filtered = filter_transcripts(df, min_qv=qv_threshold)
+    df_filtered = df
+    # metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
     df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
     pivot_df = df_filtered.rename(columns={
         cell_id_col: "cell",
@@ -193,8 +192,8 @@ def create_anndata(
         var_df['feature_types'] = 'Gene Expression'
         var_df['genome'] = 'Unknown'
         var_df = var_df.set_index('gene')
-    gene_metrics = metrics['gene_metrics'].set_index('feature_name')
-    var_df = var_df.join(gene_metrics, how='left').fillna(0)
+    # gene_metrics = metrics['gene_metrics'].set_index('feature_name')
+    # var_df = var_df.join(gene_metrics, how='left').fillna(0)
     cells = list(set(pivot_df.index) & set(cell_summary.index))
     pivot_df = pivot_df.loc[cells,:]
     cell_summary = cell_summary.loc[cells,:]
@@ -204,12 +203,12 @@ def create_anndata(
     adata.obs['unique_transcripts'] = (pivot_df > 0).sum(axis=1).values
     adata.obs_names = pivot_df.index.values.tolist()
     adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names,:], left_index=True, right_index=True)
-    adata.uns['metrics'] = {
-        'percent_assigned': metrics['percent_assigned'],
-        'percent_cytoplasmic': metrics['percent_cytoplasmic'],
-        'percent_nucleus': metrics['percent_nucleus'],
-        'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
-    }
+    # adata.uns['metrics'] = {
+    #     'percent_assigned': metrics['percent_assigned'],
+    #     'percent_cytoplasmic': metrics['percent_cytoplasmic'],
+    #     'percent_nucleus': metrics['percent_nucleus'],
+    #     'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
+    # }
     return adata
 
     

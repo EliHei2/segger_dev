@@ -8,16 +8,166 @@ from pathlib import Path
 from lightning.pytorch.plugins.environments import LightningEnvironment
 from matplotlib import pyplot as plt
 import seaborn as sns
-import pandas as pd
+# import pandas as pd
+from segger.data.utils import calculate_gene_celltype_abundance_embedding
+import scanpy as sc
+import os
 
 
-# xenium_data_dir = Path('./data_tidy/pyg_datasets/fixed_0911/xenium_pancreas_cancer')
-segger_data_dir = Path('./data_tidy/pyg_datasets/fixed_0911')
 
-# Base directory to store Pytorch Lightning models
-models_dir = Path('./models/fixed_0911')
+xenium_data_dir = Path('./data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1')
+segger_data_dir = Path('./data_tidy/pyg_datasets/bc_embedding_0918')
+models_dir = Path('./models/bc_embedding_0918')
+
+# scRNAseq_path = '/omics/groups/OE0606/internal/tangy/tasks/schier/data/atals_filtered.h5ad'
+
+# scRNAseq = sc.read(scRNAseq_path)
+
+# sc.pp.subsample(scRNAseq, 0.1)
+
+# # Step 1: Calculate the gene cell type abundance embedding
+# celltype_column = 'celltype_minor'
+# gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(scRNAseq, celltype_column)
+
+
+
+
+# # Setup Xenium sample to create dataset
+# xs = XeniumSample(verbose=False) # , embedding_df=gene_celltype_abundance_embedding)
+# xs.set_file_paths(
+#     transcripts_path=xenium_data_dir / 'transcripts.parquet',
+#     boundaries_path=xenium_data_dir / 'nucleus_boundaries.parquet',
+# )
+# xs.set_metadata()
+# xs.x_max = 1000
+# xs.y_max = 1000
+
+# try:
+#     xs.save_dataset_for_segger(
+#         processed_dir=segger_data_dir,
+#         x_size=120,
+#         y_size=120,
+#         d_x=100,
+#         d_y=100,
+#         margin_x=10,
+#         margin_y=10,
+#         compute_labels=True,  # Set to True if you need to compute labels
+#         r_tx=5,
+#         k_tx=10,
+#         val_prob=0.4,
+#         test_prob=0.1,
+#     )
+# except AssertionError as err:
+#     print(f'Dataset already exists at {segger_data_dir}')
+
+# # Base directory to store Pytorch Lightning models
+
 
 # Initialize the Lightning model
+
+
+
+
+# Initialize the Lightning data module
+dm = SeggerDataModule(
+    data_dir=segger_data_dir,
+    batch_size=4,  
+    num_workers=2,  
+)
+
+dm.setup()
+
+
+model_version = 2
+
+# Load in latest checkpoint
+model_path = models_dir / 'lightning_logs' / f'version_{model_version}'
+model = load_model(model_path / 'checkpoints')
+dm.setup()
+
+receptive_field = {'k_bd': 4, 'dist_bd': 15,'k_tx': 30, 'dist_tx': 5}
+
+# Perform segmentation (predictions)
+segmentation_train = predict(
+    model,
+    dm.train_dataloader(),
+    score_cut=0.5,  
+    receptive_field=receptive_field,
+    use_cc=False,
+    device='cuda',
+    # num_workers=4
+)
+
+segmentation_val = predict(
+    model,
+    dm.val_dataloader(),
+    score_cut=0.2,  
+    receptive_field=receptive_field,
+    use_cc=False,
+    device='cpu'
+)
+
+segmentation_test = predict(
+    model,
+    dm.test_dataloader(),
+    score_cut=0.2,  
+    receptive_field=receptive_field,
+    use_cc=False,
+    device='cpu'
+)
+
+
+# import pandas as pd
+# seg_combined = pd.concat([segmentation, segmentation_val, segmentation_test])
+# # Group by transcript_id and keep the row with the highest score for each transcript
+# seg_combined = pd.concat([segmentation, segmentation_val, segmentation_test]).reset_index()
+
+# # Group by transcript_id and keep the row with the highest score for each transcript
+# seg_final = seg_combined.loc[seg_combined.groupby('transcript_id')['score'].idxmax()]
+
+# # Drop rows where segger_cell_id is NaN
+# seg_final = seg_final.dropna(subset=['segger_cell_id'])
+
+# # Reset the index if needed
+# seg_final.reset_index(drop=True, inplace=True)
+
+
+
+# transcripts_df = dd.read_parquet('data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet')
+
+# # Assuming seg_final is already computed with pandas
+# # Convert seg_final to a Dask DataFrame to enable efficient merging with Dask
+# seg_final_dd = dd.from_pandas(seg_final, npartitions=transcripts_df.npartitions)
+
+# # Step 1: Merge segmentation with the transcripts on transcript_id
+# # Use 'inner' join to keep only matching transcript_ids
+# transcripts_df_filtered = transcripts_df.merge(seg_final_dd, on='transcript_id', how='inner')
+
+# # Compute the result if needed
+# transcripts_df_filtered = transcripts_df_filtered.compute()
+
+
+# from segger.data.utils import create_anndata
+# segger_adata = create_anndata(transcripts_df_filtered, cell_id_col='segger_cell_id')
+
+
+# transcripts_df_filtered.feature_name = transcripts_df_filtered.feature_name.apply(lambda x: x.decode('utf-8')).values
+
+# segger_adata = create_anndata(transcripts_df_filtered, cell_id_col='segger_cell_id')
+
+# import torch
+
+# x = batch['tx'].x
+# x = torch.nan_to_num(x, nan = 0)
+# is_one_dim = (x.ndim == 1) * 1
+# # x = x[:, None]    
+# x = ls.model.tx_embedding.tx(((x.sum(1) * is_one_dim).int())) * is_one_dim + ls.model.lin0.tx(x.float())  * (1 - is_one_dim) 
+# # First layer
+# x = x.relu()
+# x = self.conv_first(x, edge_index) # + self.lin_first(x)
+# x = x.relu()
+
+
 metadata = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
 ls = LitSegger(
     num_tx_tokens=500,
@@ -30,23 +180,19 @@ ls = LitSegger(
     metadata=metadata,
 )
 
-# Initialize the Lightning data module
-dm = SeggerDataModule(
-    data_dir=segger_data_dir,
-    batch_size=4,  
-    num_workers=2,  
-)
-
 # Initialize the Lightning trainer
 trainer = Trainer(
     accelerator='cuda',  
     strategy='auto',
     precision='16-mixed',
     devices=2,  
-    max_epochs=100,  
+    max_epochs=200,  
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )
+
+batch = dm.train[0]
+ls.forward(batch)
 
 
 trainer.fit(
@@ -54,7 +200,7 @@ trainer.fit(
     datamodule=dm
 )
 
-model_version = 0  # 'v_num' from training output above
+model_version = 2  # 'v_num' from training output above
 model_path = models_dir / 'lightning_logs' / f'version_{model_version}'
 metrics = pd.read_csv(model_path / 'metrics.csv', index_col=1)
 
@@ -67,21 +213,3 @@ for col in metrics.columns.difference(['epoch']):
 ax.legend(loc=(1, 0.33))
 ax.set_ylim(0, 1)
 ax.set_xlabel('Step')
-
-model_version = 0
-
-# Load in latest checkpoint
-model_path = models_dir / 'lightning_logs' / f'version_{model_version}'
-model = load_model(model_path / 'checkpoints')
-dm.setup()
-
-receptive_field = {'k_bd': 3, 'dist_bd': 20,'k_tx': 30, 'dist_tx': 5}
-
-# Perform segmentation (predictions)
-segmentation = predict(
-    model,
-    dm.train_dataloader(),
-    score_cut=0.2,  
-    receptive_field=receptive_field,
-    use_cc=False,
-)

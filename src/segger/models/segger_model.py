@@ -56,7 +56,7 @@ class Segger(torch.nn.Module):
         """
         x = torch.nan_to_num(x, nan = 0)
         is_one_dim = (x.ndim == 1) * 1
-        x = x[:, None]    
+        # x = x[:, None]    
         x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float())  * (1 - is_one_dim) 
         # First layer
         x = x.relu()

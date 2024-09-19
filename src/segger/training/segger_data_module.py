@@ -47,3 +47,6 @@ class SeggerDataModule(LightningDataModule):
     # TODO: Add documentation
     def val_dataloader(self):
         return DataLoader(self.val, shuffle=False, **self.loader_kwargs)
+    
+    def predict_dataloader(self):
+        return DataLoader(self.train + self.val + self.test, shuffle=False, **self.loader_kwargs)

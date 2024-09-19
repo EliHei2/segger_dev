@@ -5,13 +5,19 @@ import pandas as pd
 import torch.nn.functional as F
 from dask import delayed
 from tqdm import tqdm
-from dask_cuda import LocalCUDACluster
-from dask.distributed import Client
+if torch.cuda.is_available():
+    from dask_cuda import LocalCUDACluster
+    from dask.distributed import Client, LocalCluster
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components as cc
 from torch_geometric.utils import to_scipy_sparse_matrix
+from path import Path
+import glob 
+from dask.diagnostics import ProgressBar
+from typing import Dict
+import dask
 
 from segger.data.utils import (
     SpatialTranscriptomicsDataset,
@@ -20,6 +26,9 @@ from segger.data.utils import (
 )
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
+import re
+import random
+import numpy as np
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
@@ -27,8 +36,9 @@ os.environ["PYTORCH_USE_CUDA_DSA"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 # Set up Dask cluster for distributed GPU computation (optional)
-cluster = LocalCUDACluster()
-client = Client(cluster)
+if torch.cuda.is_available():
+    cluster = LocalCUDACluster()
+    client = Client(cluster)
 
 def load_model(checkpoint_path: str) -> LitSegger:
     """
@@ -67,7 +77,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
     return lit_segger
 
 
-def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: str) -> torch.Tensor:
+def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: str, device: 'str' = 'cuda') -> torch.Tensor:
     """
     Compute similarity scores between 'from_type' and 'to_type' embeddings within a batch.
 
@@ -81,7 +91,7 @@ def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: 
         torch.Tensor: A dense tensor containing the similarity scores between 'from_type' 
                       and 'to_type' nodes.
     """
-    batch = batch.to("cuda")
+    batch = batch.to(device)
     y_hat = model(batch.x_dict, batch.edge_index_dict)
 
     # Similarity of each 'from_type' to 'to_type' neighbors in embedding
@@ -113,7 +123,8 @@ def predict_batch(
     batch: Batch, 
     score_cut: float, 
     receptive_field: dict, 
-    use_cc: bool = True
+    use_cc: bool = True,
+    device: 'str' = 'cuda'
 ) -> pd.DataFrame:
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
@@ -139,7 +150,7 @@ def predict_batch(
         return ''.join(id_chars) + '-nx'
 
     with torch.no_grad():
-        batch = batch.to("cuda")
+        batch = batch.to(device)
         assignments = pd.DataFrame()
         assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
@@ -157,7 +168,7 @@ def predict_batch(
                 num_nodes=batch['tx'].id.shape[0],
                 num_nbrs=receptive_field['k_bd'],
             )
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd", device=device)
             belongs = scores.max(1)
             assignments['score'] = belongs.values.cpu()
             mask = assignments['score'] > score_cut
@@ -171,7 +182,7 @@ def predict_batch(
                     edge_index,
                     num_nodes=batch['tx'].id.shape[0],
                 )
-                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx", device=device)
                 scores = scores.fill_diagonal_(0)
 
                 # Sparse connected components for unassigned transcripts using SciPy
@@ -189,15 +200,19 @@ def predict_batch(
         return assignments
 
 
+
 def predict(
     lit_segger: LitSegger, 
     data_loader: DataLoader, 
     score_cut: float, 
     receptive_field: dict, 
-    use_cc: bool = True
+    use_cc: bool = True,
+    device: str = 'cuda',
+    num_workers: int = 4,
+    k_gpus: int = None
 ) -> dd.DataFrame:
     """
-    Predict cell assignments for multiple batches of transcript data using Dask.
+    Predict cell assignments for multiple batches of transcript data using Dask for parallel processing.
 
     Parameters:
         lit_segger (LitSegger): 
@@ -210,28 +225,62 @@ def predict(
             A dictionary specifying the receptive field settings.
         use_cc (bool, optional): 
             Whether to use connected components for unassigned transcripts. Default is True.
+        device (str, optional): 
+            The device to run the model on, either 'cuda' (GPU) or 'cpu' (default).
+        num_workers (int, optional): 
+            The number of parallel workers to use for batch processing. Default is 4 for CPU.
+        k_gpus (int, optional): 
+            The number of GPUs to use when `device='cuda'`. Default is None, in which case the system will use all available GPUs.
 
     Returns:
-        dd.DataFrame: A Dask DataFrame containing the transcript IDs, similarity scores, 
+        pd.DataFrame: A Pandas DataFrame containing the transcript IDs, similarity scores, 
                       and assigned cell IDs, consolidated across all batches.
     """
-    if len(data_loader) == 0:
-        return None
+    # Step 1: Choose the cluster based on the device (CPU or GPU)
+    if device == 'cpu':
+        cluster = LocalCluster(n_workers=num_workers, threads_per_worker=1)
+        client = Client(cluster)
+    elif device == 'cuda':
+        if k_gpus is None:
+            k_gpus = os.environ.get("CUDA_VISIBLE_DEVICES", "").count(",") + 1 if "CUDA_VISIBLE_DEVICES" in os.environ else 1
+        cluster = LocalCUDACluster(n_workers=k_gpus, threads_per_worker=1)
+        client = Client(cluster)
+    else:
+        raise ValueError(f"Unknown device '{device}', must be either 'cpu' or 'cuda'.")
 
-    delayed_batches = []
+    # Step 2: Scatter the model (lit_segger) to all workers
+    scattered_model = client.scatter(lit_segger, broadcast=True)
     
-    # Process batches in parallel using Dask delayed
-    for batch in tqdm(data_loader):
-        delayed_batch = delayed(predict_batch)(
-            lit_segger, batch, score_cut, receptive_field, use_cc
-        )
-        delayed_batches.append(delayed_batch)
+    # Step 3: Create a list of futures using Dask's `client.submit`
+    futures = [
+        client.submit(predict_batch, scattered_model, batch, score_cut, receptive_field, use_cc, device)
+        for batch in tqdm(data_loader)
+    ]
+    
+    # Step 4: Gather the results (futures) from the workers
+    delayed_batches = [delayed(f.result()) for f in futures]
 
-    # Combine all delayed results into a single Dask DataFrame
+    # Step 5: Combine all delayed results into a single Dask DataFrame
     dask_assignments = dd.from_delayed(delayed_batches)
 
-    # Handle duplicate assignments of transcripts
-    idx = dask_assignments.groupby('transcript_id')['score'].idxmax()
-    final_assignments = dask_assignments.loc[idx].compute()
+    # Step 6: Sort the DataFrame by 'transcript_id' for proper indexing
+    dask_assignments = dask_assignments.sort_values('transcript_id')
 
-    return final_assignments
+    # Step 7: Set 'transcript_id' as the index and ensure the divisions are known
+    dask_assignments = dask_assignments.set_index('transcript_id', sorted=True)
+
+    # Step 8: Compute the index of maximum scores
+    idx = dask_assignments.groupby('transcript_id')['score'].idxmax().compute()
+
+    # Step 9: Use the computed index to filter the assignments
+    final_assignments = dask_assignments.loc[idx]
+
+    # Step 10: Execute the computation with a progress bar
+    with ProgressBar():
+        result = dask.compute(final_assignments)[0]
+
+    # Shutdown the Dask client and cluster after execution
+    client.close()
+    cluster.close()
+
+    return result

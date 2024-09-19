@@ -15,6 +15,7 @@ figures_path.mkdir(parents=True, exist_ok=True)  # Ensure the figures directory 
 
 # Define colors for segmentation methods
 method_colors = {
+    'segger+': '#A00E00',
     'segger': '#D55E00',
     'segger_n0': '#E69F00',
     'segger_n1': '#F0E442',
@@ -39,6 +40,7 @@ major_colors = {
 
 # Define segmentation file paths
 segmentation_paths = {
+    'segger+': benchmarks_path / 'adata_segger_embedding.h5ad',
     'segger': benchmarks_path / 'adata_segger.h5ad',
     'Baysor': benchmarks_path / 'adata_baysor.h5ad',
     '10X': benchmarks_path / 'adata_10X.h5ad',
