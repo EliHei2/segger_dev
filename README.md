@@ -44,9 +44,6 @@ Spatial omics segmentation faces issues like:
 segger tackles these with a **graph-based approach**, achieving superior segmentation accuracy.
 
 ---
-Here’s the updated plain Markdown version for your README file, formatted for clear installation instructions without the need for MkDocs styling:
-
----
 
 ## Installation Options
 
@@ -105,10 +102,6 @@ For installations requiring RAPIDS and CUDA 12 support, run:
 ```bash
 pip install -e ".[cuda12,rapids12,cupy12,faiss]"
 ```
-
----
-
-This version is well-suited for the plain Markdown format in your README file, providing clear installation instructions with no need for MkDocs-specific features.
 
 ---
 
