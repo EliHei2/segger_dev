@@ -35,10 +35,7 @@ dependencies = [
     "shapely>=1.7.0",
     "path>=17.0.0",
     "pyarrow>=17.0.0",
-    "dask_geopandas>=0.4.0",  # Missing comma added
-    "torch-scatter>=2.1.2",
-    "torch-sparse>=0.6.18",
-    "torch-cluster>=1.6.3"
+    "dask_geopandas>=0.4.0"
 ]
 
 [project.optional-dependencies]
