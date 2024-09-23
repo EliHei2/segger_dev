@@ -117,6 +117,7 @@ def create_anndata(
     df: pd.DataFrame, 
     panel_df: Optional[pd.DataFrame] = None, 
     min_transcripts: int = 5, 
+    max_transcripts: int = 1000, 
     cell_id_col: str = 'cell_id', 
     qv_threshold: float = 30, 
     min_cell_area: float = 10.0, 
@@ -146,9 +147,12 @@ def create_anndata(
         "feature_name": "gene"
     })[['cell', 'gene']].pivot_table(index='cell', columns='gene', aggfunc='size', fill_value=0)
     pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
+    pivot_df = pivot_df[pivot_df.sum(axis=1) <= max_transcripts]
     cell_summary = []
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
+            continue
+        if len(cell_data) > max_transcripts:
             continue
         cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']])
         cell_area = cell_convex_hull.area

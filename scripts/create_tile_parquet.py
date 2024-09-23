@@ -6,6 +6,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from segger.data import XeniumSample, SpatialTranscriptomicsSample
+from segger.data.utils import comp
 from dask import delayed
 import geopandas as gpd
 

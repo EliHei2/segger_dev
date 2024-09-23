@@ -53,11 +53,26 @@ segmentations_dict = load_segmentations(segmentation_paths)
 segmentations_dict = {k: segmentations_dict[k] for k in method_colors.keys() if k in segmentations_dict}
 scRNAseq_adata = sc.read(benchmarks_path / 'scRNAseq.h5ad')
 
+# Subset each AnnData object in the segmentation dictionary to cell_centroid_x and cell_centroid_y < 1000
+for method, adata in segmentations_dict.items():
+    if 'cell_centroid_x' in adata.obs.columns and 'cell_centroid_y' in adata.obs.columns:
+        mask = (adata.obs['cell_centroid_x'] < 1000) & (adata.obs['cell_centroid_y'] < 1000)
+        segmentations_dict[method] = adata[mask].copy()
+
+gene_sets = [set(adata.var_names) for adata in segmentations_dict.values()]
+common_genes = set.intersection(*gene_sets)
+
+# Subset each AnnData object to only the common genes
+for method, adata in segmentations_dict.items():
+    segmentations_dict[method] = adata[:, list(common_genes)].copy()
+
+scRNAseq_adata = scRNAseq_adata[:, list(common_genes)]
+        
 # Generate general statistics plots
 plot_general_statistics_plots(segmentations_dict, figures_path, method_colors)
 
 # Find markers for scRNAseq data
-markers = find_markers(scRNAseq_adata, cell_type_column='celltype_major', pos_percentile=30, neg_percentile=5)
+markers = find_markers(scRNAseq_adata, cell_type_column='celltype_major', pos_percentile=20, neg_percentile=5)
 
 # Annotate spatial segmentations with scRNAseq reference data
 for method in segmentations_dict.keys():
@@ -74,6 +89,13 @@ exclusive_gene_pairs = find_mutually_exclusive_genes(
     cell_type_column='celltype_major'
 )
 
+
+cells_n1 = 
+cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
+segmentations_dict['segger+'] = segmentations_dict['segger+'][[i for i in segmentations_dict['segger+'].obs_names if not i.endswith('-nx')], :]
+# segmentations_dict['segger_n0'] = adata[cells_n0, :]
+            
+            
 # Compute MECR for each segmentation method
 mecr_results = {}
 for method in segmentations_dict.keys():
