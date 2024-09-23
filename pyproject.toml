@@ -63,8 +63,8 @@ rapids12 = [
     "cugraph-cu12==24.8.*",
     "cuspatial-cu12==24.8.*",
     "cupy-cuda12x",
-    "nccl=2.13.*",
-    "cutensor=1.4.*"
+    "nccl==2.13.*",
+    "cutensor==1.4.*"
 ]
 
 multiprocessing = ["multiprocessing"]
