@@ -46,21 +46,19 @@ faiss = [
 ]
 
 rapids11 = [
-    "cudf-cu11==24.8.*",
-    "cuml-cu11==24.8.*",
-    "cugraph-cu11==24.8.*",
-    "cuspatial-cu11==24.8.*",
     "cupy-cuda11x",
+    "cudf-cu11==24.8.*",
+    "cugraph-cu11==24.8.*",
+    "cuvs-cu11==24.8.*",
     "nccl==2.12.*",
     "cutensor==1.3.*"
 ]
 
 rapids12 = [
-    "cudf-cu12==24.8.*",
-    "cuml-cu12==24.8.*",
-    "cugraph-cu12==24.8.*",
-    "cuspatial-cu12==24.8.*",
     "cupy-cuda12x",
+    "cudf-cu12==24.8.*",
+    "cugraph-cu12==24.8.*",
+    "cuvs-cu12==24.8.*",
     "nccl==2.13.*",
     "cutensor==1.4.*"
 ]
