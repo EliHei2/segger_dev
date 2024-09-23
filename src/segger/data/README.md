@@ -131,36 +131,33 @@ Below are examples demonstrating how to utilize the `segger` data preparation mo
 ### Xenium Data
 
 ```python
-from segger.data import XeniumSample
+from segger.data.io import XeniumSample
 from pathlib import Path
+from segger.data.utils import calculate_gene_celltype_abundance_embedding
 import scanpy as sc
+import os
 
-# Set up the file paths
-raw_data_dir = Path('data_raw/xenium/')
-processed_data_dir = Path('data_tidy/pyg_datasets')
-sample_tag = "Xenium_FFPE_Human_Breast_Cancer_Rep1"
+xenium_data_dir = Path('./data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1')
+segger_data_dir = Path('./data_tidy/pyg_datasets/bc_embedding_0919')
+models_dir = Path('./models/bc_embedding_0919')
 
-# Load scRNA-seq data using Scanpy and subsample for efficiency
-scRNAseq_path = raw_data_dir / 'scRNAseq' / 'atlas_filtered.h5ad'
+scRNAseq_path = '/omics/groups/OE0606/internal/tangy/tasks/schier/data/atals_filtered.h5ad'
+
 scRNAseq = sc.read(scRNAseq_path)
-sc.pp.subsample(scRNAseq, fraction=0.1)
 
-# Calculate gene cell type abundance embedding from scRNA-seq data
-from segger.utils import calculate_gene_celltype_abundance_embedding
+sc.pp.subsample(scRNAseq, 0.1)
+
+# Step 1: Calculate the gene cell type abundance embedding
 celltype_column = 'celltype_minor'
 gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(scRNAseq, celltype_column)
 
-# Create a XeniumSample instance for spatial transcriptomics processing
-xenium_sample = XeniumSample()
-
-# Load transcripts and include the calculated cell type abundance embedding
-xenium_sample.load_transcripts(
-    base_path=raw_data_dir,
-    sample=sample_tag,
-    transcripts_filename='transcripts.parquet',
-    file_format="parquet",
-    additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding}
+# Setup Xenium sample to create dataset
+xs = XeniumSample(verbose=False , embedding_df=gene_celltype_abundance_embedding)
+xs.set_file_paths(
+    transcripts_path=xenium_data_dir / 'transcripts.parquet',
+    boundaries_path=xenium_data_dir / 'nucleus_boundaries.parquet',
 )
+xs.set_metadata()
 
 # Set the embedding to "cell_type_abundance" to use it in further processing
 xenium_sample.set_embedding("cell_type_abundance")
@@ -179,24 +176,25 @@ tile_pyg_data = xenium_sample.build_pyg_data_from_tile(
     workers=1
 )
 
-# Save dataset in processed format for segmentation
-xenium_sample.save_dataset_for_segger(
-    processed_dir=processed_data_dir / 'embedding',
-    x_size=360,
-    y_size=360,
-    d_x=180,
-    d_y=180,
-    margin_x=10,
-    margin_y=10,
-    compute_labels=False,
-    r_tx=5,
-    k_tx=5,
-    val_prob=0.1,
-    test_prob=0.2,
-    neg_sampling_ratio_approx=5,
-    sampling_rate=1,
-    num_workers=1
-)
+
+try:
+    xs.save_dataset_for_segger(
+        processed_dir=segger_data_dir,
+        x_size=400,
+        y_size=400,
+        d_x=350,
+        d_y=350,
+        margin_x=20,
+        margin_y=20,
+        compute_labels=True,  # Set to True if you need to compute labels
+        r_tx=5,
+        k_tx=10,
+        val_prob=0.4,
+        test_prob=0.1,
+        num_workers=6
+    )
+except AssertionError as err:
+    print(f'Dataset already exists at {segger_data_dir}')
 ```
 
 ### Merscope Data
