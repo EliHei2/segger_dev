@@ -44,11 +44,17 @@ Spatial omics segmentation faces issues like:
 segger tackles these with a **graph-based approach**, achieving superior segmentation accuracy.
 
 ---
+Here’s the updated plain Markdown version for your README file, formatted for clear installation instructions without the need for MkDocs styling:
+
+---
+
 ## Installation Options
 
 Choose the installation method that best suits your needs.
 
 ### Micromamba Installation
+
+To set up Segger with `micromamba` and install the required dependencies, use the following commands:
 
 ```bash
 micromamba create -n segger-rapids --channel-priority 1 \
@@ -61,11 +67,48 @@ micromamba run -n segger-rapids pip install --no-deps ./
 
 ### GitHub Installation
 
+For a straightforward local installation from GitHub, clone the repository and install the package using `pip`:
+
 ```bash
 git clone https://github.com/EliHei2/segger_dev.git
 cd segger_dev
-pip install .
 ```
+
+#### Pip Installation (CUDA 11)
+
+To install with CUDA 11 support:
+
+```bash
+pip install -e ".[cuda11]"
+```
+
+#### Pip Installation (CUDA 12)
+
+To install with CUDA 12 support:
+
+```bash
+pip install -e ".[cuda12]"
+```
+
+#### Pip Installation (RAPIDS and CUDA 11)
+
+For installations requiring RAPIDS and CUDA 11 support, run:
+
+```bash
+pip install -e ".[cuda11,rapids11,cupy11,faiss]"
+```
+
+#### Pip Installation (RAPIDS and CUDA 12)
+
+For installations requiring RAPIDS and CUDA 12 support, run:
+
+```bash
+pip install -e ".[cuda12,rapids12,cupy12,faiss]"
+```
+
+---
+
+This version is well-suited for the plain Markdown format in your README file, providing clear installation instructions with no need for MkDocs-specific features.
 
 ---
 
