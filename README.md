@@ -29,9 +29,9 @@
 
 # Why segger?
 
-- ⚙️ **Highly parallelizable** – Optimized for multi-GPU environments
-- ⚡ **Fast and efficient** – Trains in a fraction of the time compared to alternatives
-- 🔄 **Transfer learning** – Easily adaptable to new datasets and technologies
+- **Highly parallelizable** – Optimized for multi-GPU environments
+- **Fast and efficient** – Trains in a fraction of the time compared to alternatives
+- **Transfer learning** – Easily adaptable to new datasets and technologies
 
 ### Challenges in Segmentation
 
@@ -47,7 +47,32 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 ## Installation Options
 
-Choose the installation method that best suits your needs.
+
+### Important: PyTorch Geometric Dependencies
+
+Segger **highly depends** on PyTorch Geometric. One **must** install its dependencies (such as `torch-sparse` and `torch-scatter`) based on their system’s specifications, especially CUDA and PyTorch versions.
+
+Please follow the official [PyTorch Geometric Installation Guide](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html) to install the correct versions of `torch-sparse`, `torch-scatter`, and other relevant libraries.
+
+Here’s how to install them manually, e.g., for torch 2.0.0:
+
+#### For CUDA 11.x:
+
+```bash
+pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cu117.html
+pip install torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu117.html
+```
+
+#### For CUDA 12.x:
+
+```bash
+pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
+pip install torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
+```
+
+
+Afterwards choose the installation method that best suits your needs.
+
 
 ### Micromamba Installation
 
@@ -69,22 +94,7 @@ For a straightforward local installation from GitHub, clone the repository and i
 ```bash
 git clone https://github.com/EliHei2/segger_dev.git
 cd segger_dev
-```
-
-#### Pip Installation (CUDA 11)
-
-To install with CUDA 11 support:
-
-```bash
-pip install -e ".[cuda11]"
-```
-
-#### Pip Installation (CUDA 12)
-
-To install with CUDA 12 support:
-
-```bash
-pip install -e ".[cuda12]"
+pip install -e "."
 ```
 
 #### Pip Installation (RAPIDS and CUDA 11)
@@ -92,7 +102,7 @@ pip install -e ".[cuda12]"
 For installations requiring RAPIDS and CUDA 11 support, run:
 
 ```bash
-pip install -e ".[cuda11,rapids11,cupy11,faiss]"
+pip install -e ".[rapids11]"
 ```
 
 #### Pip Installation (RAPIDS and CUDA 12)
@@ -100,19 +110,19 @@ pip install -e ".[cuda11,rapids11,cupy11,faiss]"
 For installations requiring RAPIDS and CUDA 12 support, run:
 
 ```bash
-pip install -e ".[cuda12,rapids12,cupy12,faiss]"
+pip install -e ".[rapids12]"
 ```
 
 ---
 
 # Powered by
 
-- ⚡ **PyTorch Lightning & PyTorch Geometric**: Enables fast, efficient graph neural network (GNN) implementation for heterogeneous graphs.
-- ⚙️ **Dask**: Scalable parallel processing and distributed task scheduling, ideal for handling large transcriptomic datasets.
-- 🗺️ **Shapely & Geopandas**: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.
-- 🖥️ **RAPIDS**: Provides GPU-accelerated computation for tasks like k-nearest neighbors (KNN) graph construction.
-- 📊 **AnnData & Scanpy**: Efficient processing for single-cell datasets.
-- 📐 **SciPy**: Facilitates spatial graph construction, including distance metrics and convex hull calculations for transcript clustering.
+- **PyTorch Lightning & PyTorch Geometric**: Enables fast, efficient graph neural network (GNN) implementation for heterogeneous graphs.
+- **Dask**: Scalable parallel processing and distributed task scheduling, ideal for handling large transcriptomic datasets.
+- **Shapely & Geopandas**: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.
+- **RAPIDS**: Provides GPU-accelerated computation for tasks like k-nearest neighbors (KNN) graph construction.
+- **AnnData & Scanpy**: Efficient processing for single-cell datasets.
+- **SciPy**: Facilitates spatial graph construction, including distance metrics and convex hull calculations for transcript clustering.
 
 ---
 
@@ -120,11 +130,11 @@ pip install -e ".[cuda12,rapids12,cupy12,faiss]"
 
 segger is **open-source** and welcomes contributions. Join us in advancing spatial omics segmentation!
 
-- 🛠️ **Source Code**  
+- **Source Code**  
   [GitHub](https://github.com/EliHei2/segger_dev)
 
-- 🐞 **Bug Tracker**  
+- **Bug Tracker**  
   [Report Issues](https://github.com/EliHei2/segger_dev/issues)
 
-- 📚 **Full Documentation**  
+- **Full Documentation**  
   [API Reference](https://elihei2.github.io/segger_dev/api/)

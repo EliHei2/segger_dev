@@ -1,62 +1,75 @@
-name: segger-env
+name: segger
 channels:
+  - rapidsai
   - conda-forge
+  - nvidia
   - defaults
 dependencies:
-  - python=3.10
+  # Python version
+  - python>=3.10
+
+  # Main dependencies from pyproject.toml
   - pytorch>=2.0.0
+  - torchvision>=0.10.0
+  - pytorch-lightning>=1.9.0
+  - torchmetrics>=0.5.0
   - numpy>=1.21.0
   - pandas>=1.3.0
   - scipy>=1.7.0
   - matplotlib>=3.4.0
   - seaborn>=0.11.0
   - tqdm>=4.61.0
-  - torchvision>=0.10.0
-  - lightning>=1.9.0
-  - torchmetrics>=0.5.0
   - scanpy>=1.9.3
-  - squidpy>=1.2.0
-  - adjustText>=0.8
+  - squidpy==1.2.0
+  - adjusttext>=0.8
   - scikit-learn>=0.24.0
   - geopandas>=0.9.0
   - shapely>=1.7.0
   - path>=17.0.0
   - pyarrow>=17.0.0
-  - pip
-  - pip:
-      - torch-scatter>=2.1.2
-      - torch-sparse>=0.6.18
-      - torch-cluster>=1.6.3
-      - torch-geometric>=2.2.0
-  - optional:
-    - cudf>=21.08
-    - cuml>=21.08
-    - cugraph>=21.08
-    - cuspatial>=21.08
-    - faiss-cpu>=1.7.0
-    - faiss-gpu>=1.7.0
-  - optional:
-    - multiprocessing
-  - optional:
-    - pytest
-    - black
-    - flake8
-    - pre-commit
-    - twine>=4.0.2
-    - docutils>=0.8,!=0.18.*,!=0.19.*
-    - sphinx>=4.1
-    - sphinx-book-theme>=1.0.0
-    - myst-nb
-    - myst-parser
-    - sphinxcontrib-bibtex>=1.0.0
-    - sphinx-autodoc-typehints
-    - sphinx_rtd_theme
-    - sphinxext-opengraph
-    - sphinx-copybutton
-    - sphinx-design
-    - sphinx-hoverxref
-    - ipykernel
-    - ipython
-    - pandas
-    - pytest
-    - coverage
+  - dask-geopandas>=0.4.0
+  - dask-cuda>=23.10.0
+  - distributed>=2023.10.0
+
+  # RAPIDS for CUDA 11
+  - cudf-cu11==24.8.*
+  - cuml-cu11==24.8.*
+  - cugraph-cu11==24.8.*
+  - cuspatial-cu11==24.8.*
+  - cupy-cuda11x
+  - nccl==2.12.*
+  - cutensor==1.3.*
+
+  # Optional dependencies
+  - faiss-cpu>=1.7.0
+  - faiss-gpu>=1.7.0
+
+  # Development dependencies
+  - pytest
+  - black
+  - flake8
+  - pre-commit
+  - twine>=4.0.2
+
+  # Documentation dependencies
+  - docutils>=0.8,!=0.18.*,!=0.19.*
+  - sphinx>=4.1
+  - sphinx-book-theme>=1.0.0
+  - myst-nb
+  - myst-parser
+  - sphinxcontrib-bibtex>=1.0.0
+  - sphinx-autodoc-typehints
+  - sphinx_rtd_theme
+  - sphinxext-opengraph
+  - sphinx-copybutton
+  - sphinx-design
+  - sphinx-hoverxref
+  - ipykernel
+  - ipython
+  - pandas
+
+  # Testing dependencies
+  - coverage
+
+  # Multiprocessing support
+  - multiprocessing
