@@ -60,6 +60,7 @@ def filter_transcripts(
         "NegControlCodeword_",
         "BLANK_",
         "DeprecatedCodeword_",
+        "UnassignedCodeword_"
     )
     mask = transcripts_df["qv"].ge(min_qv)
     mask &= ~transcripts_df["feature_name"].str.startswith(filter_codewords)
