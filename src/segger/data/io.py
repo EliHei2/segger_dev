@@ -299,6 +299,7 @@ class SpatialTranscriptomicsSample(ABC):
             "NegControlCodeword_",
             "BLANK_",
             "DeprecatedCodeword_",
+            "UnassignedCodeword_"
         )
 
         # Iterate over row groups to extract statistics and unique gene names
@@ -975,6 +976,7 @@ class XeniumSample(SpatialTranscriptomicsSample):
             "NegControlCodeword_",
             "BLANK_",
             "DeprecatedCodeword_",
+            "UnassignedCodeword_"
         )
 
         # Ensure FEATURE_NAME is a string type for proper filtering (compatible with Dask)
