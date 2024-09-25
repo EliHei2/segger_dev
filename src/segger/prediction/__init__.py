@@ -9,4 +9,5 @@ __all__ = [
     "predict"
     ]
 
-from .predict import load_model, predict
+# from .predict import load_model, predict
+from .predict_gpu import load_model, predict

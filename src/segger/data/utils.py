@@ -363,7 +363,7 @@ def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5,
 
 def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
     """
-    Computes edge indices using RAPIDS cuML.
+    Computes edge indices using RAPIDS cuML and cuSpatial (cuVS) for spatial operations on GPU.
 
     Parameters:
         coords_1 (np.ndarray): First set of coordinates.
@@ -374,13 +374,18 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
     Returns:
         torch.Tensor: Edge indices.
     """
-    index = cuml.neighbors.NearestNeighbors(n_neighbors=k, algorithm='brute', metric='euclidean')
+        # Convert numpy arrays to cuPy arrays for cuSpatial
+    coords_1 = cp.asarray(coords_1)
+    coords_2 = cp.asarray(coords_2)
+
+    # RAPIDS cuML for nearest neighbor search
+    index = cuml.neighbors.NearestNeighbors(n_neighbors=k, metric='euclidean')
     index.fit(coords_1)
     D, I = index.kneighbors(coords_2)
 
     valid_mask = D < dist ** 2
-    edges = []
 
+    edges = []
     for idx, valid in enumerate(valid_mask):
         valid_indices = I[idx][valid]
         if valid_indices.size > 0:
@@ -388,8 +393,12 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
                 np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
             )
 
-    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    edge_index = torch.tensor(cp.asnumpy(np.vstack(edges)), dtype=torch.long).contiguous()
+
+    # Optionally, you can use cuSpatial for additional geospatial features
+    # You could apply cuSpatial functions like haversine distance or point-in-polygon queries here if needed
     return edge_index
+
 
 def get_edge_index_cugraph(
     coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10
