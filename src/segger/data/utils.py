@@ -31,11 +31,14 @@ import sys
 try_import('multiprocessing')
 try_import('joblib')
 try_import('faiss')
-try_import('cuml')
-try_import('cudf')
-try_import('cugraph')
-try_import('cuspatial')
-try_import('hnswlib')
+try_import('cuvs')
+try:
+    import cupy as cp
+    from cuvs.neighbors import cagra
+except ImportError:
+    print(f"Warning: cupy and/or cuvs are not installed. Please install them to use this functionality.")
+
+import torch.utils.dlpack as dlpack
 
 
 
@@ -260,14 +263,14 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
 def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, method: str = 'kd_tree',
                    gpu: bool = False, workers: int = 1) -> torch.Tensor:
     """
-    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).
+    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS::cuvs+cupy (cuda)).
 
     Parameters:
         coords_1 (np.ndarray): First set of coordinates.
         coords_2 (np.ndarray): Second set of coordinates.
         k (int, optional): Number of nearest neighbors.
         dist (int, optional): Distance threshold.
-        method (str, optional): The method to use ('kd_tree', 'faiss', 'rapids', 'cugraph', 'cuspatial').
+        method (str, optional): The method to use ('kd_tree', 'faiss', 'cuda').
         gpu (bool, optional): Whether to use GPU acceleration (applicable for FAISS).
 
     Returns:
@@ -277,14 +280,8 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
         return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist, workers=workers)
     elif method == 'faiss':
         return get_edge_index_faiss(coords_1, coords_2, k=k, dist=dist, gpu=gpu)
-    elif method == 'rapids':
-        return get_edge_index_rapids(coords_1, coords_2, k=k, dist=dist)
-    elif method == 'cugraph':
-        return get_edge_index_cugraph(coords_1, coords_2, k=k, dist=dist)
-    elif method == 'cuspatial':
-        return get_edge_index_cuspatial(coords_1, coords_2, k=k, dist=dist)
-    elif method == 'hnsw':
-        return get_edge_index_hnsw(coords_1, coords_2, k=k, dist=dist)
+    elif method == 'cuda':
+        return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
     else:
         raise ValueError(f"Unknown method {method}")
 
@@ -359,150 +356,52 @@ def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5,
     return edge_index
 
 
-def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
-    """
-    Computes edge indices using RAPIDS cuML.
-
-    Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
-        k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
-
-    Returns:
-        torch.Tensor: Edge indices.
-    """
-    index = cuml.neighbors.NearestNeighbors(n_neighbors=k, algorithm='brute', metric='euclidean')
-    index.fit(coords_1)
-    D, I = index.kneighbors(coords_2)
-
-    valid_mask = D < dist ** 2
-    edges = []
-
-    for idx, valid in enumerate(valid_mask):
-        valid_indices = I[idx][valid]
-        if valid_indices.size > 0:
-            edges.append(
-                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
-            )
-
-    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
-    return edge_index
-
-def get_edge_index_cugraph(
-    coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10
+def get_edge_index_cuda(
+    coords_1: torch.Tensor, 
+    coords_2: torch.Tensor, 
+    k: int = 10, 
+    dist: float = 10.0
 ) -> torch.Tensor:
     """
-    Computes edge indices using RAPIDS cuGraph.
+    Computes edge indices using RAPIDS cuVS with cagra for vector similarity search,
+    with input coordinates as PyTorch tensors on CUDA, using DLPack for conversion.
 
     Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
+        coords_1 (torch.Tensor): First set of coordinates (query vectors) on CUDA.
+        coords_2 (torch.Tensor): Second set of coordinates (index vectors) on CUDA.
         k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
+        dist (float, optional): Distance threshold.
 
     Returns:
-        torch.Tensor: Edge indices.
+        torch.Tensor: Edge indices as a PyTorch tensor on CUDA.
     """
-    gdf_1 = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
-    gdf_2 = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
-
-    gdf_1['id'] = gdf_1.index
-    gdf_2['id'] = gdf_2.index
-
-    result = cugraph.spatial_knn(
-        gdf_1, gdf_2, k=k, return_distance=True
-    )
-
-    valid_mask = result['distance'] < dist
-    edges = result[['src', 'dst']].loc[valid_mask].to_pandas().values
-    edge_index = torch.tensor(edges.T, dtype=torch.long).contiguous()
-    return edge_index
-
-
-def get_edge_index_cuspatial(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
-    """
-    Computes edge indices using cuSpatial's spatial join functionality.
-
-    Parameters:
-        coords_1 (np.ndarray): First set of coordinates (2D).
-        coords_2 (np.ndarray): Second set of coordinates (2D).
-        k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
-
-    Returns:
-        torch.Tensor: Edge indices.
-    """
-    # Convert numpy arrays to cuDF DataFrames
-    coords_1_df = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
-    coords_2_df = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
+    def cupy_to_torch(cupy_array):
+        return torch.from_dlpack((cupy_array.toDlpack()))
     
-    # Perform the nearest neighbor search using cuSpatial's point-to-point nearest neighbor
-    result = cuspatial.point_to_nearest_neighbor(
-        coords_1_df['x'], coords_1_df['y'],
-        coords_2_df['x'], coords_2_df['y'],
-        k=k
-    )
-    
-    # The result is a tuple (distances, indices)
-    distances, indices = result
-    
-    # Filter by distance threshold
-    valid_mask = distances < dist
-    edges = []
-    
-    for idx, valid in enumerate(valid_mask):
-        valid_indices = indices[idx][valid]
-        if valid_indices.size > 0:
-            edges.append(
-                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
-            )
-    
-    # Convert to torch.Tensor
-    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
-    return edge_index
-
-
-
-
-def get_edge_index_hnsw(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
-    """
-    Computes edge indices using the HNSW algorithm.
-
-    Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
-        k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
-
-    Returns:
-        torch.Tensor: Edge indices.
-    """
-    num_elements = coords_1.shape[0]
-    dim = coords_1.shape[1]
-
-    # Initialize the HNSW index
-    p = hnswlib.Index(space='l2', dim=dim)  # l2 for Euclidean distance
-    p.init_index(max_elements=num_elements, ef_construction=200, M=16)
-
-    # Add points to the index
-    p.add_items(coords_1)
-
-    # Query the index for nearest neighbors
-    indices, distances = p.knn_query(coords_2, k=k)
-
-    # Filter by distance threshold
-    valid_mask = distances < dist ** 2
-    edges = []
-
-    for idx, valid in enumerate(valid_mask):
-        valid_indices = indices[idx][valid]
-        if valid_indices.size > 0:
-            edges.append(
-                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
-            )
-
-    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
+    def torch_to_cupy(tensor):
+        return cp.fromDlpack(dlpack.to_dlpack(tensor))
+    # Convert PyTorch tensors (CUDA) to CuPy arrays using DLPack
+    cp_coords_1 = torch_to_cupy(coords_1)
+    cp_coords_2 = torch_to_cupy(coords_2)
+    # Define the distance threshold in CuPy
+    cp_dist = cp.float32(dist)
+    # IndexParams and SearchParams for cagra
+    index_params = cagra.IndexParams()
+    search_params = cagra.SearchParams()
+    # Build index using CuPy coords
+    index = cagra.build_index(index_params, cp_coords_1)
+    # Perform search to get distances and indices (still in CuPy)
+    D, I = cagra.search(search_params, index, cp_coords_2, k)
+    # Boolean mask for filtering distances below the squared threshold (all in CuPy)
+    valid_mask = cp.asarray(D < cp_dist ** 2)
+    # Vectorized operations for row and valid indices (all in CuPy)
+    repeats = valid_mask.sum(axis=1).tolist()
+    row_indices = cp.repeat(cp.arange(len(cp_coords_2)), repeats)
+    valid_indices = cp.asarray(I)[cp.where(valid_mask)]
+    # Stack row indices with valid indices to form edges
+    edges = cp.vstack((row_indices, valid_indices)).T
+    # Convert the result back to a PyTorch tensor using DLPack
+    edge_index = cupy_to_torch(edges).long().contiguous()
     return edge_index
 
 class SpatialTranscriptomicsDataset(InMemoryDataset):
