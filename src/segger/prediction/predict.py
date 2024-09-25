@@ -184,7 +184,7 @@ def predict_batch(
                 batch['tx'].pos[:, :2].cpu(),
                 k=receptive_field['k_bd'],
                 dist=receptive_field['dist_bd'],
-                method='faiss',
+                method='rapids',
             ).T
             batch['tx']['bd_field'] = coo_to_dense_adj(
                 edge_index,

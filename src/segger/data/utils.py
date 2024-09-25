@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import anndata as ad
 from scipy.spatial import ConvexHull
-from typing import Dict, Any, Optional, List, Callable, Tuple
+from typing import Dict, Any, Optional, List, Callable, Tuple, Union
 from shapely.geometry import Polygon
 import geopandas as gpd
 import torch
@@ -26,7 +26,7 @@ from shapely.affinity import scale
 import dask.dataframe as dd
 from pyarrow import parquet as pq
 import sys
-
+import torch.utils.dlpack as dlpack
 # Attempt to import specific modules with try_import function
 try_import('multiprocessing')
 try_import('joblib')
@@ -34,7 +34,14 @@ try_import('faiss')
 try_import('cuml')
 try_import('cudf')
 try_import('cugraph')
-try_import('cuspatial')
+try_import('cuvs')
+try:
+    import cupy as cp
+    from cuvs.neighbors import cagra
+except ImportError:
+    print(f"Warning: cupy and/or cuvs are not installed. Please install them to use this functionality.")
+
+
 # try_import('hnswlib')
 
 
@@ -361,31 +368,39 @@ def get_edge_index_faiss(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5,
     return edge_index
 
 
-def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> torch.Tensor:
+def get_edge_index_rapids(
+    coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: float = 10.0
+) -> torch.Tensor:
     """
-    Computes edge indices using RAPIDS cuML and cuSpatial (cuVS) for spatial operations on GPU.
+    Computes edge indices using RAPIDS cuVS for vector similarity search.
 
     Parameters:
-        coords_1 (np.ndarray): First set of coordinates.
-        coords_2 (np.ndarray): Second set of coordinates.
+        coords_1 (np.ndarray): First set of coordinates (query vectors).
+        coords_2 (np.ndarray): Second set of coordinates (index vectors).
         k (int, optional): Number of nearest neighbors.
-        dist (int, optional): Distance threshold.
+        dist (float, optional): Distance threshold.
 
     Returns:
         torch.Tensor: Edge indices.
     """
-        # Convert numpy arrays to cuPy arrays for cuSpatial
-    coords_1 = cp.asarray(coords_1)
-    coords_2 = cp.asarray(coords_2)
-
-    # RAPIDS cuML for nearest neighbor search
-    index = cuml.neighbors.NearestNeighbors(n_neighbors=k, metric='euclidean')
-    index.fit(coords_1)
-    D, I = index.kneighbors(coords_2)
+    # Convert numpy arrays to cuDF DataFrames
+    gdf_1 = cudf.DataFrame({'x': coords_1[:, 0], 'y': coords_1[:, 1]})
+    gdf_2 = cudf.DataFrame({'x': coords_2[:, 0], 'y': coords_2[:, 1]})
+    
+    gdf_1['id'] = gdf_1.index
+    gdf_2['id'] = gdf_2.index
+    
+    d = coords_1.shape[1]
+    index_params = cagra.IndexParams()
+    index = cagra.build(index_params, gdf_2[['x', 'y']])
+    
+    search_params = cagra.SearchParams()
+    
+    D, I = cagra.search(search_params, index, gdf_1[['x', 'y']], k)
 
     valid_mask = D < dist ** 2
-
     edges = []
+
     for idx, valid in enumerate(valid_mask):
         valid_indices = I[idx][valid]
         if valid_indices.size > 0:
@@ -393,10 +408,7 @@ def get_edge_index_rapids(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5
                 np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
             )
 
-    edge_index = torch.tensor(cp.asnumpy(np.vstack(edges)), dtype=torch.long).contiguous()
-
-    # Optionally, you can use cuSpatial for additional geospatial features
-    # You could apply cuSpatial functions like haversine distance or point-in-polygon queries here if needed
+    edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
     return edge_index
 
 

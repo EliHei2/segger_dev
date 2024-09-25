@@ -8,35 +8,17 @@ from torch_geometric.data import Batch
 from torchmetrics import F1Score
 from scipy.sparse.csgraph import connected_components as cc
 
-from segger.data.utils import (
-    get_edge_index_rapids,
-    coo_to_dense_adj,
-)
+from segger.data.utils import get_edge_index_rapids
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
 from tqdm import tqdm
 import random
 import string
-import cupy as cp
-from dask_cuda import LocalCUDACluster
-from dask.distributed import Client, wait
-import dask.array as da
+import cupy as cp  # Use CuPy for GPU-accelerated NumPy-like operations
+from pathlib import Path
+import glob
 import re
 
-# Function to set up the Dask-CUDA cluster with a configurable number of GPUs
-def initialize_dask_cuda_cluster(num_gpus: int):
-    """
-    Initialize a Dask-CUDA cluster with a specific number of GPUs.
-
-    Parameters
-    ----------
-    num_gpus : int
-        Number of GPUs to use in the Dask-CUDA cluster.
-    """
-    # Initialize a LocalCUDACluster with the number of desired GPUs
-    cluster = LocalCUDACluster(CUDA_VISIBLE_DEVICES=list(range(num_gpus)))
-    client = Client(cluster)
-    return client
 
 # CONFIG
 torch._dynamo.config.suppress_errors = True
@@ -56,64 +38,49 @@ def load_model(checkpoint_path: str) -> LitSegger:
     lit_segger = LitSegger.load_from_checkpoint(checkpoint_path=checkpoint_path)
     return lit_segger
 
-# Optimized edge index computation using Dask and CuPy (with RAPIDS)
-def parallel_get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10):
+
+# Optimized edge index computation using CuPy
+def get_edge_index_cupy(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10) -> cp.ndarray:
+    """
+    Compute edge index using CuPy to accelerate GPU operations.
+    This replaces Dask's `parallel_get_edge_index`.
+    """
     coords_1_cp = cp.asarray(coords_1)
     coords_2_cp = cp.asarray(coords_2)
 
-    def compute_edges_chunk(coords_1_chunk, coords_2_chunk):
-        return get_edge_index_rapids(coords_1_chunk, coords_2_chunk, k=k, dist=dist)
+    # Use RAPIDS or custom nearest neighbors logic (with CuPy)
+    edge_index = get_edge_index_rapids(coords_1_cp, coords_2_cp, k=k, dist=dist)
+    return edge_index
 
-    coords_1_da = da.from_array(coords_1_cp, chunks=(len(coords_1_cp) // 4, 2))
-    coords_2_da = da.from_array(coords_2_cp, chunks=(len(coords_2_cp) // 4, 2))
 
-    edge_indices = da.map_blocks(compute_edges_chunk, coords_1_da, coords_2_da).compute()
-
-    return edge_indices
-
-# Optimized similarity score computation using Dask and CuPy
-def parallel_get_similarity_scores(client: Client, model, batch_chunks, from_type, to_type):
+# Optimized similarity score computation using CuPy
+def get_similarity_scores_cupy(model: Segger, batch: Batch, from_type: str, to_type: str):
     """
-    Compute similarity scores in parallel using Dask and CuPy.
-    
-    Parameters:
+    Compute similarity scores using CuPy for sparse-dense matrix operations.
+
+    Parameters
     ----------
-    client : Client
-        Dask distributed client to manage parallel computation.
     model : Segger
         The segmentation model used for similarity score computation.
-    batch_chunks : list
-        A list of batches to process in parallel.
+    batch : Batch
+        The batch of graph data containing transcript and boundary nodes.
     from_type : str
-        The type of node from which the similarity is computed.
+        The node type from which similarity is computed.
     to_type : str
-        The type of node to which the similarity is computed.
-    
-    Returns:
+        The node type to which similarity is computed.
+
+    Returns
     -------
-    list
-        A list of similarity score tensors, one per batch.
+    torch.Tensor
+        A dense tensor containing similarity scores between 'from_type' and 'to_type' nodes.
     """
-    def compute_similarity(batch_chunk):
-        return get_similarity_scores(model, batch_chunk, from_type, to_type)
-
-    # Distribute the batch_chunks to the Dask client
-    similarity_results = client.map(compute_similarity, batch_chunks)
-    
-    # Gather the results back from all workers
-    results = client.gather(similarity_results)
-    
-    return results
-
-# Optimized similarity score computation with sparse matrix operations
-def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: str):
     batch = batch.to("cuda")
     y_hat = model(batch.x_dict, batch.edge_index_dict)
 
     # Sparse adjacency matrix for neighbors
     sparse_adj = batch[from_type][f'{to_type}_field']
     
-    # Perform sparse-dense multiplication
+    # Perform sparse-dense multiplication (CuPy handles this on the GPU)
     similarity = torch.sparse.mm(
         sparse_adj, 
         y_hat[to_type]
@@ -135,14 +102,34 @@ def get_similarity_scores(model: Segger, batch: Batch, from_type: str, to_type: 
 
     return sparse_sim.to_dense().detach().cpu()
 
-# Optimized predict_batch with Dask and CuPy, multi-GPU support
-def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, receptive_field: dict, use_cc: bool = True, num_gpus: int = 1) -> pd.DataFrame:
+
+# Optimized predict_batch function using PyTorch parallelism (no Dask)
+def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, receptive_field: dict, use_cc: bool = True) -> pd.DataFrame:
+    """
+    Predict cell assignments for a batch of transcript data using PyTorch parallelism.
+    
+    Parameters
+    ----------
+    lit_segger : LitSegger
+        Lightning module wrapping the segmentation model.
+    batch : Batch
+        A batch of transcript and cell data.
+    score_cut : float
+        The threshold for assigning transcripts to cells based on similarity scores.
+    receptive_field : dict
+        Receptive field parameters for computing nearest neighbors.
+    use_cc : bool
+        Whether to use connected components for unassigned transcripts.
+    
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing transcript IDs, similarity scores, and assigned cell IDs.
+    """
     def _get_id():
         id_chars = random.choices(string.ascii_lowercase, k=8)
         return ''.join(id_chars) + '-nx'
-    
-    client = initialize_dask_cuda_cluster(num_gpus)  # Initialize Dask with multiple GPUs
-    
+
     with torch.no_grad():
         batch = batch.to("cuda")
 
@@ -151,8 +138,8 @@ def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, recepti
         assignments['transcript_id'] = batch['tx'].id.cpu().numpy()
 
         if len(batch['bd'].id[0]) > 0:
-            # Parallel edge index computation using Dask and CuPy
-            edge_index = parallel_get_edge_index(
+            # Compute edge index using CuPy (GPU-accelerated)
+            edge_index = get_edge_index_cupy(
                 batch['bd'].pos[:, :2].cpu().numpy(),
                 batch['tx'].pos[:, :2].cpu().numpy(),
                 k=receptive_field['k_bd'],
@@ -166,8 +153,8 @@ def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, recepti
                 size=(batch['tx'].id.shape[0], batch['bd'].id.shape[0])
             ).coalesce()
 
-            # Compute similarity scores using Dask for parallel computation
-            scores = parallel_get_similarity_scores(client, lit_segger.model, [batch], "tx", "bd")[0]
+            # Compute similarity scores using CuPy for GPU acceleration
+            scores = get_similarity_scores_cupy(lit_segger.model, batch, "tx", "bd")
 
             # Get direct assignments from similarity matrix
             belongs = scores.max(1)
@@ -187,7 +174,7 @@ def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, recepti
                     size=(batch['tx'].id.shape[0], batch['tx'].id.shape[0])
                 ).coalesce()
 
-                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = get_similarity_scores_cupy(lit_segger.model, batch, "tx", "tx")
                 scores = scores.fill_diagonal_(0)
 
                 # Connected components to assign remaining transcripts
@@ -199,10 +186,11 @@ def predict_batch(lit_segger: LitSegger, batch: Batch, score_cut: float, recepti
 
         return assignments
 
-# Optimized predict function that processes multiple batches in parallel
-def predict(lit_segger: LitSegger, data_loader: DataLoader, score_cut: float, receptive_field: dict, use_cc: bool = True, num_gpus: int = 1) -> pd.DataFrame:
+
+# Optimized predict function for multiple batches using CuPy
+def predict(lit_segger: LitSegger, data_loader: DataLoader, score_cut: float, receptive_field: dict, use_cc: bool = True) -> pd.DataFrame:
     """
-    Predict cell assignments for multiple batches using multi-GPU Dask processing.
+    Predict cell assignments for multiple batches using multi-GPU PyTorch.
 
     Parameters
     ----------
@@ -224,18 +212,16 @@ def predict(lit_segger: LitSegger, data_loader: DataLoader, score_cut: float, re
     """
     if len(data_loader) == 0:
         return None
-    
+
     assignments = []
 
-    # Use Dask-CUDA to distribute the batches across multiple GPUs
-    client = initialize_dask_cuda_cluster(num_gpus)
+    # Iterate through batches and run `predict_batch` for each
+    for batch in tqdm(data_loader, desc="Processing batches"):
+        batch_assignments = predict_batch(lit_segger, batch, score_cut, receptive_field, use_cc)
+        assignments.append(batch_assignments)
 
-    # Distribute batches across GPUs
-    futures = client.map(lambda batch: predict_batch(lit_segger, batch, score_cut, receptive_field, use_cc, num_gpus), list(data_loader))
-    results = client.gather(futures)
-    
-    # Collect assignments from all batches
-    assignments = pd.concat(results).reset_index(drop=True)
+    # Concatenate the results from all batches
+    assignments = pd.concat(assignments).reset_index(drop=True)
 
     # Handle duplicate assignments of transcripts
     idx = assignments.groupby('transcript_id')['score'].idxmax()
