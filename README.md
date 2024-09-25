@@ -1,4 +1,4 @@
-# 🍳 Welcome to segger 
+# 🍳 Welcome to segger!
 
 **segger** is a cutting-edge tool for **cell segmentation** in **single-molecule spatial omics** datasets. By leveraging **graph neural networks (GNNs)** and heterogeneous graphs, segger offers unmatched accuracy and scalability.
 
