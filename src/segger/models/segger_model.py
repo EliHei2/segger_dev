@@ -56,7 +56,7 @@ class Segger(torch.nn.Module):
         """
         x = torch.nan_to_num(x, nan = 0)
         is_one_dim = (x.ndim == 1) * 1
-        x = x[:, None]    
+        # x = x[:, None]    
         x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float())  * (1 - is_one_dim) 
         # First layer
         x = x.relu()
@@ -65,15 +65,12 @@ class Segger(torch.nn.Module):
 
         # Middle layers
         if self.num_mid_layers > 0:
-            # for conv_mid, lin_mid in zip(self.conv_mid_layers, self.lin_mid_layers):
             for conv_mid in self.conv_mid_layers:   
                 x = conv_mid(x, edge_index) # + lin_mid(x)
                 x = x.relu()
 
         # Last layer
         x = self.conv_last(x, edge_index) # + self.lin_last(x)
-        # x = x.relu()
-        # x = x / x.norm(dim=-1, keepdim=True)  # Normalize to L2 norm of 1
 
         return x
 
