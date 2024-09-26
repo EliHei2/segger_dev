@@ -39,6 +39,7 @@ except ImportError:
     print(f"Warning: cupy and/or cuvs are not installed. Please install them to use this functionality.")
 
 import torch.utils.dlpack as dlpack
+from datetime import timedelta
 
 
 
@@ -542,3 +543,23 @@ def coo_to_dense_adj(
         nbr_idx[i, :len(nbrs)] = nbrs
 
     return nbr_idx
+
+
+
+
+
+def format_time(elapsed: float) -> str:
+    """
+    Format elapsed time to h:m:s.
+    
+    Parameters:
+    ----------
+    elapsed : float
+        Elapsed time in seconds.
+    
+    Returns:
+    -------
+    str
+        Formatted time in h:m:s.
+    """
+    return str(timedelta(seconds=int(elapsed)))
