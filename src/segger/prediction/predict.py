@@ -147,8 +147,8 @@ def predict_batch(
     score_cut: float,
     receptive_field: dict,
     use_cc: bool = True,
-    knn_method: str = 'cuda'
-) -> dd.DataFrame:
+    knn_method: str = 'kd_tree'
+) -> pd.DataFrame:
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
 
@@ -164,7 +164,9 @@ def predict_batch(
         Dictionary defining the receptive field for transcript-cell and transcript-transcript relations.
     use_cc : bool, optional
         If True, perform connected components analysis for unassigned transcripts.
-
+    knn_method : str, optional
+        The method to use for nearest neighbors ('cuda' by default).
+        
     Returns
     -------
     pd.DataFrame
@@ -179,13 +181,12 @@ def predict_batch(
         batch = batch.to("cuda")
 
         # Assignments of cells to nuclei
-        transcript_id = delayed(batch['tx'].id.cpu().numpy)()
-        assignments = dd.from_array(transcript_id, columns=['transcript_id'])
-
+        transcript_id = batch['tx'].id.cpu().numpy()
+        assignments = pd.DataFrame({'transcript_id': transcript_id})
 
         if len(batch['bd'].id[0]) > 0:
-            # Step 2.1: Calculate edge index (delayed operation)
-            edge_index = delayed(get_edge_index)(
+            # Step 2.1: Calculate edge index lazily
+            edge_index = get_edge_index(
                 batch['bd'].pos[:, :2].cpu(),
                 batch['tx'].pos[:, :2].cpu(),
                 k=receptive_field['k_bd'],
@@ -193,51 +194,38 @@ def predict_batch(
                 method=knn_method,
             ).T
 
-            # Step 2.2: Compute dense adjacency matrix lazily
-            batch['tx']['bd_field'] = delayed(coo_to_dense_adj)(
+            # Step 2.2: Compute dense adjacency matrix
+            batch['tx']['bd_field'] = coo_to_dense_adj(
                 edge_index,
                 num_nodes=batch['tx'].id.shape[0],
                 num_nbrs=receptive_field['k_bd'],
             )
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
+            # 1. Get direct assignments from similarity matrix
+            belongs = scores.max(1)
+            assignments['score'] = belongs.values.cpu()
+            mask = assignments['score'] > score_cut
+            all_ids = np.concatenate(batch['bd'].id)[belongs.indices.cpu()]
+            assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
-            # Step 2.3: Calculate similarity scores lazily
-            scores = delayed(get_similarity_scores)(lit_segger.model, batch, "tx", "bd")
-            belongs = delayed(lambda x: x.max(1))(scores)
-
-            # Step 2.4: Add scores to assignments (Dask DataFrame)
-            score_values = belongs.values.cpu().numpy()
-            assignments = assignments.assign(score=from_array(score_values))
-
-            # Step 2.5: Apply score cut-off and assign cell IDs lazily
-            all_ids = delayed(np.concatenate)(batch['bd'].id)[belongs.indices.cpu().numpy()]
-            mask = delayed(assignments['score'] > score_cut)
-            assignments['segger_cell_id'] = dd.from_array(delayed(np.where)(mask, all_ids, np.nan))
-
-
-            # Step 3: If connected components (CC) are enabled, further process the assignments
             if use_cc:
-                # Step 3.1: Calculate transcript-to-transcript field lazily
-                edge_index_tx = batch['tx', 'neighbors', 'tx'].edge_index
-                batch['tx']['tx_field'] = delayed(coo_to_dense_adj)(
-                    edge_index_tx,
+                # Transcript-transcript similarity scores, filtered by neighbors
+                edge_index = batch['tx', 'neighbors', 'tx'].edge_index
+                batch['tx']['tx_field'] = coo_to_dense_adj(
+                    edge_index,
                     num_nodes=batch['tx'].id.shape[0],
                 )
+                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = scores.fill_diagonal_(0)  # ignore self-similarity
 
-                # Step 3.2: Compute similarity scores for transcript-to-transcript lazily
-                scores_tx = delayed(get_similarity_scores)(lit_segger.model, batch, "tx", "tx")
-                scores_tx = delayed(lambda x: x.fill_diagonal_(0))(scores_tx)
-
-                # Step 3.3: Handle connected components lazily
-                no_id = assignments['segger_cell_id'].isna()
-                no_id_scores = delayed(lambda s, mask: s[mask].T[mask])(scores_tx, no_id)
-                n, comps = delayed(pqdm)([lambda: cc(no_id_scores, connection="weak", directed=False)], n_jobs=-1)
-
-
-                # Assign new IDs based on connected components
-                new_ids = delayed(np.array)([_get_id() for _ in range(n)])
-                assignments['segger_cell_id'] = dd.from_array(np.where(no_id, new_ids[comps], assignments['segger_cell_id'].values))
+                # 2. Assign remainder using connected components
+                no_id = assignments['segger_cell_id'].isna().values
+                no_id_scores = scores[no_id][:, no_id]
+                n, comps = cc(no_id_scores, connection="weak", directed=False)
+                new_ids = np.array([_get_id() for _ in range(n)])
+                assignments.loc[no_id, 'segger_cell_id'] = new_ids[comps]
                 
-        return assignments
+        return assignments  # Ensure this is a pandas DataFrame
 
 
 def predict(
@@ -245,7 +233,8 @@ def predict(
     data_loader: DataLoader,
     score_cut: float,
     receptive_field: dict,
-    use_cc: bool = True
+    use_cc: bool = True,
+    knn_method: str = 'cuda'
 ) -> dd.DataFrame:
     """
     Optimized prediction for multiple batches of transcript data using Dask and delayed processing with progress bar.
@@ -262,7 +251,9 @@ def predict(
         Dictionary defining the receptive field for transcript-cell and transcript-transcript relations.
     use_cc : bool, optional
         If True, perform connected components analysis for unassigned transcripts.
-
+    knn_method : str, optional
+        The method to use for nearest neighbors ('cuda' by default).
+        
     Returns
     -------
     dd.DataFrame
@@ -271,20 +262,29 @@ def predict(
     if len(data_loader) == 0:
         return None
 
+    # Create meta for the DataFrame
+    meta = pd.DataFrame({
+        'transcript_id': pd.Series(dtype='int64'),
+        'score': pd.Series(dtype='float64'),
+        'segger_cell_id': pd.Series(dtype='object')
+    })
+
     # Convert the entire data loader to delayed predictions
-    delayed_assignments = pqdm([delayed(predict_batch)(lit_segger, batch, score_cut, receptive_field, use_cc)
-                                for batch in data_loader], n_jobs=-1)
-    assignments_dd = dd.from_delayed(delayed_assignments)
+    delayed_assignments = [delayed(predict_batch)(lit_segger, batch, score_cut, receptive_field, use_cc, knn_method)
+                           for batch in data_loader]
+    
+    # Pass the meta to from_delayed
+    assignments_dd = dd.from_delayed(delayed_assignments, meta=meta)
 
-    # Group by transcript_id and lazily select the row with the highest score
-    idx = assignments_dd.groupby('transcript_id')['score'].idxmax()
-    final_assignments = assignments_dd.map_partitions(lambda df: df.loc[idx].reset_index(drop=True))
+    # Modify the logic to compute idxmax within each partition using map_partitions
+    def select_max_score_partition(df):
+        idx = df.groupby('transcript_id')['score'].idxmax()  # Compute idxmax within each partition
+        return df.loc[idx].reset_index(drop=True)
 
-    # Use Dask's progress bar for task execution tracking
-    with ProgressBar():
-        final_result = final_assignments.compute()
+    final_assignments = assignments_dd.map_partitions(select_max_score_partition, meta=meta)
 
-    return final_result
+    return final_assignments
+
 
 
 def segment(
@@ -342,10 +342,14 @@ def segment(
 
     # Step 1: Prediction
     step_start_time = time.time()
-
-    delayed_train = delayed(predict)(model, dm.train_dataloader(), score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
-    delayed_val = delayed(predict)(model, dm.val_dataloader(), score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
-    delayed_test = delayed(predict)(model, dm.test_dataloader(), score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
+    
+    train_dataloader = dm.train_dataloader()
+    test_dataloader  = dm.test_dataloader()
+    val_dataloader   = dm.val_dataloader()
+    
+    delayed_train = predict(model, train_dataloader, score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
+    delayed_val   = predict(model, val_dataloader , score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
+    delayed_test  = predict(model, test_dataloader, score_cut=score_cut, receptive_field=receptive_field, use_cc=use_cc, knn_method=knn_method)
     
     segmentation_train, segmentation_val, segmentation_test = dask.compute(delayed_train, delayed_val, delayed_test)
 

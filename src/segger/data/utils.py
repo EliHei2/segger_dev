@@ -282,7 +282,8 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
     elif method == 'faiss':
         return get_edge_index_faiss(coords_1, coords_2, k=k, dist=dist, gpu=gpu)
     elif method == 'cuda':
-        return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
+        pass
+        # return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
     else:
         raise ValueError(f"Unknown method {method}")
 

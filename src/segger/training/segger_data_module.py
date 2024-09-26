@@ -33,7 +33,7 @@ class SeggerDataModule(LightningDataModule):
         self.loader_kwargs = dict(
             batch_size=self.batch_size,
             num_workers=self.num_workers,
-            pin_memory=True,
+            pin_memory=False,
         )
 
     # TODO: Add documentation
