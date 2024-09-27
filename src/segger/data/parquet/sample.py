@@ -427,9 +427,7 @@ class STSampleParquet():
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
-        for region in regions:
-            func(region)
-        #pqdm(regions, func, n_jobs=self.n_workers)
+        pqdm(regions, func, n_jobs=self.n_workers)
 
 
 # TODO: Add documentation for settings
