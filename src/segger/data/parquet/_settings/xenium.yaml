@@ -1,0 +1,45 @@
+transcripts:
+  filename: "transcripts.parquet"
+  x: "x_location"
+  y: "y_location"
+  z: "z_location"
+  id: "transcript_id"
+  label: "feature_name"
+  nuclear: "overlaps_nucleus"
+  filter_substrings:
+    - "NegControlProbe_"
+    - "antisense_"
+    - "NegControlCodeword"
+    - "BLANK_"
+    - "DeprecatedCodeword_"
+    - "UnassignedCodeword_"
+  xy: 
+    - "x_location"
+    - "y_location"
+  xyz: 
+    - "x_location"
+    - "y_location"
+    - "z_location"
+  columns: 
+    - "x_location"
+    - "y_location"
+    - "z_location"
+    - "feature_name"
+    - "overlaps_nucleus"
+    - "transcript_id"
+    - "cell_id"
+    - "qv"
+
+boundaries:
+  filename: "nucleus_boundaries.parquet"
+  x: "vertex_x"
+  y: "vertex_y"
+  id: "cell_id"
+  label: "cell_id"
+  xy: 
+    - "vertex_x"
+    - "vertex_y"
+  columns: 
+    - "vertex_x"
+    - "vertex_y"
+    - "cell_id"
