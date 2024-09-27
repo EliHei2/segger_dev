@@ -297,7 +297,7 @@ def segment(
     use_cc: bool = True,
     file_format: str = 'anndata', 
     receptive_field: dict = {'k_bd': 4, 'dist_bd': 10, 'k_tx': 5, 'dist_tx': 3},
-    knn_method: str = 'cuda',
+    knn_method: str = 'kd_tree',
     verbose: bool = False,
     **anndata_kwargs
 ) -> None:
@@ -323,7 +323,7 @@ def segment(
     use_cc : bool, optional
         If to further re-group transcripts that have not been assigned to any nucleus.
     knn_method : str, optional
-        The method to use for nearest neighbors ('cuda' by default).
+        The method to use for nearest neighbors ('kd_tree' by default).
     **anndata_kwargs : dict, optional
         Additional keyword arguments passed to the create_anndata function.
 

@@ -280,11 +280,11 @@ class STSampleParquet():
         Directory structure created:
         ----------------------------
         data_dir/
-            ├── train/
+            ├── train_tiles/
             │   └── processed/
-            ├── test/
+            ├── test_tiles/
             │   └── processed/
-            └── val/
+            └── val_tiles/
                 └── processed/
 
         Parameters
@@ -298,12 +298,13 @@ class STSampleParquet():
             If any of the 'processed' directories already contain files.
         """
         data_dir = Path(data_dir)  # by default, convert to Path object
-        for dt in ['train', 'test', 'val']:
-            tile_dir = data_dir / dt / 'processed'
-            tile_dir.mkdir(parents=True, exist_ok=True)
-            if os.listdir(tile_dir):
-                msg = f"Directory '{tile_dir}' must be empty."
-                raise AssertionError(msg)
+        for tile_type in ['train_tiles', 'test_tiles', 'val_tiles']:
+            for stage in ['raw', 'processed']:
+                tile_dir = data_dir / tile_type / stage
+                tile_dir.mkdir(parents=True, exist_ok=True)
+                if os.listdir(tile_dir):
+                    msg = f"Directory '{tile_dir}' must be empty."
+                    raise AssertionError(msg)
 
 
     def set_transcript_embedding(self, weights: pd.DataFrame):
@@ -410,7 +411,7 @@ class STSampleParquet():
             for tile in tiles:
                 # Choose training, test, or validation datasets
                 data_type = np.random.choice(
-                    a=['train', 'test', 'val'],
+                    a=['train_tiles', 'test_tiles', 'val_tiles'],
                     p=[1 - (test_prob + val_prob), test_prob, val_prob],
                 )
                 xt = STTile(dataset=xm, extents=tile)
@@ -426,7 +427,9 @@ class STSampleParquet():
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
-        pqdm(regions, func, n_jobs=self.n_workers)
+        for region in regions:
+            func(region)
+        #pqdm(regions, func, n_jobs=self.n_workers)
 
 
 # TODO: Add documentation for settings
@@ -1156,18 +1159,20 @@ class STTile:
         )
         centroids = polygons.centroid.get_coordinates()
         pyg_data['bd'].id = polygons.index.to_numpy()
-        pyg_data['bd'].pos = centroids.values
+        pyg_data['bd'].pos = torch.tensor(centroids.values, dtype=torch.float32)
         pyg_data['bd'].x = self.get_boundary_props(
             area, convexity, elongation, circularity
         )
 
         # Set up Transcript nodes
-        pyg_data['tx'].id = self.transcripts[
-            self.settings.transcripts.id
-        ].values
-        pyg_data['tx'].pos = self.transcripts[
-            self.settings.transcripts.xyz
-        ].values
+        pyg_data['tx'].id = torch.tensor(
+            self.transcripts[self.settings.transcripts.id].values.astype(int),
+            dtype=torch.int,
+        )
+        pyg_data['tx'].pos = torch.tensor(
+            self.transcripts[self.settings.transcripts.xyz].values,
+            dtype=torch.float32,
+        )
         pyg_data['tx'].x = self.get_transcript_props()
 
         # Set up Boundary-Transcript neighbor edges

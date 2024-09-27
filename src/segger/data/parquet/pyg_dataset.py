@@ -18,7 +18,6 @@ class STPyGDataset(InMemoryDataset):
         pre_filter: Optional[Callable] = None
     ):
         super().__init__(root, transform, pre_transform, pre_filter)
-        os.makedirs(os.path.join(self.processed_dir, 'raw'), exist_ok=True)
 
     @property
     def raw_file_names(self) -> List[str]:
@@ -38,7 +37,7 @@ class STPyGDataset(InMemoryDataset):
         Returns:
             List[str]: List of processed file names.
         """
-        paths = glob.glob(f'{self.processed_dir}/*.pt')
+        paths = glob.glob(f'{self.processed_dir}/x=*_y=*_w=*_h=*.pt')
         file_names = list(map(os.path.basename, paths))
         return file_names
 
