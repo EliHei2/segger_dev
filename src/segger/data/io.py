@@ -43,6 +43,7 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df: pd.DataFrame = None,
         transcripts_radius: int = 10,
         boundaries_graph: bool = False,
+        embedding_df: pd.DataFrame = None,
         keys: Dict = None,
         verbose: bool = True,
     ):
@@ -261,8 +262,7 @@ class SpatialTranscriptomicsSample(ABC):
 
         # Convert the cell IDs to strings lazily
         boundaries_df[self.keys.CELL_ID.value] = boundaries_df[self.keys.CELL_ID.value].apply(
-            lambda x: str(x) if pd.notnull(x) else None,
-            meta=(self.keys.CELL_ID.value, 'str')
+            lambda x: str(x) if pd.notnull(x) else None
         )
 
         if self.verbose: print(f"Loaded boundaries from '{path}' within bounding box ({x_min}, {x_max}, {y_min}, {y_max}).")
@@ -956,8 +956,8 @@ class SpatialTranscriptomicsSample(ABC):
 
 
 class XeniumSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False, verbose: bool = True):
-        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, XeniumKeys, verbose=verbose)
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False,   embedding_df: pd.DataFrame = None, verbose: bool = True):
+        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, XeniumKeys, verbose=verbose)
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
@@ -983,8 +983,7 @@ class XeniumSample(SpatialTranscriptomicsSample):
         # Handle potential bytes to string conversion for Dask DataFrame
         if pd.api.types.is_object_dtype(transcripts_df[self.keys.FEATURE_NAME.value]):
             transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(
-                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x,
-                meta=('feature_name', 'str'),
+                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
             )
 
         # Apply the quality value filter using Dask
@@ -1001,8 +1000,8 @@ class XeniumSample(SpatialTranscriptomicsSample):
 
 
 class MerscopeSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False):
-        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, MerscopeKeys)
+    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False,   embedding_df: pd.DataFrame = None, verbose: bool = True):
+        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, MerscopeKeys)
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
