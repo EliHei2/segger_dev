@@ -282,8 +282,8 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
     elif method == 'faiss':
         return get_edge_index_faiss(coords_1, coords_2, k=k, dist=dist, gpu=gpu)
     elif method == 'cuda':
-        pass
-        # return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
+        # pass
+        return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
     else:
         msg = (
             f"Unknown method {method}. Valid methods include: 'kd_tree', "
@@ -387,12 +387,12 @@ def get_edge_index_cuda(
     def torch_to_cupy(tensor):
         return cp.fromDlpack(dlpack.to_dlpack(tensor))
     # Convert PyTorch tensors (CUDA) to CuPy arrays using DLPack
-    cp_coords_1 = torch_to_cupy(coords_1)
-    cp_coords_2 = torch_to_cupy(coords_2)
+    cp_coords_1 = cp.float32(torch_to_cupy(coords_1))
+    cp_coords_2 = cp.float32(torch_to_cupy(coords_2))
     # Define the distance threshold in CuPy
     cp_dist = cp.float32(dist)
     # IndexParams and SearchParams for cagra
-    index_params = cagra.IndexParams()
+    index_params = cagra.IndexParams(nn_descent_niter=100)
     search_params = cagra.SearchParams()
     # Build index using CuPy coords
     index = cagra.build_index(index_params, cp_coords_1)
