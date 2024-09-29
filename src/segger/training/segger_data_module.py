@@ -2,7 +2,7 @@ from pytorch_lightning import LightningDataModule
 from torch_geometric.loader import DataLoader
 import os
 from pathlib import Path
-from segger.data.io import SpatialTranscriptomicsDataset
+from segger.data.parquet.pyg_dataset import STPyGDataset
 
 
 # TODO: Add documentation
@@ -21,15 +21,9 @@ class SeggerDataModule(LightningDataModule):
 
     # TODO: Add documentation
     def setup(self, stage=None):
-        self.train = SpatialTranscriptomicsDataset(
-            root=self.data_dir / 'train_tiles'
-        )
-        self.test = SpatialTranscriptomicsDataset(
-            root=self.data_dir / 'test_tiles'
-        )
-        self.val = SpatialTranscriptomicsDataset(
-            root=self.data_dir / 'val_tiles'
-        )
+        self.train = STPyGDataset(root=self.data_dir / 'train_tiles')
+        self.test = STPyGDataset(root=self.data_dir / 'test_tiles')
+        self.val = STPyGDataset(root=self.data_dir / 'val_tiles')
         self.loader_kwargs = dict(
             batch_size=self.batch_size,
             num_workers=self.num_workers,

@@ -285,7 +285,11 @@ def get_edge_index(coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist:
         pass
         # return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
     else:
-        raise ValueError(f"Unknown method {method}")
+        msg = (
+            f"Unknown method {method}. Valid methods include: 'kd_tree', "
+            "'faiss', and 'cuda'."
+        )
+        raise ValueError()
 
 
 
