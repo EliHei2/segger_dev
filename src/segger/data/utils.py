@@ -95,21 +95,19 @@ def compute_transcript_metrics(
     df_filtered = df[df['qv'] > qv_threshold]
     total_transcripts = len(df_filtered)
     assigned_transcripts = df_filtered[df_filtered[cell_id_col] != -1]
-    percent_assigned = len(assigned_transcripts) / total_transcripts * 100
+    percent_assigned = len(assigned_transcripts) / (total_transcripts+1) * 100
     cytoplasmic_transcripts = assigned_transcripts[assigned_transcripts['overlaps_nucleus'] != 1]
-    percent_cytoplasmic = len(cytoplasmic_transcripts) / len(assigned_transcripts) * 100
+    percent_cytoplasmic = len(cytoplasmic_transcripts) / (len(assigned_transcripts) + 1)* 100
     percent_nucleus = 100 - percent_cytoplasmic
     non_assigned_transcripts = df_filtered[df_filtered[cell_id_col] == -1]
     non_assigned_cytoplasmic = non_assigned_transcripts[non_assigned_transcripts['overlaps_nucleus'] != 1]
-    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / len(non_assigned_transcripts) * 100
-
+    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / (len(non_assigned_transcripts)+1) * 100
     gene_group_assigned = assigned_transcripts.groupby('feature_name')
     gene_group_all = df_filtered.groupby('feature_name')
-    gene_percent_assigned = (gene_group_assigned.size() / gene_group_all.size() * 100).reset_index(name='percent_assigned')
+    gene_percent_assigned = (gene_group_assigned.size() / (gene_group_all.size()+1) * 100).reset_index(names='percent_assigned')
     cytoplasmic_gene_group = cytoplasmic_transcripts.groupby('feature_name')
-    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / len(cytoplasmic_transcripts) * 100).reset_index(name='percent_cytoplasmic')
+    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / (len(cytoplasmic_transcripts)+1) * 100).reset_index(name='percent_cytoplasmic')
     gene_metrics = pd.merge(gene_percent_assigned, gene_percent_cytoplasmic, on='feature_name', how='outer').fillna(0)
-
     results = {
         'percent_assigned': percent_assigned,
         'percent_cytoplasmic': percent_cytoplasmic,
@@ -144,8 +142,9 @@ def create_anndata(
     Returns:
         ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
     """
-    df_filtered = filter_transcripts(df, min_qv=qv_threshold)
-    metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
+    # df_filtered = filter_transcripts(df, min_qv=qv_threshold)
+    df_filtered = df
+    # metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
     df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != '-1']
     pivot_df = df_filtered.rename(columns={
         cell_id_col: "cell",
@@ -156,28 +155,28 @@ def create_anndata(
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
             continue
-        cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']])
+        cell_convex_hull = ConvexHull(cell_data[['x_location', 'y_location']], qhull_options='QJ')
         cell_area = cell_convex_hull.area
         if cell_area < min_cell_area or cell_area > max_cell_area:
             continue
-        if 'nucleus_distance' in cell_data:
-            nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
-        else:
-            nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
-        if len(nucleus_data) >= 3:
-            nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
-        else:
-            nucleus_convex_hull = None
+        # if 'nucleus_distance' in cell_data:
+        #     nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
+        # else:
+        #     nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
+        # if len(nucleus_data) >= 3:
+        #     nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
+        # else:
+        #     nucleus_convex_hull = None
         cell_summary.append({
             "cell": cell_id,
             "cell_centroid_x": cell_data['x_location'].mean(),
             "cell_centroid_y": cell_data['y_location'].mean(),
             "cell_area": cell_area,
-            "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-            "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
-            "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
-            "has_nucleus": len(nucleus_data) > 0
+            # "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
+            # "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
+            # "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
+            # "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
+            # "has_nucleus": len(nucleus_data) > 0
         })
     cell_summary = pd.DataFrame(cell_summary).set_index("cell")
     if panel_df is not None:
@@ -198,8 +197,8 @@ def create_anndata(
         var_df['feature_types'] = 'Gene Expression'
         var_df['genome'] = 'Unknown'
         var_df = var_df.set_index('gene')
-    gene_metrics = metrics['gene_metrics'].set_index('feature_name')
-    var_df = var_df.join(gene_metrics, how='left').fillna(0)
+    # gene_metrics = metrics['gene_metrics'].set_index('feature_name')
+    # var_df = var_df.join(gene_metrics, how='left').fillna(0)
     cells = list(set(pivot_df.index) & set(cell_summary.index))
     pivot_df = pivot_df.loc[cells,:]
     cell_summary = cell_summary.loc[cells,:]
@@ -209,12 +208,12 @@ def create_anndata(
     adata.obs['unique_transcripts'] = (pivot_df > 0).sum(axis=1).values
     adata.obs_names = pivot_df.index.values.tolist()
     adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names,:], left_index=True, right_index=True)
-    adata.uns['metrics'] = {
-        'percent_assigned': metrics['percent_assigned'],
-        'percent_cytoplasmic': metrics['percent_cytoplasmic'],
-        'percent_nucleus': metrics['percent_nucleus'],
-        'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
-    }
+    # adata.uns['metrics'] = {
+    #     'percent_assigned': metrics['percent_assigned'],
+    #     'percent_cytoplasmic': metrics['percent_cytoplasmic'],
+    #     'percent_nucleus': metrics['percent_nucleus'],
+    #     'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
+    # }
     return adata
 
     
@@ -362,7 +361,9 @@ def get_edge_index_cuda(
     coords_1: torch.Tensor, 
     coords_2: torch.Tensor, 
     k: int = 10, 
-    dist: float = 10.0
+    dist: float = 10.0,
+    metric: str = "sqeuclidean",
+    nn_descent_niter: int = 100
 ) -> torch.Tensor:
     """
     Computes edge indices using RAPIDS cuVS with cagra for vector similarity search,
@@ -379,16 +380,17 @@ def get_edge_index_cuda(
     """
     def cupy_to_torch(cupy_array):
         return torch.from_dlpack((cupy_array.toDlpack()))
-    
+    # gg
     def torch_to_cupy(tensor):
         return cp.fromDlpack(dlpack.to_dlpack(tensor))
     # Convert PyTorch tensors (CUDA) to CuPy arrays using DLPack
-    cp_coords_1 = cp.float32(torch_to_cupy(coords_1))
-    cp_coords_2 = cp.float32(torch_to_cupy(coords_2))
+    cp_coords_1 = torch_to_cupy(coords_1).astype(cp.float32)
+    cp_coords_2 = torch_to_cupy(coords_2).astype(cp.float32)
     # Define the distance threshold in CuPy
     cp_dist = cp.float32(dist)
     # IndexParams and SearchParams for cagra
-    index_params = cagra.IndexParams(nn_descent_niter=100)
+    # compression_params = cagra.CompressionParams(pq_bits=pq_bits)
+    index_params = cagra.IndexParams(metric=metric,nn_descent_niter=nn_descent_niter) #, compression=compression_params)
     search_params = cagra.SearchParams()
     # Build index using CuPy coords
     index = cagra.build_index(index_params, cp_coords_1)
@@ -564,3 +566,16 @@ def format_time(elapsed: float) -> str:
         Formatted time in h:m:s.
     """
     return str(timedelta(seconds=int(elapsed)))
+
+
+
+
+
+
+
+
+
+
+
+
+
