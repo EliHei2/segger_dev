@@ -785,7 +785,7 @@ class STTile:
         'x=100_y=200_w=50_h=50'
         """
         x_min, y_min, x_max, y_max = map(int, self.extents.bounds)
-        uid = f'x={x_min}_y={y_min}_w={x_max-x_min}_h={y_max-y_min}'
+        uid = f'tiles_x={x_min}_y={y_min}_w={x_max-x_min}_h={y_max-y_min}'
         return uid
 
 

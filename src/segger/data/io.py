@@ -815,7 +815,7 @@ class SpatialTranscriptomicsSample(ABC):
 
             # Save the tile data to the appropriate directory based on split
             if self.verbose: print(f"Saving data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
-            filename = f"tiles_x{x_loc}_y{y_loc}_{x_size}_{y_size}.pt"
+            filename = f"tiles_x={x_loc}_y={y_loc}_w={x_size}_h={y_size}.pt"
             if prob > val_prob + test_prob:
                 torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
             elif prob > test_prob:
