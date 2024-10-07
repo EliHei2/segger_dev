@@ -3,7 +3,7 @@ import sys
 import argparse
 from pathlib import Path
 import torch
-import lightning as L
+from pytorch_lightning import Trainer
 from torch_geometric.loader import DataLoader
 from segger.data.utils import SpatialTranscriptomicsDataset  # Updated dataset class
 from segger.models.segger_model import Segger
@@ -57,7 +57,7 @@ def main(args):
     litsegger = LitSegger(model=model)
 
     # Initialize the PyTorch Lightning trainer
-    trainer = L.Trainer(
+    trainer = Trainer(
         accelerator=args.accelerator,
         strategy=args.strategy,
         precision=args.precision,
