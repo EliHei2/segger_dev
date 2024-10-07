@@ -40,13 +40,13 @@ segment(
     model,
     dm,
     save_dir=benchmarks_dir,
-    seg_tag='segger_embedding_1001_cc_true',
+    seg_tag='segger_embedding_1001_0.5',
     transcript_file=transcripts_file,
     file_format='anndata',
     receptive_field = receptive_field,
     min_transcripts=5,
     # max_transcripts=1500,
     cell_id_col='segger_cell_id',
-    use_cc=True,
+    use_cc=False,
     knn_method='cuda'
 )

@@ -341,7 +341,7 @@ def segment(
     save_dir: Union[str, Path], 
     seg_tag: str, 
     transcript_file: Union[str, Path], 
-    score_cut: float = .25,
+    score_cut: float = .5,
     use_cc: bool = True,
     file_format: str = 'anndata', 
     receptive_field: dict = {'k_bd': 4, 'dist_bd': 10, 'k_tx': 5, 'dist_tx': 3},
