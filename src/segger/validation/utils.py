@@ -526,9 +526,10 @@ def plot_metric_comparison(
     metric: str, 
     label: str, 
     method1: str, 
-    method2: str
+    method2: str,
+    output_path: Path
 ) -> None:
-    """Plot a comparison of a specific metric between two methods.
+    """Plot a comparison of a specific metric between two methods and save the comparison data.
 
     Args:
     - ax: plt.Axes
@@ -543,19 +544,27 @@ def plot_metric_comparison(
         The first method to compare.
     - method2: str
         The second method to compare.
+    - output_path: Path
+        Path to save the merged DataFrame as a CSV.
     """
     subset1 = data[data['method'] == method1]
     subset2 = data[data['method'] == method2]
     merged_data = pd.merge(subset1, subset2, on='celltype_major', suffixes=(f'_{method1}', f'_{method2}'))
+    
+    # Save the merged data used in the plot to CSV
+    merged_data.to_csv(output_path / f'metric_comparison_{metric}_{method1}_vs_{method2}.csv', index=False)
+    
     for cell_type in merged_data['celltype_major'].unique():
         cell_data = merged_data[merged_data['celltype_major'] == cell_type]
         ax.scatter(cell_data[f'{metric}_{method1}'], cell_data[f'{metric}_{method2}'], 
                    label=cell_type)
+    
     max_value = max(merged_data[f'{metric}_{method1}'].max(), merged_data[f'{metric}_{method2}'].max())
     ax.plot([0, max_value], [0, max_value], 'k--', alpha=0.5)
     ax.set_xlabel(f'{label} ({method1})')
     ax.set_ylabel(f'{label} ({method2})')
     ax.set_title(f'{label}: {method1} vs {method2}')
+
 
 
 
@@ -582,8 +591,8 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
 
 
 
-def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str] ) -> None:
-    """Plot the number of cells per segmentation method.
+def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
+    """Plot the number of cells per segmentation method and save the cell count data as a CSV.
 
     Args:
     segmentations_dict (Dict[str, sc.AnnData]): Dictionary mapping segmentation method names to loaded AnnData objects.
@@ -594,6 +603,9 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     
     # Create a DataFrame for the bar plot
     df = pd.DataFrame(cell_counts, index=['Number of Cells']).T
+    
+    # Save the DataFrame to CSV
+    df.to_csv(output_path / 'cell_counts_data.csv', index=True)
     
     # Generate the bar plot
     ax = df.plot(kind='bar', stacked=False, color=[palette.get(key, '#333333') for key in df.index], figsize=(3, 6), width=0.9)
@@ -612,6 +624,7 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     # Save the figure as a PDF
     plt.savefig(output_path / 'cell_counts_bar_plot.pdf', bbox_inches='tight')
     plt.show()
+
 
 def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
     """Plot the percentage of assigned transcripts (normalized) for each segmentation method.
@@ -637,6 +650,8 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
         'Segmentation Method': [],
         'Percent Assigned (Normalized)': []
     })
+    
+    
 
     # Add normalized percent_assigned data for each method
     for method in segmentations_dict.keys():
@@ -646,6 +661,8 @@ def plot_percent_assigned(segmentations_dict: Dict[str, sc.AnnData], output_path
             'Percent Assigned (Normalized)': method_data.values
         })
         violin_data = pd.concat([violin_data, method_df], axis=0)
+        
+    violin_data.to_csv(output_path / 'percent_assigned_normalized.csv', index=True)
 
     # Plot the violin plots
     plt.figure(figsize=(12, 8))
@@ -698,6 +715,8 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
             'Normalized Counts': method_counts.values
         })
         boxplot_data = pd.concat([boxplot_data, method_df], axis=0)
+        
+    boxplot_data.to_csv(output_path / 'gene_counts_normalized_data.csv', index=True)
 
     # Plot the box plots
     plt.figure(figsize=(3, 6))
@@ -737,6 +756,8 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
             'Counts per Cell (log2)': method_counts.values
         })
         violin_data = pd.concat([violin_data, method_df], axis=0)
+    
+    violin_data.to_csv(output_path / 'counts_per_cell_data.csv', index=True)
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
     ax = sns.violinplot(x='Segmentation Method', y='Counts per Cell (log2)', data=violin_data, palette=palette)
@@ -774,6 +795,7 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
                 'Cell Area (log2)': method_area.values
             })
             violin_data = pd.concat([violin_data, method_df], axis=0)
+    violin_data.to_csv(output_path / 'cell_area_log2_data.csv', index=True)
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
     ax = sns.violinplot(x='Segmentation Method', y='Cell Area (log2)', data=violin_data, palette=palette)
@@ -813,6 +835,8 @@ def plot_transcript_density(segmentations_dict: Dict[str, sc.AnnData], output_pa
                 'Transcript Density (log2)': method_density_log2.values
             })
             violin_data = pd.concat([violin_data, method_df], axis=0)
+    
+    violin_data.to_csv(output_path / 'transcript_density_log2_data.csv', index=True)
 
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
@@ -882,6 +906,7 @@ def plot_mecr_results(mecr_results: Dict[str, Dict[Tuple[str, str], float]], out
                 'MECR': mecr_value
             })
     df = pd.DataFrame(plot_data)
+    df.to_csv(output_path / 'mcer_box.csv', index=True)
     plt.figure(figsize=(3, 6))
     sns.boxplot(x='Segmentation Method', y='MECR', data=df, palette=palette)
     plt.title('Mutually Exclusive Co-expression Rate (MECR)')
@@ -898,10 +923,11 @@ def plot_quantized_mecr_counts(quantized_mecr_counts: Dict[str, pd.DataFrame], o
     """Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.
 
     Args:
-    quantized_mecr_counts (Dict[str, pd.DataFrame]): Dictionary of quantized MECR count data for each segmentation method.
-    output_path (Path): Path to the directory where the plot will be saved.
-    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+        quantized_mecr_counts (Dict[str, pd.DataFrame]): Dictionary of quantized MECR count data for each segmentation method.
+        output_path (Path): Path to the directory where the plot will be saved.
+        palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
+    quantized_mecr_counts.to_csv(output_path / 'quantized_mecr_counts.csv', index=True)
     plt.figure(figsize=(9, 6))
     for method, df in quantized_mecr_counts.items():
         plt.plot(
@@ -940,6 +966,7 @@ def plot_quantized_mecr_area(quantized_mecr_area: Dict[str, pd.DataFrame], outpu
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
+    quantized_mecr_area.to_csv(output_path / 'quantized_mecr_area.csv', index=True)
     plt.figure(figsize=(6, 4))
     for method, df in quantized_mecr_area.items():
         plt.plot(
@@ -976,10 +1003,11 @@ def plot_contamination_results(contamination_results: Dict[str, pd.DataFrame], o
     """Plot contamination results for each segmentation method.
 
     Args:
-    contamination_results (Dict[str, pd.DataFrame]): Dictionary of contamination data for each segmentation method.
-    output_path (Path): Path to the directory where the plot will be saved.
-    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+        contamination_results (Dict[str, pd.DataFrame]): Dictionary of contamination data for each segmentation method.
+        output_path (Path): Path to the directory where the plot will be saved.
+        palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
+    contamination_results.to_csv(output_path / 'contamination_results.csv', index=True)
     for method, df in contamination_results.items():
         plt.figure(figsize=(10, 6))
         sns.heatmap(df, annot=True, cmap='coolwarm', linewidths=0.5)
@@ -999,6 +1027,7 @@ def plot_contamination_boxplots(boxplot_data: pd.DataFrame, output_path: Path, p
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
+    boxplot_data.to_csv(output_path / 'contamination_box_results.csv', index=True)
     plt.figure(figsize=(14, 8))
     sns.boxplot(
         x='Source Cell Type', 
@@ -1082,10 +1111,11 @@ def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path,
 def plot_sensitivity_boxplots(sensitivity_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
     """Plot boxplots for sensitivity across different segmentation methods by cell type.
     Args:
-    sensitivity_boxplot_data (pd.DataFrame): DataFrame containing sensitivity data for all segmentation methods.
-    output_path (Path): Path to the directory where the plot will be saved.
-    palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
+        sensitivity_boxplot_data (pd.DataFrame): DataFrame containing sensitivity data for all segmentation methods.
+        output_path (Path): Path to the directory where the plot will be saved.
+        palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
+    sensitivity_boxplot_data.to_csv(output_path / 'sensitivity_results.csv', index=True)
     plt.figure(figsize=(14, 8))
     sns.boxplot(
         x='Cell Type', 

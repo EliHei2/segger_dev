@@ -14,13 +14,13 @@ import scanpy as sc
 import os
 
 
-segger_data_dir = Path('./data_tidy/pyg_datasets/bc_embedding_0919')
-models_dir = Path('./models/bc_embedding_0919')
+segger_data_dir = Path('./data_tidy/pyg_datasets/bc_embedding_1001')
+models_dir = Path('./models/bc_embedding_1001_small')
 
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=1,  
-    num_workers=1,  
+    batch_size=4,  
+    num_workers=2,  
 )
 
 dm.setup()
