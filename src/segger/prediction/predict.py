@@ -157,7 +157,7 @@ def get_similarity_scores(
         indices[1] = edge_index[edge_index != -1]
         rows = cp.fromDlpack(to_dlpack(indices[0,:].to('cuda')))
         columns = cp.fromDlpack(to_dlpack(indices[1,:].to('cuda')))
-        print(rows)
+        # print(rows)
         del indices
         values = similarity[edge_index != -1].flatten()
         sparse_result = coo_matrix((cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape)
@@ -419,7 +419,7 @@ def segment(
     seg_combined = pd.concat([segmentation_train, segmentation_val, segmentation_test], ignore_index=True)
 
     # seg_combined = segmentation_test
-    print(seg_combined.columns)
+    # print(seg_combined.columns)
     # print(transcripts_df.id)
     # Drop any unassigned rows
     seg_final = seg_combined.dropna(subset=['segger_cell_id']).reset_index(drop=True)
