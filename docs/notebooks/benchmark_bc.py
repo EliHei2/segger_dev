@@ -58,12 +58,13 @@ plot_general_statistics_plots(segmentations_dict, figures_path, method_colors)
 markers = find_markers(scRNAseq_adata, cell_type_column='celltype_major', pos_percentile=30, neg_percentile=5)
 
 # Annotate spatial segmentations with scRNAseq reference data
-for method in segmentations_dict.keys():
-    segmentations_dict[method] = annotate_query_with_reference(
-        reference_adata=scRNAseq_adata,
-        query_adata=segmentations_dict[method],
-        transfer_column='celltype_major'
-    )
+for method in segmentation_paths.keys():
+    # segmentations_dict[method] = annotate_query_with_reference(
+    #     reference_adata=scRNAseq_adata,
+    #     query_adata=segmentations_dict[method],
+    #     transfer_column='celltype_major'
+    # )
+    segmentations_dict[method].write(segmentation_paths[method])
 
 # Find mutually exclusive genes based on scRNAseq data
 exclusive_gene_pairs = find_mutually_exclusive_genes(

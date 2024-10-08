@@ -48,20 +48,12 @@ faiss = [
 
 rapids11 = [
     "cupy-cuda11x",
-    "cudf-cu11==24.8.*",
-    "cugraph-cu11==24.8.*",
-    "cuvs-cu11==24.8.*",
-    "nvidia-nccl-cu11==2.18.*",
-    "cutensor-cu11"
+    "cuvs-cu11>=24.4.*",
 ]
 
 rapids12 = [
     "cupy-cuda12x",
-    "cudf-cu12==24.8.*",
-    "cugraph-cu12==24.8.*",
-    "cuvs-cu12==24.8.*",
-    "nvidia-nccl-cu12==2.18.*",
-    "cutensor-cu12"
+    "cuvs-cu12>=24.4.*",
 ]
 
 multiprocessing = ["multiprocessing"]
