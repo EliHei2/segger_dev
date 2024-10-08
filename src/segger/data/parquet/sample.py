@@ -389,10 +389,11 @@ class STSampleParquet():
             if frac > 1:
                 msg = f"Arg 'frac' should be <= 1.0, but got {frac}."
                 raise ValueError(msg)
-            n_tiles = self.n_transcripts / tile_size / self.n_workers * frac
-            if int(n_tiles) == 0:
-                msg = f"Sampling parameters would yield 0 total tiles."
-                raise ValueError(msg)
+            if tile_size is not None:
+                n_tiles = self.n_transcripts / tile_size / self.n_workers * frac
+                if int(n_tiles) == 0:
+                    msg = f"Sampling parameters would yield 0 total tiles."
+                    raise ValueError(msg)
         # Propagate errors to logging
         except Exception as e:
             self.logger.error(str(e), exc_info=True)
