@@ -423,9 +423,10 @@ class STSampleParquet():
                     dist_tx=dist_tx,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
-                if pyg_data is not None:
-                    filepath = data_dir / data_type / 'processed' / f'{xt.uid}.pt'
-                    torch.save(pyg_data, filepath)
+                if pyg_data.test_flag:
+                    data_type = 'test_tiles'
+                filepath = data_dir / data_type / 'processed' / f'{xt.uid}.pt'
+                torch.save(pyg_data, filepath)
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
@@ -1183,9 +1184,19 @@ class STTile:
             k=k_bd,
             max_distance=dist,
         )
-        if nbrs_edge_idx.size(1) == 0:
-            logging.warning('No boundary-transcript neighbors found in tile "%s."', self.uid)
-            return None
+
+        num_edges = nbrs_edge_idx.shape[1]
+        # If there are no tx-bd edges, we set a flag to indicate that this data can only be used for prediction
+        pyg_data.test_flag = num_edges == 0
+        if pyg_data.test_flag:
+            return pyg_data
+        
+        # num_possible_edges = pyg_data['tx'].id.shape[0] * pyg_data['bd'].id.shape[0]
+        # if num_possible_edges <= num_edges * neg_sampling_ratio:
+        #     logging.warning(
+        #         'Not enough negative edges to sample in tile "%s".', self.uid
+        #     )
+
         pyg_data["tx", "neighbors", "bd"].edge_index = nbrs_edge_idx
 
         # Set up Transcript-Transcript neighbor edges
@@ -1195,9 +1206,7 @@ class STTile:
             k=k_tx,
             max_distance=dist_tx,
         )
-        if nbrs_edge_idx.size(1) == 0:
-            logging.warning('No transcript-transcript neighbors found in tile "%s."', self.uid)
-            return None
+
         pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
 
         # Find nuclear transcripts
