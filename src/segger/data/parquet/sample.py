@@ -423,8 +423,12 @@ class STSampleParquet():
                     dist_tx=dist_tx,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
-                filepath = data_dir / data_type / 'processed' / f'{xt.uid}.pt'
-                torch.save(pyg_data, filepath)
+                if pyg_data is not None:
+                    if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
+                         # this tile is only for testing
+                        data_type = 'test_tiles'
+                    filepath = data_dir / data_type / 'processed' / f'{xt.uid}.pt'
+                    torch.save(pyg_data, filepath)
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
@@ -1149,6 +1153,32 @@ class STTile:
         # Initialize an empty HeteroData object
         pyg_data = HeteroData()
 
+        # Set up Transcript nodes
+        pyg_data['tx'].id = torch.tensor(
+            self.transcripts[self.settings.transcripts.id].values.astype(int),
+            dtype=torch.int,
+        )
+        pyg_data['tx'].pos = torch.tensor(
+            self.transcripts[self.settings.transcripts.xyz].values,
+            dtype=torch.float32,
+        )
+        pyg_data['tx'].x = self.get_transcript_props()
+
+        # Set up Transcript-Transcript neighbor edges
+        nbrs_edge_idx = self.get_kdtree_edge_index(
+            self.transcripts[self.settings.transcripts.xy],
+            self.transcripts[self.settings.transcripts.xy],
+            k=k_tx,
+            max_distance=dist_tx,
+        )
+
+        # If there are no tx-neighbors-tx edges, skip saving tile
+        if nbrs_edge_idx.shape[1] == 0:
+            logging.warning(f"No tx-neighbors-tx edges found in tile {self.uid}.")
+            return None
+
+        pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
+
         # Set up Boundary nodes
         polygons = utils.get_polygons_from_xy(
             self.boundaries,
@@ -1163,17 +1193,6 @@ class STTile:
             area, convexity, elongation, circularity
         )
 
-        # Set up Transcript nodes
-        pyg_data['tx'].id = torch.tensor(
-            self.transcripts[self.settings.transcripts.id].values.astype(int),
-            dtype=torch.int,
-        )
-        pyg_data['tx'].pos = torch.tensor(
-            self.transcripts[self.settings.transcripts.xyz].values,
-            dtype=torch.float32,
-        )
-        pyg_data['tx'].x = self.get_transcript_props()
-
         # Set up Boundary-Transcript neighbor edges
         dist = np.sqrt(polygons.area.max()) * 10  # heuristic distance
         nbrs_edge_idx = self.get_kdtree_edge_index(
@@ -1184,14 +1203,14 @@ class STTile:
         )
         pyg_data["tx", "neighbors", "bd"].edge_index = nbrs_edge_idx
 
-        # Set up Transcript-Transcript neighbor edges
-        nbrs_edge_idx = self.get_kdtree_edge_index(
-            self.transcripts[self.settings.transcripts.xy],
-            self.transcripts[self.settings.transcripts.xy],
-            k=k_tx,
-            max_distance=dist_tx,
-        )
-        pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
+        # If there are no tx-neighbors-bd edges, we put the tile automatically in test set
+        if nbrs_edge_idx.numel() == 0:
+            logging.warning(f"No tx-neighbors-bd edges found in tile {self.uid}.")
+            pyg_data["tx", "belongs", "bd"].edge_index = torch.tensor([], dtype=torch.long)
+            return pyg_data
+        
+        # Now we identify and split the tx-belongs-bd edges
+        edge_type = ('tx', 'belongs', 'bd')
 
         # Find nuclear transcripts
         tx_cell_ids = self.transcripts[self.settings.boundaries.id]
@@ -1205,11 +1224,15 @@ class STTile:
         row_idx = np.where(is_nuclear)[0]
         col_idx = tx_cell_ids.iloc[row_idx].map(cell_ids_map)
         blng_edge_idx = torch.tensor(np.stack([row_idx, col_idx])).long()
-        pyg_data["tx", "belongs", "bd"].edge_index = blng_edge_idx
+        pyg_data[edge_type].edge_index = blng_edge_idx
 
-        # Add negative edges for training
+        # If there are no tx-belongs-bd edges, flag tile as test only (cannot be used for training)
+        if blng_edge_idx.numel() == 0:
+            logging.warning(f"No tx-belongs-bd edges found in tile {self.uid}.")
+            return pyg_data
+
+        # If there are tx-bd edges, add negative edges for training
         # Need more time-efficient solution than this
-        edge_type = ('tx', 'belongs', 'bd')
         transform = RandomLinkSplit(
             num_val=0,
             num_test=0,
