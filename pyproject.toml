@@ -48,12 +48,12 @@ faiss = [
 
 rapids11 = [
     "cupy-cuda11x",
-    "cuvs-cu11>=24.4.*",
+    "cuvs-cu11==24.4.*",
 ]
 
 rapids12 = [
     "cupy-cuda12x",
-    "cuvs-cu12>=24.4.*",
+    "cuvs-cu12==24.4.*",
 ]
 
 multiprocessing = ["multiprocessing"]
