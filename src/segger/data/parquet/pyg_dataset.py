@@ -64,4 +64,12 @@ class STPyGDataset(InMemoryDataset):
         filepath = Path(self.processed_dir) / self.processed_file_names[idx]
         data = torch.load(filepath)
         data['tx'].x = data['tx'].x.to_dense()
+        if data['tx'].x.dim() == 1:
+            data['tx'].x = data['tx'].x.unsqueeze(1)
+        assert data['tx'].x.dim() == 2
+        # this is an issue in PyG's RandomLinkSplit, dimensions are not consistent if there is only one edge in the graph
+        if data['tx', 'belongs', 'bd'].edge_label_index.dim() == 1:
+            data['tx', 'belongs', 'bd'].edge_label_index = data['tx', 'belongs', 'bd'].edge_label_index.unsqueeze(1)
+            data['tx', 'belongs', 'bd'].edge_label = data['tx', 'belongs', 'bd'].edge_label.unsqueeze(0)
+        assert data['tx', 'belongs', 'bd'].edge_label_index.dim() == 2
         return data
