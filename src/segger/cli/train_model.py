@@ -4,9 +4,12 @@ import os
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging
+from argparse import Namespace
+
+# Path to default YAML configuration file
+train_yml = Path(__file__).parent / 'configs' / 'train' / 'default.yaml'
 
 help_msg = "Train the Segger segmentation model."
-
 @click.command(name="train_model", help=help_msg)
 @add_options(config_path=train_yml)
 @click.option('--dataset_dir', type=Path, required=True, help='Directory containing the processed Segger dataset.')
@@ -25,12 +28,7 @@ help_msg = "Train the Segger segmentation model."
 @click.option('--devices', type=int, default=4, help='Number of devices (GPUs) to use.') 
 @click.option('--strategy', type=str, default='auto', help='Training strategy for the trainer.') 
 @click.option('--precision', type=str, default='16-mixed', help='Precision for training.') 
-def train_model(dataset_dir: Path, models_dir: Path, sample_tag: str,
-                init_emb: int = 8, hidden_channels: int = 32, num_tx_tokens: int = 500,
-                out_channels: int = 8, heads: int = 2, num_mid_layers: int = 2,
-                batch_size: int = 4, num_workers: int = 2, 
-                accelerator: str = 'cuda', max_epochs: int = 200,
-                devices: int = 4, strategy: str = 'auto', precision: str = '16-mixed'):
+def train_model(args: Namespace):
 
     # Setup logging
     ch = logging.StreamHandler()
@@ -50,9 +48,9 @@ def train_model(dataset_dir: Path, models_dir: Path, sample_tag: str,
     # Load datasets
     logging.info("Loading Xenium datasets...")
     dm = SeggerDataModule(
-        data_dir=dataset_dir,
-        batch_size=batch_size,  # Hard-coded batch size
-        num_workers=num_workers,  # Hard-coded number of workers
+        data_dir=args.dataset_dir,
+        batch_size=args.batch_size,  # Hard-coded batch size
+        num_workers=args.num_workers,  # Hard-coded number of workers
     )
 
     dm.setup()
@@ -62,25 +60,25 @@ def train_model(dataset_dir: Path, models_dir: Path, sample_tag: str,
     logging.info("Initializing Segger model and trainer...")
     metadata = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
     ls = LitSegger(
-        num_tx_tokens=num_tx_tokens,
-        init_emb=init_emb,
-        hidden_channels=hidden_channels,
-        out_channels=out_channels,  # Hard-coded value
-        heads=heads,  # Hard-coded value
-        num_mid_layers=num_mid_layers,  # Hard-coded value
+        num_tx_tokens=args.num_tx_tokens,
+        init_emb=args.init_emb,
+        hidden_channels=args.hidden_channels,
+        out_channels=args.out_channels,  # Hard-coded value
+        heads=args.heads,  # Hard-coded value
+        num_mid_layers=args.num_mid_layers,  # Hard-coded value
         aggr='sum',  # Hard-coded value
         metadata=metadata,
     )
 
     # Initialize the Lightning trainer
     trainer = Trainer(
-        accelerator=accelerator,  # Directly use the specified accelerator
-        strategy=strategy,  # Hard-coded value
-        precision=precision,  # Hard-coded value
-        devices=devices,  # Hard-coded value
-        max_epochs=max_epochs,  # Hard-coded value
-        default_root_dir=models_dir,
-        logger=CSVLogger(models_dir),
+        accelerator=args.accelerator,  # Directly use the specified accelerator
+        strategy=args.strategy,  # Hard-coded value
+        precision=args.precision,  # Hard-coded value
+        devices=args.devices,  # Hard-coded value
+        max_epochs=args.max_epochs,  # Hard-coded value
+        default_root_dir=args.models_dir,
+        logger=CSVLogger(args.models_dir),
     )
     
     logging.info("Done.")
@@ -93,7 +91,6 @@ def train_model(dataset_dir: Path, models_dir: Path, sample_tag: str,
     )
     logging.info("Done.")
 
-train_yml = Path(__file__).parent / 'configs' / 'train' / 'default.yaml'
 
 @click.command(name="slurm", help="Train on Slurm cluster")
 @add_options(config_path=train_yml)
@@ -105,3 +102,6 @@ def train():
     pass
 
 train.add_command(train_slurm)
+
+if __name__ == '__main__':
+    train_model()

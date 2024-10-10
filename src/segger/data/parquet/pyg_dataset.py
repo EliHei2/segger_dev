@@ -63,5 +63,9 @@ class STPyGDataset(InMemoryDataset):
         """
         filepath = Path(self.processed_dir) / self.processed_file_names[idx]
         data = torch.load(filepath)
-        data['tx'].x = data['tx'].x.to_dense()
+        data['tx'].x = data['tx'].x.to_dense().unsqueeze(1)
+        # this is an issue in PyG's RandomLinkSplit, dimensions are not consistent if there is only one edge in the graph
+        if data['tx', 'belongs', 'bd'].edge_label_index.shape.__len__() < 2:
+            data['tx', 'belongs', 'bd'].edge_label_index = data['tx', 'belongs', 'bd'].edge_label_index.unsqueeze(1)
+            data['tx', 'belongs', 'bd'].edge_label = data['tx', 'belongs', 'bd'].edge_label.unsqueeze(0)
         return data
