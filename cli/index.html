@@ -1,0 +1,1290 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fast and accurate cell segmentation for single-molecule spatial omics">
+      
+      
+        <meta name="author" content="Elyas Heidari">
+      
+      
+        <link rel="canonical" href="https://EliHei2.github.io/segger_dev/cli/">
+      
+      
+        <link rel="prev" href="../notebooks/segger_tutorial/">
+      
+      
+        <link rel="next" href="../api/data/">
+      
+      
+      <link rel="icon" href="../images/logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.40">
+    
+    
+      
+        <title>CLI - segger Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=ubuntu:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"ubuntu";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/termynal@0.0.1/termynal.css">
+    
+      <link rel="stylesheet" href="../termynal.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#segger-command-line-interface" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="segger Documentation" class="md-header__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            segger Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CLI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="segger Documentation" class="md-nav__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../images/logo.png" alt="logo">
+
+    </a>
+    segger Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/data_creation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dataset Creation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/segger_tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction to Segger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    CLI
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    CLI
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#segger-command-line-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segger Command Line Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Segger Command Line Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-creating-a-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Creating a Dataset
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Creating a Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Updates:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-training-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Training a Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Training a Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-making-predictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Making Predictions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Making Predictions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-utility-commands-and-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Utility Commands and Reports
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Utility Commands and Reports">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters-for-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters for check
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameters-for-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters for report
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/prediction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prediction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>CLI</h1>
+
+<h2 id="segger-command-line-interface">Segger Command Line Interface<a class="headerlink" href="#segger-command-line-interface" title="Permanent link">&para;</a></h2>
+<p>This section will simulate typing the <code>segger --help</code> command output.</p>
+<div class="termy" data-termynal data-ty-macos data-ty-title="bash"><span data-ty="input" data-ty-prompt="$">segger --help</span><span data-ty><br>Usage: segger [OPTIONS] COMMAND [ARGS]...<br><br>╭─ Commands ─────────────────────────────────────────────────────╮<br>│ create_dataset  Create a dataset for spatial transcriptomics     │<br>│ train           Train the model using the prepared dataset       │<br>│ predict         Run predictions using a trained model            │<br>╰────────────────────────────────────────────────────────────────╯<br></span></div>
+
+<h3 id="1-creating-a-dataset">1. Creating a Dataset<a class="headerlink" href="#1-creating-a-dataset" title="Permanent link">&para;</a></h3>
+<p>The <code>create_dataset</code> command helps you build a dataset for spatial transcriptomics. Here’s a breakdown of the options available:</p>
+<div class="termy" data-termynal data-ty-macos data-ty-title="bash"><span data-ty>// Example: Create a dataset for spatial transcriptomics<br>python create_dataset create_dataset \<br>    --dataset_dir /path/to/dataset \<br>    --data_dir /path/to/save/processed_data \<br>    --sample_tag sample_name \<br>    --transcripts_file transcripts.parquet \<br>    --boundaries_file nucleus_boundaries.parquet \<br>    --x_size 300 \<br>    --y_size 300 \<br>    --d_x 280 \<br>    --d_y 280 \<br>    --margin_x 10 \<br>    --margin_y 10 \<br>    --r_tx 5 \<br>    --k_tx 5 \<br>    --val_prob 0.1 \<br>    --test_prob 0.2 \<br>    --neg_sampling_ratio 5 \<br>    --sampling_rate 1 \<br>    --workers 4 \<br>    --gpu<br></span></div>
+
+<h4 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dataset_type</code></td>
+<td>Specifies the type of dataset (e.g., <code>xenium</code>, <code>merscope</code>).</td>
+<td><code>xenium</code></td>
+</tr>
+<tr>
+<td><code>dataset_dir</code></td>
+<td>Path to the directory where raw data is stored.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>sample_tag</code></td>
+<td>Tag to identify the dataset, useful for version control.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>transcripts_file</code></td>
+<td>File path to the transcript data in Parquet format.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>boundaries_file</code></td>
+<td>File path to the nucleus or cell boundaries data in Parquet format.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>data_dir</code></td>
+<td>Directory to store processed datasets (used during model training).</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>x_size</code>, <code>y_size</code></td>
+<td>Size of the tiles in the x and y directions.</td>
+<td><code>300</code></td>
+</tr>
+<tr>
+<td><code>d_x</code>, <code>d_y</code></td>
+<td>Step size in the x and y directions for overlapping tiles.</td>
+<td><code>280</code></td>
+</tr>
+<tr>
+<td><code>margin_x</code>, <code>margin_y</code></td>
+<td>Additional margins added to each tile in the x and y directions.</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>r_tx</code></td>
+<td>Radius for computing the neighborhood graph for transcripts.</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>k_tx</code></td>
+<td>Number of nearest neighbors for the neighborhood graph.</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>val_prob</code></td>
+<td>Proportion of the dataset used for validation.</td>
+<td><code>0.1</code></td>
+</tr>
+<tr>
+<td><code>test_prob</code></td>
+<td>Proportion of the dataset used for testing.</td>
+<td><code>0.2</code></td>
+</tr>
+<tr>
+<td><code>compute_labels</code></td>
+<td>Flag to enable or disable the computation of labels for segmentation.</td>
+<td><code>True</code></td>
+</tr>
+<tr>
+<td><code>neg_sampling_ratio</code></td>
+<td>Approximate ratio for negative sampling.</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>sampling_rate</code></td>
+<td>Proportion of the dataset to sample (useful for large datasets).</td>
+<td><code>1</code> (no sampling)</td>
+</tr>
+<tr>
+<td><code>workers</code></td>
+<td>Number of CPU cores to use for parallel processing.</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>gpu</code></td>
+<td>Whether to use a GPU for processing.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-updates">Key Updates:<a class="headerlink" href="#key-updates" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bounding box options (<code>x_min</code>, <code>y_min</code>, etc.)</strong> were removed.</li>
+<li><strong><code>x_size</code>, <code>y_size</code></strong> now refer to tile sizes, not bounding boxes.</li>
+<li><strong><code>MerscopeSample</code></strong> is added as a supported dataset type alongside <code>XeniumSample</code>.</li>
+<li><strong><code>r_tx</code> and <code>k_tx</code></strong> refer to parameters for computing neighborhood graphs.</li>
+<li><strong><code>neg_sampling_ratio</code></strong> is included for negative sampling.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Customizing Your Dataset</p>
+<ul>
+<li><strong>dataset_type</strong>: Defines the type of spatial transcriptomics data.</li>
+<li><strong>x_size, y_size</strong>: Bounding box dimensions are important for memory efficiency.</li>
+<li><strong>val_prob, test_prob</strong>: Adjust these probabilities based on the need for model validation and testing.</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Faster Dataset Creation</p>
+<p>You can reduce the <strong>sampling_rate</strong> to process only a subset of your dataset, which is useful for large datasets.</p>
+</div>
+<hr />
+<h3 id="2-training-a-model">2. Training a Model<a class="headerlink" href="#2-training-a-model" title="Permanent link">&para;</a></h3>
+<p>The <code>train</code> command initializes and trains a model using the dataset created. Here are the key parameters:</p>
+<div class="termy" data-termynal data-ty-macos data-ty-title="bash"><span data-ty>// Example: Train the model using SLURM</span><span data-ty="input" data-ty-prompt="$">segger train slurm \
+    --data_dir data_tidy/pyg_datasets \
+    --batch_size_train 32 \
+    --batch_size_val 16 \
+    --init_emb 128 \
+    --hidden_channels 256 \
+    --out_channels 3 \
+    --heads 8 \
+    --aggr mean \
+    --accelerator gpu \
+    --strategy ddp \
+    --precision 16 \
+    --devices 4 \
+    --epochs 100 \
+    --model_dir /path/to/save/model/checkpoints</span><span data-ty></span></div>
+
+<h4 id="parameters_1">Parameters<a class="headerlink" href="#parameters_1" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data_dir</code></td>
+<td>Directory containing the dataset to be used for training.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>batch_size_train</code></td>
+<td>Number of samples to process per training batch.</td>
+<td><code>32</code></td>
+</tr>
+<tr>
+<td><code>batch_size_val</code></td>
+<td>Number of samples to process per validation batch.</td>
+<td><code>16</code></td>
+</tr>
+<tr>
+<td><code>init_emb</code></td>
+<td>Size of the initial embedding for the input data.</td>
+<td><code>128</code></td>
+</tr>
+<tr>
+<td><code>hidden_channels</code></td>
+<td>Number of hidden units in each layer of the neural network.</td>
+<td><code>256</code></td>
+</tr>
+<tr>
+<td><code>out_channels</code></td>
+<td>Number of output channels.</td>
+<td><code>3</code></td>
+</tr>
+<tr>
+<td><code>heads</code></td>
+<td>Number of attention heads used in graph attention layers.</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td><code>aggr</code></td>
+<td>Aggregation method for attention layers (e.g., <code>mean</code>, <code>sum</code>).</td>
+<td><code>mean</code></td>
+</tr>
+<tr>
+<td><code>accelerator</code></td>
+<td>Device used for training (e.g., <code>gpu</code> or <code>cpu</code>).</td>
+<td><code>gpu</code></td>
+</tr>
+<tr>
+<td><code>strategy</code></td>
+<td>Strategy for distributed training (e.g., <code>ddp</code> for Distributed Data Parallel).</td>
+<td><code>ddp</code></td>
+</tr>
+<tr>
+<td><code>precision</code></td>
+<td>Floating-point precision for training (e.g., <code>16</code> for FP16).</td>
+<td><code>16</code></td>
+</tr>
+<tr>
+<td><code>devices</code></td>
+<td>Number of devices (GPUs or CPUs) to use during training.</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td><code>epochs</code></td>
+<td>Number of training epochs.</td>
+<td><code>100</code></td>
+</tr>
+<tr>
+<td><code>model_dir</code></td>
+<td>Directory to save model checkpoints.</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Adjusting for Your Hardware</p>
+<ul>
+<li><strong>batch_size_train</strong>: For larger datasets, you might need to decrease this value based on your GPU memory.</li>
+<li><strong>epochs</strong>: Increasing the number of epochs can lead to better model performance but will take longer to train.</li>
+</ul>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Ensure Correct GPU Setup</p>
+<p>Before using the <code>--accelerator gpu</code> flag, make sure your system supports GPU computation and that CUDA is properly installed.</p>
+</div>
+<hr />
+<h3 id="3-making-predictions">3. Making Predictions<a class="headerlink" href="#3-making-predictions" title="Permanent link">&para;</a></h3>
+<p>After training the model, use the <code>predict</code> command to make predictions on new data.</p>
+<div class="termy" data-termynal data-ty-macos data-ty-title="bash"><span data-ty>// Example: Make predictions using a trained model</span><span data-ty="input" data-ty-prompt="$">segger predict \
+    --dataset_path /path/to/new/dataset \
+    --checkpoint_path /path/to/saved/checkpoint \
+    --output_path /path/to/save/predictions.csv \
+    --batch_size 16 \
+    --workers 4 \
+    --score_cut 0.5 \
+    --use_cc true</span><span data-ty></span></div>
+
+<h4 id="parameters_2">Parameters<a class="headerlink" href="#parameters_2" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dataset_path</code></td>
+<td>Path to the dataset for which predictions will be made.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>checkpoint_path</code></td>
+<td>Path to the saved model checkpoint from training.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>output_path</code></td>
+<td>File where the predictions will be saved.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>Number of samples processed simultaneously during prediction.</td>
+<td><code>16</code></td>
+</tr>
+<tr>
+<td><code>workers</code></td>
+<td>Number of CPU cores used for parallel processing during prediction.</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td><code>score_cut</code></td>
+<td>Cutoff threshold for confidence scores in predictions.</td>
+<td><code>0.5</code></td>
+</tr>
+<tr>
+<td><code>use_cc</code></td>
+<td>Enable connected component analysis to refine predictions.</td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Improve Prediction Efficiency</p>
+<ul>
+<li><strong>batch_size</strong>: Adjust this based on the size of the dataset and available GPU memory.</li>
+<li><strong>use_cc</strong>: Enabling connected component analysis can improve the accuracy of transcript assignments</li>
+</ul>
+</div>
+<p>.</p>
+<hr />
+<h3 id="4-utility-commands-and-reports">4. Utility Commands and Reports<a class="headerlink" href="#4-utility-commands-and-reports" title="Permanent link">&para;</a></h3>
+<p>Segger includes utility commands for checking dataset and model setup as well as generating reports.</p>
+<div class="termy" data-termynal data-ty-macos data-ty-title="bash"><span data-ty>// Example: Check dataset and model setup</span><span data-ty="input" data-ty-prompt="$">segger check \
+    --dataset_dir data_raw/xenium \
+    --model_dir /path/to/model/checkpoints</span><span data-ty><br>// Example: Generate a report</span><span data-ty="input" data-ty-prompt="$">segger report \
+    --dataset_path /path/to/dataset \
+    --output_path /path/to/report.html</span><span data-ty></span></div>
+
+<h4 id="parameters-for-check">Parameters for <code>check</code><a class="headerlink" href="#parameters-for-check" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dataset_dir</code></td>
+<td>Path to the raw dataset.</td>
+</tr>
+<tr>
+<td><code>model_dir</code></td>
+<td>Path to the directory where model checkpoints are saved.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="parameters-for-report">Parameters for <code>report</code><a class="headerlink" href="#parameters-for-report" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dataset_path</code></td>
+<td>Path to the dataset for which the report will be generated.</td>
+</tr>
+<tr>
+<td><code>output_path</code></td>
+<td>Path where the HTML report will be saved.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Utility Commands</p>
+<ul>
+<li>Use <code>check</code> to verify that your dataset and model are correctly set up.</li>
+<li>The <code>report</code> command provides a detailed HTML output of your model's performance.</li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+        <script src="../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://unpkg.com/termynal@0.0.1/termynal.js"></script>
+      
+        <script src="../termynal.js"></script>
+      
+    
+  </body>
+</html>
