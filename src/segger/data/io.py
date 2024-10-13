@@ -167,6 +167,7 @@ class SpatialTranscriptomicsSample(ABC):
         ]
 
         # Load the dataset lazily with filters applied for the bounding box
+        columns = set(dd.read_parquet(file_path).columns)
         transcripts_df = dd.read_parquet(file_path, columns=columns_to_read, filters=filters).compute()
 
         # Convert transcript and cell IDs to strings lazily
@@ -253,12 +254,48 @@ class SpatialTranscriptomicsSample(ABC):
         ]
 
         # Load the dataset lazily with filters applied for the bounding box
-        boundaries_df = dd.read_parquet(path, columns=columns_to_read, filters=filters)
+        columns = set(dd.read_parquet(path).columns)
+        if "geometry" in columns:
+            bbox = (x_min, y_min, x_max, y_max)
+            # TODO: check that SpatialData objects write the "bbox covering metadata" to the parquet file
+            gdf = dgpd.read_parquet(path, bbox=bbox)
+            id_col, x_col, y_col = (
+                self.keys.CELL_ID.value,
+                self.keys.BOUNDARIES_VERTEX_X.value,
+                self.keys.BOUNDARIES_VERTEX_Y.value,
+            )
 
-        # Convert the cell IDs to strings lazily
-        boundaries_df[self.keys.CELL_ID.value] = boundaries_df[self.keys.CELL_ID.value].apply(
-            lambda x: str(x) if pd.notnull(x) else None, meta=("cell_id", "object")
-        )
+            # Function to expand each polygon into a list of vertices
+            def expand_polygon(row):
+                expanded_data = []
+                polygon = row["geometry"]
+                if polygon.geom_type == "Polygon":
+                    exterior_coords = polygon.exterior.coords
+                    for x, y in exterior_coords:
+                        expanded_data.append({id_col: row.name, x_col: x, y_col: y})
+                else:
+                    # Instead of expanding the gdf and then having code later to recreate it (when computing the pyg graph)
+                    # we could directly have this function returning a Dask GeoDataFrame. This means that we don't need
+                    # to implement this else black
+                    raise ValueError(f"Unsupported geometry type: {polygon.geom_type}")
+                return expanded_data
+
+            # Apply the function to each partition and collect results
+            def process_partition(df):
+                expanded_data = [expand_polygon(row) for _, row in df.iterrows()]
+                # Flatten the list of lists
+                flattened_data = [item for sublist in expanded_data for item in sublist]
+                return pd.DataFrame(flattened_data)
+
+            # Use map_partitions to apply the function and convert it into a Dask DataFrame
+            boundaries_df = gdf.map_partitions(process_partition, meta={id_col: str, x_col: float, y_col: float})
+        else:
+            boundaries_df = dd.read_parquet(path, columns=columns_to_read, filters=filters)
+
+            # Convert the cell IDs to strings lazily
+            boundaries_df[self.keys.CELL_ID.value] = boundaries_df[self.keys.CELL_ID.value].apply(
+                lambda x: str(x) if pd.notnull(x) else None, meta=("cell_id", "object")
+            )
 
         if self.verbose:
             print(f"Loaded boundaries from '{path}' within bounding box ({x_min}, {x_max}, {y_min}, {y_max}).")
@@ -272,11 +309,6 @@ class SpatialTranscriptomicsSample(ABC):
         instead of one-hot encodings and store the lookup table for later mapping.
         """
         # Load the Parquet file metadata
-        ##
-        # luca's experiment
-        import time
-
-        # old method
         parquet_file = pq.read_table(self.transcripts_path)
 
         # Get the column names for X, Y, and feature names from the class's keys
@@ -300,7 +332,7 @@ class SpatialTranscriptomicsSample(ABC):
             "UnassignedCodeword_",
         )
 
-        row_group_size = 1_000_000
+        row_group_size = 4_000_000
         start = 0
         n = len(parquet_file)
         while start < n:
@@ -486,7 +518,7 @@ class SpatialTranscriptomicsSample(ABC):
             # if self.verbose: print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
             polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
 
-        if polygons_gdf.empty():
+        if polygons_gdf.empty:
             raise ValueError("No valid polygons were generated from the boundaries.")
         else:
             if self.verbose:
@@ -513,6 +545,12 @@ class SpatialTranscriptomicsSample(ABC):
         # Apply the check_overlap function in parallel to each row using Dask's map_partitions
         if self.verbose:
             print(f"Starting overlap computation for transcripts with the boundary polygons.")
+        if isinstance(transcripts_df, pd.DataFrame):
+            # luca: I found this bug here
+            warnings.warn("BUG! This function expects Dask DataFrames, not Pandas DataFrames.")
+            # if we want to really have the below working in parallel, we need to add n_partitions>1 here
+            transcripts_df = dd.from_pandas(transcripts_df, npartitions=1)
+            transcripts_df.compute().columns
         transcripts_df = transcripts_df.map_partitions(
             lambda df: df.assign(
                 **{
@@ -986,7 +1024,9 @@ class SpatialTranscriptomicsSample(ABC):
         if self.keys.OVERLAPS_BOUNDARY.value not in transcripts_df.columns:
             if self.verbose:
                 print(f"Computing overlaps for transcripts...")
-            transcripts_df = self.compute_transcript_overlap_with_boundaries(transcripts_df, bd_gdf, scale_factor=1.0)
+            transcripts_df = self.compute_transcript_overlap_with_boundaries(
+                transcripts_df, polygons_gdf=bd_gdf, scale_factor=1.0
+            )
 
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
         if self.verbose:
@@ -1099,3 +1139,65 @@ class MerscopeSample(SpatialTranscriptomicsSample):
         # Add custom Merscope-specific filtering logic if needed
         # For now, apply only the quality value filter
         return transcripts_df[transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv]
+
+
+class SpatialDataSample(SpatialTranscriptomicsSample):
+    def __init__(
+        self,
+        transcripts_df: dd.DataFrame = None,
+        transcripts_radius: int = 10,
+        boundaries_graph: bool = False,
+        embedding_df: pd.DataFrame = None,
+        feature_name: str | None = None,
+        verbose: bool = True,
+    ):
+        if feature_name is not None:
+            # luca: just a quick hack for now, I propose to use dataclasses instead of enums to address this
+            SpatialDataKeys.FEATURE_NAME._value_ = feature_name
+        else:
+            raise ValueError(
+                "the automatic determination of a feature_name from a SpatialData object is not enabled yet"
+            )
+
+        super().__init__(
+            transcripts_df, transcripts_radius, boundaries_graph, embedding_df, SpatialDataKeys, verbose=verbose
+        )
+
+    def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
+        """
+        Filters transcripts based on quality value and removes unwanted transcripts for Xenium using Dask.
+
+        Parameters:
+            transcripts_df (dd.DataFrame): The Dask DataFrame containing transcript data.
+            min_qv (float, optional): The minimum quality value threshold for filtering transcripts.
+
+        Returns:
+            dd.DataFrame: The filtered Dask DataFrame.
+        """
+        filter_codewords = (
+            "NegControlProbe_",
+            "antisense_",
+            "NegControlCodeword_",
+            "BLANK_",
+            "DeprecatedCodeword_",
+            "UnassignedCodeword_",
+        )
+
+        # Ensure FEATURE_NAME is a string type for proper filtering (compatible with Dask)
+        # Handle potential bytes to string conversion for Dask DataFrame
+        if pd.api.types.is_object_dtype(transcripts_df[self.keys.FEATURE_NAME.value]):
+            transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(
+                lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
+            )
+
+        # Apply the quality value filter using Dask
+        mask_quality = transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv
+
+        # Apply the filter for unwanted codewords using Dask string functions
+        mask_codewords = ~transcripts_df[self.keys.FEATURE_NAME.value].str.startswith(filter_codewords)
+
+        # Combine the filters and return the filtered Dask DataFrame
+        mask = mask_quality & mask_codewords
+
+        # Return the filtered DataFrame lazily
+        return transcripts_df[mask]

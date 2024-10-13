@@ -85,3 +85,31 @@ class MerscopeKeys(Enum):
     COUNTS_CELL_KEY = "cell"
     CELL_X = "center_x"
     CELL_Y = "center_y"
+
+
+class SpatialDataKeys(Enum):
+    """Keys for *MERSCOPE* data (Vizgen platform)."""
+
+    # File mappings
+    TRANSCRIPTS_FILE = "detected_transcripts.csv"
+    BOUNDARIES_FILE = "cell_boundaries.parquet"
+    CELL_METADATA_FILE = "cell_metadata.csv"
+
+    # Cell identifiers
+    CELL_ID = "cell_id"
+    TRANSCRIPTS_ID = "transcript_id"
+
+    # Coordinates and locations
+    TRANSCRIPTS_X = "x"
+    TRANSCRIPTS_Y = "y"
+    BOUNDARIES_VERTEX_X = "center_x"
+    BOUNDARIES_VERTEX_Y = "center_y"
+
+    # Metadata
+    FEATURE_NAME = "<placeholder>"
+    QUALITY_VALUE = "qv"
+    OVERLAPS_BOUNDARY = "overlaps_nucleus"
+    METADATA_CELL_KEY = None
+    COUNTS_CELL_KEY = None
+    CELL_X = None
+    CELL_Y = None
