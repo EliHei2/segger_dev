@@ -8,16 +8,20 @@ from pathlib import Path
 from lightning.pytorch.plugins.environments import LightningEnvironment
 from matplotlib import pyplot as plt
 import seaborn as sns
+
 # import pandas as pd
 from segger.data.utils import calculate_gene_celltype_abundance_embedding
 import scanpy as sc
 import os
+
 # import Dask.DataFrame as dd
 
-os.environ['DASK_DAEMON'] = 'False'
+os.environ["DASK_DAEMON"] = "False"
 
-xenium_data_dir = Path('/omics/odcf/analysis/OE0606_projects/oncolgy_data_exchange/20230831-pan-cns-TMA-Xenium/output-XETG00078__0010722__TMA_AKSI__20230831__151713/')
-segger_data_dir = Path('./data_tidy/pyg_datasets/pan_cns_AKSI')
+xenium_data_dir = Path(
+    "/omics/odcf/analysis/OE0606_projects/oncolgy_data_exchange/20230831-pan-cns-TMA-Xenium/output-XETG00078__0010722__TMA_AKSI__20230831__151713/"
+)
+segger_data_dir = Path("./data_tidy/pyg_datasets/pan_cns_AKSI")
 # models_dir = Path('./models/bc_embedding_1001')
 
 # scRNAseq_path = '/omics/groups/OE0606/internal/tangy/tasks/schier/data/atals_filtered.h5ad'
@@ -31,13 +35,11 @@ segger_data_dir = Path('./data_tidy/pyg_datasets/pan_cns_AKSI')
 # gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(scRNAseq, celltype_column)
 
 
-
-
 # Setup Xenium sample to create dataset
-xs = XeniumSample(verbose=False) # , embedding_df=gene_celltype_abundance_embedding)
+xs = XeniumSample(verbose=False)  # , embedding_df=gene_celltype_abundance_embedding)
 xs.set_file_paths(
-    transcripts_path=xenium_data_dir / 'transcripts.parquet',
-    boundaries_path=xenium_data_dir / 'nucleus_boundaries.parquet',
+    transcripts_path=xenium_data_dir / "transcripts.parquet",
+    boundaries_path=xenium_data_dir / "nucleus_boundaries.parquet",
 )
 
 # dd.read_parquet(transcripts_path[0])
@@ -59,8 +61,7 @@ try:
         k_tx=5,
         val_prob=0.3,
         test_prob=0.1,
-        num_workers=6
+        num_workers=6,
     )
 except AssertionError as err:
-    print(f'Dataset already exists at {segger_data_dir}')
-
+    print(f"Dataset already exists at {segger_data_dir}")

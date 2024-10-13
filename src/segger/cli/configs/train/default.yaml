@@ -44,7 +44,7 @@ num_workers:
   help: Number of workers for data loading.
 accelerator:
   type: str
-  default: 'cuda'
+  default: "cuda"
   help: Device type to use for training (e.g., "cuda", "cpu").
 max_epochs:
   type: int
@@ -56,9 +56,9 @@ devices:
   help: Number of devices (GPUs) to use.
 strategy:
   type: str
-  default: 'auto'
+  default: "auto"
   help: Training strategy for the trainer.
 precision:
   type: str
-  default: '16-mixed'
+  default: "16-mixed"
   help: Precision for training.

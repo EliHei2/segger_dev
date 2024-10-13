@@ -3,10 +3,11 @@ import shapely
 import numpy as np
 import math
 
-class NDTree():
+
+class NDTree:
     """
-    NDTree is a data structure for recursively splitting multi-dimensional data 
-    into smaller regions until each leaf node contains less than or equal to a 
+    NDTree is a data structure for recursively splitting multi-dimensional data
+    into smaller regions until each leaf node contains less than or equal to a
     specified number of points. It stores these regions in a balanced binary
     tree.
 
@@ -19,7 +20,7 @@ class NDTree():
     idx : np.ndarray
         The indices of the input data points.
     boxes : list
-        A list to store the bounding boxes (as shapely polygons) of each region 
+        A list to store the bounding boxes (as shapely polygons) of each region
         in the tree.
     rect : Rectangle
         The bounding box of the entire input data space.
@@ -46,7 +47,8 @@ class NDTree():
         self.rect = Rectangle(data.min(0), data.max(0))
         self.tree = innernode(self.n, self.idx, self.rect, self)
 
-class innernode():
+
+class innernode:
     """
     Represents a node in the NDTree. Each node either stores a bounding box for
     the data it contains (leaf nodes) or splits the data into two child nodes.
@@ -66,7 +68,7 @@ class innernode():
     split_point : float
         The value along the split dimension used to divide the data.
     less : innernode
-        The child node containing data points less than or equal to the split 
+        The child node containing data points less than or equal to the split
         point.
     greater : innernode
         The child node containing data points greater than the split point.
@@ -85,10 +87,10 @@ class innernode():
         else:
             box = shapely.box(*self.rect.mins, *self.rect.maxes)
             self.tree.boxes.append(box)
-    
+
     def split(self):
         """
-        Recursively splits the node's data into two child nodes along the 
+        Recursively splits the node's data into two child nodes along the
         dimension with the largest spread.
         """
         less = math.floor(self.n // 2)
@@ -98,19 +100,6 @@ class innernode():
         data = data[:, self.split_dim]
         self.split_point = np.quantile(data, less / (less + greater))
         mask = data <= self.split_point
-        less_rect, greater_rect = self.rect.split(
-            self.split_dim,
-            self.split_point
-        )
-        self.less = innernode(
-            less,
-            self.idx[mask],
-            less_rect,
-            self.tree
-        )
-        self.greater = innernode(
-            greater,
-            self.idx[~mask],
-            greater_rect,
-            self.tree
-        )
+        less_rect, greater_rect = self.rect.split(self.split_dim, self.split_point)
+        self.less = innernode(less, self.idx[mask], less_rect, self.tree)
+        self.greater = innernode(greater, self.idx[~mask], greater_rect, self.tree)

@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 from urllib import request
-from segger.data.utils import XeniumSample
+from segger.data.io import XeniumSample
 
 
 def download_file(url, dest):
@@ -30,9 +30,7 @@ def main(args):
     download_file(transcripts_url, transcripts_path)
     download_file(nuclei_url, nuclei_path)
 
-    xs = XeniumSample().load_transcripts(
-        path=transcripts_path, min_qv=args.min_qv
-    )
+    xs = XeniumSample().load_transcripts(path=transcripts_path, min_qv=args.min_qv)
     xs.load_nuclei(path=nuclei_path)
 
     if args.parallel:
@@ -83,9 +81,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Create dataset from Xenium Human Pancreatic data."
-    )
+    parser = argparse.ArgumentParser(description="Create dataset from Xenium Human Pancreatic data.")
     parser.add_argument(
         "--raw_data_dir",
         type=str,
@@ -104,9 +100,7 @@ if __name__ == "__main__":
         required=True,
         help="URL for transcripts data.",
     )
-    parser.add_argument(
-        "--nuclei_url", type=str, required=True, help="URL for nuclei data."
-    )
+    parser.add_argument("--nuclei_url", type=str, required=True, help="URL for nuclei data.")
     parser.add_argument(
         "--min_qv",
         type=int,
@@ -125,21 +119,11 @@ if __name__ == "__main__":
         default=180,
         help="Step size in y direction for tiles.",
     )
-    parser.add_argument(
-        "--x_size", type=int, default=200, help="Width of each tile."
-    )
-    parser.add_argument(
-        "--y_size", type=int, default=200, help="Height of each tile."
-    )
-    parser.add_argument(
-        "--margin_x", type=int, default=None, help="Margin in x direction."
-    )
-    parser.add_argument(
-        "--margin_y", type=int, default=None, help="Margin in y direction."
-    )
-    parser.add_argument(
-        "--r_tx", type=int, default=3, help="Radius for building the graph."
-    )
+    parser.add_argument("--x_size", type=int, default=200, help="Width of each tile.")
+    parser.add_argument("--y_size", type=int, default=200, help="Height of each tile.")
+    parser.add_argument("--margin_x", type=int, default=None, help="Margin in x direction.")
+    parser.add_argument("--margin_y", type=int, default=None, help="Margin in y direction.")
+    parser.add_argument("--r_tx", type=int, default=3, help="Radius for building the graph.")
     parser.add_argument(
         "--val_prob",
         type=float,
@@ -158,9 +142,7 @@ if __name__ == "__main__":
         default=3,
         help="Number of nearest neighbors for nuclei.",
     )
-    parser.add_argument(
-        "--dist_nc", type=int, default=10, help="Distance threshold for nuclei."
-    )
+    parser.add_argument("--dist_nc", type=int, default=10, help="Distance threshold for nuclei.")
     parser.add_argument(
         "--k_tx",
         type=int,
@@ -179,12 +161,8 @@ if __name__ == "__main__":
         default=True,
         help="Whether to compute edge labels.",
     )
-    parser.add_argument(
-        "--sampling_rate", type=float, default=1, help="Rate of sampling tiles."
-    )
-    parser.add_argument(
-        "--parallel", action="store_true", help="Use parallel processing."
-    )
+    parser.add_argument("--sampling_rate", type=float, default=1, help="Rate of sampling tiles.")
+    parser.add_argument("--parallel", action="store_true", help="Use parallel processing.")
     parser.add_argument(
         "--num_workers",
         type=int,

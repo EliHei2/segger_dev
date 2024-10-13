@@ -30,9 +30,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Predict using the Segger model"
-    )
+    parser = argparse.ArgumentParser(description="Predict using the Segger model")
     parser.add_argument(
         "--dataset_path",
         type=str,
@@ -51,24 +49,16 @@ if __name__ == "__main__":
         required=True,
         help="Path to the model checkpoint",
     )
-    parser.add_argument(
-        "--init_emb", type=int, default=8, help="Initial embedding size"
-    )
+    parser.add_argument("--init_emb", type=int, default=8, help="Initial embedding size")
     parser.add_argument(
         "--hidden_channels",
         type=int,
         default=64,
         help="Number of hidden channels",
     )
-    parser.add_argument(
-        "--out_channels", type=int, default=16, help="Number of output channels"
-    )
-    parser.add_argument(
-        "--heads", type=int, default=4, help="Number of attention heads"
-    )
-    parser.add_argument(
-        "--aggr", type=str, default="sum", help="Aggregation method"
-    )
+    parser.add_argument("--out_channels", type=int, default=16, help="Number of output channels")
+    parser.add_argument("--heads", type=int, default=4, help="Number of attention heads")
+    parser.add_argument("--aggr", type=str, default="sum", help="Aggregation method")
     parser.add_argument(
         "--score_cut",
         type=float,
@@ -81,9 +71,7 @@ if __name__ == "__main__":
         default=4,
         help="Number of nearest neighbors for nuclei",
     )
-    parser.add_argument(
-        "--dist_nc", type=int, default=20, help="Distance threshold for nuclei"
-    )
+    parser.add_argument("--dist_nc", type=int, default=20, help="Distance threshold for nuclei")
     parser.add_argument(
         "--k_tx",
         type=int,

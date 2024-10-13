@@ -30,11 +30,8 @@ from dask.diagnostics import ProgressBar
 import logging
 import warnings
 
-for msg in [
-    r".*Geometry is in a geographic CRS.*",
-    r".*You did not provide metadata.*"
-]:
-    warnings.filterwarnings('ignore', category=UserWarning, message=msg)
+for msg in [r".*Geometry is in a geographic CRS.*", r".*You did not provide metadata.*"]:
+    warnings.filterwarnings("ignore", category=UserWarning, message=msg)
 
 
 class SpatialTranscriptomicsSample(ABC):
@@ -60,10 +57,8 @@ class SpatialTranscriptomicsSample(ABC):
         self.boundaries_graph = boundaries_graph
         self.keys = keys
         self.embedding_df = embedding_df
-        self.current_embedding = 'token'
+        self.current_embedding = "token"
         self.verbose = verbose
-        
-
 
     @abstractmethod
     def filter_transcripts(self, transcripts_df: pd.DataFrame, min_qv: float = 20.0) -> pd.DataFrame:
@@ -78,8 +73,7 @@ class SpatialTranscriptomicsSample(ABC):
             pd.DataFrame: The filtered dataframe.
         """
         pass
-    
-    
+
     def set_file_paths(self, transcripts_path: Path, boundaries_path: Path) -> None:
         """
         Set the paths for the transcript and boundary files.
@@ -90,10 +84,11 @@ class SpatialTranscriptomicsSample(ABC):
         """
         self.transcripts_path = transcripts_path
         self.boundaries_path = boundaries_path
-        
-        if self.verbose: print(f"Set transcripts file path to {transcripts_path}")
-        if self.verbose: print(f"Set boundaries file path to {boundaries_path}")
 
+        if self.verbose:
+            print(f"Set transcripts file path to {transcripts_path}")
+        if self.verbose:
+            print(f"Set boundaries file path to {boundaries_path}")
 
     def load_transcripts(
         self,
@@ -153,22 +148,22 @@ class SpatialTranscriptomicsSample(ABC):
             self.keys.TRANSCRIPTS_X.value,
             self.keys.TRANSCRIPTS_Y.value,
             self.keys.FEATURE_NAME.value,
-            self.keys.CELL_ID.value
+            self.keys.CELL_ID.value,
         ]
 
         # Check if the QUALITY_VALUE key exists in the dataset, and add it to the columns list if present
         if self.keys.QUALITY_VALUE.value in available_columns:
             columns_to_read.append(self.keys.QUALITY_VALUE.value)
-        
+
         if self.keys.OVERLAPS_BOUNDARY.value in available_columns:
             columns_to_read.append(self.keys.OVERLAPS_BOUNDARY.value)
 
         # Use filters to only load data within the specified bounding box (x_min, x_max, y_min, y_max)
         filters = [
-            (self.keys.TRANSCRIPTS_X.value, '>=', x_min),
-            (self.keys.TRANSCRIPTS_X.value, '<=', x_max),
-            (self.keys.TRANSCRIPTS_Y.value, '>=', y_min),
-            (self.keys.TRANSCRIPTS_Y.value, '<=', y_max)
+            (self.keys.TRANSCRIPTS_X.value, ">=", x_min),
+            (self.keys.TRANSCRIPTS_X.value, "<=", x_max),
+            (self.keys.TRANSCRIPTS_Y.value, ">=", y_min),
+            (self.keys.TRANSCRIPTS_Y.value, "<=", y_max),
         ]
 
         # Load the dataset lazily with filters applied for the bounding box
@@ -190,32 +185,32 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df = self.filter_transcripts(transcripts_df)
 
         # Handle additional embeddings if provided
-        if not self.embedding_df.empty:
+        if self.embedding_df is not None and not self.embedding_df.empty:
             valid_genes = self.embedding_df.index
             # Lazily count the number of rows in the DataFrame before filtering
             initial_count = delayed(lambda df: df.shape[0])(transcripts_df)
             # Filter the DataFrame lazily based on valid genes from embeddings
-            transcripts_df = transcripts_df[
-                transcripts_df[self.keys.FEATURE_NAME.value].isin(valid_genes)
-            ]
+            transcripts_df = transcripts_df[transcripts_df[self.keys.FEATURE_NAME.value].isin(valid_genes)]
             final_count = delayed(lambda df: df.shape[0])(transcripts_df)
-            if self.verbose: print(f"Dropped {initial_count - final_count} transcripts not found in {key} embedding.")
+            if self.verbose:
+                print(f"Dropped {initial_count - final_count} transcripts not found in {key} embedding.")
 
         # Ensure that the 'OVERLAPS_BOUNDARY' column is boolean if it exists
         if self.keys.OVERLAPS_BOUNDARY.value in transcripts_df.columns:
-            transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].astype(bool)
+            transcripts_df[self.keys.OVERLAPS_BOUNDARY.value] = transcripts_df[
+                self.keys.OVERLAPS_BOUNDARY.value
+            ].astype(bool)
 
         return transcripts_df
 
-
     def load_boundaries(
-        self, 
-        path: Path, 
-        file_format: str = "parquet", 
-        x_min: float = None, 
-        x_max: float = None, 
-        y_min: float = None, 
-        y_max: float = None
+        self,
+        path: Path,
+        file_format: str = "parquet",
+        x_min: float = None,
+        x_max: float = None,
+        y_min: float = None,
+        y_max: float = None,
     ) -> dd.DataFrame:
         """
         Load boundaries data lazily using Dask, filtering by the specified bounding box.
@@ -233,7 +228,7 @@ class SpatialTranscriptomicsSample(ABC):
         """
         if file_format != "parquet":
             raise ValueError(f"Unsupported file format: {file_format}")
-        
+
         self.boundaries_path = path
 
         # Use bounding box values from set_metadata if not explicitly provided
@@ -246,15 +241,15 @@ class SpatialTranscriptomicsSample(ABC):
         columns_to_read = [
             self.keys.BOUNDARIES_VERTEX_X.value,
             self.keys.BOUNDARIES_VERTEX_Y.value,
-            self.keys.CELL_ID.value
+            self.keys.CELL_ID.value,
         ]
 
         # Use filters to only load data within the specified bounding box (x_min, x_max, y_min, y_max)
         filters = [
-            (self.keys.BOUNDARIES_VERTEX_X.value, '>=', x_min),
-            (self.keys.BOUNDARIES_VERTEX_X.value, '<=', x_max),
-            (self.keys.BOUNDARIES_VERTEX_Y.value, '>=', y_min),
-            (self.keys.BOUNDARIES_VERTEX_Y.value, '<=', y_max)
+            (self.keys.BOUNDARIES_VERTEX_X.value, ">=", x_min),
+            (self.keys.BOUNDARIES_VERTEX_X.value, "<=", x_max),
+            (self.keys.BOUNDARIES_VERTEX_Y.value, ">=", y_min),
+            (self.keys.BOUNDARIES_VERTEX_Y.value, "<=", y_max),
         ]
 
         # Load the dataset lazily with filters applied for the bounding box
@@ -262,24 +257,27 @@ class SpatialTranscriptomicsSample(ABC):
 
         # Convert the cell IDs to strings lazily
         boundaries_df[self.keys.CELL_ID.value] = boundaries_df[self.keys.CELL_ID.value].apply(
-            lambda x: str(x) if pd.notnull(x) else None
+            lambda x: str(x) if pd.notnull(x) else None, meta=("cell_id", "object")
         )
 
-        if self.verbose: print(f"Loaded boundaries from '{path}' within bounding box ({x_min}, {x_max}, {y_min}, {y_max}).")
+        if self.verbose:
+            print(f"Loaded boundaries from '{path}' within bounding box ({x_min}, {x_max}, {y_min}, {y_max}).")
 
         return boundaries_df
-
-
-
 
     def set_metadata(self) -> None:
         """
         Set metadata for the transcript dataset, including bounding box limits and unique gene names,
-        without reading the entire Parquet file. Additionally, return integer tokens for unique gene names 
+        without reading the entire Parquet file. Additionally, return integer tokens for unique gene names
         instead of one-hot encodings and store the lookup table for later mapping.
         """
         # Load the Parquet file metadata
-        parquet_file = pq.ParquetFile(self.transcripts_path)
+        ##
+        # luca's experiment
+        import time
+
+        # old method
+        parquet_file = pq.read_table(self.transcripts_path)
 
         # Get the column names for X, Y, and feature names from the class's keys
         x_col = self.keys.TRANSCRIPTS_X.value
@@ -287,7 +285,7 @@ class SpatialTranscriptomicsSample(ABC):
         feature_col = self.keys.FEATURE_NAME.value
 
         # Initialize variables to track min/max values for X and Y
-        x_min, x_max, y_min, y_max = float('inf'), float('-inf'), float('inf'), float('-inf')
+        x_min, x_max, y_min, y_max = float("inf"), float("-inf"), float("inf"), float("-inf")
 
         # Extract unique gene names and ensure they're strings
         gene_set = set()
@@ -299,16 +297,19 @@ class SpatialTranscriptomicsSample(ABC):
             "NegControlCodeword_",
             "BLANK_",
             "DeprecatedCodeword_",
-            "UnassignedCodeword_"
+            "UnassignedCodeword_",
         )
 
-        # Iterate over row groups to extract statistics and unique gene names
-        for row_group_idx in range(parquet_file.num_row_groups):
-            row_group_table = parquet_file.read_row_group(row_group_idx, columns=[x_col, y_col, feature_col])
+        row_group_size = 1_000_000
+        start = 0
+        n = len(parquet_file)
+        while start < n:
+            chunk = parquet_file.slice(start, start + row_group_size)
+            start += row_group_size
 
             # Update the bounding box values (min/max)
-            x_values = row_group_table[x_col].to_pandas()
-            y_values = row_group_table[y_col].to_pandas()
+            x_values = chunk[x_col].to_pandas()
+            y_values = chunk[y_col].to_pandas()
 
             x_min = min(x_min, x_values.min())
             x_max = max(x_max, x_values.max())
@@ -316,8 +317,12 @@ class SpatialTranscriptomicsSample(ABC):
             y_max = max(y_max, y_values.max())
 
             # Convert feature values (gene names) to strings and filter out unwanted codewords
-            feature_values = row_group_table[feature_col].to_pandas().apply(
-                lambda x: x.decode('utf-8') if isinstance(x, bytes) else str(x),
+            feature_values = (
+                chunk[feature_col]
+                .to_pandas()
+                .apply(
+                    lambda x: x.decode("utf-8") if isinstance(x, bytes) else str(x),
+                )
             )
 
             # Filter out unwanted codewords
@@ -332,11 +337,15 @@ class SpatialTranscriptomicsSample(ABC):
         self.y_min = y_min
         self.y_max = y_max
 
-        if self.verbose: print(f"Bounding box limits set: x_min={self.x_min}, x_max={self.x_max}, y_min={self.y_min}, y_max={self.y_max}")
+        if self.verbose:
+            print(
+                f"Bounding box limits set: x_min={self.x_min}, x_max={self.x_max}, y_min={self.y_min}, y_max={self.y_max}"
+            )
 
         # Convert the set of unique genes into a sorted list for consistent ordering
         self.unique_genes = sorted(gene_set)
-        if self.verbose: print(f"Extracted {len(self.unique_genes)} unique gene names for integer tokenization.")
+        if self.verbose:
+            print(f"Extracted {len(self.unique_genes)} unique gene names for integer tokenization.")
 
         # Initialize a LabelEncoder to convert unique genes into integer tokens
         self.tx_encoder = LabelEncoder()
@@ -345,18 +354,19 @@ class SpatialTranscriptomicsSample(ABC):
         self.tx_encoder.fit(self.unique_genes)
 
         # Store the integer tokens mapping to gene names
-        self.gene_to_token_map = dict(zip(self.tx_encoder.classes_, self.tx_encoder.transform(self.tx_encoder.classes_)))
+        self.gene_to_token_map = dict(
+            zip(self.tx_encoder.classes_, self.tx_encoder.transform(self.tx_encoder.classes_))
+        )
 
-
-        if self.verbose: print("Integer tokens have been computed and stored based on unique gene names.")
+        if self.verbose:
+            print("Integer tokens have been computed and stored based on unique gene names.")
 
         # Optional: Create a reverse mapping for lookup purposes (token to gene)
         self.token_to_gene_map = {v: k for k, v in self.gene_to_token_map.items()}
 
+        if self.verbose:
+            print("Lookup tables (gene_to_token_map and token_to_gene_map) have been created.")
 
-        if self.verbose: print("Lookup tables (gene_to_token_map and token_to_gene_map) have been created.")
-
-        
     def set_embedding(self, embedding_name: str) -> None:
         """
         Set the current embedding type for the transcripts.
@@ -370,8 +380,7 @@ class SpatialTranscriptomicsSample(ABC):
             self.current_embedding = embedding_name
         else:
             raise ValueError(f"Embedding {embedding_name} not found in embeddings_dict.")
-        
-    
+
     @staticmethod
     def create_scaled_polygon(group: pd.DataFrame, scale_factor: float, keys) -> gpd.GeoDataFrame:
         """
@@ -386,9 +395,9 @@ class SpatialTranscriptomicsSample(ABC):
             gpd.GeoDataFrame: A GeoDataFrame containing the scaled Polygon and cell_id.
         """
         # Extract coordinates and cell ID from the group using keys
-        x_coords = group[keys['vertex_x']]
-        y_coords = group[keys['vertex_y']]
-        cell_id = group[keys['cell_id']].iloc[0]
+        x_coords = group[keys["vertex_x"]]
+        y_coords = group[keys["vertex_y"]]
+        cell_id = group[keys["cell_id"]].iloc[0]
 
         # Ensure there are at least 3 points to form a polygon
         if len(x_coords) >= 3:
@@ -398,19 +407,13 @@ class SpatialTranscriptomicsSample(ABC):
                 # Scale the polygon by the provided factor
                 scaled_polygon = polygon.buffer(scale_factor)
                 if scaled_polygon.is_valid and not scaled_polygon.is_empty:
-                    return gpd.GeoDataFrame({
-                        'geometry': [scaled_polygon], 
-                        keys['cell_id']: [cell_id]
-                    }, geometry='geometry', crs="EPSG:4326")
+                    return gpd.GeoDataFrame(
+                        {"geometry": [scaled_polygon], keys["cell_id"]: [cell_id]}, geometry="geometry", crs="EPSG:4326"
+                    )
         # Return an empty GeoDataFrame if no valid polygon is created
-        return gpd.GeoDataFrame({
-            'geometry': [None], 
-            keys['cell_id']: [cell_id]
-        }, geometry='geometry', crs="EPSG:4326")
-        
-    def generate_and_scale_polygons(
-        self, boundaries_df: dd.DataFrame, scale_factor: float = 1.0
-        ) -> dgpd.GeoDataFrame:
+        return gpd.GeoDataFrame({"geometry": [None], keys["cell_id"]: [cell_id]}, geometry="geometry", crs="EPSG:4326")
+
+    def generate_and_scale_polygons(self, boundaries_df: dd.DataFrame, scale_factor: float = 1.0) -> dgpd.GeoDataFrame:
         """
         Generate and scale polygons from boundary coordinates using Dask.
         Keeps class structure intact by using static method for the core polygon generation.
@@ -428,40 +431,39 @@ class SpatialTranscriptomicsSample(ABC):
         cell_id_column = self.keys.CELL_ID.value
         vertex_x_column = self.keys.BOUNDARIES_VERTEX_X.value
         vertex_y_column = self.keys.BOUNDARIES_VERTEX_Y.value
-        
+
         create_polygon = self.create_scaled_polygon
         # Use a lambda to wrap the static method call and avoid passing the function object directly to Dask
         polygons_ddf = boundaries_df.groupby(cell_id_column).apply(
             lambda group: create_polygon(
-                group=group, scale_factor=scale_factor,
+                group=group,
+                scale_factor=scale_factor,
                 keys={  # Pass keys as a dict for the lambda function
-                    'vertex_x': vertex_x_column,
-                    'vertex_y': vertex_y_column,
-                    'cell_id': cell_id_column
-                }
+                    "vertex_x": vertex_x_column,
+                    "vertex_y": vertex_y_column,
+                    "cell_id": cell_id_column,
+                },
             )
         )
-        
+
         # Lazily compute centroids for each polygon
-        if self.verbose: print("Adding centroids to the polygons...")
-        polygons_ddf['centroid_x'] = polygons_ddf.geometry.centroid.x
-        polygons_ddf['centroid_y'] = polygons_ddf.geometry.centroid.y
-        
+        if self.verbose:
+            print("Adding centroids to the polygons...")
+        polygons_ddf["centroid_x"] = polygons_ddf.geometry.centroid.x
+        polygons_ddf["centroid_y"] = polygons_ddf.geometry.centroid.y
+
         polygons_ddf = polygons_ddf.drop_duplicates()
         # polygons_ddf = polygons_ddf.to_crs("EPSG:3857")
 
         return polygons_ddf
-
-
-    
 
     def compute_transcript_overlap_with_boundaries(
         self,
         transcripts_df: dd.DataFrame,
         boundaries_df: dd.DataFrame = None,
         polygons_gdf: dgpd.GeoDataFrame = None,
-        scale_factor: float = 1.0
-        ) -> dd.DataFrame:
+        scale_factor: float = 1.0,
+    ) -> dd.DataFrame:
         """
         Computes the overlap of transcript locations with scaled boundary polygons
         and assigns corresponding cell IDs to the transcripts using Dask.
@@ -479,15 +481,16 @@ class SpatialTranscriptomicsSample(ABC):
         if polygons_gdf is None:
             if boundaries_df is None:
                 raise ValueError("Both boundaries_df and polygons_gdf cannot be None. Provide at least one.")
-            
+
             # Generate polygons from boundaries_df if polygons_gdf is None
             # if self.verbose: print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
             polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
-        
+
         if polygons_gdf.empty():
             raise ValueError("No valid polygons were generated from the boundaries.")
         else:
-            if self.verbose: print(f"Polygons are available. Proceeding with overlap computation.")
+            if self.verbose:
+                print(f"Polygons are available. Proceeding with overlap computation.")
 
         # Create a delayed function to check if a point is within any polygon
         def check_overlap(transcript, polygons_gdf):
@@ -508,20 +511,20 @@ class SpatialTranscriptomicsSample(ABC):
             return overlap, cell_id
 
         # Apply the check_overlap function in parallel to each row using Dask's map_partitions
-        if self.verbose: print(f"Starting overlap computation for transcripts with the boundary polygons.")
+        if self.verbose:
+            print(f"Starting overlap computation for transcripts with the boundary polygons.")
         transcripts_df = transcripts_df.map_partitions(
             lambda df: df.assign(
                 **{
-                    self.keys.OVERLAPS_BOUNDARY.value: df.apply(lambda row: delayed(check_overlap)(row, polygons_gdf)[0], axis=1),
+                    self.keys.OVERLAPS_BOUNDARY.value: df.apply(
+                        lambda row: delayed(check_overlap)(row, polygons_gdf)[0], axis=1
+                    ),
                     self.keys.CELL_ID.value: df.apply(lambda row: delayed(check_overlap)(row, polygons_gdf)[1], axis=1),
                 }
             )
         )
 
         return transcripts_df
-
-
-
 
     def compute_boundaries_geometries(
         self,
@@ -552,38 +555,47 @@ class SpatialTranscriptomicsSample(ABC):
         if polygons_gdf is None:
             if boundaries_df is None:
                 raise ValueError("Both boundaries_df and polygons_gdf cannot be None. Provide at least one.")
-            
+
             # Generate polygons from boundaries_df if polygons_gdf is None
-            if self.verbose: print(f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.")
+            if self.verbose:
+                print(
+                    f"No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}."
+                )
             polygons_gdf = self.generate_and_scale_polygons(boundaries_df, scale_factor)
-        
+
         # Check if the generated polygons_gdf is empty
         if polygons_gdf.shape[0] == 0:
             raise ValueError("No valid polygons were generated from the boundaries.")
         else:
-            if self.verbose: print(f"Polygons are available. Proceeding with geometrical computations.")
-        
+            if self.verbose:
+                print(f"Polygons are available. Proceeding with geometrical computations.")
+
         # Compute additional geometrical properties
         polygons = polygons_gdf.geometry
 
         # Compute additional geometrical properties
         if area:
-            if self.verbose: print("Computing area...")
-            polygons_gdf['area'] = polygons.area
+            if self.verbose:
+                print("Computing area...")
+            polygons_gdf["area"] = polygons.area
         if convexity:
-            if self.verbose: print("Computing convexity...")
-            polygons_gdf['convexity'] = polygons.convex_hull.area / polygons.area
+            if self.verbose:
+                print("Computing convexity...")
+            polygons_gdf["convexity"] = polygons.convex_hull.area / polygons.area
         if elongation:
-            if self.verbose: print("Computing elongation...")
+            if self.verbose:
+                print("Computing elongation...")
             r = polygons.minimum_rotated_rectangle()
-            polygons_gdf['elongation'] = (r.length * r.length) / r.area
+            polygons_gdf["elongation"] = (r.length * r.length) / r.area
         if circularity:
-            if self.verbose: print("Computing circularity...")
+            if self.verbose:
+                print("Computing circularity...")
             r = polygons_gdf.minimum_bounding_radius()
-            polygons_gdf['circularity'] = polygons.area / (r * r)
+            polygons_gdf["circularity"] = polygons.area / (r * r)
 
-        if self.verbose: print("Geometrical computations completed.")
-        
+        if self.verbose:
+            print("Geometrical computations completed.")
+
         return polygons_gdf.reset_index(drop=True)
 
     def save_dataset_for_segger(
@@ -604,9 +616,9 @@ class SpatialTranscriptomicsSample(ABC):
         sampling_rate: float = 1,
         num_workers: int = 1,
         scale_boundaries: float = 1.0,
-        method: str = 'kd_tree',
+        method: str = "kd_tree",
         gpu: bool = False,
-        workers: int = 1
+        workers: int = 1,
     ) -> None:
         """
         Saves the dataset for Segger in a processed format using Dask for parallel and lazy processing.
@@ -631,49 +643,64 @@ class SpatialTranscriptomicsSample(ABC):
             method (str, optional): Method for computing edge indices (e.g., 'kd_tree', 'faiss').
             gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
             workers (int, optional): Number of workers to use to compute the neighborhood graph (per tile).
-            
+
         """
         # Prepare directories for storing processed tiles
         self._prepare_directories(processed_dir)
-        
+
         # Get x and y coordinate ranges for tiling
         x_range, y_range = self._get_ranges(d_x, d_y)
-        
+
         # Generate parameters for each tile
         tile_params = self._generate_tile_params(
-            x_range, y_range, x_size, y_size, margin_x, margin_y, compute_labels, 
-            r_tx, k_tx, val_prob, test_prob, neg_sampling_ratio_approx, sampling_rate, 
-            processed_dir, scale_boundaries, method, gpu, workers
+            x_range,
+            y_range,
+            x_size,
+            y_size,
+            margin_x,
+            margin_y,
+            compute_labels,
+            r_tx,
+            k_tx,
+            val_prob,
+            test_prob,
+            neg_sampling_ratio_approx,
+            sampling_rate,
+            processed_dir,
+            scale_boundaries,
+            method,
+            gpu,
+            workers,
         )
 
         # Process each tile using Dask to parallelize the task
-        if self.verbose: print("Starting tile processing...")
+        if self.verbose:
+            print("Starting tile processing...")
         tasks = [delayed(self._process_tile)(params) for params in tile_params]
-        
-        with ProgressBar():
-        # Use Dask to process all tiles in parallel
-            dask.compute(*tasks, num_workers=num_workers)
-        if self.verbose: print("Tile processing completed.")
 
+        with ProgressBar():
+            # Use Dask to process all tiles in parallel
+            dask.compute(*tasks, num_workers=num_workers)
+        if self.verbose:
+            print("Tile processing completed.")
 
     def _prepare_directories(self, processed_dir: Path) -> None:
         """Prepares directories for saving tiles."""
         processed_dir = Path(processed_dir)  # by default, convert to Path object
-        for data_type in ['train', 'test', 'val']:
-            for data_stage in ['raw', 'processed']:
-                tile_dir = processed_dir / f'{data_type}_tiles' / data_stage
+        for data_type in ["train", "test", "val"]:
+            for data_stage in ["raw", "processed"]:
+                tile_dir = processed_dir / f"{data_type}_tiles" / data_stage
                 tile_dir.mkdir(parents=True, exist_ok=True)
                 if os.listdir(tile_dir):
                     msg = f"Directory '{tile_dir}' must be empty."
                     raise AssertionError(msg)
-
 
     def _get_ranges(self, d_x: float, d_y: float) -> Tuple[np.ndarray, np.ndarray]:
         """Generates ranges for tiling."""
         x_range = np.arange(self.x_min // 1000 * 1000, self.x_max, d_x)
         y_range = np.arange(self.y_min // 1000 * 1000, self.y_max, d_y)
         return x_range, y_range
-    
+
     def _generate_tile_params(
         self,
         x_range: np.ndarray,
@@ -693,7 +720,7 @@ class SpatialTranscriptomicsSample(ABC):
         scale_boundaries: float,
         method: str,
         gpu: bool,
-        workers: int
+        workers: int,
     ) -> List[Tuple]:
         """
         Generates parameters for processing tiles using the bounding box approach.
@@ -707,22 +734,36 @@ class SpatialTranscriptomicsSample(ABC):
         # Generate tile parameters based on ranges and margins
         tile_params = [
             (
-                i, j, x_size, y_size, x_range[i], y_range[j], margin_x, margin_y, 
-                compute_labels, r_tx, k_tx, neg_sampling_ratio_approx, val_prob, 
-                test_prob, processed_dir, scale_boundaries, sampling_rate, 
-                method, gpu, workers
+                i,
+                j,
+                x_size,
+                y_size,
+                x_range[i],
+                y_range[j],
+                margin_x,
+                margin_y,
+                compute_labels,
+                r_tx,
+                k_tx,
+                neg_sampling_ratio_approx,
+                val_prob,
+                test_prob,
+                processed_dir,
+                scale_boundaries,
+                sampling_rate,
+                method,
+                gpu,
+                workers,
             )
-            for i in range(len(x_range)) 
+            for i in range(len(x_range))
             for j in range(len(y_range))
         ]
         return tile_params
 
-
-
     # def _process_tiles(self, tile_params: List[Tuple], num_workers: int) -> None:
     #     """
     #     Processes the tiles using Dask's parallelization utilities.
-        
+
     #     Parameters:
     #     -----------
     #     tile_params : List[Tuple]
@@ -741,7 +782,6 @@ class SpatialTranscriptomicsSample(ABC):
 
     #     if self.verbose: print("Tile processing completed.")
 
-
     def _process_tile(self, tile_params: Tuple) -> None:
         """
         Process a single tile using Dask for parallelism and lazy evaluation, and save the data.
@@ -751,33 +791,54 @@ class SpatialTranscriptomicsSample(ABC):
                 Parameters for the tile processing.
         """
         (
-            i, j, x_size, y_size, x_loc, y_loc, margin_x, margin_y, compute_labels, 
-            r_tx, k_tx, neg_sampling_ratio_approx, val_prob, test_prob, processed_dir, 
-            scale_boundaries, sampling_rate, method, gpu, workers
+            i,
+            j,
+            x_size,
+            y_size,
+            x_loc,
+            y_loc,
+            margin_x,
+            margin_y,
+            compute_labels,
+            r_tx,
+            k_tx,
+            neg_sampling_ratio_approx,
+            val_prob,
+            test_prob,
+            processed_dir,
+            scale_boundaries,
+            sampling_rate,
+            method,
+            gpu,
+            workers,
         ) = tile_params
 
-        if self.verbose: print(f"Processing tile at location (x_min: {x_loc}, y_min: {y_loc}), size (width: {x_size}, height: {y_size})")
+        if self.verbose:
+            print(
+                f"Processing tile at location (x_min: {x_loc}, y_min: {y_loc}), size (width: {x_size}, height: {y_size})"
+            )
 
         # Sampling rate to decide if the tile should be processed
         if random.random() > sampling_rate:
-            if self.verbose: print(f"Skipping tile at (x_min: {x_loc}, y_min: {y_loc}) due to sampling rate.")
+            if self.verbose:
+                print(f"Skipping tile at (x_min: {x_loc}, y_min: {y_loc}) due to sampling rate.")
             return
 
         # Read only the required boundaries and transcripts for this tile using delayed loading
         boundaries_df = delayed(self.load_boundaries)(
             path=self.boundaries_path,
-            x_min=x_loc - margin_x, 
-            x_max=x_loc + x_size + margin_x, 
-            y_min=y_loc - margin_y, 
-            y_max=y_loc + y_size + margin_y
+            x_min=x_loc - margin_x,
+            x_max=x_loc + x_size + margin_x,
+            y_min=y_loc - margin_y,
+            y_max=y_loc + y_size + margin_y,
         ).compute()
-        
+
         transcripts_df = delayed(self.load_transcripts)(
             path=self.transcripts_path,
             x_min=x_loc - margin_x,
-            x_max=x_loc + x_size ,
+            x_max=x_loc + x_size,
             y_min=y_loc - margin_y,
-            y_max=y_loc + y_size 
+            y_max=y_loc + y_size,
         ).compute()
 
         # If no data is found in transcripts or boundaries, skip the tile
@@ -788,62 +849,78 @@ class SpatialTranscriptomicsSample(ABC):
 
         # If the number of transcripts is less than 20 or the number of nuclei is less than 2, skip the tile
         if transcripts_df_count < 20 or boundaries_df_count < 2:
-            if self.verbose: print(f"Dropping tile (x_min: {x_loc}, y_min: {y_loc}) due to insufficient data (transcripts: {transcripts_df_count}, boundaries: {boundaries_df_count}).")
+            if self.verbose:
+                print(
+                    f"Dropping tile (x_min: {x_loc}, y_min: {y_loc}) due to insufficient data (transcripts: {transcripts_df_count}, boundaries: {boundaries_df_count})."
+                )
             return
 
         # Build PyG data structure from tile-specific data
-        if self.verbose: print(f"Building PyG data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+        if self.verbose:
+            print(f"Building PyG data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
         data = delayed(self.build_pyg_data_from_tile)(
-            boundaries_df, transcripts_df, r_tx=r_tx, k_tx=k_tx, method=method, gpu=gpu, workers=workers, scale_boundaries=scale_boundaries
+            boundaries_df,
+            transcripts_df,
+            r_tx=r_tx,
+            k_tx=k_tx,
+            method=method,
+            gpu=gpu,
+            workers=workers,
+            scale_boundaries=scale_boundaries,
         )
-        
+
         data = data.compute()
-        if self.verbose: print(data)
+        if self.verbose:
+            print(data)
 
         try:
             # Probability to assign to train-val-test split
             prob = random.random()
             if compute_labels and (prob > test_prob):
-                if self.verbose: print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+                if self.verbose:
+                    print(f"Computing labels for tile at (x_min: {x_loc}, y_min: {y_loc})...")
                 transform = RandomLinkSplit(
-                    num_val=0, num_test=0, is_undirected=True, edge_types=[('tx', 'belongs', 'bd')],
+                    num_val=0,
+                    num_test=0,
+                    is_undirected=True,
+                    edge_types=[("tx", "belongs", "bd")],
                     neg_sampling_ratio=neg_sampling_ratio_approx * 2,
                 )
                 data = delayed(transform)(data).compute()[0]
-            
+
             # if self.verbose: print(data)
 
             # Save the tile data to the appropriate directory based on split
-            if self.verbose: print(f"Saving data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
+            if self.verbose:
+                print(f"Saving data for tile at (x_min: {x_loc}, y_min: {y_loc})...")
             filename = f"tiles_x={x_loc}_y={y_loc}_w={x_size}_h={y_size}.pt"
             if prob > val_prob + test_prob:
-                torch.save(data, processed_dir / 'train_tiles' / 'processed' / filename)
+                torch.save(data, processed_dir / "train_tiles" / "processed" / filename)
             elif prob > test_prob:
-                torch.save(data, processed_dir / 'val_tiles' / 'processed' / filename)
+                torch.save(data, processed_dir / "val_tiles" / "processed" / filename)
             else:
-                torch.save(data, processed_dir / 'test_tiles' / 'processed' / filename)
+                torch.save(data, processed_dir / "test_tiles" / "processed" / filename)
 
             # Use Dask to save the file in parallel
             # save_task.compute()
 
-            if self.verbose: print(f"Tile at (x_min: {x_loc}, y_min: {y_loc}) processed and saved successfully.")
+            if self.verbose:
+                print(f"Tile at (x_min: {x_loc}, y_min: {y_loc}) processed and saved successfully.")
 
         except Exception as e:
-            if self.verbose: print(f"Error processing tile at (x_min: {x_loc}, y_min: {y_loc}): {e}")
-
-
+            if self.verbose:
+                print(f"Error processing tile at (x_min: {x_loc}, y_min: {y_loc}): {e}")
 
     def build_pyg_data_from_tile(
-        self, 
-        boundaries_df: dd.DataFrame, 
-        transcripts_df: dd.DataFrame, 
-        r_tx: float = 5.0, 
-        k_tx: int = 3, 
-        method: str = 'kd_tree', 
-        gpu: bool = False, 
+        self,
+        boundaries_df: dd.DataFrame,
+        transcripts_df: dd.DataFrame,
+        r_tx: float = 5.0,
+        k_tx: int = 3,
+        method: str = "kd_tree",
+        gpu: bool = False,
         workers: int = 1,
-        scale_boundaries: float = 1.0
-        
+        scale_boundaries: float = 1.0,
     ) -> HeteroData:
         """
         Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.
@@ -857,7 +934,7 @@ class SpatialTranscriptomicsSample(ABC):
             gpu (bool, optional): Whether to use GPU acceleration for edge index computation.
             workers (int, optional): Number of workers to use for parallel processing.
             scale_boundaries (float, optional): The factor by which to scale the boundary polygons. Default is 1.0.
-            
+
         Returns:
             HeteroData: PyG Heterogeneous Data object.
         """
@@ -865,100 +942,94 @@ class SpatialTranscriptomicsSample(ABC):
         data = HeteroData()
 
         # Lazily compute boundaries geometries using Dask
-        if self.verbose: print("Computing boundaries geometries...")
+        if self.verbose:
+            print("Computing boundaries geometries...")
         bd_gdf = self.compute_boundaries_geometries(boundaries_df, scale_factor=scale_boundaries)
-        bd_gdf = bd_gdf[bd_gdf['geometry'].notnull()]
-        
-        # Add boundary node data to PyG HeteroData lazily
-        data['bd'].id = bd_gdf[self.keys.CELL_ID.value].values
-        data['bd'].pos = torch.as_tensor(bd_gdf[['centroid_x', 'centroid_y']].values.astype(float))
-        
-        if data['bd'].pos.isnan().any():
-            raise ValueError(data['bd'].id[data['bd'].pos.isnan().any(1)])
-        
-        bd_x = bd_gdf.iloc[:, 4:]
-        data['bd'].x = torch.as_tensor(bd_x.to_numpy(), dtype=torch.float32)
+        bd_gdf = bd_gdf[bd_gdf["geometry"].notnull()]
 
+        # Add boundary node data to PyG HeteroData lazily
+        data["bd"].id = bd_gdf[self.keys.CELL_ID.value].values
+        data["bd"].pos = torch.as_tensor(bd_gdf[["centroid_x", "centroid_y"]].values.astype(float))
+
+        if data["bd"].pos.isnan().any():
+            raise ValueError(data["bd"].id[data["bd"].pos.isnan().any(1)])
+
+        bd_x = bd_gdf.iloc[:, 4:]
+        data["bd"].x = torch.as_tensor(bd_x.to_numpy(), dtype=torch.float32)
 
         # Extract the transcript coordinates lazily
-        if self.verbose: print("Preparing transcript features and positions...")
+        if self.verbose:
+            print("Preparing transcript features and positions...")
         x_xyz = transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].to_numpy()
-        data['tx'].id = torch.as_tensor(transcripts_df[self.keys.TRANSCRIPTS_ID.value].values.astype(int))
-        data['tx'].pos = torch.tensor(x_xyz, dtype=torch.float32)
+        data["tx"].id = torch.as_tensor(transcripts_df[self.keys.TRANSCRIPTS_ID.value].values.astype(int))
+        data["tx"].pos = torch.tensor(x_xyz, dtype=torch.float32)
 
-
-
-                
         # Lazily prepare transcript embeddings (if available)
-        if self.verbose: print("Preparing transcript embeddings..")
+        if self.verbose:
+            print("Preparing transcript embeddings..")
         token_encoding = self.tx_encoder.transform(transcripts_df[self.keys.FEATURE_NAME.value])
-        transcripts_df['token'] = token_encoding  # Store the integer tokens in the 'token' column
-        data['tx'].token = torch.as_tensor(token_encoding).int()
+        transcripts_df["token"] = token_encoding  # Store the integer tokens in the 'token' column
+        data["tx"].token = torch.as_tensor(token_encoding).int()
         # Handle additional embeddings lazily as well
-        if not self.embedding_df.empty:
-            embeddings = delayed(lambda df: self.embedding_df.loc[
-                df[self.keys.FEATURE_NAME.value].values
-            ].values)(transcripts_df)
-        else:  
+        if self.embedding_df is not None and not self.embedding_df.empty:
+            embeddings = delayed(lambda df: self.embedding_df.loc[df[self.keys.FEATURE_NAME.value].values].values)(
+                transcripts_df
+            )
+        else:
             embeddings = token_encoding
-        embeddings = embeddings.compute()
+        if hasattr(embeddings, "compute"):
+            embeddings = embeddings.compute()
         x_features = torch.as_tensor(embeddings).int()
-        data['tx'].x = x_features
+        data["tx"].x = x_features
 
         # Check if the overlap column exists, if not, compute it lazily using Dask
         if self.keys.OVERLAPS_BOUNDARY.value not in transcripts_df.columns:
-            if self.verbose: print(f"Computing overlaps for transcripts...")
-            transcripts_df = self.compute_transcript_overlap_with_boundaries(
-                transcripts_df, bd_gdf, scale_factor=1.0
-            )
+            if self.verbose:
+                print(f"Computing overlaps for transcripts...")
+            transcripts_df = self.compute_transcript_overlap_with_boundaries(transcripts_df, bd_gdf, scale_factor=1.0)
 
         # Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)
-        if self.verbose: print("Connecting transcripts with boundaries...")
+        if self.verbose:
+            print("Connecting transcripts with boundaries...")
         overlaps = transcripts_df[self.keys.OVERLAPS_BOUNDARY.value].values
         valid_cell_ids = bd_gdf[self.keys.CELL_ID.value].values
-        ind = np.where(
-            overlaps & transcripts_df[self.keys.CELL_ID.value].isin(valid_cell_ids)
-        )[0]
-        tx_bd_edge_index = np.column_stack((
-            ind,
-            np.searchsorted(
-                valid_cell_ids,
-                transcripts_df.iloc[ind][self.keys.CELL_ID.value]
-            )
-        ))
+        ind = np.where(overlaps & transcripts_df[self.keys.CELL_ID.value].isin(valid_cell_ids))[0]
+        tx_bd_edge_index = np.column_stack(
+            (ind, np.searchsorted(valid_cell_ids, transcripts_df.iloc[ind][self.keys.CELL_ID.value]))
+        )
 
         # Add transcript-boundary edge index to PyG HeteroData
-        data['tx', 'belongs', 'bd'].edge_index = torch.as_tensor(tx_bd_edge_index.T, dtype=torch.long)
+        data["tx", "belongs", "bd"].edge_index = torch.as_tensor(tx_bd_edge_index.T, dtype=torch.long)
 
         # Compute transcript-to-transcript (tx-tx) edges using Dask (lazy computation)
-        if self.verbose: print("Computing tx-tx edges...")
+        if self.verbose:
+            print("Computing tx-tx edges...")
         tx_positions = transcripts_df[[self.keys.TRANSCRIPTS_X.value, self.keys.TRANSCRIPTS_Y.value]].values
         delayed_tx_edge_index = delayed(get_edge_index)(
-            tx_positions,
-            tx_positions,
-            k=k_tx,
-            dist=r_tx,
-            method=method,
-            gpu=gpu,
-            workers=workers
+            tx_positions, tx_positions, k=k_tx, dist=r_tx, method=method, gpu=gpu, workers=workers
         )
         tx_edge_index = delayed_tx_edge_index.compute()
 
         # Add the tx-tx edge index to the PyG HeteroData object
-        data['tx', 'neighbors', 'tx'].edge_index = torch.as_tensor(tx_edge_index.T, dtype=torch.long)
-        
-        
-        if self.verbose: print("Finished building PyG data for the tile.")
+        data["tx", "neighbors", "tx"].edge_index = torch.as_tensor(tx_edge_index.T, dtype=torch.long)
+
+        if self.verbose:
+            print("Finished building PyG data for the tile.")
         return data
 
 
-
-
-
-
 class XeniumSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False,   embedding_df: pd.DataFrame = None, verbose: bool = True):
-        super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, XeniumKeys, verbose=verbose)
+    def __init__(
+        self,
+        transcripts_df: dd.DataFrame = None,
+        transcripts_radius: int = 10,
+        boundaries_graph: bool = False,
+        embedding_df: pd.DataFrame = None,
+        verbose: bool = True,
+    ):
+        super().__init__(
+            transcripts_df, transcripts_radius, boundaries_graph, embedding_df, XeniumKeys, verbose=verbose
+        )
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
         """
@@ -977,14 +1048,14 @@ class XeniumSample(SpatialTranscriptomicsSample):
             "NegControlCodeword_",
             "BLANK_",
             "DeprecatedCodeword_",
-            "UnassignedCodeword_"
+            "UnassignedCodeword_",
         )
 
         # Ensure FEATURE_NAME is a string type for proper filtering (compatible with Dask)
         # Handle potential bytes to string conversion for Dask DataFrame
         if pd.api.types.is_object_dtype(transcripts_df[self.keys.FEATURE_NAME.value]):
             transcripts_df[self.keys.FEATURE_NAME.value] = transcripts_df[self.keys.FEATURE_NAME.value].apply(
-                lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
+                lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
             )
 
         # Apply the quality value filter using Dask
@@ -1001,7 +1072,14 @@ class XeniumSample(SpatialTranscriptomicsSample):
 
 
 class MerscopeSample(SpatialTranscriptomicsSample):
-    def __init__(self, transcripts_df: dd.DataFrame = None, transcripts_radius: int = 10, boundaries_graph: bool = False,   embedding_df: pd.DataFrame = None, verbose: bool = True):
+    def __init__(
+        self,
+        transcripts_df: dd.DataFrame = None,
+        transcripts_radius: int = 10,
+        boundaries_graph: bool = False,
+        embedding_df: pd.DataFrame = None,
+        verbose: bool = True,
+    ):
         super().__init__(transcripts_df, transcripts_radius, boundaries_graph, embedding_df, MerscopeKeys)
 
     def filter_transcripts(self, transcripts_df: dd.DataFrame, min_qv: float = 20.0) -> dd.DataFrame:
@@ -1021,5 +1099,3 @@ class MerscopeSample(SpatialTranscriptomicsSample):
         # Add custom Merscope-specific filtering logic if needed
         # For now, apply only the quality value filter
         return transcripts_df[transcripts_df[self.keys.QUALITY_VALUE.value] >= min_qv]
-
-

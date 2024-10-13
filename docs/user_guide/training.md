@@ -69,12 +69,12 @@ To instantiate and run the `segger` model:
 
 ```python
 model = segger(
-    num_tx_tokens=5000,    # Number of unique 'tx' tokens
-    init_emb=32,           # Initial embedding dimension
-    hidden_channels=64,    # Number of hidden channels
-    num_mid_layers=2,      # Number of middle layers
-    out_channels=128,      # Number of output channels
-    heads=4                # Number of attention heads
+    num_tx_tokens=5000,  # Number of unique 'tx' tokens
+    init_emb=32,  # Initial embedding dimension
+    hidden_channels=64,  # Number of hidden channels
+    num_mid_layers=2,  # Number of middle layers
+    out_channels=128,  # Number of output channels
+    heads=4,  # Number of attention heads
 )
 
 output = model(x, edge_index)
