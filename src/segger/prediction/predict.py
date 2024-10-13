@@ -97,7 +97,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
 
 
 def get_similarity_scores(
-    model: torch.nn.Module, 
+    model: torch.nn.Module,
     batch: Batch,
     from_type: str,
     to_type: str,
@@ -124,8 +124,8 @@ def get_similarity_scores(
     edge_index = get_edge_index(
         batch[to_type].pos[:, :2],  # 'tx' positions
         batch[from_type].pos[:, :2],  # 'bd' positions
-        k=receptive_field[f'k_{to_type}'],
-        dist=receptive_field[f'dist_{to_type}'],
+        k=receptive_field[f"k_{to_type}"],
+        dist=receptive_field[f"dist_{to_type}"],
         method=knn_method,
     )
     edge_index = coo_to_dense_adj(
@@ -233,16 +233,15 @@ def predict_batch(
             all_ids = np.concatenate(batch["bd"].id)  # Keep IDs as NumPy array
             assignments["segger_cell_id"] = None  # Initialize as None
             max_indices = cp.argmax(dense_scores, axis=1).get()
-            assignments.loc[mask, 'segger_cell_id'] = all_ids[max_indices[mask]] # Assign IDs
-            
+            assignments.loc[mask, "segger_cell_id"] = all_ids[max_indices[mask]]  # Assign IDs
+
             del dense_scores  # Remove from memory
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
             # Move back to CPU
-            assignments['bound'] = 0
-            assignments.loc[mask, 'bound'] = 1
-            
-            
+            assignments["bound"] = 0
+            assignments.loc[mask, "bound"] = 1
+
             if use_cc:
                 # Compute similarity scores between 'tx' and 'tx'
                 scores_tx = get_similarity_scores(lit_segger.model, batch, "tx", "tx", receptive_field)
