@@ -45,9 +45,9 @@ def run_segmentation(args: Namespace):
         batch_size=args.batch_size,  
         num_workers=args.num_workers,  
     )
-    
+
     dm.setup()
-    
+
     logger.info("Loading the model...")
     # Load in the latest checkpoint
     model_path = Path(args.models_dir) / 'lightning_logs' / f'version_{args.model_version}'
@@ -68,8 +68,9 @@ def run_segmentation(args: Namespace):
         knn_method=args.knn_method,
         verbose=True,
     )
-    
+
     logger.info("Segmentation completed.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run_segmentation()

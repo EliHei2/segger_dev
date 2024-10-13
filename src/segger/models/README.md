@@ -1,4 +1,3 @@
-
 # segger: Graph Neural Network Model
 
 The `segger` model is a graph neural network designed to handle heterogeneous graphs with two primary node types: **transcripts** and **nuclei or cell boundaries**. It leverages attention-based convolutional layers to compute node embeddings and relationships in spatial transcriptomics data. The architecture includes an initial embedding layer for node feature transformation, multiple graph attention layers (GATv2Conv), and residual linear connections.
@@ -32,7 +31,8 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
    $$
 
    where:
-   - \( \alpha_{ij} \) is the attention coefficient between node \( i \) and node \( j \), computed as:
+
+   - \( \alpha\_{ij} \) is the attention coefficient between node \( i \) and node \( j \), computed as:
 
    $$
    \alpha_{ij} = \frac{\exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{j}^{(l)}] \right)\right)}{\sum_{k \in \mathcal{N}(i)} \exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{k}^{(l)}] \right)\right)}
@@ -47,7 +47,7 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
    \mathbf{h}_{i}^{(l+1)} = \text{ReLU}\left( \mathbf{h}_{i}^{(l+1)} + \mathbf{W}_{res} \mathbf{h}_{i}^{(l)} \right)
    $$
 
-   where \( \mathbf{W}_{res} \) is a residual weight matrix.
+   where \( \mathbf{W}\_{res} \) is a residual weight matrix.
 
 4. **L2 Normalization**:  
    Finally, the embeddings are normalized using L2 normalization:
@@ -62,23 +62,21 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
 
 In the next step, the `segger` model is transformed into a **heterogeneous graph neural network** using PyTorch Geometric's `to_hetero` function. This transformation enables the model to handle distinct node and edge types (transcripts and nuclei or cell boundaries) with separate mechanisms for modeling their relationships.
 
-
 ## Usage
 
 To instantiate and run the segger model:
 
 ```python
 model = segger(
-    num_tx_tokens=5000,    # Number of unique 'tx' tokens
-    init_emb=32,           # Initial embedding dimension
-    hidden_channels=64,    # Number of hidden channels
-    num_mid_layers=2,      # Number of middle layers
-    out_channels=128,      # Number of output channels
-    heads=4                # Number of attention heads
+    num_tx_tokens=5000,  # Number of unique 'tx' tokens
+    init_emb=32,  # Initial embedding dimension
+    hidden_channels=64,  # Number of hidden channels
+    num_mid_layers=2,  # Number of middle layers
+    out_channels=128,  # Number of output channels
+    heads=4,  # Number of attention heads
 )
 
 output = model(x, edge_index)
 ```
 
 Once transformed to a heterogeneous model and trained using PyTorch Lightning, the model can efficiently learn relationships between transcripts and nuclei or cell boundaries.
-

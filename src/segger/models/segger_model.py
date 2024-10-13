@@ -3,10 +3,20 @@ from torch_geometric.nn import GATv2Conv, Linear
 from torch.nn import Embedding
 from torch import Tensor
 from typing import Union
-#from torch_sparse import SparseTensor
+
+# from torch_sparse import SparseTensor
+
 
 class Segger(torch.nn.Module):
-    def __init__(self, num_tx_tokens: int, init_emb: int = 16, hidden_channels: int = 32, num_mid_layers: int = 3, out_channels: int = 32, heads: int = 3):
+    def __init__(
+        self,
+        num_tx_tokens: int,
+        init_emb: int = 16,
+        hidden_channels: int = 32,
+        num_mid_layers: int = 3,
+        out_channels: int = 32,
+        heads: int = 3,
+    ):
         """
         Initializes the Segger model.
 
@@ -54,27 +64,26 @@ class Segger(torch.nn.Module):
         Returns:
             Tensor: Output node embeddings.
         """
-        x = torch.nan_to_num(x, nan = 0)
+        x = torch.nan_to_num(x, nan=0)
         is_one_dim = (x.ndim == 1) * 1
-        # x = x[:, None]    
-        x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float())  * (1 - is_one_dim) 
+        # x = x[:, None]
+        x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float()) * (1 - is_one_dim)
         # First layer
         x = x.relu()
-        x = self.conv_first(x, edge_index) # + self.lin_first(x)
+        x = self.conv_first(x, edge_index)  # + self.lin_first(x)
         x = x.relu()
 
         # Middle layers
         if self.num_mid_layers > 0:
-            for conv_mid in self.conv_mid_layers:   
-                x = conv_mid(x, edge_index) # + lin_mid(x)
+            for conv_mid in self.conv_mid_layers:
+                x = conv_mid(x, edge_index)  # + lin_mid(x)
                 x = x.relu()
 
         # Last layer
-        x = self.conv_last(x, edge_index) # + self.lin_last(x)
+        x = self.conv_last(x, edge_index)  # + self.lin_last(x)
 
         return x
 
-    
     def decode(self, z: Tensor, edge_index: Union[Tensor]) -> Tensor:
         """
         Decode the node embeddings to predict edge values.

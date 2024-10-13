@@ -1,5 +1,7 @@
 # 🍳 Welcome to segger!
 
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/EliHei2/segger_dev/main.svg)](https://results.pre-commit.ci/latest/github/EliHei2/segger_dev/main)
+
 **segger** is a cutting-edge tool for **cell segmentation** in **single-molecule spatial omics** datasets. By leveraging **graph neural networks (GNNs)** and heterogeneous graphs, segger offers unmatched accuracy and scalability.
 
 # How segger Works
@@ -47,7 +49,6 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 ## Installation Options
 
-
 ### Important: PyTorch Geometric Dependencies
 
 Segger **highly depends** on PyTorch Geometric. One **must** install its dependencies (such as `torch-sparse` and `torch-scatter`) based on their system’s specifications, especially CUDA and PyTorch versions.
@@ -70,9 +71,7 @@ pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
 pip install torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
 ```
 
-
 Afterwards choose the installation method that best suits your needs.
-
 
 ### Micromamba Installation
 

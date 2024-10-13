@@ -7,27 +7,33 @@ import logging
 from argparse import Namespace
 
 # Path to default YAML configuration file
-train_yml = Path(__file__).parent / 'configs' / 'train' / 'default.yaml'
+train_yml = Path(__file__).parent / "configs" / "train" / "default.yaml"
 
 help_msg = "Train the Segger segmentation model."
+
+
 @click.command(name="train_model", help=help_msg)
 @add_options(config_path=train_yml)
-@click.option('--dataset_dir', type=Path, required=True, help='Directory containing the processed Segger dataset.')
-@click.option('--models_dir', type=Path, required=True, help='Directory to save the trained model and the training logs.')
-@click.option('--sample_tag', type=str, required=True, help='Sample tag for the dataset.')
-@click.option('--init_emb', type=int, default=8, help='Size of the embedding layer.')
-@click.option('--hidden_channels', type=int, default=32, help='Size of hidden channels in the model.')
-@click.option('--num_tx_tokens', type=int, default=500, help='Number of transcript tokens.')
-@click.option('--out_channels', type=int, default=8, help='Number of output channels.') 
-@click.option('--heads', type=int, default=2, help='Number of attention heads.') 
-@click.option('--num_mid_layers', type=int, default=2, help='Number of mid layers in the model.') 
-@click.option('--batch_size', type=int, default=4, help='Batch size for training.') 
-@click.option('--num_workers', type=int, default=2, help='Number of workers for data loading.') 
-@click.option('--accelerator', type=str, default='cuda', help='Device type to use for training (e.g., "cuda", "cpu").')  # Ask for accelerator
-@click.option('--max_epochs', type=int, default=200, help='Number of epochs for training.') 
-@click.option('--devices', type=int, default=4, help='Number of devices (GPUs) to use.') 
-@click.option('--strategy', type=str, default='auto', help='Training strategy for the trainer.') 
-@click.option('--precision', type=str, default='16-mixed', help='Precision for training.') 
+@click.option("--dataset_dir", type=Path, required=True, help="Directory containing the processed Segger dataset.")
+@click.option(
+    "--models_dir", type=Path, required=True, help="Directory to save the trained model and the training logs."
+)
+@click.option("--sample_tag", type=str, required=True, help="Sample tag for the dataset.")
+@click.option("--init_emb", type=int, default=8, help="Size of the embedding layer.")
+@click.option("--hidden_channels", type=int, default=32, help="Size of hidden channels in the model.")
+@click.option("--num_tx_tokens", type=int, default=500, help="Number of transcript tokens.")
+@click.option("--out_channels", type=int, default=8, help="Number of output channels.")
+@click.option("--heads", type=int, default=2, help="Number of attention heads.")
+@click.option("--num_mid_layers", type=int, default=2, help="Number of mid layers in the model.")
+@click.option("--batch_size", type=int, default=4, help="Batch size for training.")
+@click.option("--num_workers", type=int, default=2, help="Number of workers for data loading.")
+@click.option(
+    "--accelerator", type=str, default="cuda", help='Device type to use for training (e.g., "cuda", "cpu").'
+)  # Ask for accelerator
+@click.option("--max_epochs", type=int, default=200, help="Number of epochs for training.")
+@click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
+@click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
+@click.option("--precision", type=str, default="16-mixed", help="Precision for training.")
 def train_model(args: Namespace):
 
     # Setup logging
@@ -43,6 +49,7 @@ def train_model(args: Namespace):
     from segger.training.segger_data_module import SeggerDataModule
     from lightning.pytorch.loggers import CSVLogger
     from pytorch_lightning import Trainer
+
     logging.info("Done.")
 
     # Load datasets
@@ -66,7 +73,7 @@ def train_model(args: Namespace):
         out_channels=args.out_channels,  # Hard-coded value
         heads=args.heads,  # Hard-coded value
         num_mid_layers=args.num_mid_layers,  # Hard-coded value
-        aggr='sum',  # Hard-coded value
+        aggr="sum",  # Hard-coded value
         metadata=metadata,
     )
 
@@ -85,15 +92,12 @@ def train_model(args: Namespace):
         default_root_dir=args.models_dir,
         logger=CSVLogger(args.models_dir),
     )
-    
+
     logging.info("Done.")
 
     # Train model
     logging.info("Training model...")
-    trainer.fit(
-        model=ls,
-        datamodule=dm
-    )
+    trainer.fit(model=ls, datamodule=dm)
     logging.info("Done.")
 
 
@@ -102,11 +106,13 @@ def train_model(args: Namespace):
 def train_slurm(args):
     train_model(args)
 
+
 @click.group(help="Train the Segger model")
 def train():
     pass
 
+
 train.add_command(train_slurm)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     train_model()
