@@ -97,7 +97,12 @@ def load_model(checkpoint_path: str) -> LitSegger:
 
 
 def get_similarity_scores(
-    model: torch.nn.Module, batch: Batch, from_type: str, to_type: str, receptive_field: dict
+    model: torch.nn.Module,
+    batch: Batch,
+    from_type: str,
+    to_type: str,
+    receptive_field: dict,
+    knn_method: str,
 ) -> coo_matrix:
     """
     Compute similarity scores between embeddings for 'from_type' and 'to_type' nodes
@@ -121,7 +126,7 @@ def get_similarity_scores(
         batch[from_type].pos[:, :2],  # 'bd' positions
         k=receptive_field[f"k_{to_type}"],
         dist=receptive_field[f"dist_{to_type}"],
-        method="cuda",
+        method=knn_method,
     )
     edge_index = coo_to_dense_adj(
         edge_index.T,
@@ -214,7 +219,7 @@ def predict_batch(
 
         if len(batch["bd"].pos) >= 10:
             # Compute similarity scores between 'tx' and 'bd'
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd", receptive_field)
+            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd", receptive_field, knn_method)
             torch.cuda.empty_cache()
             # Convert sparse matrix to dense format
             dense_scores = scores.toarray()  # Convert to dense NumPy array
@@ -228,14 +233,14 @@ def predict_batch(
             all_ids = np.concatenate(batch["bd"].id)  # Keep IDs as NumPy array
             assignments["segger_cell_id"] = None  # Initialize as None
             max_indices = cp.argmax(dense_scores, axis=1).get()
-            assignments["segger_cell_id"][mask] = all_ids[max_indices[mask]]  # Assign IDs
+            assignments.loc[mask, "segger_cell_id"] = all_ids[max_indices[mask]]  # Assign IDs
 
             del dense_scores  # Remove from memory
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
             # Move back to CPU
             assignments["bound"] = 0
-            assignments["bound"][mask] = 1
+            assignments.loc[mask, "bound"] = 1
 
             if use_cc:
                 # Compute similarity scores between 'tx' and 'tx'
