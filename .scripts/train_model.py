@@ -95,39 +95,21 @@ if __name__ == "__main__":
         default=4,
         help="Batch size for validation",
     )
-    parser.add_argument(
-        "--init_emb", type=int, default=8, help="Initial embedding size"
-    )
+    parser.add_argument("--init_emb", type=int, default=8, help="Initial embedding size")
     parser.add_argument(
         "--hidden_channels",
         type=int,
         default=64,
         help="Number of hidden channels",
     )
-    parser.add_argument(
-        "--out_channels", type=int, default=16, help="Number of output channels"
-    )
-    parser.add_argument(
-        "--heads", type=int, default=4, help="Number of attention heads"
-    )
-    parser.add_argument(
-        "--aggr", type=str, default="sum", help="Aggregation method"
-    )
-    parser.add_argument(
-        "--accelerator", type=str, default="cuda", help="Type of accelerator"
-    )
-    parser.add_argument(
-        "--strategy", type=str, default="auto", help="Training strategy"
-    )
-    parser.add_argument(
-        "--precision", type=str, default="16-mixed", help="Precision mode"
-    )
-    parser.add_argument(
-        "--devices", type=int, default=4, help="Number of devices"
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=100, help="Number of epochs"
-    )
+    parser.add_argument("--out_channels", type=int, default=16, help="Number of output channels")
+    parser.add_argument("--heads", type=int, default=4, help="Number of attention heads")
+    parser.add_argument("--aggr", type=str, default="sum", help="Aggregation method")
+    parser.add_argument("--accelerator", type=str, default="cuda", help="Type of accelerator")
+    parser.add_argument("--strategy", type=str, default="auto", help="Training strategy")
+    parser.add_argument("--precision", type=str, default="16-mixed", help="Precision mode")
+    parser.add_argument("--devices", type=int, default=4, help="Number of devices")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs")
     parser.add_argument(
         "--default_root_dir",
         type=str,

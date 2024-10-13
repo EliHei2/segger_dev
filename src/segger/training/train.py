@@ -60,7 +60,17 @@ class LitSegger(LightningModule):
         self.validation_step_outputs = []
         self.criterion = torch.nn.BCEWithLogitsLoss()
 
-    def from_new(self, num_tx_tokens: int, init_emb: int, hidden_channels: int, out_channels: int, heads: int, num_mid_layers: int, aggr: str, metadata: Union[Tuple, Metadata]):
+    def from_new(
+        self,
+        num_tx_tokens: int,
+        init_emb: int,
+        hidden_channels: int,
+        out_channels: int,
+        heads: int,
+        num_mid_layers: int,
+        aggr: str,
+        metadata: Union[Tuple, Metadata],
+    ):
         """
         Initializes the LitSegger module with new parameters.
 
@@ -124,7 +134,7 @@ class LitSegger(LightningModule):
             The output of the model.
         """
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['bd'].t())  # Example for bipartite graph
+        output = torch.matmul(z["tx"], z["bd"].t())  # Example for bipartite graph
         return output
 
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -145,16 +155,16 @@ class LitSegger(LightningModule):
         """
         # Forward pass to get the logits
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['bd'].t())
+        output = torch.matmul(z["tx"], z["bd"].t())
 
         # Get edge labels and logits
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
+        edge_label_index = batch["tx", "belongs", "bd"].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
-        
+        edge_label = batch["tx", "belongs", "bd"].edge_label
+
         # Compute binary cross-entropy loss with logits (no sigmoid here)
         loss = self.criterion(out_values, edge_label)
-        
+
         # Log the training loss
         self.log("train_loss", loss, prog_bar=True, batch_size=batch.num_graphs)
         return loss
@@ -177,31 +187,31 @@ class LitSegger(LightningModule):
         """
         # Forward pass to get the logits
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = torch.matmul(z['tx'], z['bd'].t())
+        output = torch.matmul(z["tx"], z["bd"].t())
 
         # Get edge labels and logits
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
+        edge_label_index = batch["tx", "belongs", "bd"].edge_label_index
         out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
-        
+        edge_label = batch["tx", "belongs", "bd"].edge_label
+
         # Compute binary cross-entropy loss with logits (no sigmoid here)
         loss = self.criterion(out_values, edge_label)
-        
+
         # Apply sigmoid to logits for AUROC and F1 metrics
         out_values_prob = torch.sigmoid(out_values)
 
         # Compute metrics
         auroc = torchmetrics.AUROC(task="binary")
         auroc_res = auroc(out_values_prob, edge_label)
-        
+
         f1 = F1Score(task="binary").to(self.device)
         f1_res = f1(out_values_prob, edge_label)
-        
+
         # Log validation metrics
         self.log("validation_loss", loss, batch_size=batch.num_graphs)
         self.log("validation_auroc", auroc_res, prog_bar=True, batch_size=batch.num_graphs)
         self.log("validation_f1", f1_res, prog_bar=True, batch_size=batch.num_graphs)
-        
+
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:

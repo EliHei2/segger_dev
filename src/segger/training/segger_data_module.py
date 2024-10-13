@@ -21,9 +21,9 @@ class SeggerDataModule(LightningDataModule):
 
     # TODO: Add documentation
     def setup(self, stage=None):
-        self.train = STPyGDataset(root=self.data_dir / 'train_tiles')
-        self.test = STPyGDataset(root=self.data_dir / 'test_tiles')
-        self.val = STPyGDataset(root=self.data_dir / 'val_tiles')
+        self.train = STPyGDataset(root=self.data_dir / "train_tiles")
+        self.test = STPyGDataset(root=self.data_dir / "test_tiles")
+        self.val = STPyGDataset(root=self.data_dir / "val_tiles")
         self.loader_kwargs = dict(
             batch_size=self.batch_size,
             num_workers=self.num_workers,
