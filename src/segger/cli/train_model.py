@@ -70,6 +70,11 @@ def train_model(args: Namespace):
         metadata=metadata,
     )
 
+    # Forward pass to initialize the model
+    if args.devices > 1:
+        batch = dm.train[0]
+        ls.forward(batch)
+
     # Initialize the Lightning trainer
     trainer = Trainer(
         accelerator=args.accelerator,  # Directly use the specified accelerator
