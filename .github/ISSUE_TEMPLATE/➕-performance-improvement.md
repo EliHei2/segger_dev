@@ -1,10 +1,9 @@
 ---
 name: "➕ Performance Improvement"
 about: Suggest an improvement in the performance
-title: ''
-labels: ''
+title: ""
+labels: ""
 assignees: andrewmoorman, EliHei2
-
 ---
 
 **Describe the issue with the current implementation**

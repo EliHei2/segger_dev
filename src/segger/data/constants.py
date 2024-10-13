@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class SpatialTranscriptomicsKeys(Enum):
     """Unified keys for spatial transcriptomics data, supporting multiple platforms."""
 
@@ -7,11 +8,11 @@ class SpatialTranscriptomicsKeys(Enum):
     TRANSCRIPTS_FILE = auto()
     BOUNDARIES_FILE = auto()
     CELL_METADATA_FILE = auto()
-    
+
     # Cell identifiers
     CELL_ID = auto()
     TRANSCRIPTS_ID = auto()
-    
+
     # Coordinates and locations
     TRANSCRIPTS_X = auto()
     TRANSCRIPTS_Y = auto()
@@ -19,7 +20,7 @@ class SpatialTranscriptomicsKeys(Enum):
     BOUNDARIES_VERTEX_Y = auto()
     GLOBAL_X = auto()
     GLOBAL_Y = auto()
-    
+
     # Metadata
     METADATA_CELL_KEY = auto()
     COUNTS_CELL_KEY = auto()

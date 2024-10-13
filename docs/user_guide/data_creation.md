@@ -140,19 +140,22 @@ from pathlib import Path
 import scanpy as sc
 
 # Set up the file paths
-raw_data_dir = Path('/path/to/xenium_output')
-processed_data_dir = Path('path/to/processed_files')
+raw_data_dir = Path("/path/to/xenium_output")
+processed_data_dir = Path("path/to/processed_files")
 sample_tag = "sample/tag"
 
 # Load scRNA-seq data using Scanpy and subsample for efficiency
-scRNAseq_path = 'path/to/scRNAseq.h5ad'
+scRNAseq_path = "path/to/scRNAseq.h5ad"
 scRNAseq = sc.read(scRNAseq_path)
 sc.pp.subsample(scRNAseq, fraction=0.1)
 
 # Calculate gene cell type abundance embedding from scRNA-seq data
 from segger.utils import calculate_gene_celltype_abundance_embedding
-celltype_column = 'celltype_column'
-gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(scRNAseq, celltype_column)
+
+celltype_column = "celltype_column"
+gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
+    scRNAseq, celltype_column
+)
 
 # Create a XeniumSample instance for spatial transcriptomics processing
 xenium_sample = XeniumSample()
@@ -161,9 +164,9 @@ xenium_sample = XeniumSample()
 xenium_sample.load_transcripts(
     base_path=raw_data_dir,
     sample=sample_tag,
-    transcripts_filename='transcripts.parquet',
+    transcripts_filename="transcripts.parquet",
     file_format="parquet",
-    additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding}
+    additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding},
 )
 
 # Set the embedding to "cell_type_abundance" to use it in further processing
@@ -171,7 +174,7 @@ xenium_sample.set_embedding("cell_type_abundance")
 
 # Load nuclei data to define boundaries
 nuclei_path = raw_data_dir / sample_tag / "nucleus_boundaries.parquet"
-xenium_sample.load_boundaries(path=nuclei_path, file_format='parquet')
+xenium_sample.load_boundaries(path=nuclei_path, file_format="parquet")
 
 # Build PyTorch Geometric (PyG) data from a tile of the dataset
 tile_pyg_data = xenium_sample.build_pyg_data_from_tile(
@@ -180,7 +183,7 @@ tile_pyg_data = xenium_sample.build_pyg_data_from_tile(
     r_tx=20,
     k_tx=20,
     use_precomputed=False,
-    workers=1
+    workers=1,
 )
 
 # Save dataset in processed format for segmentation
@@ -199,7 +202,7 @@ xenium_sample.save_dataset_for_segger(
     test_prob=0.2,
     neg_sampling_ratio_approx=5,
     sampling_rate=1,
-    num_workers=1
+    num_workers=1,
 )
 ```
 
@@ -210,8 +213,8 @@ from segger.data import MerscopeSample
 from pathlib import Path
 
 # Set up the file paths
-raw_data_dir = Path('path/to/merscope_outputs')
-processed_data_dir = Path('path/to/processed_files')
+raw_data_dir = Path("path/to/merscope_outputs")
+processed_data_dir = Path("path/to/processed_files")
 sample_tag = "sample_tag"
 
 # Create a MerscopeSample instance for spatial transcriptomics processing
@@ -221,16 +224,18 @@ merscope_sample = MerscopeSample()
 merscope_sample.load_transcripts(
     base_path=raw_data_dir,
     sample=sample_tag,
-    transcripts_filename='transcripts.csv',
-    file_format='csv'
+    transcripts_filename="transcripts.csv",
+    file_format="csv",
 )
 
 # Optionally load cell boundaries
 cell_boundaries_path = raw_data_dir / sample_tag / "cell_boundaries.parquet"
-merscope_sample.load_boundaries(path=cell_boundaries_path, file_format='parquet')
+merscope_sample.load_boundaries(path=cell_boundaries_path, file_format="parquet")
 
 # Filter transcripts based on specific criteria
-filtered_transcripts = merscope_sample.filter_transcripts(merscope_sample.transcripts_df)
+filtered_transcripts = merscope_sample.filter_transcripts(
+    merscope_sample.transcripts_df
+)
 
 # Build PyTorch Geometric (PyG) data from a tile of the dataset
 tile_pyg_data = merscope_sample.build_pyg_data_from_tile(
@@ -239,7 +244,7 @@ tile_pyg_data = merscope_sample.build_pyg_data_from_tile(
     r_tx=15,
     k_tx=15,
     use_precomputed=True,
-    workers=2
+    workers=2,
 )
 
 # Save dataset in processed format for segmentation
@@ -258,6 +263,6 @@ merscope_sample.save_dataset_for_segger(
     test_prob=0.2,
     neg_sampling_ratio_approx=3,
     sampling_rate=1,
-    num_workers=2
+    num_workers=2,
 )
 ```
