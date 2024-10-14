@@ -586,6 +586,11 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
             cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
             segmentations_dict['segger_n1'] = adata[cells_n1, :]
             segmentations_dict['segger_n0'] = adata[cells_n0, :]
+        if method == 'Baysor':
+            # cells_n1 = [i for i in adata.obs_names if not i.endswith('-nx')]
+            # cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
+            segmentations_dict['Baysor_n1'] = adata[adata.obs.has_nucleus, :]
+            segmentations_dict['Baysor_n0'] = adata[~adata.obs.has_nucleus, :]
         segmentations_dict[method] = adata
     return segmentations_dict
 
@@ -927,7 +932,7 @@ def plot_quantized_mecr_counts(quantized_mecr_counts: Dict[str, pd.DataFrame], o
         output_path (Path): Path to the directory where the plot will be saved.
         palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
-    quantized_mecr_counts.to_csv(output_path / 'quantized_mecr_counts.csv', index=True)
+    # quantized_mecr_counts.to_csv(output_path / 'quantized_mecr_counts.csv', index=True)
     plt.figure(figsize=(9, 6))
     for method, df in quantized_mecr_counts.items():
         plt.plot(
@@ -966,7 +971,7 @@ def plot_quantized_mecr_area(quantized_mecr_area: Dict[str, pd.DataFrame], outpu
     output_path (Path): Path to the directory where the plot will be saved.
     palette (Dict[str, str]): Dictionary mapping segmentation method names to color codes.
     """
-    quantized_mecr_area.to_csv(output_path / 'quantized_mecr_area.csv', index=True)
+    # quantized_mecr_area.to_csv(output_path / 'quantized_mecr_area.csv', index=True)
     plt.figure(figsize=(6, 4))
     for method, df in quantized_mecr_area.items():
         plt.plot(

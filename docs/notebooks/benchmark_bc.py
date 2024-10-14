@@ -18,10 +18,13 @@ method_colors = {
     'segger': '#D55E00',
     'segger_n0': '#E69F00',
     'segger_n1': '#F0E442',
-    'Baysor': '#0072B2',
-    '10X': '#009E73',
+    'segger_embedding': '#C72228',
+    'Baysor': '#000075',
+    'Baysor_n0': '#0F4A9C',
+    'Baysor_n1': '#0072B2',
+    '10X': '#8B008B',
     '10X-nucleus': '#CC79A7',
-    'BIDCell': '#8B008B'
+    # 'BIDCell': '#009E73'
 }
 
 # Define colors for cell types
@@ -37,34 +40,47 @@ major_colors = {
     'Plasmablasts': '#000075'
 }
 
+
 # Define segmentation file paths
 segmentation_paths = {
-    'segger': benchmarks_path / 'adata_segger.h5ad',
+    # 'segger': benchmarks_path / 'Xenium_FFPE_Human_Breast_Cancer_Rep1_v9_segger.h5ad',
+    'segger': 'data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep1_v9_segger.h5ad',
+    # 'segger_embedding': benchmarks_path / 'segger_embedding_1001_0.5_cc_segmentation.h5ad',
     'Baysor': benchmarks_path / 'adata_baysor.h5ad',
     '10X': benchmarks_path / 'adata_10X.h5ad',
     '10X-nucleus': benchmarks_path / 'adata_10X_nuc.h5ad',
-    'BIDCell': benchmarks_path / 'adata_BIDCell.h5ad'
+    # 'BIDCell': benchmarks_path / 'adata_BIDCell.h5ad'
 }
 
 # Load the segmentations and the scRNAseq data
 segmentations_dict = load_segmentations(segmentation_paths)
 segmentations_dict = {k: segmentations_dict[k] for k in method_colors.keys() if k in segmentations_dict}
 scRNAseq_adata = sc.read(benchmarks_path / 'scRNAseq.h5ad')
+segmentations_dict['segger'] = segmentations_dict['segger'][segmentations_dict['segger'].obs.cell_area < 150]
+# scRNAseq_adata = set(scRNAseq_adata.var_names).intersect([set(segmentations_dict[seg].var_names) for seg in segmentations_dict.keys()])
 
 # Generate general statistics plots
-plot_general_statistics_plots(segmentations_dict, figures_path, method_colors)
+# plot_general_statistics_plots(segmentations_dict, figures_path, method_colors)
+
+
+plot_cell_counts(segmentations_dict, figures_path, palette=method_colors)
+plot_cell_area(segmentations_dict, figures_path, palette=method_colors)
 
 # Find markers for scRNAseq data
 markers = find_markers(scRNAseq_adata, cell_type_column='celltype_major', pos_percentile=30, neg_percentile=5)
 
 # Annotate spatial segmentations with scRNAseq reference data
-for method in segmentation_paths.keys():
-    # segmentations_dict[method] = annotate_query_with_reference(
-    #     reference_adata=scRNAseq_adata,
-    #     query_adata=segmentations_dict[method],
-    #     transfer_column='celltype_major'
-    # )
-    segmentations_dict[method].write(segmentation_paths[method])
+# for method in segmentation_paths.keys():
+#     segmentations_dict[method] = annotate_query_with_reference(
+#         reference_adata=scRNAseq_adata,
+#         query_adata=segmentations_dict[method],
+#         transfer_column='celltype_major'
+#     )
+#     segmentations_dict[method].write(segmentation_paths[method])
+    
+sc._settings.ScanpyConfig.figdir = figures_path
+segmentations_dict['segger_embedding'].obsm['spatial'] = segmentations_dict['segger_embedding'].obs[['cell_centroid_x', 'cell_centroid_y']].values
+sc.pl.spatial(segmentations_dict['segger_embedding'], spot_size=10, save= 'embedding.pdf', color='celltype_major', palette=major_colors)
 
 # Find mutually exclusive genes based on scRNAseq data
 exclusive_gene_pairs = find_mutually_exclusive_genes(
@@ -88,10 +104,10 @@ for method in segmentations_dict.keys():
             adata=segmentations_dict[method],
             gene_pairs=exclusive_gene_pairs
         )
-    quantized_mecr_counts[method] = compute_quantized_mecr_counts(
-        adata=segmentations_dict[method],
-        gene_pairs=exclusive_gene_pairs
-    )
+    # quantized_mecr_counts[method] = compute_quantized_mecr_counts(
+    #     adata=segmentations_dict[method],
+    #     gene_pairs=exclusive_gene_pairs
+    # )
 
 # Plot MECR results
 plot_mecr_results(mecr_results, output_path=figures_path, palette=method_colors)
@@ -166,7 +182,7 @@ entropy_boxplot_data = pd.concat(entropy_boxplot_data)
 plot_entropy_boxplots(entropy_boxplot_data, figures_path, palette=method_colors)
 
 # Find markers for sensitivity calculation
-purified_markers = find_markers(scRNAseq_adata, 'celltype_major', pos_percentile=20, percentage=75)
+purified_markers = find_markers(scRNAseq_adata, 'celltype_major', pos_percentile=30, percentage=70)
 
 # Calculate sensitivity for each segmentation method
 sensitivity_results_per_method = {}
