@@ -8,17 +8,19 @@ import os
 import dask.dataframe as dd
 import pandas as pd
 from pathlib import Path
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import cupy as cp
 from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-segger_data_dir = Path('./data_tidy/pyg_datasets/bc_embedding_1001')
-models_dir = Path('./models/bc_embedding_1001_small')
-benchmarks_dir = Path('/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc')
-transcripts_file = 'data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet'
+
+segger_data_dir = Path("./data_tidy/pyg_datasets/bc_embedding_1001")
+models_dir = Path("./models/bc_embedding_1001_small")
+benchmarks_dir = Path("/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc")
+transcripts_file = "data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet"
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
@@ -32,12 +34,10 @@ dm.setup()
 model_version = 0
 
 # Load in latest checkpoint
-model_path = models_dir / 'lightning_logs' / f'version_{model_version}'
-model = load_model(model_path / 'checkpoints')
+model_path = models_dir / "lightning_logs" / f"version_{model_version}"
+model = load_model(model_path / "checkpoints")
 
-receptive_field = {'k_bd': 4, 'dist_bd': 20,'k_tx': 15, 'dist_tx': 1}
-
-
+receptive_field = {"k_bd": 4, "dist_bd": 12, "k_tx": 5, "dist_tx": 5}
 
 segment(
     model,
@@ -50,12 +50,13 @@ segment(
     min_transcripts=5,
     score_cut=0.5,
     # max_transcripts=1500,
-    cell_id_col='segger_cell_id',
+    cell_id_col="segger_cell_id",
     use_cc=True,
     knn_method='cuda',
     verbose=True
     # client=client
 )
+
 
 # if __name__ == "__main__":
 #     cluster = LocalCUDACluster(

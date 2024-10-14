@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from pathlib import Path
 import yaml
 
+
 def get_xy_extents(
     filepath,
     x: str,
@@ -50,6 +51,7 @@ def get_xy_extents(
     bounds = shapely.box(x_min, y_min, x_max, y_max)
     return bounds
 
+
 def read_parquet_region(
     filepath,
     x: str,
@@ -89,14 +91,17 @@ def read_parquet_region(
     # Find bounds of full file if not supplied
     if bounds is None:
         bounds = get_xy_bounds(filepath, x, y)
-    
+
     # Load pre-filtered data from Parquet file
-    filters = [[
-        (x, '>', bounds.bounds[0]),
-        (y, '>', bounds.bounds[1]),
-        (x, '<', bounds.bounds[2]),
-        (y, '<', bounds.bounds[3]),
-    ] + extra_filters]
+    filters = [
+        [
+            (x, ">", bounds.bounds[0]),
+            (y, ">", bounds.bounds[1]),
+            (x, "<", bounds.bounds[2]),
+            (y, "<", bounds.bounds[3]),
+        ]
+        + extra_filters
+    ]
 
     columns = list({x, y} | set(extra_columns))
 
@@ -107,6 +112,7 @@ def read_parquet_region(
     )
     return region
 
+
 def get_polygons_from_xy(
     boundaries: pd.DataFrame,
     x: str,
@@ -114,13 +120,13 @@ def get_polygons_from_xy(
     label: str,
 ) -> gpd.GeoSeries:
     """
-    Convert boundary coordinates from a cuDF DataFrame to a GeoSeries of 
+    Convert boundary coordinates from a cuDF DataFrame to a GeoSeries of
     polygons.
 
     Parameters
     ----------
     boundaries : pd.DataFrame
-        A DataFrame containing the boundary data with x and y coordinates 
+        A DataFrame containing the boundary data with x and y coordinates
         and identifiers.
     x : str
         The name of the column representing the x-coordinate.
@@ -133,7 +139,7 @@ def get_polygons_from_xy(
     Returns
     -------
     gpd.GeoSeries
-        A GeoSeries containing the polygons created from the boundary 
+        A GeoSeries containing the polygons created from the boundary
         coordinates.
     """
     # Polygon offsets in coords
@@ -152,6 +158,7 @@ def get_polygons_from_xy(
 
     return gs
 
+
 def filter_boundaries(
     boundaries: pd.DataFrame,
     inset: shapely.Polygon,
@@ -161,13 +168,13 @@ def filter_boundaries(
     label: str,
 ):
     """
-    Filter boundary polygons based on their overlap with specified inset and 
+    Filter boundary polygons based on their overlap with specified inset and
     outset regions.
 
     Parameters
     ----------
     boundaries : cudf.DataFrame
-        A DataFrame containing the boundary data with x and y coordinates and 
+        A DataFrame containing the boundary data with x and y coordinates and
         identifiers.
     inset : shapely.Polygon
         A polygon representing the inner region to filter the boundaries.
@@ -187,42 +194,45 @@ def filter_boundaries(
 
     Notes
     -----
-    The function determines overlaps of boundary polygons with the specified 
-    inset and outset regions. It creates boolean masks for overlaps with the 
-    top, left, right, and bottom sides of the outset region, as well as the 
-    center region defined by the inset polygon. The filtering logic includes 
+    The function determines overlaps of boundary polygons with the specified
+    inset and outset regions. It creates boolean masks for overlaps with the
+    top, left, right, and bottom sides of the outset region, as well as the
+    center region defined by the inset polygon. The filtering logic includes
     polygons that:
     - Are completely within the center region.
     - Overlap with the center and the left side, but not the bottom side.
     - Overlap with the center and the top side, but not the right side.
     """
+
     # Determine overlaps of boundary polygons
     def in_region(region):
         in_x = boundaries[x].between(region.bounds[0], region.bounds[2])
         in_y = boundaries[y].between(region.bounds[1], region.bounds[3])
         return in_x & in_y
+
     x1, y1, x4, y4 = outset.bounds
     x2, y2, x3, y3 = inset.bounds
-    boundaries['top'] = in_region(shapely.box(x1, y1, x4, y2))
-    boundaries['left'] = in_region(shapely.box(x1, y1, x2, y4))
-    boundaries['right'] = in_region(shapely.box(x3, y1, x4, y4))
-    boundaries['bottom'] = in_region(shapely.box(x1, y3, x4, y4))
-    boundaries['center'] = in_region(inset)
+    boundaries["top"] = in_region(shapely.box(x1, y1, x4, y2))
+    boundaries["left"] = in_region(shapely.box(x1, y1, x2, y4))
+    boundaries["right"] = in_region(shapely.box(x3, y1, x4, y4))
+    boundaries["bottom"] = in_region(shapely.box(x1, y3, x4, y4))
+    boundaries["center"] = in_region(inset)
 
     # Filter boundary polygons
     # Include overlaps with top and left, not bottom and right
     gb = boundaries.groupby(label, sort=False)
-    total = gb['center'].transform('size')
-    in_top = gb['top'].transform('sum')
-    in_left = gb['left'].transform('sum')
-    in_right = gb['right'].transform('sum')
-    in_bottom = gb['bottom'].transform('sum')
-    in_center = gb['center'].transform('sum')
+    total = gb["center"].transform("size")
+    in_top = gb["top"].transform("sum")
+    in_left = gb["left"].transform("sum")
+    in_right = gb["right"].transform("sum")
+    in_bottom = gb["bottom"].transform("sum")
+    in_center = gb["center"].transform("sum")
     keep = in_center == total
-    keep |= ((in_center > 0) & (in_left > 0) & (in_bottom == 0))
-    keep |= ((in_center > 0) & (in_top > 0) & (in_right == 0))
+    keep |= (in_center > 0) & (in_left > 0) & (in_bottom == 0)
+    keep |= (in_center > 0) & (in_top > 0) & (in_right == 0)
     inset_boundaries = boundaries.loc[keep]
     return inset_boundaries
+
 
 def filter_transcripts(
     transcripts_df: pd.DataFrame,
@@ -256,9 +266,10 @@ def filter_transcripts(
         mask &= transcripts_df["qv"].ge(min_qv)
     return transcripts_df[mask]
 
+
 def load_settings(sample_type: str) -> SimpleNamespace:
     """
-    Loads a matching YAML file from the _settings/ directory and converts its 
+    Loads a matching YAML file from the _settings/ directory and converts its
     contents into a SimpleNamespace.
 
     Parameters
@@ -276,24 +287,22 @@ def load_settings(sample_type: str) -> SimpleNamespace:
     ValueError
         If `sample_type` does not match any filenames.
     """
-    settings_dir = Path(__file__).parent.resolve() / '_settings'
+    settings_dir = Path(__file__).parent.resolve() / "_settings"
     # Get a list of YAML filenames (without extensions) in the _settings dir
-    filenames = [file.stem for file in settings_dir.glob('*.yaml')]
+    filenames = [file.stem for file in settings_dir.glob("*.yaml")]
     # Convert sample_type to lowercase and check if it matches any filename
     sample_type = sample_type.lower()
     if sample_type not in filenames:
-        msg = (
-            f"Sample type '{sample_type}' not found in settings. "
-            f"Available options: {', '.join(filenames)}"
-        )
+        msg = f"Sample type '{sample_type}' not found in settings. " f"Available options: {', '.join(filenames)}"
         raise FileNotFoundError(msg)
     # Load the matching YAML file
     yaml_file_path = settings_dir / f"{sample_type}.yaml"
-    with yaml_file_path.open('r') as file:
+    with yaml_file_path.open("r") as file:
         data = yaml.safe_load(file)
-    
+
     # Convert the YAML data into a SimpleNamespace recursively
     return _dict_to_namespace(data)
+
 
 def _dict_to_namespace(d):
     """

@@ -1,0 +1,64 @@
+dataset_dir:
+  type: Path
+  required: true
+  help: Directory containing the processed Segger dataset.
+models_dir:
+  type: Path
+  required: true
+  help: Directory to save the trained model and the training logs.
+sample_tag:
+  type: str
+  required: true
+  help: Sample tag for the dataset.
+init_emb:
+  type: int
+  default: 8
+  help: Size of the embedding layer.
+hidden_channels:
+  type: int
+  default: 32
+  help: Size of hidden channels in the model.
+num_tx_tokens:
+  type: int
+  default: 500
+  help: Number of transcript tokens.
+out_channels:
+  type: int
+  default: 8
+  help: Number of output channels.
+heads:
+  type: int
+  default: 2
+  help: Number of attention heads.
+num_mid_layers:
+  type: int
+  default: 2
+  help: Number of mid layers in the model.
+batch_size:
+  type: int
+  default: 4
+  help: Batch size for training.
+num_workers:
+  type: int
+  default: 2
+  help: Number of workers for data loading.
+accelerator:
+  type: str
+  default: "cuda"
+  help: Device type to use for training (e.g., "cuda", "cpu").
+max_epochs:
+  type: int
+  default: 200
+  help: Number of epochs for training.
+devices:
+  type: int
+  default: 4
+  help: Number of devices (GPUs) to use.
+strategy:
+  type: str
+  default: "auto"
+  help: Training strategy for the trainer.
+precision:
+  type: str
+  default: "16-mixed"
+  help: Precision for training.

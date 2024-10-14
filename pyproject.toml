@@ -48,12 +48,12 @@ faiss = [
 
 rapids11 = [
     "cupy-cuda11x",
-    "cuvs-cu11>=24.4.*",
+    "cuvs-cu11==24.4.*",
 ]
 
 rapids12 = [
     "cupy-cuda12x",
-    "cuvs-cu12>=24.4.*",
+    "cuvs-cu12==24.4.*",
 ]
 
 multiprocessing = ["multiprocessing"]
@@ -99,3 +99,23 @@ repository = "https://github.com/EliHei2/segger_dev"
 [tool.setuptools]
 packages = ["segger"]
 package-dir = {"" = "src"}
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
