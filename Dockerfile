@@ -24,4 +24,4 @@ RUN git clone https://github.com/EliHei2/segger_dev.git /workspace/segger_dev &&
 
 EXPOSE 5678
 
-ENV PYTHONPATH=/home/developer/segger_dev/src:$PYTHONPATH
+ENV PYTHONPATH=/workspace/segger_dev/src:$PYTHONPATH
