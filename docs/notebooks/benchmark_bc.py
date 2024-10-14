@@ -15,15 +15,15 @@ figures_path.mkdir(parents=True, exist_ok=True)  # Ensure the figures directory 
 
 # Define colors for segmentation methods
 method_colors = {
-    'segger': '#D55E00',
-    'segger_n0': '#E69F00',
-    'segger_n1': '#F0E442',
-    'segger_embedding': '#C72228',
-    'Baysor': '#000075',
-    'Baysor_n0': '#0F4A9C',
-    'Baysor_n1': '#0072B2',
-    '10X': '#8B008B',
-    '10X-nucleus': '#CC79A7',
+    "segger": "#D55E00",
+    "segger_n0": "#E69F00",
+    "segger_n1": "#F0E442",
+    "segger_embedding": "#C72228",
+    "Baysor": "#000075",
+    "Baysor_n0": "#0F4A9C",
+    "Baysor_n1": "#0072B2",
+    "10X": "#8B008B",
+    "10X-nucleus": "#CC79A7",
     # 'BIDCell': '#009E73'
 }
 
@@ -73,10 +73,18 @@ markers = find_markers(scRNAseq_adata, cell_type_column="celltype_major", pos_pe
 #         transfer_column='celltype_major'
 #     )
 #     segmentations_dict[method].write(segmentation_paths[method])
-    
+
 sc._settings.ScanpyConfig.figdir = figures_path
-segmentations_dict['segger_embedding'].obsm['spatial'] = segmentations_dict['segger_embedding'].obs[['cell_centroid_x', 'cell_centroid_y']].values
-sc.pl.spatial(segmentations_dict['segger_embedding'], spot_size=10, save= 'embedding.pdf', color='celltype_major', palette=major_colors)
+segmentations_dict["segger_embedding"].obsm["spatial"] = (
+    segmentations_dict["segger_embedding"].obs[["cell_centroid_x", "cell_centroid_y"]].values
+)
+sc.pl.spatial(
+    segmentations_dict["segger_embedding"],
+    spot_size=10,
+    save="embedding.pdf",
+    color="celltype_major",
+    palette=major_colors,
+)
 
 # Find mutually exclusive genes based on scRNAseq data
 exclusive_gene_pairs = find_mutually_exclusive_genes(
