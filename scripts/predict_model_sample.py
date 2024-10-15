@@ -16,7 +16,6 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-
 segger_data_dir = Path("./data_tidy/pyg_datasets/bc_embedding_1001")
 models_dir = Path("./models/bc_embedding_1001_small")
 benchmarks_dir = Path("/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc")
@@ -24,8 +23,8 @@ transcripts_file = "data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcr
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=1,  
-    num_workers=0,  
+    batch_size=1,
+    num_workers=0,
 )
 
 dm.setup()
@@ -43,17 +42,17 @@ segment(
     model,
     dm,
     save_dir=benchmarks_dir,
-    seg_tag='parquet_test_big',
+    seg_tag="parquet_test_big",
     transcript_file=transcripts_file,
     # file_format='anndata',
-    receptive_field = receptive_field,
+    receptive_field=receptive_field,
     min_transcripts=5,
     score_cut=0.5,
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
     use_cc=True,
-    knn_method='cuda',
-    verbose=True
+    knn_method="cuda",
+    verbose=True,
     # client=client
 )
 
@@ -70,7 +69,7 @@ segment(
 #         lifetime_restart=True  # Automatically restart workers
 #     )
 #     client = Client(cluster)
-    
+
 # segment(
 #     model,
 #     dm,

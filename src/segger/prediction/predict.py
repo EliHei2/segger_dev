@@ -121,11 +121,11 @@ def get_similarity_scores(
     """
 
     # Keep everything on GPU until final results
-    batch = batch.to('cuda')
+    batch = batch.to("cuda")
 
     # Step 1: Get embeddings from the model (on GPU)
     shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-    
+
     # Compute edge indices using knn method (still on GPU)
     edge_index = get_edge_index(
         batch[to_type].pos[:, :2],  # 'tx' positions
@@ -134,7 +134,7 @@ def get_similarity_scores(
         dist=receptive_field[f"dist_{to_type}"],
         method=knn_method,
     )
-    
+
     # Convert to dense adjacency matrix (on GPU)
     edge_index = coo_to_dense_adj(
         edge_index.T,
@@ -176,7 +176,7 @@ def get_similarity_scores(
 
     # Call the sparse multiply function
     sparse_similarity = sparse_multiply(embeddings, edge_index, shape)
-    
+
     return sparse_similarity
 
 
@@ -190,8 +190,8 @@ def predict_batch(
 ) -> pd.DataFrame:
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
-    Adds a 'bound' column to indicate if the transcript is assigned to a cell (bound=1) 
-    or unassigned (bound=0). Unassigned transcripts are handled with connected components 
+    Adds a 'bound' column to indicate if the transcript is assigned to a cell (bound=1)
+    or unassigned (bound=0). Unassigned transcripts are handled with connected components
     if use_cc is True.
     Adds a 'bound' column to indicate if the transcript is assigned to a cell (bound=1)
     or unassigned (bound=0).
@@ -221,8 +221,8 @@ def predict_batch(
         batch = batch.to("cuda")
 
         # Extract transcript IDs and initialize assignments DataFrame
-        transcript_id = batch['tx'].id.cpu()
-        assignments = pd.DataFrame({'transcript_id': transcript_id})
+        transcript_id = batch["tx"].id.cpu()
+        assignments = pd.DataFrame({"transcript_id": transcript_id})
         transcript_id = cp.asnumpy(batch["tx"].id)
         assignments = pd.DataFrame({"transcript_id": transcript_id})
 
@@ -244,7 +244,7 @@ def predict_batch(
             all_ids = np.concatenate(batch["bd"].id)  # Keep IDs as NumPy array
             assignments["segger_cell_id"] = None  # Initialize as None
             max_indices = cp.argmax(dense_scores, axis=1).get()
-            assignments.loc[mask, 'segger_cell_id'] = all_ids[max_indices[mask]]
+            assignments.loc[mask, "segger_cell_id"] = all_ids[max_indices[mask]]
 
             assignments.loc[mask, "segger_cell_id"] = all_ids[max_indices[mask]]  # Assign IDs
 
@@ -252,9 +252,8 @@ def predict_batch(
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
 
-            assignments['bound'] = 0
-            assignments.loc[mask, 'bound'] = 1
-
+            assignments["bound"] = 0
+            assignments.loc[mask, "bound"] = 1
 
             # Handle unassigned transcripts with connected components
             # Move back to CPU
@@ -263,13 +262,15 @@ def predict_batch(
 
             if use_cc:
                 # Compute similarity scores between 'tx' and 'tx'
-                scores_tx = get_similarity_scores(lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method)
-                
-                                 # Convert to dense NumPy array
-                data_cpu = scores_tx.data.get()   # Transfer data to CPU (NumPy)
-                row_cpu = scores_tx.row.get()     # Transfer row indices to CPU (NumPy)
-                col_cpu = scores_tx.col.get()     # Transfer column indices to CPU (NumPy)
-                 # Remove from memory
+                scores_tx = get_similarity_scores(
+                    lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method
+                )
+
+                # Convert to dense NumPy array
+                data_cpu = scores_tx.data.get()  # Transfer data to CPU (NumPy)
+                row_cpu = scores_tx.row.get()  # Transfer row indices to CPU (NumPy)
+                col_cpu = scores_tx.col.get()  # Transfer column indices to CPU (NumPy)
+                # Remove from memory
                 scores_tx = get_similarity_scores(lit_segger.model, batch, "tx", "tx", receptive_field)
                 # Convert to dense NumPy array
                 data_cpu = scores_tx.data.get()  # Transfer data to CPU (NumPy)
@@ -279,11 +280,11 @@ def predict_batch(
                 # dense_scores_tx = scores_tx.toarray().astype(cp.float16)
                 # Rebuild the matrix on CPU using SciPy
                 dense_scores_tx = scipy_coo_matrix((data_cpu, (row_cpu, col_cpu)), shape=scores_tx.shape).toarray()
-                del scores_tx 
+                del scores_tx
                 np.fill_diagonal(dense_scores_tx, 0)  # Ignore self-similarity
 
                 # Get the indices of unassigned transcripts
-                no_id = assignments['segger_cell_id'].isna().values  # Convert to numpy for indexing
+                no_id = assignments["segger_cell_id"].isna().values  # Convert to numpy for indexing
 
                 del scores_tx  # Remove from memory
                 cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
@@ -303,7 +304,7 @@ def predict_batch(
                     non_zero_rows, non_zero_cols = no_id_scores.nonzero()
 
                     # Map these indices back to the actual transcript IDs (no_id_mask gives us their original position)
-                    unassigned_ids = batch['tx'].id[no_id]  # Unassigned transcript IDs
+                    unassigned_ids = batch["tx"].id[no_id]  # Unassigned transcript IDs
 
                     # Construct edge index (source, target) based on non-zero connections in the no_id_scores matrix
                     source_nodes = unassigned_ids[non_zero_rows].cpu()
@@ -326,11 +327,6 @@ def predict_batch(
                     torch.cuda.empty_cache()
 
         return assignments
-
-    
-    
-
-
 
 
 def predict(
@@ -357,11 +353,13 @@ def predict(
     Returns:
         pd.DataFrame: Final DataFrame containing the transcript IDs, similarity scores, and assigned cell IDs.
     """
-    
+
     all_assignments = []
     # Use Dask delayed to parallelize the predict_batch execution and create assignments
-    delayed_batches = [delayed(predict_batch)(lit_segger, batch, score_cut, receptive_field, use_cc, knn_method)
-                        for batch in data_loader]
+    delayed_batches = [
+        delayed(predict_batch)(lit_segger, batch, score_cut, receptive_field, use_cc, knn_method)
+        for batch in data_loader
+    ]
 
     for batch in data_loader:
         assignments = predict_batch(lit_segger, batch, score_cut, receptive_field, use_cc, knn_method)
@@ -404,9 +402,6 @@ def predict(
     return result
 
 
-
-
-    
 def segment(
     model: LitSegger,
     dm: SeggerDataModule,
@@ -446,8 +441,8 @@ def segment(
         The method to use for nearest neighbors ('cuda' by default).
     **anndata_kwargs : dict, optional
         Additional keyword arguments passed to the create_anndata function.
-    Perform segmentation using the model, merge segmentation results with transcripts data, 
-    and save the results in the specified format. The function also handles unassigned 
+    Perform segmentation using the model, merge segmentation results with transcripts data,
+    and save the results in the specified format. The function also handles unassigned
     transcripts through connected components analysis if `use_cc` is True.
 
     Args:
@@ -456,16 +451,16 @@ def segment(
         save_dir (Union[str, Path]): Directory to save the final segmentation results.
         seg_tag (str): Tag to include in the saved filename.
         transcript_file (Union[str, Path]): Path to the transcripts Parquet file.
-        score_cut (float, optional): The threshold for assigning transcripts to cells based on 
+        score_cut (float, optional): The threshold for assigning transcripts to cells based on
                                      similarity scores. Defaults to 0.5.
-        use_cc (bool, optional): If True, perform connected components analysis for unassigned 
+        use_cc (bool, optional): If True, perform connected components analysis for unassigned
                                  transcripts. Defaults to True.
-        file_format (str, optional): The file format to save the results ('csv', 'parquet', or 'anndata'). 
+        file_format (str, optional): The file format to save the results ('csv', 'parquet', or 'anndata').
                                      Defaults to 'anndata'.
-        receptive_field (dict, optional): Defines the receptive field for transcript-cell and 
-                                          transcript-transcript relations. Defaults to 
+        receptive_field (dict, optional): Defines the receptive field for transcript-cell and
+                                          transcript-transcript relations. Defaults to
                                           {'k_bd': 4, 'dist_bd': 10, 'k_tx': 5, 'dist_tx': 3}.
-        knn_method (str, optional): The method to use for nearest neighbors ('cuda' or 'kd_tree'). 
+        knn_method (str, optional): The method to use for nearest neighbors ('cuda' or 'kd_tree').
                                     Defaults to 'kd_tree'.
         verbose (bool, optional): Whether to print verbose status updates. Defaults to False.
         **anndata_kwargs: Additional keyword arguments passed to the `create_anndata` function.
@@ -473,7 +468,7 @@ def segment(
     Returns:
         None
     """
-    
+
     # Initialize global_edge_index_list to store edge indices across batches
     global global_edge_index_list
     global_edge_index_list = []
@@ -557,24 +552,30 @@ def segment(
         edge_index_computed = concatenated_edge_index.compute()  # Get the full edge_index (source, target)
 
         # Map transcript_ids to their index positions in the DataFrame
-        transcript_idx_map = pd.Series(transcripts_df_filtered.index, index=transcripts_df_filtered['transcript_id']).to_dict()
+        transcript_idx_map = pd.Series(
+            transcripts_df_filtered.index, index=transcripts_df_filtered["transcript_id"]
+        ).to_dict()
 
         # Convert the transcript_ids in edge_index_computed to positional indices
         source_indices = [transcript_idx_map[tid] for tid in edge_index_computed[0]]
         target_indices = [transcript_idx_map[tid] for tid in edge_index_computed[1]]
 
         # Use SciPy's connected components algorithm
-        n, comps = cc(scipy_coo_matrix((np.ones(len(source_indices)), 
-                                        (source_indices, target_indices)),
-                                       shape=(transcripts_df_filtered.shape[0], transcripts_df_filtered.shape[0])),
-                      connection="weak", directed=False)
+        n, comps = cc(
+            scipy_coo_matrix(
+                (np.ones(len(source_indices)), (source_indices, target_indices)),
+                shape=(transcripts_df_filtered.shape[0], transcripts_df_filtered.shape[0]),
+            ),
+            connection="weak",
+            directed=False,
+        )
 
         # Generate new cell IDs based on connected components
         new_ids = np.array([_get_id() for _ in range(n)])
 
         # Assign new cell IDs to the unassigned transcripts in the final assignments
-        unassigned_mask = transcripts_df_filtered['segger_cell_id'].isna()
-        transcripts_df_filtered.loc[unassigned_mask, 'segger_cell_id'] = new_ids[comps]
+        unassigned_mask = transcripts_df_filtered["segger_cell_id"].isna()
+        transcripts_df_filtered.loc[unassigned_mask, "segger_cell_id"] = new_ids[comps]
 
         if verbose:
             elapsed_time = format_time(time.time() - step_start_time)

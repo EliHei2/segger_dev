@@ -556,11 +556,11 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
     for method, path in segmentation_paths.items():
         adata = sc.read(path)
         # Special handling for 'segger' to separate into 'segger_n0' and 'segger_n1'
-        if method == 'segger':
-            cells_n1 = [i for i in adata.obs_names if not i.endswith('-nx')]
-            cells_n0 = [i for i in adata.obs_names if i.endswith('-nx')]
-            segmentations_dict['segger_n1'] = adata[cells_n1, :]
-            segmentations_dict['segger_n0'] = adata[cells_n0, :]
+        if method == "segger":
+            cells_n1 = [i for i in adata.obs_names if not i.endswith("-nx")]
+            cells_n0 = [i for i in adata.obs_names if i.endswith("-nx")]
+            segmentations_dict["segger_n1"] = adata[cells_n1, :]
+            segmentations_dict["segger_n0"] = adata[cells_n0, :]
         segmentations_dict[method] = adata
     return segmentations_dict
 
