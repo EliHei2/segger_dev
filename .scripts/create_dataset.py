@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 from urllib import request
-from segger.data.utils import XeniumSample
+from segger.data.io import XeniumSample
 
 
 def download_file(url, dest):

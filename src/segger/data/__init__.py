@@ -16,7 +16,7 @@ __all__ = [
     "get_edge_index",
 ]
 
-from .utils import (
+from segger.data.utils import (
     filter_transcripts,
     create_anndata,
     compute_transcript_metrics,
@@ -25,10 +25,10 @@ from .utils import (
     SpatialTranscriptomicsDataset,
 )
 
-from .io import (
+from segger.data.io import (
     XeniumSample,
     MerscopeSample,
     SpatialTranscriptomicsSample,
 )
 
-from .constants import SpatialTranscriptomicsKeys, XeniumKeys, MerscopeKeys
+from segger.data.constants import SpatialTranscriptomicsKeys, XeniumKeys, MerscopeKeys

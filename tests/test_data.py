@@ -4,6 +4,7 @@ import unittest
 import torch
 from torch_geometric.data import Data
 from segger.data.utils import *
+from segger.data import XeniumSample
 import unittest
 import pandas as pd
 

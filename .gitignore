@@ -163,9 +163,12 @@ cython_debug/
 
 
 data_*
+data/*
 model_*
 
 *.egg_info
 figure*
 
 dev*
+.DS_Store
+.idea/

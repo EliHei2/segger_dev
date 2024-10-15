@@ -44,7 +44,6 @@ def train_model(args: Namespace):
 
     # Import packages
     logging.info("Importing packages...")
-    from segger.data.io import XeniumSample
     from segger.training.train import LitSegger
     from segger.training.segger_data_module import SeggerDataModule
     from lightning.pytorch.loggers import CSVLogger
