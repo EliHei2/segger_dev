@@ -56,7 +56,7 @@ def find_markers(
         cutoff_low = np.percentile(mean_expression, neg_percentile)
         pos_indices = np.where(mean_expression >= cutoff_high)[0]
         neg_indices = np.where(mean_expression <= cutoff_low)[0]
-        expr_frac = np.asarray((subset.X[:, pos_indices] > 0).mean(axis=0))[0]
+        expr_frac = np.asarray((subset.X[:, pos_indices] > 0).mean(axis=0)).flatten()
         valid_pos_indices = pos_indices[expr_frac >= (percentage / 100)]
         positive_markers = genes[valid_pos_indices]
         negative_markers = genes[neg_indices]
