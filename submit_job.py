@@ -6,15 +6,21 @@ with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 # Helper function to wrap command with Singularity
-def wrap_command_with_singularity(command):
-    return [
+def wrap_command_with_singularity(command, use_gpu=False):
+    singularity_command = [
         "singularity", "exec", "--bind",
         f"{config['paths']['local_repo_dir']}:{config['paths']['container_dir']}",
-        "--pwd", config['paths']['container_dir'],
-        config['paths']['singularity_image']
-    ] + command
+        "--pwd", config['paths']['container_dir']
+    ]
+    
+    if use_gpu:
+        singularity_command.append("--nv")
+    
+    singularity_command.append(config['paths']['singularity_image'])
+    
+    return singularity_command + command
 
-# Define the pipeline functions
+# Define the pipeline functions:
 
 # Run the data processing pipeline
 def run_data_processing():
@@ -29,7 +35,7 @@ def run_data_processing():
     ]
 
     if config['use_singularity']:
-        python_command = wrap_command_with_singularity(python_command)
+        python_command = wrap_command_with_singularity(python_command, use_gpu=False)
     
     bsub_command = [
         "bsub", "-J", "job_data_processing", "-o", config['preprocessing']['output_log'],
@@ -52,7 +58,7 @@ def run_training():
     ]
 
     if config['use_singularity']:
-        python_command = wrap_command_with_singularity(python_command)
+        python_command = wrap_command_with_singularity(python_command, use_gpu=True)
 
     bsub_command = [
         "bsub", "-J", "job_training", "-w", "done(job_data_processing)",
@@ -78,7 +84,7 @@ def run_prediction():
     ]
 
     if config['use_singularity']:
-        python_command = wrap_command_with_singularity(python_command)
+        python_command = wrap_command_with_singularity(python_command, use_gpu=True)
 
     bsub_command = [
         "bsub", "-J", "job_prediction", "-w", "done(job_training)",
