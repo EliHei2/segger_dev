@@ -41,8 +41,8 @@ SINGULARITY_IMAGE="segger_dev_latest.sif"  # Path to the Singularity image
 
 # Functions to run different pipelines
 run_data_processing() {
-    bsub -o "$OUTPUT_LOG_PREPROCESS" -n "$N_WORKERS_PREPROCESS" -R "rusage[mem=$RAM_PREPROCESS]" -q long \
-    "singularity exec --bind $LOCAL_REPO_DIR:$CONTAINER_DIR \
+    bsub -J "job_data_processing" -o "$OUTPUT_LOG_PREPROCESS" -n "$N_WORKERS_PREPROCESS" -R "rusage[mem=$RAM_PREPROCESS]" -q long \
+    "singularity exec --bind $LOCAL_REPO_DIR:$CONTAINER_DIR --pwd $CONTAINER_DIR \
     $SINGULARITY_IMAGE python3 src/segger/cli/create_dataset_fast.py \
     --base_dir '$BASE_DIR' \
     --data_dir '$DATA_DIR' \
@@ -53,8 +53,8 @@ run_data_processing() {
 }
 
 run_training() {
-    bsub -o "$OUTPUT_LOG_TRAIN" -n "$N_WORKERS_TRAIN" -R "rusage[mem=$RAM_TRAIN]" -R "tensorcore" -gpu "num=$GPUS:j_exclusive=no:gmem=$GPU_MEM_TRAIN" -q gpu \
-    "singularity exec --nv --bind $LOCAL_REPO_DIR:$CONTAINER_DIR \
+    bsub -J "job_training" -w "done(job_data_processing)" -o "$OUTPUT_LOG_TRAIN" -n "$N_WORKERS_TRAIN" -R "rusage[mem=$RAM_TRAIN]" -R "tensorcore" -gpu "num=$GPUS:j_exclusive=no:gmem=$GPU_MEM_TRAIN" -q gpu \
+    "singularity exec --nv --bind $LOCAL_REPO_DIR:$CONTAINER_DIR --pwd $CONTAINER_DIR \
     $SINGULARITY_IMAGE python3 src/segger/cli/train_model.py \
     --dataset_dir '$DATASET_DIR' \
     --models_dir '$MODELS_DIR' \
@@ -64,8 +64,8 @@ run_training() {
 }
 
 run_prediction() {
-    bsub -o "$OUTPUT_LOG_PREDICT" -n "$N_WORKERS_PREDICT" -R "rusage[mem=$RAM_PREDICT]" -R "tensorcore" -gpu "num=1:j_exclusive=no:gmem=$GPU_MEM_PREDICT" -q gpu \
-    "singularity exec --nv --bind $LOCAL_REPO_DIR:$CONTAINER_DIR \
+    bsub -J "job_prediction" -w "done(job_training)" -o "$OUTPUT_LOG_PREDICT" -n "$N_WORKERS_PREDICT" -R "rusage[mem=$RAM_PREDICT]" -R "tensorcore" -gpu "num=1:j_exclusive=no:gmem=$GPU_MEM_PREDICT" -q gpu \
+    "singularity exec --nv --bind $LOCAL_REPO_DIR:$CONTAINER_DIR --pwd $CONTAINER_DIR \
     $SINGULARITY_IMAGE python3 src/segger/cli/predict.py \
     --segger_data_dir '$SEGGER_DATA_DIR' \
     --models_dir '$MODELS_DIR' \
