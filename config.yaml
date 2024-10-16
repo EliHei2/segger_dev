@@ -4,9 +4,9 @@ paths:
   singularity_image: "segger_dev_latest.sif"
 
 pipelines:
-  - 1  # Run data processing
-  - 2  # Run training
-  - 3  # Run prediction
+  - 1 # Run data processing
+  - 2 # Run training
+  - 3 # Run prediction
 
 preprocessing:
   output_log: "preprocess_output.log"
