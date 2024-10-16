@@ -1,7 +1,9 @@
-import pandas as pd
-import seaborn as sns
+import scanpy as sc
 import matplotlib.pyplot as plt
-from pathlib import Path
+import numpy as np
+import seaborn as sns
+import os
+import pandas as pd
 
 # Define method colors
 method_colors = {
@@ -237,3 +239,141 @@ plt.savefig(final_mcer_boxplot_png_path, format="png", bbox_inches="tight", dpi=
 
 # Close the figure
 plt.close()
+
+
+
+
+
+
+
+
+
+
+
+for method in method_colors.keys():
+    # Set Seaborn style for minimalistic plots
+    # sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+    # Load your AnnData object (replace with your actual file)
+    adata = segmentations_dict[method]
+    # Assuming spatial coordinates are stored in 'spatial' and cell areas are in 'cell_area'
+    x = adata.obs['cell_centroid_x']  # Replace with actual x-coordinate key
+    y = -adata.obs['cell_centroid_y']  # Replace with actual y-coordinate key
+    cell_area = adata.obs['cell_area']  # Replace with actual cell area key
+    # adata = adata[adata.obs.celltype_major == 'CAFs']
+    # Create the hexbin plot
+    # plt.figure(figsize=(8, 6))
+    # Use a "cool" colormap like "coolwarm" or "plasma" for a smoother effect
+    vmax=np.percentile(cell_area, 99)
+    vmin=np.percentile(cell_area, 50)
+    cell_area = np.clip(cell_area, vmin, vmax)
+    hb = plt.hexbin(x, y, C=cell_area, gridsize=50, cmap="viridis", reduce_C_function=np.mean, norm=mcolors.LogNorm(vmin=20, vmax=100))
+    # Add a colorbar with a minimalistic design
+    cb = plt.colorbar(hb, orientation='vertical')
+    cb.set_label('Average Cell Area', fontsize=10)
+    # Minimalistic design: Remove unnecessary spines and ticks
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['left'].set_visible(False)
+    plt.gca().spines['bottom'].set_visible(False)
+    plt.gca().tick_params(left=False, bottom=False)
+    plt.gca().set_xticks([])
+    plt.gca().set_yticks([])
+    # Minimalistic labels and title with ample space
+    plt.xlabel('', fontsize=12)
+    plt.ylabel('', fontsize=12)
+    plt.title(method, fontsize=16, pad=20)
+    # Tight layout for better spacing
+    plt.tight_layout()
+    # Define the path where you want to save the figure
+    # figures_path = 'figures_path'  # Replace with your actual path
+    # Ensure the directory exists
+    # os.makedirs(figures_path, exist_ok=True)
+    # Save the figure as a PDF in the specified directory
+    pdf_path = figures_path / f'average_cell_area_hexbin_{method}.pdf'
+    plt.savefig(pdf_path, format='pdf', bbox_inches='tight')
+    # Optionally, show the plot (if needed)
+    plt.show()
+    plt.close()
+
+import matplotlib.colors as mcolors
+
+for method in method_colors.keys():
+    # Set Seaborn style for minimalistic plots
+    # sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+    # Load your AnnData object (replace with your actual file)
+    adata = segmentations_dict[method]
+    # Assuming spatial coordinates are stored in 'spatial' and cell areas are in 'cell_area'
+    x = adata.obs['cell_centroid_x']  # Replace with actual x-coordinate key
+    y = -adata.obs['cell_centroid_y']  # Replace with actual y-coordinate key
+    # vmin = adata.shape[0] / 3000
+    # cell_area = np.log(adata.obs['cell_area'])  # Replace with actual cell area key
+    # adata = adata[adata.obs.celltype_major == 'CAFs']
+    # Create the hexbin plot
+    # plt.figure(figsize=(8, 6))
+    # Use a "cool" colormap like "coolwarm" or "plasma" for a smoother effect
+    # vmax=np.percentile(cell_area, 90)
+    # vmin=np.percentile(cell_area, 50)
+    hb = plt.hexbin(x, y, gridsize=50, cmap="mako", mincnt=1, norm=mcolors.LogNorm(vmin=vmin))
+    # Add a colorbar with a minimalistic design
+    cb = plt.colorbar(hb, orientation='vertical')
+    cb.set_label('# Cells', fontsize=10)
+    # Minimalistic design: Remove unnecessary spines and ticks
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['left'].set_visible(False)
+    plt.gca().spines['bottom'].set_visible(False)
+    plt.gca().tick_params(left=False, bottom=False)
+    plt.gca().set_xticks([])
+    plt.gca().set_yticks([])
+    # Minimalistic labels and title with ample space
+    plt.xlabel('', fontsize=12)
+    plt.ylabel('', fontsize=12)
+    plt.title(method, fontsize=16, pad=20)
+    # Tight layout for better spacing
+    plt.tight_layout()
+    # Define the path where you want to save the figure
+    # figures_path = 'figures_path'  # Replace with your actual path
+    # Ensure the directory exists
+    # os.makedirs(figures_path, exist_ok=True)
+    # Save the figure as a PDF in the specified directory
+    pdf_path = figures_path / f'cell_counts_hexbin_{method}.pdf'
+    plt.savefig(pdf_path, format='pdf', bbox_inches='tight')
+    # Optionally, show the plot (if needed)
+    plt.show()
+    plt.close()
+
+
+for method in method_colors.keys():
+    # Clear the current figure to prevent overlapping plots and legends
+    plt.clf()
+    # Load your AnnData object (replace with your actual file)
+    adata = segmentations_dict[method]
+    # Filter for CAFs
+    # Assuming spatial coordinates are stored in 'spatial' and cell areas are in 'cell_area'
+    x = adata.obs['cell_centroid_x']  # Replace with actual x-coordinate key
+    y = -adata.obs['cell_centroid_y']  # Replace with actual y-coordinate key
+    # Create a figure
+    # plt.figure(figsize=(8, 6))
+    # Plot the KDE for just counts (density of points) using 'mako' colormap
+    sns.kdeplot(x=x, y=y, fill=True, thresh=0, levels=30, cmap="mako")
+    # Remove spines and make the plot minimalistic
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['left'].set_visible(False)
+    plt.gca().spines['bottom'].set_visible(False)
+    plt.gca().tick_params(left=False, bottom=False)
+    plt.gca().set_xticks([])
+    plt.gca().set_yticks([])
+    # Minimalistic labels and title with ample space
+    plt.xlabel('', fontsize=12)
+    plt.ylabel('', fontsize=12)
+    plt.title(f'Density Count KDE Plot ({method})', fontsize=16, pad=20)
+    # Tight layout for better spacing
+    plt.tight_layout()
+    # Ensure the directory exists
+    os.makedirs(figures_path, exist_ok=True)
+    # Save the figure as a PDF in the specified directory
+    pdf_path = figures_path / f'density_kde_{method}.pdf'
+    plt.savefig(pdf_path, format='pdf', bbox_inches='tight')
+    # Close the current figure to prevent it from being displayed
+    plt.close()

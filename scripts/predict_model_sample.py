@@ -36,7 +36,7 @@ model_version = 0
 model_path = models_dir / "lightning_logs" / f"version_{model_version}"
 model = load_model(model_path / "checkpoints")
 
-receptive_field = {"k_bd": 4, "dist_bd": 12, "k_tx": 5, "dist_tx": 5}
+receptive_field = {"k_bd": 4, "dist_bd": 20, "k_tx": 5, "dist_tx": 3}
 
 segment(
     model,
@@ -51,8 +51,9 @@ segment(
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
     use_cc=True,
-    knn_method="cuda",
+    knn_method='cuda',
     verbose=True,
+    gpu_ids=['0']
     # client=client
 )
 
