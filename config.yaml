@@ -1,0 +1,39 @@
+paths:
+  local_repo_dir: "/omics/groups/OE0540/internal_temp/users/danielu/segger_dev"
+  container_dir: "/workspace/segger_dev"
+  singularity_image: "segger_dev_latest.sif"
+
+pipelines:
+  - 1  # Run data processing
+  - 2  # Run training
+  - 3  # Run prediction
+
+preprocessing:
+  output_log: "preprocess_output.log"
+  base_dir: "data_xenium"
+  data_dir: "data_segger_test"
+  sample_type: "xenium"
+  tile_width: 120
+  tile_height: 120
+  workers: 16
+  memory: "16G"
+
+training:
+  output_log: "train_output.log"
+  dataset_dir: "data_segger_test"
+  models_dir: "model_dir"
+  sample_tag: "first_training"
+  workers: 16
+  memory: "16G"
+  gpus: 8
+  gpu_memory: "8G"
+
+prediction:
+  output_log: "predict_output.log"
+  segger_data_dir: "data_segger_test"
+  benchmarks_dir: "benchmark_dir"
+  transcripts_file: "data_xenium/transcripts.parquet"
+  knn_method: "cuda"
+  workers: 16
+  memory: "16G"
+  gpu_memory: "8G"
