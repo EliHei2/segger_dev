@@ -1127,7 +1127,7 @@ class STTile:
         # Set up Transcript nodes
         pyg_data["tx"].id = torch.tensor(
             self.transcripts[self.settings.transcripts.id].values.astype(int),
-            dtype=torch.int,
+            dtype=torch.long,
         )
         pyg_data["tx"].pos = torch.tensor(
             self.transcripts[self.settings.transcripts.xyz].values,
