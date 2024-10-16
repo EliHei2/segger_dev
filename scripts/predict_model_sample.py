@@ -51,9 +51,9 @@ segment(
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
     use_cc=True,
-    knn_method='cuda',
+    knn_method="cuda",
     verbose=True,
-    gpu_ids=['0']
+    gpu_ids=["0"],
     # client=client
 )
 

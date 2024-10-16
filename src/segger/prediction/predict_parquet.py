@@ -56,6 +56,7 @@ from time import time
 from cupyx.scipy.sparse import coo_matrix as cp_coo_matrix
 from cupyx.scipy.sparse.csgraph import connected_components as cp_cc
 import random
+
 # Setup Dask cluster with 3 workers
 
 
@@ -104,11 +105,11 @@ def subset_sparse_matrix(sparse_matrix, row_idx, col_idx):
     Returns:
     cupyx.scipy.sparse.spmatrix: A new sparse matrix that is a subset of the input matrix.
     """
-    
+
     # Convert indices to CuPy arrays if not already
     row_idx = cp.asarray(row_idx)
     col_idx = cp.asarray(col_idx)
-    
+
     # Ensure sparse matrix is in COO format for easy indexing (you can use CSR/CSC if more optimal)
     sparse_matrix = sparse_matrix.tocoo()
 
@@ -128,8 +129,6 @@ def subset_sparse_matrix(sparse_matrix, row_idx, col_idx):
 
     # Return the new subset sparse matrix
     return coo_matrix((new_data, (row_map, col_map)), shape=(len(row_idx), len(col_idx)))
-
-
 
 
 def load_model(checkpoint_path: str) -> LitSegger:
@@ -179,13 +178,13 @@ def load_model(checkpoint_path: str) -> LitSegger:
 
 
 def get_similarity_scores(
-    model: torch.nn.Module, 
+    model: torch.nn.Module,
     batch: Batch,
     from_type: str,
     to_type: str,
     receptive_field: dict,
-    knn_method: str = 'cuda',
-    gpu_id: int = 0  # Added argument for GPU ID
+    knn_method: str = "cuda",
+    gpu_id: int = 0,  # Added argument for GPU ID
 ) -> coo_matrix:
     """
     Compute similarity scores between embeddings for 'from_type' and 'to_type' nodes
@@ -207,47 +206,43 @@ def get_similarity_scores(
     # Set the specified GPU device for CuPy operations
     with cp.cuda.Device(gpu_id):
         # Move the batch to the specified GPU
-        batch = batch.to(f'cuda:{gpu_id}')
+        batch = batch.to(f"cuda:{gpu_id}")
 
         # Step 1: Get embeddings from the model (on GPU)
         shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-        
+
         # Compute edge indices using knn method (still on GPU)
         edge_index = get_edge_index(
             batch[to_type].pos[:, :2],  # 'tx' positions
             batch[from_type].pos[:, :2],  # 'bd' positions
-            k=receptive_field[f'k_{to_type}'],
-            dist=receptive_field[f'dist_{to_type}'],
-            method=knn_method
+            k=receptive_field[f"k_{to_type}"],
+            dist=receptive_field[f"dist_{to_type}"],
+            method=knn_method,
         )
-        
+
         # Convert to dense adjacency matrix (on GPU)
-        edge_index = coo_to_dense_adj(
-            edge_index.T,
-            num_nodes=shape[0],
-            num_nbrs=receptive_field[f'k_{to_type}']
-        )
-        
+        edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
+
         with torch.no_grad():
             embeddings = model(batch.x_dict, batch.edge_index_dict)
-            
+
         def sparse_multiply(embeddings, edge_index, shape) -> coo_matrix:
             m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
 
             similarity = torch.bmm(
-                m(embeddings[to_type])[edge_index],    # 'to' x 'from' neighbors x embed
-                embeddings[from_type].unsqueeze(-1) # 'to' x embed x 1
-            )                                  # -> 'to' x 'from' neighbors x 1
+                m(embeddings[to_type])[edge_index],  # 'to' x 'from' neighbors x embed
+                embeddings[from_type].unsqueeze(-1),  # 'to' x embed x 1
+            )  # -> 'to' x 'from' neighbors x 1
             del embeddings
             # Sigmoid to get most similar 'to_type' neighbor
             similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
             similarity = F.sigmoid(similarity)
             # Neighbor-filtered similarity scores
             # shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-            indices =  torch.argwhere(edge_index != -1).T
+            indices = torch.argwhere(edge_index != -1).T
             indices[1] = edge_index[edge_index != -1]
-            rows = cp.fromDlpack(to_dlpack(indices[0,:].to('cuda')))
-            columns = cp.fromDlpack(to_dlpack(indices[1,:].to('cuda')))
+            rows = cp.fromDlpack(to_dlpack(indices[0, :].to("cuda")))
+            columns = cp.fromDlpack(to_dlpack(indices[1, :].to("cuda")))
             # print(rows)
             del indices
             values = similarity[edge_index != -1].flatten()
@@ -257,7 +252,7 @@ def get_similarity_scores(
 
         # Call the sparse multiply function
         sparse_similarity = sparse_multiply(embeddings, edge_index, shape)
-    
+
     return sparse_similarity
 
 
@@ -267,10 +262,10 @@ def predict_batch(
     score_cut: float,
     receptive_field: Dict[str, float],
     use_cc: bool = True,
-    knn_method: str = 'cuda',
+    knn_method: str = "cuda",
     edge_index_save_path: Union[str, Path] = None,
     output_ddf_save_path: Union[str, Path] = None,
-    gpu_id: int = 0  # Added argument for GPU ID
+    gpu_id: int = 0,  # Added argument for GPU ID
 ):
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
@@ -298,8 +293,8 @@ def predict_batch(
     print(gpu_id)
     with cp.cuda.Device(gpu_id):
         # Move the batch to the specified GPU
-        batch = batch.to(f'cuda:{gpu_id}')
-        lit_segger.model = lit_segger.model.to(f'cuda:{gpu_id}')
+        batch = batch.to(f"cuda:{gpu_id}")
+        lit_segger.model = lit_segger.model.to(f"cuda:{gpu_id}")
 
         # Extract transcript IDs and initialize a dictionary for assignments
         transcript_id = batch["tx"].id.cpu().numpy().astype("str")
@@ -307,7 +302,9 @@ def predict_batch(
 
         if len(batch["bd"].pos) >= 10:
             # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id)
+            scores = get_similarity_scores(
+                lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+            )
             torch.cuda.empty_cache()
 
             # Convert sparse matrix to dense format (on GPU)
@@ -332,7 +329,9 @@ def predict_batch(
 
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
-                scores_tx = get_similarity_scores(lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method, gpu_id=gpu_id)
+                scores_tx = get_similarity_scores(
+                    lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+                )
 
                 # Stay on GPU and use CuPy sparse matrices
                 no_id_scores = cupyx.scipy.sparse.coo_matrix(
@@ -347,11 +346,13 @@ def predict_batch(
                 no_id_scores.eliminate_zeros()  # Remove zero entries to keep the matrix sparse
 
                 # Find unassigned transcripts (those with no segger_cell_id)
-                no_id = cp.where(cp.asarray(assignments['segger_cell_id'] == None))[0] # Using CuPy to handle None values
-                
+                no_id = cp.where(cp.asarray(assignments["segger_cell_id"] == None))[
+                    0
+                ]  # Using CuPy to handle None values
+
                 if len(no_id) > 0:  # Only compute if there are unassigned transcripts
                     # Apply score cut-off to unassigned transcripts
-                    no_id_scores =  subset_sparse_matrix(no_id_scores, no_id, no_id)
+                    no_id_scores = subset_sparse_matrix(no_id_scores, no_id, no_id)
                     no_id_scores.data[no_id_scores.data < score_cut] = 0  # Apply threshold
                     no_id_scores.eliminate_zeros()  # Clean up zeros
 
@@ -364,9 +365,13 @@ def predict_batch(
                     target_nodes = unassigned_ids[non_zero_cols.get()]
 
                     # # Save edge_index using CuDF and Dask-CuDF for GPU acceleration
-                    edge_index_ddf = delayed(dd.from_pandas)(pd.DataFrame({'source': source_nodes, 'target': target_nodes}), npartitions=1)
+                    edge_index_ddf = delayed(dd.from_pandas)(
+                        pd.DataFrame({"source": source_nodes, "target": target_nodes}), npartitions=1
+                    )
                     # Use delayed for asynchronous disk writing of edge_index in Dask DataFrame
-                    delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(edge_index_save_path, append=True, ignore_divisions=True)
+                    delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(
+                        edge_index_save_path, append=True, ignore_divisions=True
+                    )
                     delayed_write_edge_index.persist()  # Schedule writing
 
             assignments = {
@@ -404,8 +409,8 @@ def segment(
     receptive_field: dict = {"k_bd": 4, "dist_bd": 10, "k_tx": 5, "dist_tx": 3},
     knn_method: str = "cuda",
     verbose: bool = False,
-    gpu_ids: list = ['0'],
-    **anndata_kwargs
+    gpu_ids: list = ["0"],
+    **anndata_kwargs,
 ) -> None:
     """
     Perform segmentation using the model, save transcripts, AnnData, and cell masks as needed,
@@ -467,7 +472,7 @@ def segment(
 
     # # Initialize Dask DataFrame for assignments
     # output_ddf = None
-    
+
     # @dask.delayed
     # def process_batch(batch, gpu_id):
     #     # Assume you're using CuPy, and you need to use a specific GPU
@@ -482,7 +487,7 @@ def segment(
     #         output_ddf_save_path=output_ddf_save_path,
     #         gpu_id=gpu_id
     #     )
-        
+
     # delayed_tasks = [process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(dm.train)]
     # # pqdm(delayed_tasks, n_jobs=len(gpu_ids), argument_type='delayed', progress_bar=True)
     # # dask.compute(*delayed_tasks)
@@ -501,7 +506,7 @@ def segment(
         if verbose:
             print(f"Processing {loader_name} data...")
 
-        for batch in tqdm(loader, desc=f'Processing {loader_name} batches'):
+        for batch in tqdm(loader, desc=f"Processing {loader_name} batches"):
             gpu_id = random.choice(gpu_ids)
             # Call predict_batch for each batch
             predict_batch(
@@ -513,7 +518,7 @@ def segment(
                 knn_method=knn_method,
                 edge_index_save_path=edge_index_save_path,
                 output_ddf_save_path=output_ddf_save_path,
-                gpu_id=gpu_id
+                gpu_id=gpu_id,
             )
 
     if verbose:
