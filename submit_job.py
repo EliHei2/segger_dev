@@ -1,37 +1,38 @@
 import yaml
 import subprocess
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", default="config.yaml", help="Path to the configuration YAML file")
+args = parser.parse_args()
 
 # Load the YAML configuration file
-with open("config.yaml", "r") as file:
+with open(args.config, "r") as file:
     config = yaml.safe_load(file)
 
+# Function to get Singularity command if enabled
+def get_singularity_command(use_gpu=False):
+    if config.get('use_singularity', False):
+        singularity_command = [
+            "singularity", "exec", "--bind",
+            f"{config['path_mappings']['local_repo_dir']}:{config['path_mappings']['container_dir']}",
+            "--pwd", config['path_mappings']['container_dir']
+        ]
+        if use_gpu:
+            singularity_command.append("--nv")
+        singularity_command.append(config['path_mappings']['singularity_image'])
+        return singularity_command
+    return []  # Return an empty list if Singularity is not enabled
 
-# Helper function to wrap command with Singularity
-def wrap_command_with_singularity(command, use_gpu=False):
-    singularity_command = [
-        "singularity",
-        "exec",
-        "--bind",
-        f"{config['paths']['local_repo_dir']}:{config['paths']['container_dir']}",
-        "--pwd",
-        config["paths"]["container_dir"],
-    ]
-
-    if use_gpu:
-        singularity_command.append("--nv")
-
-    singularity_command.append(config["paths"]["singularity_image"])
-
-    return singularity_command + command
-
+# Function to get Python command
+def get_python_command():
+    return ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client"] if config.get('use_debugpy', False) else ["python3"]
 
 # Define the pipeline functions
 
-
 # Run the data processing pipeline
 def run_data_processing():
-    python_command = [
-        "python3",
+    command = get_singularity_command(use_gpu=False) + get_python_command() + [
         "src/segger/cli/create_dataset_fast.py",
         "--base_dir",
         config["preprocessing"]["base_dir"],
@@ -47,30 +48,30 @@ def run_data_processing():
         str(config["preprocessing"]["workers"]),
     ]
 
-    if config["use_singularity"]:
-        python_command = wrap_command_with_singularity(python_command, use_gpu=False)
+    if config.get('use_lsf', False):
+        command = [
+            "bsub",
+            "-J",
+            "job_data_processing",
+            "-o",
+            config["preprocessing"]["output_log"],
+            "-n",
+            str(config["preprocessing"]["workers"]),
+            "-R",
+            f"rusage[mem={config['preprocessing']['memory']}]",
+            "-q",
+            "medium",
+        ] + command
 
-    bsub_command = [
-        "bsub",
-        "-J",
-        "job_data_processing",
-        "-o",
-        config["preprocessing"]["output_log"],
-        "-n",
-        str(config["preprocessing"]["workers"]),
-        "-R",
-        f"rusage[mem={config['preprocessing']['memory']}]",
-        "-q",
-        "long",
-    ] + python_command
-
-    subprocess.run(bsub_command)
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running data processing pipeline: {e}")
 
 
 # Run the training pipeline
 def run_training():
-    python_command = [
-        "python3",
+    command = get_singularity_command(use_gpu=True) + get_python_command() + [
         "src/segger/cli/train_model.py",
         "--dataset_dir",
         config["training"]["dataset_dir"],
@@ -84,39 +85,41 @@ def run_training():
         str(config["training"]["gpus"]),
     ]
 
-    if config["use_singularity"]:
-        python_command = wrap_command_with_singularity(python_command, use_gpu=True)
+    if config.get('use_lsf', False):
+        command = [
+            "bsub",
+            "-J",
+            "job_training",
+            "-w",
+            "done(job_data_processing)",
+            "-o",
+            config["training"]["output_log"],
+            "-n",
+            str(config["training"]["workers"]),
+            "-R",
+            f"rusage[mem={config['training']['memory']}]",
+            "-R",
+            "tensorcore",
+            "-gpu",
+            f"num={config['training']['gpus']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
+            "-q",
+            "gpu",
+        ] + command
 
-    bsub_command = [
-        "bsub",
-        "-J",
-        "job_training",
-        "-w",
-        "done(job_data_processing)",
-        "-o",
-        config["training"]["output_log"],
-        "-n",
-        str(config["training"]["workers"]),
-        "-R",
-        f"rusage[mem={config['training']['memory']}]",
-        "-R",
-        "tensorcore",
-        "-gpu",
-        f"num={config['training']['gpus']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
-        "-q",
-        "gpu",
-    ] + python_command
-
-    subprocess.run(bsub_command)
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running training pipeline: {e}")
 
 
 # Run the prediction pipeline
 def run_prediction():
-    python_command = [
-        "python3",
+    command = get_singularity_command(use_gpu=True) + get_python_command() + [
         "src/segger/cli/predict.py",
         "--segger_data_dir",
         config["prediction"]["segger_data_dir"],
+        "--models_dir",
+        config["prediction"]["models_dir"],
         "--benchmarks_dir",
         config["prediction"]["benchmarks_dir"],
         "--transcripts_file",
@@ -127,30 +130,31 @@ def run_prediction():
         str(config["prediction"]["workers"]),
     ]
 
-    if config["use_singularity"]:
-        python_command = wrap_command_with_singularity(python_command, use_gpu=True)
+    if config.get('use_lsf', False):
+        command = [
+            "bsub",
+            "-J",
+            "job_prediction",
+            "-w",
+            "done(job_training)",
+            "-o",
+            config["prediction"]["output_log"],
+            "-n",
+            str(config["prediction"]["workers"]),
+            "-R",
+            f"rusage[mem={config['prediction']['memory']}]",
+            "-R",
+            "tensorcore",
+            "-gpu",
+            f"num=1:j_exclusive=no:gmem={config['prediction']['gpu_memory']}",
+            "-q",
+            "gpu",
+        ] + command
 
-    bsub_command = [
-        "bsub",
-        "-J",
-        "job_prediction",
-        "-w",
-        "done(job_training)",
-        "-o",
-        config["prediction"]["output_log"],
-        "-n",
-        str(config["prediction"]["workers"]),
-        "-R",
-        f"rusage[mem={config['prediction']['memory']}]",
-        "-R",
-        "tensorcore",
-        "-gpu",
-        f"num=1:j_exclusive=no:gmem={config['prediction']['gpu_memory']}",
-        "-q",
-        "gpu",
-    ] + python_command
-
-    subprocess.run(bsub_command)
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running prediction pipeline: {e}")
 
 
 # Run the selected pipelines
