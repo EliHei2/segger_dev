@@ -1,7 +1,9 @@
+use_singularity: false
+
 paths:
   local_repo_dir: "/omics/groups/OE0540/internal_temp/users/danielu/segger_dev"
   container_dir: "/workspace/segger_dev"
-  singularity_image: "segger_dev_latest.sif"
+  singularity_image: "segger_dev_latest.sif"  # this is ignored if use_singularity is false
 
 pipelines:
   - 1  # Run data processing
@@ -23,7 +25,7 @@ training:
   dataset_dir: "data_segger_test"
   models_dir: "model_dir"
   sample_tag: "first_training"
-  workers: 16
+  workers: 4
   memory: "16G"
   gpus: 8
   gpu_memory: "8G"
@@ -34,6 +36,6 @@ prediction:
   benchmarks_dir: "benchmark_dir"
   transcripts_file: "data_xenium/transcripts.parquet"
   knn_method: "cuda"
-  workers: 16
+  workers: 4
   memory: "16G"
   gpu_memory: "8G"
