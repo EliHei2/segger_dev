@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>segger.data.utils &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for segger.data.utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Function to attempt importing a module and warn if it&#39;s not installed</span>
+<div class="viewcode-block" id="try_import">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.try_import">[docs]</a>
+<span class="k">def</span> <span class="nf">try_import</span><span class="p">(</span><span class="n">module_name</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="n">module_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">module_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2"> is not installed. Please install it to use this functionality.&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Standard imports</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">anndata</span> <span class="k">as</span> <span class="nn">ad</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">ConvexHull</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">OneHotEncoder</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.data</span> <span class="kn">import</span> <span class="n">HeteroData</span><span class="p">,</span> <span class="n">InMemoryDataset</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.transforms</span> <span class="kn">import</span> <span class="n">BaseTransform</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.nn</span> <span class="kn">import</span> <span class="n">radius_graph</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">cKDTree</span>
+<span class="c1"># import hnswlib</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="kn">from</span> <span class="nn">shapely.affinity</span> <span class="kn">import</span> <span class="n">scale</span>
+<span class="kn">import</span> <span class="nn">dask.dataframe</span> <span class="k">as</span> <span class="nn">dd</span>
+
+<span class="c1"># Attempt to import specific modules with try_import function</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;multiprocessing&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;joblib&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;faiss&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;cuml&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;cudf&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;cugraph&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;cuspatial&#39;</span><span class="p">)</span>
+<span class="n">try_import</span><span class="p">(</span><span class="s1">&#39;hnswlib&#39;</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="uint32_to_str">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.uint32_to_str">[docs]</a>
+<span class="k">def</span> <span class="nf">uint32_to_str</span><span class="p">(</span><span class="n">cell_id_uint32</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dataset_suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a 32-bit unsigned integer cell ID to a string with a specific suffix.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    cell_id_uint32 (int): The 32-bit unsigned integer cell ID.</span>
+<span class="sd">    dataset_suffix (str): The suffix to append to the string representation of the cell ID.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    str: The string representation of the cell ID with the appended suffix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hex_prefix</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">cell_id_uint32</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">hex_to_str_mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;0&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">:</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;4&#39;</span><span class="p">:</span> <span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span> <span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">:</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">:</span> <span class="s1">&#39;h&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;8&#39;</span><span class="p">:</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;9&#39;</span><span class="p">:</span> <span class="s1">&#39;j&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="s1">&#39;p&#39;</span>
+    <span class="p">}</span>
+    <span class="n">str_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">hex_to_str_mapping</span><span class="p">[</span><span class="n">char</span><span class="p">]</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">hex_prefix</span><span class="p">])</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">str_prefix</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">dataset_suffix</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="filter_transcripts">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.filter_transcripts">[docs]</a>
+<span class="k">def</span> <span class="nf">filter_transcripts</span><span class="p">(</span>
+    <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">min_qv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filters transcripts based on quality value and removes unwanted transcripts.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    transcripts_df (pd.DataFrame): The dataframe containing transcript data.</span>
+<span class="sd">    min_qv (float): The minimum quality value threshold for filtering transcripts.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    pd.DataFrame: The filtered dataframe.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filter_codewords</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;NegControlProbe_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;antisense_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NegControlCodeword_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;BLANK_&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DeprecatedCodeword_&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="s2">&quot;qv&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ge</span><span class="p">(</span><span class="n">min_qv</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">transcripts_df</span><span class="p">[</span><span class="s2">&quot;feature_name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">filter_codewords</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="compute_transcript_metrics">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.compute_transcript_metrics">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_transcript_metrics</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">qv_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="n">cell_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cell_id&#39;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    df (pd.DataFrame): The dataframe containing transcript data.</span>
+<span class="sd">    qv_threshold (float): The quality value threshold for filtering transcripts.</span>
+<span class="sd">    cell_id_col (str): The name of the column representing the cell ID.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    Dict[str, Any]: A dictionary containing:</span>
+<span class="sd">        - &#39;percent_assigned&#39; (float): The percentage of assigned transcripts.</span>
+<span class="sd">        - &#39;percent_cytoplasmic&#39; (float): The percentage of cytoplasmic transcripts among assigned transcripts.</span>
+<span class="sd">        - &#39;percent_nucleus&#39; (float): The percentage of nucleus transcripts among assigned transcripts.</span>
+<span class="sd">        - &#39;percent_non_assigned_cytoplasmic&#39; (float): The percentage of non-assigned cytoplasmic transcripts among all non-assigned transcripts.</span>
+<span class="sd">        - &#39;gene_metrics&#39; (pd.DataFrame): A dataframe containing gene-level metrics:</span>
+<span class="sd">            - &#39;feature_name&#39;: The gene name.</span>
+<span class="sd">            - &#39;percent_assigned&#39;: The percentage of assigned transcripts for each gene.</span>
+<span class="sd">            - &#39;percent_cytoplasmic&#39;: The percentage of cytoplasmic transcripts for each gene.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_filtered</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;qv&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">qv_threshold</span><span class="p">]</span>
+    <span class="n">total_transcripts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_filtered</span><span class="p">)</span>
+    <span class="n">assigned_transcripts</span> <span class="o">=</span> <span class="n">df_filtered</span><span class="p">[</span><span class="n">df_filtered</span><span class="p">[</span><span class="n">cell_id_col</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">percent_assigned</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">assigned_transcripts</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_transcripts</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">cytoplasmic_transcripts</span> <span class="o">=</span> <span class="n">assigned_transcripts</span><span class="p">[</span><span class="n">assigned_transcripts</span><span class="p">[</span><span class="s1">&#39;overlaps_nucleus&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">percent_cytoplasmic</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cytoplasmic_transcripts</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">assigned_transcripts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="n">percent_nucleus</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">percent_cytoplasmic</span>
+    <span class="n">non_assigned_transcripts</span> <span class="o">=</span> <span class="n">df_filtered</span><span class="p">[</span><span class="n">df_filtered</span><span class="p">[</span><span class="n">cell_id_col</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">non_assigned_cytoplasmic</span> <span class="o">=</span> <span class="n">non_assigned_transcripts</span><span class="p">[</span><span class="n">non_assigned_transcripts</span><span class="p">[</span><span class="s1">&#39;overlaps_nucleus&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">percent_non_assigned_cytoplasmic</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_assigned_cytoplasmic</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_assigned_transcripts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="n">gene_group_assigned</span> <span class="o">=</span> <span class="n">assigned_transcripts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;feature_name&#39;</span><span class="p">)</span>
+    <span class="n">gene_group_all</span> <span class="o">=</span> <span class="n">df_filtered</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;feature_name&#39;</span><span class="p">)</span>
+    <span class="n">gene_percent_assigned</span> <span class="o">=</span> <span class="p">(</span><span class="n">gene_group_assigned</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="n">gene_group_all</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;percent_assigned&#39;</span><span class="p">)</span>
+    <span class="n">cytoplasmic_gene_group</span> <span class="o">=</span> <span class="n">cytoplasmic_transcripts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;feature_name&#39;</span><span class="p">)</span>
+    <span class="n">gene_percent_cytoplasmic</span> <span class="o">=</span> <span class="p">(</span><span class="n">cytoplasmic_gene_group</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">cytoplasmic_transcripts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;percent_cytoplasmic&#39;</span><span class="p">)</span>
+    <span class="n">gene_metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">gene_percent_assigned</span><span class="p">,</span> <span class="n">gene_percent_cytoplasmic</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;feature_name&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;percent_assigned&#39;</span><span class="p">:</span> <span class="n">percent_assigned</span><span class="p">,</span>
+        <span class="s1">&#39;percent_cytoplasmic&#39;</span><span class="p">:</span> <span class="n">percent_cytoplasmic</span><span class="p">,</span>
+        <span class="s1">&#39;percent_nucleus&#39;</span><span class="p">:</span> <span class="n">percent_nucleus</span><span class="p">,</span>
+        <span class="s1">&#39;percent_non_assigned_cytoplasmic&#39;</span><span class="p">:</span> <span class="n">percent_non_assigned_cytoplasmic</span><span class="p">,</span>
+        <span class="s1">&#39;gene_metrics&#39;</span><span class="p">:</span> <span class="n">gene_metrics</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<div class="viewcode-block" id="create_anndata">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.create_anndata">[docs]</a>
+<span class="k">def</span> <span class="nf">create_anndata</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> 
+    <span class="n">panel_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+    <span class="n">min_transcripts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> 
+    <span class="n">cell_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;cell_id&#39;</span><span class="p">,</span> 
+    <span class="n">qv_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> 
+    <span class="n">min_cell_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> 
+    <span class="n">max_cell_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ad</span><span class="o">.</span><span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates an AnnData object from a dataframe of segmented transcriptomics data.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    df (pd.DataFrame): The dataframe containing segmented transcriptomics data.</span>
+<span class="sd">    panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.</span>
+<span class="sd">    min_transcripts (int): The minimum number of transcripts required for a cell to be included.</span>
+<span class="sd">    cell_id_col (str): The column name representing the cell ID in the input dataframe.</span>
+<span class="sd">    qv_threshold (float): The quality value threshold for filtering transcripts.</span>
+<span class="sd">    min_cell_area (float): The minimum cell area to include a cell.</span>
+<span class="sd">    max_cell_area (float): The maximum cell area to include a cell.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">    ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_filtered</span> <span class="o">=</span> <span class="n">filter_transcripts</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">min_qv</span><span class="o">=</span><span class="n">qv_threshold</span><span class="p">)</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="n">compute_transcript_metrics</span><span class="p">(</span><span class="n">df_filtered</span><span class="p">,</span> <span class="n">qv_threshold</span><span class="p">,</span> <span class="n">cell_id_col</span><span class="p">)</span>
+    <span class="n">df_filtered</span> <span class="o">=</span> <span class="n">df_filtered</span><span class="p">[</span><span class="n">df_filtered</span><span class="p">[</span><span class="n">cell_id_col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;-1&#39;</span><span class="p">]</span>
+    <span class="n">pivot_df</span> <span class="o">=</span> <span class="n">df_filtered</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">cell_id_col</span><span class="p">:</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;feature_name&quot;</span><span class="p">:</span> <span class="s2">&quot;gene&quot;</span>
+    <span class="p">})[[</span><span class="s1">&#39;cell&#39;</span><span class="p">,</span> <span class="s1">&#39;gene&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;cell&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;gene&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">pivot_df</span> <span class="o">=</span> <span class="n">pivot_df</span><span class="p">[</span><span class="n">pivot_df</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_transcripts</span><span class="p">]</span>
+    <span class="n">cell_summary</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">cell_id</span><span class="p">,</span> <span class="n">cell_data</span> <span class="ow">in</span> <span class="n">df_filtered</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">cell_id_col</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_transcripts</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">cell_convex_hull</span> <span class="o">=</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">cell_data</span><span class="p">[[</span><span class="s1">&#39;x_location&#39;</span><span class="p">,</span> <span class="s1">&#39;y_location&#39;</span><span class="p">]])</span>
+        <span class="n">cell_area</span> <span class="o">=</span> <span class="n">cell_convex_hull</span><span class="o">.</span><span class="n">area</span>
+        <span class="k">if</span> <span class="n">cell_area</span> <span class="o">&lt;</span> <span class="n">min_cell_area</span> <span class="ow">or</span> <span class="n">cell_area</span> <span class="o">&gt;</span> <span class="n">max_cell_area</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="s1">&#39;nucleus_distance&#39;</span> <span class="ow">in</span> <span class="n">cell_data</span><span class="p">:</span>
+            <span class="n">nucleus_data</span> <span class="o">=</span> <span class="n">cell_data</span><span class="p">[</span><span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;nucleus_distance&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nucleus_data</span> <span class="o">=</span> <span class="n">cell_data</span><span class="p">[</span><span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;overlaps_nucleus&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nucleus_data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nucleus_convex_hull</span> <span class="o">=</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">nucleus_data</span><span class="p">[[</span><span class="s1">&#39;x_location&#39;</span><span class="p">,</span> <span class="s1">&#39;y_location&#39;</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nucleus_convex_hull</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">cell_summary</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="n">cell_id</span><span class="p">,</span>
+            <span class="s2">&quot;cell_centroid_x&quot;</span><span class="p">:</span> <span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;x_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s2">&quot;cell_centroid_y&quot;</span><span class="p">:</span> <span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;y_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s2">&quot;cell_area&quot;</span><span class="p">:</span> <span class="n">cell_area</span><span class="p">,</span>
+            <span class="s2">&quot;nucleus_centroid_x&quot;</span><span class="p">:</span> <span class="n">nucleus_data</span><span class="p">[</span><span class="s1">&#39;x_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nucleus_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;x_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s2">&quot;nucleus_centroid_y&quot;</span><span class="p">:</span> <span class="n">nucleus_data</span><span class="p">[</span><span class="s1">&#39;x_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nucleus_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;x_location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s2">&quot;nucleus_area&quot;</span><span class="p">:</span> <span class="n">nucleus_convex_hull</span><span class="o">.</span><span class="n">area</span> <span class="k">if</span> <span class="n">nucleus_convex_hull</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;percent_cytoplasmic&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell_data</span><span class="p">[</span><span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;overlaps_nucleus&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell_data</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="s2">&quot;has_nucleus&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">nucleus_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">})</span>
+    <span class="n">cell_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">cell_summary</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;cell&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">panel_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">panel_df</span> <span class="o">=</span> <span class="n">panel_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;gene&#39;</span><span class="p">)</span>
+        <span class="n">genes</span> <span class="o">=</span> <span class="n">panel_df</span><span class="p">[</span><span class="s1">&#39;gene&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">for</span> <span class="n">gene</span> <span class="ow">in</span> <span class="n">genes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gene</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pivot_df</span><span class="p">:</span>
+                <span class="n">pivot_df</span><span class="p">[</span><span class="n">gene</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">pivot_df</span> <span class="o">=</span> <span class="n">pivot_df</span><span class="p">[</span><span class="n">genes</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="n">panel_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">var_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span>
+            <span class="s2">&quot;gene&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span> 
+            <span class="s2">&quot;feature_types&quot;</span><span class="p">:</span> <span class="s1">&#39;Gene Expression&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;genome&#39;</span><span class="p">:</span> <span class="s1">&#39;Unknown&#39;</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">pivot_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)])</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;gene&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">var_df</span> <span class="o">=</span> <span class="n">panel_df</span><span class="p">[[</span><span class="s1">&#39;gene&#39;</span><span class="p">,</span> <span class="s1">&#39;ensembl&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;ensembl&#39;</span><span class="p">:</span><span class="s1">&#39;gene_ids&#39;</span><span class="p">})</span>
+        <span class="n">var_df</span><span class="p">[</span><span class="s1">&#39;feature_types&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Gene Expression&#39;</span>
+        <span class="n">var_df</span><span class="p">[</span><span class="s1">&#39;genome&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Unknown&#39;</span>
+        <span class="n">var_df</span> <span class="o">=</span> <span class="n">var_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;gene&#39;</span><span class="p">)</span>
+    <span class="n">gene_metrics</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;gene_metrics&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;feature_name&#39;</span><span class="p">)</span>
+    <span class="n">var_df</span> <span class="o">=</span> <span class="n">var_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gene_metrics</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cells</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pivot_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">cell_summary</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+    <span class="n">pivot_df</span> <span class="o">=</span> <span class="n">pivot_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">cells</span><span class="p">,:]</span>
+    <span class="n">cell_summary</span> <span class="o">=</span> <span class="n">cell_summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">cells</span><span class="p">,:]</span>
+    <span class="n">adata</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">AnnData</span><span class="p">(</span><span class="n">pivot_df</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">var</span> <span class="o">=</span> <span class="n">var_df</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;transcripts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pivot_df</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;unique_transcripts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">pivot_df</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span> <span class="o">=</span> <span class="n">pivot_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="n">cell_summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,:],</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;metrics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;percent_assigned&#39;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;percent_assigned&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;percent_cytoplasmic&#39;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;percent_cytoplasmic&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;percent_nucleus&#39;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;percent_nucleus&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;percent_non_assigned_cytoplasmic&#39;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;percent_non_assigned_cytoplasmic&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">adata</span></div>
+
+
+
+<div class="viewcode-block" id="BuildTxGraph">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph">[docs]</a>
+<span class="k">class</span> <span class="nc">BuildTxGraph</span><span class="p">(</span><span class="n">BaseTransform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">loop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;source_to_target&#39;</span><span class="p">,</span> <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="BuildTxGraph.r">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.r">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">r</span></div>
+
+<div class="viewcode-block" id="BuildTxGraph.loop">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.loop">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loop</span> <span class="o">=</span> <span class="n">loop</span></div>
+
+<div class="viewcode-block" id="BuildTxGraph.max_num_neighbors">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.max_num_neighbors">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span></div>
+
+<div class="viewcode-block" id="BuildTxGraph.flow">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.flow">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="n">flow</span></div>
+
+<div class="viewcode-block" id="BuildTxGraph.num_workers">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.num_workers">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">num_workers</span></div>
+
+
+<div class="viewcode-block" id="BuildTxGraph.forward">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.BuildTxGraph.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">HeteroData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HeteroData</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;neighbors&#39;</span><span class="p">,</span> <span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_index</span> <span class="o">=</span> <span class="n">radius_graph</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">max_num_neighbors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">(r=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="si">}</span><span class="s1">)&#39;</span></div>
+
+    
+
+<div class="viewcode-block" id="calculate_gene_celltype_abundance_embedding">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.calculate_gene_celltype_abundance_embedding">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">ad</span><span class="o">.</span><span class="n">AnnData</span><span class="p">,</span> <span class="n">celltype_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type </span>
+<span class="sd">    that express the gene (non-zero expression).</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    adata : AnnData</span>
+<span class="sd">        An AnnData object containing gene expression data and cell type information.</span>
+<span class="sd">    celltype_column : str</span>
+<span class="sd">        The column name in `adata.obs` that contains the cell type information.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        A DataFrame where rows are genes and columns are cell types, with each value representing </span>
+<span class="sd">        the percentage of cells in that cell type expressing the gene.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; adata = AnnData(...)  # Load your scRNA-seq AnnData object</span>
+<span class="sd">    &gt;&gt;&gt; celltype_column = &#39;celltype_major&#39;</span>
+<span class="sd">    &gt;&gt;&gt; abundance_df = calculate_gene_celltype_abundance_embedding(adata, celltype_column)</span>
+<span class="sd">    &gt;&gt;&gt; abundance_df.head()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract expression data (cells x genes) and cell type information (cells)</span>
+    <span class="n">expression_data</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;toarray&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span>
+    <span class="n">cell_types</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">celltype_column</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="c1"># Create a binary matrix for gene expression (1 if non-zero, 0 otherwise)</span>
+    <span class="n">gene_expression_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">expression_data</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="c1"># Convert the binary matrix to a DataFrame</span>
+    <span class="n">gene_expression_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gene_expression_binary</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">adata</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">adata</span><span class="o">.</span><span class="n">var_names</span><span class="p">)</span>
+    <span class="c1"># Perform one-hot encoding on the cell types</span>
+    <span class="n">encoder</span> <span class="o">=</span> <span class="n">OneHotEncoder</span><span class="p">(</span><span class="n">sparse_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">cell_type_encoded</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">cell_types</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="c1"># Calculate the percentage of cells expressing each gene per cell type</span>
+    <span class="n">cell_type_abundance_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cell_type_encoded</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="c1"># Extract cells of the current cell type</span>
+        <span class="n">cell_type_mask</span> <span class="o">=</span> <span class="n">cell_type_encoded</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="c1"># Calculate the abundance: sum of non-zero expressions in this cell type / total cells in this cell type</span>
+        <span class="n">abundance</span> <span class="o">=</span> <span class="n">gene_expression_df</span><span class="p">[</span><span class="n">cell_type_mask</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="n">cell_type_abundance_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">abundance</span><span class="p">)</span>
+    <span class="c1"># Create a DataFrame for the cell type abundance with gene names as rows and cell types as columns</span>
+    <span class="n">cell_type_abundance_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">cell_type_abundance_list</span><span class="p">,</span> 
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">adata</span><span class="o">.</span><span class="n">var_names</span><span class="p">,</span> 
+                                            <span class="n">index</span><span class="o">=</span><span class="n">encoder</span><span class="o">.</span><span class="n">categories_</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">cell_type_abundance_df</span></div>
+
+
+<div class="viewcode-block" id="get_edge_index">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;kd_tree&#39;</span><span class="p">,</span>
+                   <span class="n">gpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        The method to use (&#39;kd_tree&#39;, &#39;faiss&#39;, &#39;rapids&#39;, &#39;cugraph&#39;, &#39;cuspatial&#39;).</span>
+<span class="sd">    gpu : bool, optional</span>
+<span class="sd">        Whether to use GPU acceleration (applicable for FAISS).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;kd_tree&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_kdtree</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;faiss&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_faiss</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;rapids&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_rapids</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cugraph&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_cugraph</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cuspatial&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_cuspatial</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;hnsw&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_edge_index_hnsw</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown method </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_edge_index_kdtree">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_kdtree">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_kdtree</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using KDTree.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">coords_1</span><span class="p">)</span>
+    <span class="n">d_kdtree</span><span class="p">,</span> <span class="n">idx_out</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">distance_upper_bound</span><span class="o">=</span><span class="n">dist</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span><span class="p">)</span>
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">d_kdtree</span> <span class="o">&lt;</span> <span class="n">dist</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">valid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">):</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">idx_out</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">valid_indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="n">valid_indices</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="p">)</span>
+
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+
+<div class="viewcode-block" id="get_edge_index_faiss">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_faiss">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_faiss</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">gpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using FAISS.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+<span class="sd">    gpu : bool, optional</span>
+<span class="sd">        Whether to use GPU acceleration.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coords_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">coords_1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">coords_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">coords_2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">coords_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">gpu</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">StandardGpuResources</span><span class="p">()</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">GpuIndexFlatL2</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">IndexFlatL2</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="n">index</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">coords_1</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">))</span>
+    <span class="n">D</span><span class="p">,</span> <span class="n">I</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">coords_2</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">),</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">D</span> <span class="o">&lt;</span> <span class="n">dist</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">valid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">):</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">valid_indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="n">valid_indices</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="p">)</span>
+
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+
+<div class="viewcode-block" id="get_edge_index_rapids">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_rapids">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_rapids</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using RAPIDS cuML.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">cuml</span><span class="o">.</span><span class="n">neighbors</span><span class="o">.</span><span class="n">NearestNeighbors</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;brute&#39;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">)</span>
+    <span class="n">index</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">coords_1</span><span class="p">)</span>
+    <span class="n">D</span><span class="p">,</span> <span class="n">I</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">kneighbors</span><span class="p">(</span><span class="n">coords_2</span><span class="p">)</span>
+
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">D</span> <span class="o">&lt;</span> <span class="n">dist</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">valid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">):</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">valid_indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="n">valid_indices</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="p">)</span>
+
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+<div class="viewcode-block" id="get_edge_index_cugraph">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_cugraph">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_cugraph</span><span class="p">(</span>
+    <span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using RAPIDS cuGraph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gdf_1</span> <span class="o">=</span> <span class="n">cudf</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">coords_1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">coords_1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]})</span>
+    <span class="n">gdf_2</span> <span class="o">=</span> <span class="n">cudf</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">coords_2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">coords_2</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]})</span>
+
+    <span class="n">gdf_1</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf_1</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">gdf_2</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf_2</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">cugraph</span><span class="o">.</span><span class="n">spatial_knn</span><span class="p">(</span>
+        <span class="n">gdf_1</span><span class="p">,</span> <span class="n">gdf_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">return_distance</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">dist</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">result</span><span class="p">[[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;dst&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">edges</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+
+<div class="viewcode-block" id="get_edge_index_cuspatial">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_cuspatial">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_cuspatial</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using cuSpatial&#39;s spatial join functionality.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates (2D).</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates (2D).</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert numpy arrays to cuDF DataFrames</span>
+    <span class="n">coords_1_df</span> <span class="o">=</span> <span class="n">cudf</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">coords_1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">coords_1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]})</span>
+    <span class="n">coords_2_df</span> <span class="o">=</span> <span class="n">cudf</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">coords_2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">coords_2</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]})</span>
+    
+    <span class="c1"># Perform the nearest neighbor search using cuSpatial&#39;s point-to-point nearest neighbor</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">cuspatial</span><span class="o">.</span><span class="n">point_to_nearest_neighbor</span><span class="p">(</span>
+        <span class="n">coords_1_df</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">coords_1_df</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span>
+        <span class="n">coords_2_df</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">coords_2_df</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span>
+        <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># The result is a tuple (distances, indices)</span>
+    <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">result</span>
+    
+    <span class="c1"># Filter by distance threshold</span>
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">&lt;</span> <span class="n">dist</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">valid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">):</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">valid_indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="n">valid_indices</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="p">)</span>
+    
+    <span class="c1"># Convert to torch.Tensor</span>
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset">[docs]</a>
+<span class="k">class</span> <span class="nc">SpatialTranscriptomicsDataset</span><span class="p">(</span><span class="n">InMemoryDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        root (str): The root directory where the dataset is stored.</span>
+<span class="sd">        transform (callable): A function/transform that takes in a Data object and returns a transformed version.</span>
+<span class="sd">        pre_transform (callable): A function/transform that takes in a Data object and returns a transformed version.</span>
+<span class="sd">        pre_filter (callable): A function that takes in a Data object and returns a boolean indicating whether to keep it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pre_filter</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the SpatialTranscriptomicsDataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            root (str): Root directory where the dataset is stored.</span>
+<span class="sd">            transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</span>
+<span class="sd">            pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</span>
+<span class="sd">            pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">pre_filter</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_dir</span><span class="p">,</span> <span class="s1">&#39;raw&#39;</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.raw_file_names">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.raw_file_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">raw_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list of raw file names in the raw directory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: List of raw file names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.processed_file_names">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.processed_file_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">processed_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list of processed file names in the processed directory.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: List of processed file names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_dir</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;tiles&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.download">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.download">[docs]</a>
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Download the raw data. This method should be overridden if you need to download the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.process">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.process">[docs]</a>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.len">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.len">[docs]</a>
+    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the number of processed files.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Number of processed files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_file_names</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsDataset.get">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.SpatialTranscriptomicsDataset.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a processed data object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idx (int): Index of the data object to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Data: The processed data object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_file_names</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_dense</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="get_edge_index_hnsw">
+<a class="viewcode-back" href="../../../api/segger/data/utils/index.html#segger.data.utils.get_edge_index_hnsw">[docs]</a>
+<span class="k">def</span> <span class="nf">get_edge_index_hnsw</span><span class="p">(</span><span class="n">coords_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">coords_2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes edge indices using the HNSW algorithm.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    coords_1 : np.ndarray</span>
+<span class="sd">        First set of coordinates.</span>
+<span class="sd">    coords_2 : np.ndarray</span>
+<span class="sd">        Second set of coordinates.</span>
+<span class="sd">    k : int, optional</span>
+<span class="sd">        Number of nearest neighbors.</span>
+<span class="sd">    dist : int, optional</span>
+<span class="sd">        Distance threshold.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        Edge indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_elements</span> <span class="o">=</span> <span class="n">coords_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">coords_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Initialize the HNSW index</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">hnswlib</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="s1">&#39;l2&#39;</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>  <span class="c1"># l2 for Euclidean distance</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">init_index</span><span class="p">(</span><span class="n">max_elements</span><span class="o">=</span><span class="n">num_elements</span><span class="p">,</span> <span class="n">ef_construction</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+
+    <span class="c1"># Add points to the index</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_items</span><span class="p">(</span><span class="n">coords_1</span><span class="p">)</span>
+
+    <span class="c1"># Query the index for nearest neighbors</span>
+    <span class="n">indices</span><span class="p">,</span> <span class="n">distances</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">knn_query</span><span class="p">(</span><span class="n">coords_2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="c1"># Filter by distance threshold</span>
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">&lt;</span> <span class="n">dist</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">valid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">):</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">valid_indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="n">valid_indices</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="p">)</span>
+
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge_index</span></div>
+
+
+
+<span class="c1"># def create_scaled_polygon(group, scale_factor, keys):</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     Helper function to create and scale a polygon from boundary vertices.</span>
+
+<span class="c1">#     Parameters:</span>
+<span class="c1">#     -----------</span>
+<span class="c1">#     group : pd.DataFrame</span>
+<span class="c1">#         Group of boundary coordinates (for a specific cell).</span>
+<span class="c1">#     scale_factor : float</span>
+<span class="c1">#         The factor by which to scale the polygons.</span>
+<span class="c1">#     keys : dict</span>
+<span class="c1">#         Dictionary containing the relevant key mappings as strings.</span>
+
+<span class="c1">#     Returns:</span>
+<span class="c1">#     --------</span>
+<span class="c1">#     pd.Series</span>
+<span class="c1">#         A Series containing the scaled Polygon and cell_id.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     x_coords = group[keys[&#39;vertex_x&#39;]]</span>
+<span class="c1">#     y_coords = group[keys[&#39;vertex_y&#39;]]</span>
+<span class="c1">#     if len(x_coords) &gt;= 3:  # Ensure there are at least 3 points to form a polygon</span>
+<span class="c1">#         polygon = Polygon(zip(x_coords, y_coords))</span>
+<span class="c1">#         if polygon.is_valid and not polygon.is_empty:</span>
+<span class="c1">#             # Scale the polygon by the provided factor</span>
+<span class="c1">#             scaled_polygon = polygon.buffer(scale_factor)  # Buffer can be used to mimic scaling</span>
+<span class="c1">#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:</span>
+<span class="c1">#                 return pd.Series({</span>
+<span class="c1">#                     &#39;geometry&#39;: scaled_polygon, </span>
+<span class="c1">#                     keys[&#39;cell_id&#39;]: group[keys[&#39;cell_id&#39;]].iloc[0]</span>
+<span class="c1">#                 })</span>
+<span class="c1">#     return pd.Series({&#39;geometry&#39;: None, keys[&#39;cell_id&#39;]: group[keys[&#39;cell_id&#39;]].iloc[0]})</span>
+
+
+<span class="c1"># def create_scaled_polygon(group, scale_factor, keys):</span>
+<span class="c1">#     x_coords = group[keys[&#39;vertex_x&#39;]]</span>
+<span class="c1">#     y_coords = group[keys[&#39;vertex_y&#39;]]</span>
+
+<span class="c1">#     # Ensure at least 3 points for the polygon</span>
+<span class="c1">#     if len(x_coords) &gt;= 3:</span>
+<span class="c1">#         polygon = Polygon(zip(x_coords, y_coords))</span>
+        
+<span class="c1">#         # Check if the polygon is valid (requires computation)</span>
+<span class="c1">#         if polygon.is_valid and not polygon.is_empty:</span>
+<span class="c1">#             # Scale the polygon and check its validity after scaling</span>
+<span class="c1">#             scaled_polygon = polygon.buffer(scale_factor)</span>
+            
+<span class="c1">#             if scaled_polygon.is_valid and not scaled_polygon.is_empty:</span>
+<span class="c1">#                 # Return the scaled polygon and the corresponding cell_id</span>
+<span class="c1">#                 return pd.Series({</span>
+<span class="c1">#                     &#39;geometry&#39;: scaled_polygon, </span>
+<span class="c1">#                     keys[&#39;cell_id&#39;]: group[keys[&#39;cell_id&#39;]].iloc[0]</span>
+<span class="c1">#                 })</span>
+
+<span class="c1">#     # Return a default result when no valid polygon is created</span>
+<span class="c1">#     return pd.Series({&#39;geometry&#39;: None, keys[&#39;cell_id&#39;]: group[keys[&#39;cell_id&#39;]].iloc[0]})</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
