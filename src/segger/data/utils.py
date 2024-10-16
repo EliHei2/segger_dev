@@ -409,7 +409,10 @@ def get_edge_index_cuda(
     )  # , compression=compression_params)
     search_params = cagra.SearchParams()
     # Build index using CuPy coords
-    index = cagra.build_index(index_params, cp_coords_1)
+    try:
+        index = cagra.build(index_params, cp_coords_1)
+    except AttributeError:
+        index = cagra.build_index(index_params, cp_coords_1)
     # Perform search to get distances and indices (still in CuPy)
     D, I = cagra.search(search_params, index, cp_coords_2, k)
     # Boolean mask for filtering distances below the squared threshold (all in CuPy)
