@@ -10,45 +10,60 @@ args = parser.parse_args()
 with open(args.config, "r") as file:
     config = yaml.safe_load(file)
 
+
 # Function to get Singularity command if enabled
 def get_singularity_command(use_gpu=False):
-    if config.get('use_singularity', False):
+    if config.get("use_singularity", False):
         singularity_command = [
-            "singularity", "exec", "--bind",
+            "singularity",
+            "exec",
+            "--bind",
             f"{config['path_mappings']['local_repo_dir']}:{config['path_mappings']['container_dir']}",
-            "--pwd", config['path_mappings']['container_dir']
+            "--pwd",
+            config["path_mappings"]["container_dir"],
         ]
         if use_gpu:
             singularity_command.append("--nv")
-        singularity_command.append(config['path_mappings']['singularity_image'])
+        singularity_command.append(config["path_mappings"]["singularity_image"])
         return singularity_command
     return []  # Return an empty list if Singularity is not enabled
 
+
 # Function to get Python command
 def get_python_command():
-    return ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client"] if config.get('use_debugpy', False) else ["python3"]
+    return (
+        ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client"]
+        if config.get("use_debugpy", False)
+        else ["python3"]
+    )
+
 
 # Define the pipeline functions
 
+
 # Run the data processing pipeline
 def run_data_processing():
-    command = get_singularity_command(use_gpu=False) + get_python_command() + [
-        "src/segger/cli/create_dataset_fast.py",
-        "--base_dir",
-        config["preprocessing"]["base_dir"],
-        "--data_dir",
-        config["preprocessing"]["data_dir"],
-        "--sample_type",
-        config["preprocessing"]["sample_type"],
-        "--tile_width",
-        str(config["preprocessing"]["tile_width"]),
-        "--tile_height",
-        str(config["preprocessing"]["tile_height"]),
-        "--n_workers",
-        str(config["preprocessing"]["workers"]),
-    ]
+    command = (
+        get_singularity_command(use_gpu=False)
+        + get_python_command()
+        + [
+            "src/segger/cli/create_dataset_fast.py",
+            "--base_dir",
+            config["preprocessing"]["base_dir"],
+            "--data_dir",
+            config["preprocessing"]["data_dir"],
+            "--sample_type",
+            config["preprocessing"]["sample_type"],
+            "--tile_width",
+            str(config["preprocessing"]["tile_width"]),
+            "--tile_height",
+            str(config["preprocessing"]["tile_height"]),
+            "--n_workers",
+            str(config["preprocessing"]["workers"]),
+        ]
+    )
 
-    if config.get('use_lsf', False):
+    if config.get("use_lsf", False):
         command = [
             "bsub",
             "-J",
@@ -71,21 +86,25 @@ def run_data_processing():
 
 # Run the training pipeline
 def run_training():
-    command = get_singularity_command(use_gpu=True) + get_python_command() + [
-        "src/segger/cli/train_model.py",
-        "--dataset_dir",
-        config["training"]["dataset_dir"],
-        "--models_dir",
-        config["training"]["models_dir"],
-        "--sample_tag",
-        config["training"]["sample_tag"],
-        "--num_workers",
-        str(config["training"]["workers"]),
-        "--devices",
-        str(config["training"]["gpus"]),
-    ]
+    command = (
+        get_singularity_command(use_gpu=True)
+        + get_python_command()
+        + [
+            "src/segger/cli/train_model.py",
+            "--dataset_dir",
+            config["training"]["dataset_dir"],
+            "--models_dir",
+            config["training"]["models_dir"],
+            "--sample_tag",
+            config["training"]["sample_tag"],
+            "--num_workers",
+            str(config["training"]["workers"]),
+            "--devices",
+            str(config["training"]["gpus"]),
+        ]
+    )
 
-    if config.get('use_lsf', False):
+    if config.get("use_lsf", False):
         command = [
             "bsub",
             "-J",
@@ -114,23 +133,27 @@ def run_training():
 
 # Run the prediction pipeline
 def run_prediction():
-    command = get_singularity_command(use_gpu=True) + get_python_command() + [
-        "src/segger/cli/predict.py",
-        "--segger_data_dir",
-        config["prediction"]["segger_data_dir"],
-        "--models_dir",
-        config["prediction"]["models_dir"],
-        "--benchmarks_dir",
-        config["prediction"]["benchmarks_dir"],
-        "--transcripts_file",
-        config["prediction"]["transcripts_file"],
-        "--knn_method",
-        config["prediction"]["knn_method"],
-        "--num_workers",
-        str(config["prediction"]["workers"]),
-    ]
+    command = (
+        get_singularity_command(use_gpu=True)
+        + get_python_command()
+        + [
+            "src/segger/cli/predict.py",
+            "--segger_data_dir",
+            config["prediction"]["segger_data_dir"],
+            "--models_dir",
+            config["prediction"]["models_dir"],
+            "--benchmarks_dir",
+            config["prediction"]["benchmarks_dir"],
+            "--transcripts_file",
+            config["prediction"]["transcripts_file"],
+            "--knn_method",
+            config["prediction"]["knn_method"],
+            "--num_workers",
+            str(config["prediction"]["workers"]),
+        ]
+    )
 
-    if config.get('use_lsf', False):
+    if config.get("use_lsf", False):
         command = [
             "bsub",
             "-J",
