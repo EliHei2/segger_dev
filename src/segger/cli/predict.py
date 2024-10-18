@@ -24,16 +24,16 @@ help_msg = "Run the Segger segmentation model."
 @click.option("--batch_size", type=int, default=1, help="Batch size for processing.")
 @click.option("--num_workers", type=int, default=1, help="Number of workers for data loading.")
 @click.option("--model_version", type=int, default=0, help="Model version to load.")
-@click.option("--save_tag", type=str, default="segger_embedding_1001_0.5", help="Tag for saving segmentation results.")
+@click.option("--save_tag", type=str, default="segger_embedding_1001", help="Tag for saving segmentation results.")
 @click.option("--min_transcripts", type=int, default=5, help="Minimum number of transcripts for segmentation.")
 @click.option("--cell_id_col", type=str, default="segger_cell_id", help="Column name for cell IDs.")
-@click.option("--use_cc", is_flag=True, default=False, help="Use connected components if specified.")
+@click.option("--use_cc", type=bool, default=False, help="Use connected components if specified.")
 @click.option("--knn_method", type=str, default="cuda", help="Method for KNN computation.")
 @click.option("--file_format", type=str, default="anndata", help="File format for output data.")
 @click.option("--k_bd", type=int, default=4, help="K value for boundary computation.")
-@click.option("--dist_bd", type=int, default=12, help="Distance for boundary computation.")
+@click.option("--dist_bd", type=float, default=12.0, help="Distance for boundary computation.")
 @click.option("--k_tx", type=int, default=5, help="K value for transcript computation.")
-@click.option("--dist_tx", type=int, default=5, help="Distance for transcript computation.")
+@click.option("--dist_tx", type=float, default=5.0, help="Distance for transcript computation.")
 def run_segmentation(args: Namespace):
 
     # Setup logging

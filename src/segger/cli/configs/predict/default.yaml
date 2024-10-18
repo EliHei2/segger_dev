@@ -39,7 +39,7 @@ cell_id_col:
   default: "segger_cell_id"
   help: Column name for cell IDs.
 use_cc:
-  is_flag: true
+  type: bool
   default: false
   help: Use connected components if specified.
 knn_method:
@@ -55,7 +55,7 @@ k_bd:
   default: 4
   help: K value for boundary computation.
 dist_bd:
-  type: int
+  type: float
   default: 12
   help: Distance for boundary computation.
 k_tx:
@@ -63,6 +63,6 @@ k_tx:
   default: 5
   help: K value for transcript computation.
 dist_tx:
-  type: int
+  type: float
   default: 5
   help: Distance for transcript computation.

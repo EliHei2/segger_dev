@@ -369,7 +369,7 @@ def predict(
         torch.cuda.empty_cache()
 
     # Concatenate all assignments into a single Dask DataFrame
-    final_assignments = dd.concat(all_assignments_dd, ignore_index=True)
+    final_assignments = dd.concat(all_assignments, ignore_index=True)
 
     # Sort the Dask DataFrame by 'transcript_id' before setting it as an index
     final_assignments = final_assignments.sort_values(by="transcript_id")
