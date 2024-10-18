@@ -2,6 +2,8 @@ use_lsf: true
 use_singularity: false
 use_debugpy: false
 
+config_file: "config.yaml"
+
 pipelines:
   - 1 # Run data processing
   - 2 # Run training
@@ -12,9 +14,18 @@ preprocessing:
   base_dir: "data_xenium"
   data_dir: "data_segger"
   sample_type: "xenium"
+  k_bd: 3
+  dist_bd: 15.0
+  k_tx: 3
+  dist_tx: 5.0
+  tile_size: null
   tile_width: 120
   tile_height: 120
-  workers: 12
+  neg_sampling_ratio: 5.0
+  frac: 1.0
+  val_prob: 0.1
+  test_prob: 0.2
+  n_workers: 12
   memory: "16G" # this is ignored if use_lsf is false
 
 training:
@@ -22,24 +33,45 @@ training:
   dataset_dir: "data_segger"
   models_dir: "model_dir"
   sample_tag: "first_training"
-  workers: 12
+  init_emb: 8
+  hidden_channels: 32
+  num_tx_tokens: 500
+  out_channels: 8
+  heads: 2
+  num_mid_layers: 2
+  batch_size: 4
+  num_workers: 12
+  accelerator: "cuda"
+  max_epochs: 200
+  devices: 8
+  strategy: "auto"
+  precision: "16-mixed"
   memory: "16G" # this is ignored if use_lsf is false
-  gpus: 8
   gpu_memory: "8G" # this is ignored if use_lsf is false
 
 prediction:
-  output_log: "predict_output.log"
+  output_log: "predict_parquet_final_output.log"
   segger_data_dir: "data_segger"
   models_dir: "model_dir"
   benchmarks_dir: "benchmark_dir"
   transcripts_file: "data_xenium/transcripts.parquet"
+  batch_size: 1
+  num_workers: 12
+  model_version: 0
+  save_tag: segger_embedding
+  min_transcripts: 5
+  cell_id_col: segger_cell_id
+  use_cc: false
   knn_method: "cuda"
-  workers: 12
+  file_format: "anndata"
+  k_bd: 4
+  dist_bd: 15.0
+  k_tx: 5
+  dist_tx: 5.0
   memory: "16G" # this is ignored if use_lsf is false
   gpu_memory: "8G" # this is ignored if use_lsf is false
 
-# path_mappings are ignored if use_singularity is false
 path_mappings:
   local_repo_dir: "/omics/groups/OE0540/internal_temp/users/danielu/segger_dev"
-  container_dir: "/workspace/segger_dev"
-  singularity_image: "segger_dev_latest.sif"
+  container_dir: "/workspace/segger_dev" # this is ignored if use_singularity is false
+  singularity_image: "segger_dev_latest.sif" # this is ignored if use_singularity is false
