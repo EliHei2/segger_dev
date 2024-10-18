@@ -111,6 +111,7 @@ pip install -e ".[rapids12]"
 ```
 
 ### Docker Installation
+
 Segger provides an easy-to-use Docker container for those who prefer a containerized environment. To pull the latest Docker image:
 
 ```bash
@@ -120,6 +121,7 @@ docker pull danielunyi42/segger_dev:latest
 The Docker image comes with all dependencies packaged, including RAPIDS. It currently supports only CUDA 12.2, and we will soon release a version that supports CUDA 11.8.
 
 ### Singularity Installation
+
 For users who prefer Singularity, you can pull the Docker image as follows:
 
 ```bash
