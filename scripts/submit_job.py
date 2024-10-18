@@ -187,7 +187,7 @@ def run_prediction():
         get_singularity_command(use_gpu=True)
         + get_python_command()
         + [
-            f"{repo_dir}/src/segger/cli/predict.py",
+            f"{repo_dir}/src/segger/cli/predict_fast.py",
             "--segger_data_dir",
             config["prediction"]["segger_data_dir"],
             "--models_dir",
