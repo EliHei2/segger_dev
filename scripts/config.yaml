@@ -2,8 +2,6 @@ use_lsf: true
 use_singularity: false
 use_debugpy: false
 
-config_file: "config.yaml"
-
 pipelines:
   - 1 # Run data processing
   - 2 # Run training
