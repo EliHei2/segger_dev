@@ -46,8 +46,9 @@ from tqdm import tqdm
 import json
 from datetime import datetime
 import dask_geopandas as dgpd  # Assuming dask-geopandas is installed
-import cudf
-import dask_cudf
+
+# import cudf
+# import dask_cudf
 import cupy as cp
 import cupyx
 import warnings
@@ -128,7 +129,7 @@ def subset_sparse_matrix(sparse_matrix, row_idx, col_idx):
     col_mapped = cp.searchsorted(col_idx, col_filtered)
 
     # Return the new subset sparse matrix
-    return coo_matrix((new_data, (row_map, col_map)), shape=(len(row_idx), len(col_idx)))
+    return coo_matrix((data_filtered, (row_mapped, col_mapped)), shape=(len(row_idx), len(col_idx)))
 
 
 def load_model(checkpoint_path: str) -> LitSegger:
@@ -403,6 +404,7 @@ def segment(
     transcript_file: Union[str, Path],
     score_cut: float = 0.5,
     use_cc: bool = True,
+    file_format: str = "",
     save_transcripts: bool = True,
     save_anndata: bool = True,
     save_cell_masks: bool = False,  # Placeholder for future implementation
