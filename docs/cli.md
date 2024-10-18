@@ -44,7 +44,7 @@ python3 src/segger/cli/create_dataset_fast.py \
 | `n_workers`          | Number of workers for parallel processing.                                              | `1`           |
 
 
-### Key Updates:
+#### Key Updates
 - **Faster Dataset Creation** This method is way faster due to the use of ND-tree-based partitioning and parallel processing.
 
 !!! note "Customizing Your Dataset"
@@ -189,35 +189,46 @@ This allows you to run the full pipeline or just specific steps. Set the desired
 #### Running the Pipeline
 
 Use the following command to run the pipeline:
-<!-- termynal -->
+
 ```console
-$ python3 submit_job.py --config_file=filename.yaml
+python3 submit_job.py --config_file=filename.yaml
 ```
 
 - If no `--config_file` is provided, the default `config.yaml` file will be used.
 
+### 5. Containerization
+
+For users who want a portable, containerized environment, segger supports both Docker and Singularity containers. These containers provide a consistent runtime environment with all dependencies pre-installed.
+
 #### Using Docker
 
-If you prefer using Docker, you can pull the Segger container with the following command:
-<!-- termynal -->
+You can pull the segger Docker image from Docker Hub with this command:
+
 ```console
-$ docker pull danielunyi42/segger_dev:latest
+docker pull danielunyi42/segger_dev:latest
 ```
 
-To run the pipeline in a Conda environment or Docker, ensure that `use_singularity: false` and `use_lsf: false` are set in your YAML configuration file. Make sure you are in a terminal inside your Conda environment or inside Docker, and then type the command above.
+To run the pipeline in Docker, make sure your YAML configuration includes the following settings:
+
+- `use_singularity`: false
+- `use_lsf`: false
+
+Afterwards, run the pipeline inside the Docker container with the same `submit_job.py` command.
 
 #### Using Singularity
-For Singularity containerized environments, pull the Singularity image with:
-<!-- termynal -->
+For a Singularity environment, pull the image with:
+
 ```console
-$ singularity pull docker://danielunyi42/segger_dev:latest
+singularity pull docker://danielunyi42/segger_dev:latest
 ```
 
-Set `use_singularity: true` in the YAML file and specify the Singularity image (e.g., `segger_dev_latest.sif`) in the `singularity_image` field.
+Ensure `use_singularity: true` in the YAML file and specify the Singularity image file (e.g., `segger_dev_latest.sif`) in the `singularity_image` field.
 
 !!! note "Containerization"
-    - Docker and Singularity provides a safe and portable environment with everything pre-installed.
-    - The Docker image currently supports CUDA 12.1. A CUDA 11.8 compatible version will be added soon.
+    - The segger Docker image currently supports CUDA 12.1. A CUDA 11.8 compatible version will be added soon.
 
-#### Running on HPC with LSF
-For HPC environments, the pipeline supports job submission via LSF. Set `use_lsf: true` in the YAML configuration to enable LSF job scheduling. The current setup is for LSF, but Slurm support is planned soon.
+### 6. HPC Environments
+
+Segger also supports HPC environments with LSF job scheduling. To run the pipeline on an HPC cluster using LSF, set `use_lsf: true` in your YAML configuration.
+
+If your HPC system supports Slurm, a similar setup is planned and will be introduced soon.
