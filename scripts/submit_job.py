@@ -35,40 +35,49 @@ def get_singularity_command(use_gpu=False):
 
 # Function to get Python command
 def get_python_command():
-    return ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client"] if config.get('use_debugpy', False) else ["python3"]
+    return (
+        ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client"]
+        if config.get("use_debugpy", False)
+        else ["python3"]
+    )
+
 
 # Define the pipeline functions
 
 
 # Run the data processing pipeline
 def run_data_processing():
-    command = get_singularity_command(use_gpu=False) + get_python_command() + [
-        f"{base_dir}/src/segger/cli/create_dataset_fast.py",
-        "--base_dir",
-        config["preprocessing"]["base_dir"],
-        "--data_dir",
-        config["preprocessing"]["data_dir"],
-        "--sample_type",
-        config["preprocessing"]["sample_type"],
-        "--k_bd",
-        str(config["preprocessing"]["k_bd"]),
-        "--dist_bd",
-        str(config["preprocessing"]["dist_bd"]),
-        "--k_tx",
-        str(config["preprocessing"]["k_tx"]),
-        "--dist_tx",
-        str(config["preprocessing"]["dist_tx"]),
-        "--neg_sampling_ratio",
-        str(config["preprocessing"]["neg_sampling_ratio"]),
-        "--frac",
-        str(config["preprocessing"]["frac"]),
-        "--val_prob",
-        str(config["preprocessing"]["val_prob"]),
-        "--test_prob",
-        str(config["preprocessing"]["test_prob"]),
-        "--n_workers",
-        str(config["preprocessing"]["n_workers"]),
-    ]
+    command = (
+        get_singularity_command(use_gpu=False)
+        + get_python_command()
+        + [
+            f"{base_dir}/src/segger/cli/create_dataset_fast.py",
+            "--base_dir",
+            config["preprocessing"]["base_dir"],
+            "--data_dir",
+            config["preprocessing"]["data_dir"],
+            "--sample_type",
+            config["preprocessing"]["sample_type"],
+            "--k_bd",
+            str(config["preprocessing"]["k_bd"]),
+            "--dist_bd",
+            str(config["preprocessing"]["dist_bd"]),
+            "--k_tx",
+            str(config["preprocessing"]["k_tx"]),
+            "--dist_tx",
+            str(config["preprocessing"]["dist_tx"]),
+            "--neg_sampling_ratio",
+            str(config["preprocessing"]["neg_sampling_ratio"]),
+            "--frac",
+            str(config["preprocessing"]["frac"]),
+            "--val_prob",
+            str(config["preprocessing"]["val_prob"]),
+            "--test_prob",
+            str(config["preprocessing"]["test_prob"]),
+            "--n_workers",
+            str(config["preprocessing"]["n_workers"]),
+        ]
+    )
 
     if config["preprocessing"].get("tile_size") is not None:
         command.extend(["--tile_size", str(config["preprocessing"]["tile_size"])])
@@ -101,41 +110,45 @@ def run_data_processing():
 
 # Run the training pipeline
 def run_training():
-    command = get_singularity_command(use_gpu=True) + get_python_command() + [
-        f"{base_dir}/src/segger/cli/train_model.py",
-        "--dataset_dir",
-        config["training"]["dataset_dir"],
-        "--models_dir",
-        config["training"]["models_dir"],
-        "--sample_tag",
-        config["training"]["sample_tag"],
-        "--init_emb",
-        str(config["training"]["init_emb"]),
-        "--hidden_channels",
-        str(config["training"]["hidden_channels"]),
-        "--num_tx_tokens",
-        str(config["training"]["num_tx_tokens"]),
-        "--out_channels",
-        str(config["training"]["out_channels"]),
-        "--heads",
-        str(config["training"]["heads"]),
-        "--num_mid_layers",
-        str(config["training"]["num_mid_layers"]),
-        "--batch_size",
-        str(config["training"]["batch_size"]),
-        "--num_workers",
-        str(config["training"]["num_workers"]),
-        "--accelerator",
-        config["training"]["accelerator"],
-        "--max_epochs",
-        str(config["training"]["max_epochs"]),
-        "--devices",
-        str(config["training"]["devices"]),
-        "--strategy",
-        config["training"]["strategy"],
-        "--precision",
-        config["training"]["precision"],
-    ]
+    command = (
+        get_singularity_command(use_gpu=True)
+        + get_python_command()
+        + [
+            f"{base_dir}/src/segger/cli/train_model.py",
+            "--dataset_dir",
+            config["training"]["dataset_dir"],
+            "--models_dir",
+            config["training"]["models_dir"],
+            "--sample_tag",
+            config["training"]["sample_tag"],
+            "--init_emb",
+            str(config["training"]["init_emb"]),
+            "--hidden_channels",
+            str(config["training"]["hidden_channels"]),
+            "--num_tx_tokens",
+            str(config["training"]["num_tx_tokens"]),
+            "--out_channels",
+            str(config["training"]["out_channels"]),
+            "--heads",
+            str(config["training"]["heads"]),
+            "--num_mid_layers",
+            str(config["training"]["num_mid_layers"]),
+            "--batch_size",
+            str(config["training"]["batch_size"]),
+            "--num_workers",
+            str(config["training"]["num_workers"]),
+            "--accelerator",
+            config["training"]["accelerator"],
+            "--max_epochs",
+            str(config["training"]["max_epochs"]),
+            "--devices",
+            str(config["training"]["devices"]),
+            "--strategy",
+            config["training"]["strategy"],
+            "--precision",
+            config["training"]["precision"],
+        ]
+    )
 
     if config.get("use_lsf", False):
         command = [
@@ -167,43 +180,47 @@ def run_training():
 
 # Run the prediction pipeline
 def run_prediction():
-    command = get_singularity_command(use_gpu=True) + get_python_command() + [
-        f"{base_dir}/src/segger/cli/predict.py",
-        "--segger_data_dir",
-        config["prediction"]["segger_data_dir"],
-        "--models_dir",
-        config["prediction"]["models_dir"],
-        "--benchmarks_dir",
-        config["prediction"]["benchmarks_dir"],
-        "--transcripts_file",
-        config["prediction"]["transcripts_file"],
-        "--batch_size",
-        str(config["prediction"]["batch_size"]),
-        "--num_workers",
-        str(config["prediction"]["num_workers"]),
-        "--model_version",
-        str(config["prediction"]["model_version"]),
-        "--save_tag",
-        config["prediction"]["save_tag"],
-        "--min_transcripts",
-        str(config["prediction"]["min_transcripts"]),
-        "--cell_id_col",
-        str(config["prediction"]["cell_id_col"]),
-        "--use_cc",
-        str(config["prediction"]["use_cc"]),
-        "--knn_method",
-        config["prediction"]["knn_method"],
-        "--file_format",
-        config["prediction"]["file_format"],
-        "--k_bd",
-        str(config["preprocessing"]["k_bd"]),
-        "--dist_bd",
-        str(config["preprocessing"]["dist_bd"]),
-        "--k_tx",
-        str(config["preprocessing"]["k_tx"]),
-        "--dist_tx",
-        str(config["preprocessing"]["dist_tx"]),
-    ]
+    command = (
+        get_singularity_command(use_gpu=True)
+        + get_python_command()
+        + [
+            f"{base_dir}/src/segger/cli/predict.py",
+            "--segger_data_dir",
+            config["prediction"]["segger_data_dir"],
+            "--models_dir",
+            config["prediction"]["models_dir"],
+            "--benchmarks_dir",
+            config["prediction"]["benchmarks_dir"],
+            "--transcripts_file",
+            config["prediction"]["transcripts_file"],
+            "--batch_size",
+            str(config["prediction"]["batch_size"]),
+            "--num_workers",
+            str(config["prediction"]["num_workers"]),
+            "--model_version",
+            str(config["prediction"]["model_version"]),
+            "--save_tag",
+            config["prediction"]["save_tag"],
+            "--min_transcripts",
+            str(config["prediction"]["min_transcripts"]),
+            "--cell_id_col",
+            str(config["prediction"]["cell_id_col"]),
+            "--use_cc",
+            str(config["prediction"]["use_cc"]),
+            "--knn_method",
+            config["prediction"]["knn_method"],
+            "--file_format",
+            config["prediction"]["file_format"],
+            "--k_bd",
+            str(config["preprocessing"]["k_bd"]),
+            "--dist_bd",
+            str(config["preprocessing"]["dist_bd"]),
+            "--k_tx",
+            str(config["preprocessing"]["k_tx"]),
+            "--dist_tx",
+            str(config["preprocessing"]["dist_tx"]),
+        ]
+    )
 
     if config.get("use_lsf", False):
         command = [
