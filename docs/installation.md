@@ -41,12 +41,12 @@ cd segger_dev
 pip install -e "."
 ```
 
-=== ":rocket: Pip Installation (RAPIDS with CUDA 11)"
+=== ":rocket: Pip Installation of RAPIDS with CUDA 11"
 ```bash
 pip install "segger[rapids11]"
 ```
 
-=== ":rocket: Pip Installation (RAPIDS with CUDA 12)"
+=== ":rocket: Pip Installation of RAPIDS with CUDA 12"
 ```bash
 pip install "segger[rapids12]"
 ```
