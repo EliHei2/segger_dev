@@ -101,7 +101,7 @@ def run_data_processing():
             "-R",
             f"rusage[mem={config['preprocessing']['memory']}]",
             "-q",
-            "medium",
+            "long",
         ] + command
 
     try:
@@ -169,7 +169,7 @@ def run_training():
             "-R",
             "tensorcore",
             "-gpu",
-            f"num={config['training']['gpus']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
+            f"num={config['training']['devices']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
             "-q",
             "gpu",
         ] + command
