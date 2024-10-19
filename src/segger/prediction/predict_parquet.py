@@ -21,6 +21,8 @@ from segger.data.utils import (
 )
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
+from segger.prediction.boundary import generate_boundaries
+
 from scipy.sparse.csgraph import connected_components as cc
 from typing import Union, Dict
 import dask.dataframe as dd
@@ -682,7 +684,10 @@ def segment(
             step_start_time = time()
             print(f"Computing and saving cell masks anndata object...")
         # Placeholder for future cell masks implementation as Dask Geopandas Parquet
+        boundaries_gdf = generate_boundaries(transcripts_df_filtered)
         cell_masks_save_path = save_dir / "segger_cell_boundaries.parquet"
+
+        boundaries_gdf.to_parquet(cell_masks_save_path)
         if verbose:
             elapsed_time = time() - step_start_time
             print(f"Saved cell masks in {elapsed_time:.2f} seconds.")
