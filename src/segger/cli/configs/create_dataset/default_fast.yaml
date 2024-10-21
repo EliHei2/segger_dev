@@ -10,6 +10,14 @@ sample_type:
   type: str
   default: null
   help: The sample type of the raw data, e.g., "xenium" or "merscope".
+scrnaseq_file:
+  type: str
+  default: null
+  help: Name of the scRNA-seq file.
+celltype_column:
+  type: str
+  default: null
+  help: Column name for cell type annotations in the scRNAseq file.
 k_bd:
   type: int
   default: 3
