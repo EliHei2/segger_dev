@@ -12,6 +12,8 @@ preprocessing:
   base_dir: "data_xenium"
   data_dir: "data_segger"
   sample_type: "xenium"
+  scrnaseq_file: "scrnaseq.h5ad"
+  celltype_column: "celltype_minor"
   k_bd: 3
   dist_bd: 15.0
   k_tx: 3
