@@ -20,6 +20,7 @@ repo_dir = config["container_dir"] if config.get("use_singularity", False) else 
 
 time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
+
 # Function to get Singularity command if enabled
 def get_singularity_command(use_gpu=False):
     if config.get("use_singularity", False):
