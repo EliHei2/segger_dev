@@ -1,91 +1,60 @@
 ## Segger Command Line Interface
 
-
-
-This section will simulate typing the `segger --help` command output.
-
-
-<!-- termynal -->
-
-```console 
-$ segger --help
-
-Usage: segger [OPTIONS] COMMAND [ARGS]...
-
-╭─ Commands ─────────────────────────────────────────────────────╮
-│ create_dataset  Create a dataset for spatial transcriptomics     │
-│ train           Train the model using the prepared dataset       │
-│ predict         Run predictions using a trained model            │
-╰────────────────────────────────────────────────────────────────╯
-```
-
-
 ### 1. Creating a Dataset
 
-The `create_dataset` command helps you build a dataset for spatial transcriptomics. Here’s a breakdown of the options available:
+The `create_dataset` command helps you to build a dataset for spatial transcriptomics. Here’s a breakdown of the options available:
 
 <!-- termynal -->
 ```console
-// Example: Create a dataset for spatial transcriptomics
-python create_dataset create_dataset \
-    --dataset_dir /path/to/dataset \
+// Example: Creating a dataset for spatial transcriptomics
+python3 src/segger/cli/create_dataset_fast.py \
+    --base_dir /path/to/raw_data \
     --data_dir /path/to/save/processed_data \
-    --sample_tag sample_name \
-    --transcripts_file transcripts.parquet \
-    --boundaries_file nucleus_boundaries.parquet \
-    --x_size 300 \
-    --y_size 300 \
-    --d_x 280 \
-    --d_y 280 \
-    --margin_x 10 \
-    --margin_y 10 \
-    --r_tx 5 \
-    --k_tx 5 \
+    --sample_type xenium \
+    --k_bd 3 \
+    --dist_bd 15.0 \
+    --k_tx 3 \
+    --dist_tx 5.0 \
+    --tile_width 200 \
+    --tile_height 200 \
+    --neg_sampling_ratio 5.0 \
+    --frac 1.0 \
     --val_prob 0.1 \
     --test_prob 0.2 \
-    --neg_sampling_ratio 5 \
-    --sampling_rate 1 \
-    --workers 4 \
-    --gpu
+    --n_workers 16
 ```
 
 #### Parameters
 
-| Parameter            | Description                                                                            | Default Value |
-|----------------------|----------------------------------------------------------------------------------------|---------------|
-| `dataset_type`        | Specifies the type of dataset (e.g., `xenium`, `merscope`).                            | `xenium`      |
-| `dataset_dir`         | Path to the directory where raw data is stored.                                        | None          |
-| `sample_tag`          | Tag to identify the dataset, useful for version control.                               | None          |
-| `transcripts_file`    | File path to the transcript data in Parquet format.                                    | None          |
-| `boundaries_file`     | File path to the nucleus or cell boundaries data in Parquet format.                    | None          |
-| `data_dir`            | Directory to store processed datasets (used during model training).                    | None          |
-| `x_size`, `y_size`    | Size of the tiles in the x and y directions.                                           | `300`         |
-| `d_x`, `d_y`          | Step size in the x and y directions for overlapping tiles.                             | `280`         |
-| `margin_x`, `margin_y`| Additional margins added to each tile in the x and y directions.                       | `10`          |
-| `r_tx`                | Radius for computing the neighborhood graph for transcripts.                           | `5`           |
-| `k_tx`                | Number of nearest neighbors for the neighborhood graph.                                | `5`           |
-| `val_prob`            | Proportion of the dataset used for validation.                                         | `0.1`         |
-| `test_prob`           | Proportion of the dataset used for testing.                                            | `0.2`         |
-| `compute_labels`      | Flag to enable or disable the computation of labels for segmentation.                  | `True`        |
-| `neg_sampling_ratio`  | Approximate ratio for negative sampling.                                               | `5`           |
-| `sampling_rate`       | Proportion of the dataset to sample (useful for large datasets).                       | `1` (no sampling) |
-| `workers`             | Number of CPU cores to use for parallel processing.                                    | `1`           |
-| `gpu`                 | Whether to use a GPU for processing.                                                   | `False`       |
+| Parameter            | Description                                                                             | Default Value |
+|----------------------|-----------------------------------------------------------------------------------------|---------------|
+| `base_dir`           | Directory containing the raw dataset (e.g., transcripts, boundaries).                   | None          |
+| `data_dir`           | Directory to save the processed Segger dataset (in PyTorch Geometric format).           | None          |
+| `sample_type`        | The sample type of the raw data, e.g., "xenium" or "merscope".                          | `xenium`      |
+| `k_bd`               | Number of nearest neighbors for boundary nodes.                                         | `3`           |
+| `dist_bd`            | Maximum distance for boundary neighbors.                                                | `15.0`        |
+| `k_tx`               | Number of nearest neighbors for transcript nodes.                                       | `3`           |
+| `dist_tx`            | Maximum distance for transcript neighbors.                                              | `5.0`         |
+| `tile_width`         | Width of the tiles in pixels (ignored if `tile_size` is provided).                      | `200`         |
+| `tile_height`        | Height of the tiles in pixels (ignored if `tile_size` is provided).                     | `200`         |
+| `neg_sampling_ratio` | Ratio of negative samples.                                                              | `5.0`         |
+| `frac`               | Fraction of the dataset to process. Useful for subsampling large datasets.              | `1.0`         |
+| `val_prob`           | Proportion of the dataset used for validation split.                                    | `0.1`         |
+| `test_prob`          | Proportion of the dataset used for testing split.                                       | `0.2`         |
+| `n_workers`          | Number of workers for parallel processing.                                              | `1`           |
 
-### Key Updates:
-- **Bounding box options (`x_min`, `y_min`, etc.)** were removed.
-- **`x_size`, `y_size`** now refer to tile sizes, not bounding boxes.
-- **`MerscopeSample`** is added as a supported dataset type alongside `XeniumSample`.
-- **`r_tx` and `k_tx`** refer to parameters for computing neighborhood graphs.
-- **`neg_sampling_ratio`** is included for negative sampling.
+
+#### Key Updates
+- **Faster Dataset Creation** This method is way faster due to the use of ND-tree-based partitioning and parallel processing.
 
 !!! note "Customizing Your Dataset"
-    - **dataset_type**: Defines the type of spatial transcriptomics data.
-    - **x_size, y_size**: Bounding box dimensions are important for memory efficiency.
-    - **val_prob, test_prob**: Adjust these probabilities based on the need for model validation and testing.
+    - **dataset_type**: Defines the type of spatial transcriptomics data. Currently, **xenium** and **merscope** are supported and have been tested.
+    - **val_prob, test_prob**: Control the dataset portions for validation and testing. Adjust based on your dataset size and evaluation needs.
+    - **frac**: Specifies the fraction of the dataset to process. Reducing `frac` can be useful when working with very large datasets, allowing for faster dataset creation by only processing a subset of the data.
+
 
 !!! tip "Faster Dataset Creation"
-    You can reduce the **sampling_rate** to process only a subset of your dataset, which is useful for large datasets.
+    Increasing the number of workers (`n_workers`) can significantly accelerate the dataset creation process, especially for large datasets, by taking advantage of parallel processing across multiple CPU cores.
 
 ---
 
@@ -95,121 +64,171 @@ The `train` command initializes and trains a model using the dataset created. He
 
 <!-- termynal -->
 ```console
-// Example: Train the model using SLURM
-$ segger train slurm \
-    --data_dir data_tidy/pyg_datasets \
-    --batch_size_train 32 \
-    --batch_size_val 16 \
-    --init_emb 128 \
-    --hidden_channels 256 \
-    --out_channels 3 \
-    --heads 8 \
-    --aggr mean \
-    --accelerator gpu \
-    --strategy ddp \
-    --precision 16 \
+// Example: Training a segger model
+$ python3 src/segger/cli/train_model.py \
+    --dataset_dir /path/to/saved/processed_data \
+    --models_dir /path/to/save/model/checkpoints \
+    --sample_tag first_training \
+    --init_emb 8 \
+    --hidden_channels 32 \
+    --num_tx_tokens 500 \
+    --out_channels 8 \
+    --heads 2 \
+    --num_mid_layers 2 \
+    --batch_size 4 \
+    --num_workers 2 \
+    --accelerator cuda \
+    --max_epochs 200 \
     --devices 4 \
-    --epochs 100 \
-    --model_dir /path/to/save/model/checkpoints
+    --strategy auto \
+    --precision 16-mixed
 ```
 
 #### Parameters
 
-| Parameter          | Description                                                                            | Default Value |
-|--------------------|----------------------------------------------------------------------------------------|---------------|
-| `data_dir`         | Directory containing the dataset to be used for training.                               | None          |
-| `batch_size_train` | Number of samples to process per training batch.                                        | `32`          |
-| `batch_size_val`   | Number of samples to process per validation batch.                                      | `16`          |
-| `init_emb`         | Size of the initial embedding for the input data.                                       | `128`         |
-| `hidden_channels`  | Number of hidden units in each layer of the neural network.                             | `256`         |
-| `out_channels`     | Number of output channels.                                                              | `3`           |
-| `heads`            | Number of attention heads used in graph attention layers.                               | `8`           |
-| `aggr`             | Aggregation method for attention layers (e.g., `mean`, `sum`).                          | `mean`        |
-| `accelerator`      | Device used for training (e.g., `gpu` or `cpu`).                                        | `gpu`         |
-| `strategy`         | Strategy for distributed training (e.g., `ddp` for Distributed Data Parallel).          | `ddp`         |
-| `precision`        | Floating-point precision for training (e.g., `16` for FP16).                            | `16`          |
-| `devices`          | Number of devices (GPUs or CPUs) to use during training.                                | `4`           |
-| `epochs`           | Number of training epochs.                                                              | `100`         |
-| `model_dir`        | Directory to save model checkpoints.                                                    | None          |
+| Parameter          | Description                                                                             | Default Value |
+|--------------------|-----------------------------------------------------------------------------------------|---------------|
+| `dataset_dir`      | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | None          |
+| `models_dir`       | Directory to save the trained model and training logs.                                  | None          |
+| `sample_tag`       | Tag used to identify the dataset during training.                                       | None          |
+| `init_emb`         | Size of the embedding layer for input data.                                             | `8`           |
+| `hidden_channels`  | Number of hidden units in each layer of the neural network.                             | `32`          |
+| `num_tx_tokens`    | Number of transcript tokens used during training.                                       | `500`         |
+| `out_channels`     | Number of output channels from the model.                                               | `8`           |
+| `heads`            | Number of attention heads used in graph attention layers.                               | `2`           |
+| `num_mid_layers`   | Number of mid layers in the model.                                                      | `2`           |
+| `batch_size`       | Number of samples to process per training batch.                                        | `4`           |
+| `num_workers`      | Number of workers to use for parallel data loading.                                     | `2`           |
+| `accelerator`      | Device used for training (e.g., `cuda` for GPU or `cpu`).                               | `cuda`        |
+| `max_epochs`       | Number of training epochs.                                                              | `200`         |
+| `devices`          | Number of devices (GPUs) to use during training.                                        | `4`           |
+| `strategy`         | Strategy used for training (e.g., `ddp` for distributed training or `auto`).            | `auto`        |
+| `precision`        | Precision used for training (e.g., `16-mixed` for mixed precision training).            | `16-mixed`    |
 
-!!! tip "Adjusting for Your Hardware"
-    - **batch_size_train**: For larger datasets, you might need to decrease this value based on your GPU memory.
-    - **epochs**: Increasing the number of epochs can lead to better model performance but will take longer to train.
+!!! tip "Optimizing training time"
+    - **devices**: Use multiple GPUs by increasing the `devices` parameter to further accelerate training.
+    - **batch_size**: A larger batch size can speed up training, but requires more memory. Adjust based on your hardware capabilities.
+    - **epochs**: Increasing the number of epochs can improve model performance by allowing more learning cycles, but it will also extend the overall training time. Balance this based on your time constraints and hardware capacity.
 
-!!! warning "Ensure Correct GPU Setup"
-    Before using the `--accelerator gpu` flag, make sure your system supports GPU computation and that CUDA is properly installed.
+!!! warning "Ensure Correct CUDA and PyTorch Setup"
+    Before using the `--accelerator cuda` flag, ensure your system has CUDA installed and configured correctly. Also, check that the installed CUDA version is compatible with your PyTorch and PyTorch Geometric versions.
 
 ---
 
 ### 3. Making Predictions
 
-After training the model, use the `predict` command to make predictions on new data.
+After training the model, use the `predict` command to make predictions on new data:
 
 <!-- termynal -->
 ```console
 // Example: Make predictions using a trained model
-$ segger predict \
-    --dataset_path /path/to/new/dataset \
-    --checkpoint_path /path/to/saved/checkpoint \
-    --output_path /path/to/save/predictions.csv \
-    --batch_size 16 \
-    --workers 4 \
-    --score_cut 0.5 \
-    --use_cc true
+$ python3 src/segger/cli/predict_fast.py \
+    --segger_data_dir /path/to/saved/processed_data \
+    --models_dir /path/to/saved/model/checkpoints \
+    --benchmarks_dir /path/to/save/segmentation/results \
+    --transcripts_file /path/to/raw_data/transcripts.parquet \
+    --batch_size 1 \
+    --num_workers 1 \
+    --model_version 0 \
+    --save_tag segger_embedding_1001 \
+    --min_transcripts 5 \
+    --cell_id_col segger_cell_id \
+    --use_cc false \
+    --knn_method cuda \
+    --file_format anndata \
+    --k_bd 4 \
+    --dist_bd 12.0 \
+    --k_tx 5 \
+    --dist_tx 5.0
 ```
 
 #### Parameters
 
-| Parameter          | Description                                                                            | Default Value |
-|--------------------|----------------------------------------------------------------------------------------|---------------|
-| `dataset_path`      | Path to the dataset for which predictions will be made.                                | None          |
-| `checkpoint_path`   | Path to the saved model checkpoint from training.                                      | None          |
-| `output_path`       | File where the predictions will be saved.                                              | None          |
-| `batch_size`        | Number of samples processed simultaneously during prediction.                          | `16`          |
-| `workers`           | Number of CPU cores used for parallel processing during prediction.                    | `4`           |
-| `score_cut`         | Cutoff threshold for confidence scores in predictions.                                 | `0.5`         |
-| `use_cc`            | Enable connected component analysis to refine predictions.                             | `true`        |
+| Parameter             | Description                                                                              | Default Value |
+|-----------------------|------------------------------------------------------------------------------------------|---------------|
+| `segger_data_dir`     | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | None          |
+| `models_dir`          | Directory containing the trained models.                                                | None          |
+| `benchmarks_dir`      | Directory to save the segmentation results, including cell boundaries and associations. | None          |
+| `transcripts_file`    | Path to the transcripts.parquet file.                                                   | None          |
+| `batch_size`          | Number of samples to process per batch during prediction.                               | `1`           |
+| `num_workers`         | Number of workers for parallel data loading.                                            | `1`           |
+| `model_version`       | Model version number to load for predictions, corresponding to the version from training logs. | `0`           |
+| `save_tag`            | Tag used to name and organize the segmentation results.                                 | `segger_embedding_1001` |
+| `min_transcripts`     | Minimum number of transcripts required for segmentation.                                | `5`           |
+| `cell_id_col`         | Column name for cell IDs in the output data.                                            | `segger_cell_id` |
+| `use_cc`              | Whether to use connected components for grouping transcripts without direct nucleus association. | `False`       |
+| `knn_method`          | Method for KNN computation (e.g., `cuda` for GPU-based computation).                    | `cuda`        |
+| `file_format`         | Format for the output segmentation data (e.g., `anndata`).                              | `anndata`     |
+| `k_bd`                | Number of nearest neighbors for boundary nodes.                                         | `4`           |
+| `dist_bd`             | Maximum distance for boundary nodes.                                                    | `12.0`        |
+| `k_tx`                | Number of nearest neighbors for transcript nodes.                                       | `5`           |
+| `dist_tx`             | Maximum distance for transcript nodes.                                                  | `5.0`         |
 
-!!! tip "Improve Prediction Efficiency"
-    - **batch_size**: Adjust this based on the size of the dataset and available GPU memory.
-    - **use_cc**: Enabling connected component analysis can improve the accuracy of transcript assignments
+!!! tip "Improving Prediction Pipeline"
+    - **batch_size**: A larger batch size can speed up training, but requires more memory. Adjust based on your hardware capabilities.
+    - **use_cc**: Enabling connected component analysis can improve the accuracy of transcript assignments.
 
-.
+!!! warning "Ensure Correct CUDA, cuVS, and PyTorch Setup"
+    Before using the `knn_method cuda` flag, ensure your system has CUDA installed and configured properly. Also, verify that the installed CUDA version is compatible with your cuPy, cuVS, PyTorch, and PyTorch Geometric versions.
 
 ---
 
-### 4. Utility Commands and Reports
+### 4. Running the Entire Pipeline
 
-Segger includes utility commands for checking dataset and model setup as well as generating reports.
+The `submit_job.py` script allows you to run the complete Segger pipeline or specific stages like dataset creation, training, or prediction. The pipeline execution is determined by the configuration provided in a YAML file, supporting various environments like Docker, Singularity, and HPC systems (with LSF, Slurm support is planned).
 
-<!-- termynal -->
+#### Selecting Pipelines
+You can run the three stages—dataset creation, training, and prediction—sequentially or independently by specifying the pipelines in the YAML configuration file:
+
+    - `1` for dataset creation
+    - `2` for model training
+    - `3` for prediction
+
+This allows you to run the full pipeline or just specific steps. Set the desired stages under the pipelines field in your YAML file.
+
+#### Running the Pipeline
+
+Use the following command to run the pipeline:
+
 ```console
-// Example: Check dataset and model setup
-$ segger check \
-    --dataset_dir data_raw/xenium \
-    --model_dir /path/to/model/checkpoints
-
-// Example: Generate a report
-$ segger report \
-    --dataset_path /path/to/dataset \
-    --output_path /path/to/report.html
+python3 submit_job.py --config_file=filename.yaml
 ```
 
-#### Parameters for `check`
+- If no `--config_file` is provided, the default `config.yaml` file will be used.
 
-| Parameter        | Description                                          |
-|------------------|------------------------------------------------------|
-| `dataset_dir`     | Path to the raw dataset.                            |
-| `model_dir`      | Path to the directory where model checkpoints are saved. |
+### 5. Containerization
 
-#### Parameters for `report`
+For users who want a portable, containerized environment, segger supports both Docker and Singularity containers. These containers provide a consistent runtime environment with all dependencies pre-installed.
 
-| Parameter        | Description                                          |
-|------------------|------------------------------------------------------|
-| `dataset_path`   | Path to the dataset for which the report will be generated. |
-| `output_path`    | Path where the HTML report will be saved.            |
+#### Using Docker
 
-!!! info "Utility Commands"
-    - Use `check` to verify that your dataset and model are correctly set up.
-    - The `report` command provides a detailed HTML output of your model's performance.
+You can pull the segger Docker image from Docker Hub with this command:
 
+```console
+docker pull danielunyi42/segger_dev:latest
+```
+
+To run the pipeline in Docker, make sure your YAML configuration includes the following settings:
+
+- `use_singularity`: false
+- `use_lsf`: false
+
+Afterwards, run the pipeline inside the Docker container with the same `submit_job.py` command.
+
+#### Using Singularity
+For a Singularity environment, pull the image with:
+
+```console
+singularity pull docker://danielunyi42/segger_dev:latest
+```
+
+Ensure `use_singularity: true` in the YAML file and specify the Singularity image file (e.g., `segger_dev_latest.sif`) in the `singularity_image` field.
+
+!!! note "Containerization"
+    - The segger Docker image currently supports CUDA 12.1. A CUDA 11.8 compatible version will be added soon.
+
+### 6. HPC Environments
+
+Segger also supports HPC environments with LSF job scheduling. To run the pipeline on an HPC cluster using LSF, set `use_lsf: true` in your YAML configuration.
+
+If your HPC system supports Slurm, a similar setup is planned and will be introduced soon.

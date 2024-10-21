@@ -2,6 +2,7 @@ import yaml
 import subprocess
 import argparse
 import os
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", default="config.yaml", help="Path to the configuration YAML file")
@@ -16,6 +17,8 @@ with open(config_file_path, "r") as file:
 
 # Get the base directory
 repo_dir = config["container_dir"] if config.get("use_singularity", False) else config["local_repo_dir"]
+
+time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
 
 # Function to get Singularity command if enabled
@@ -61,6 +64,10 @@ def run_data_processing():
             config["preprocessing"]["data_dir"],
             "--sample_type",
             config["preprocessing"]["sample_type"],
+            "--scrnaseq_file",
+            config["preprocessing"]["scrnaseq_file"],
+            "--celltype_column",
+            config["preprocessing"]["celltype_column"],
             "--k_bd",
             str(config["preprocessing"]["k_bd"]),
             "--dist_bd",
@@ -93,7 +100,7 @@ def run_data_processing():
         command = [
             "bsub",
             "-J",
-            "job_data_processing",
+            f"job_data_processing_{time_stamp}",
             "-o",
             config["preprocessing"]["output_log"],
             "-n",
@@ -101,7 +108,7 @@ def run_data_processing():
             "-R",
             f"rusage[mem={config['preprocessing']['memory']}]",
             "-q",
-            "medium",
+            "long",
         ] + command
 
     try:
@@ -157,9 +164,7 @@ def run_training():
         command = [
             "bsub",
             "-J",
-            "job_training",
-            "-w",
-            "done(job_data_processing)",
+            f"job_training_{time_stamp}",
             "-o",
             config["training"]["output_log"],
             "-n",
@@ -169,10 +174,13 @@ def run_training():
             "-R",
             "tensorcore",
             "-gpu",
-            f"num={config['training']['gpus']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
+            f"num={config['training']['devices']}:j_exclusive=no:gmem={config['training']['gpu_memory']}",
             "-q",
             "gpu",
         ] + command
+        # only run training after data_processing
+        if "1" in config["pipelines"]:
+            command[4:4] = ["-w", f"done(job_data_processing_{time_stamp})"]
 
     try:
         print(f"Running command: {command}")
@@ -187,7 +195,7 @@ def run_prediction():
         get_singularity_command(use_gpu=True)
         + get_python_command()
         + [
-            f"{repo_dir}/src/segger/cli/predict.py",
+            f"{repo_dir}/src/segger/cli/predict_fast.py",
             "--segger_data_dir",
             config["prediction"]["segger_data_dir"],
             "--models_dir",
@@ -229,9 +237,7 @@ def run_prediction():
         command = [
             "bsub",
             "-J",
-            "job_prediction",
-            "-w",
-            "done(job_training)",
+            f"job_prediction_{time_stamp}",
             "-o",
             config["prediction"]["output_log"],
             "-n",
@@ -245,6 +251,11 @@ def run_prediction():
             "-q",
             "gpu",
         ] + command
+        # only run prediction after training/data_processing
+        if "2" in config["pipelines"]:
+            command[4:4] = ["-w", f"done(job_training_{time_stamp})"]
+        elif "1" in config["pipelines"]:
+            command[4:4] = ["-w", f"done(job_data_processing_{time_stamp})"]
 
     try:
         print(f"Running command: {command}")

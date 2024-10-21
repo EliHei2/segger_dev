@@ -51,24 +51,22 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 ### Important: PyTorch Geometric Dependencies
 
-Segger **highly depends** on PyTorch Geometric. One **must** install its dependencies (such as `torch-sparse` and `torch-scatter`) based on their system’s specifications, especially CUDA and PyTorch versions.
+Segger **relies heavily** on PyTorch Geometric for its graph-based operations. One **must** install its dependencies (such as `torch-sparse` and `torch-scatter`) based on their system’s specifications, especially the **CUDA** and **PyTorch** versions.
 
 Please follow the official [PyTorch Geometric Installation Guide](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html) to install the correct versions of `torch-sparse`, `torch-scatter`, and other relevant libraries.
 
-Here’s how to install them manually, e.g., for torch 2.0.0:
+Below is a quick guide for installing PyTorch Geometric dependencies for **torch 2.4.0**:
 
 #### For CUDA 11.x:
 
 ```bash
-pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cu117.html
-pip install torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu117.html
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 ```
 
 #### For CUDA 12.x:
 
 ```bash
-pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
-pip install torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu120.html
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cu118.html
 ```
 
 Afterwards choose the installation method that best suits your needs.
@@ -110,6 +108,24 @@ For installations requiring RAPIDS and CUDA 12 support, run:
 
 ```bash
 pip install -e ".[rapids12]"
+```
+
+### Docker Installation
+
+Segger provides an easy-to-use Docker container for those who prefer a containerized environment. To pull the latest Docker image:
+
+```bash
+docker pull danielunyi42/segger_dev:latest
+```
+
+The Docker image comes with all dependencies packaged, including RAPIDS. It currently supports only CUDA 12.2, and we will soon release a version that supports CUDA 11.8.
+
+### Singularity Installation
+
+For users who prefer Singularity, you can pull the Docker image as follows:
+
+```bash
+singularity pull docker://danielunyi42/segger_dev:latest
 ```
 
 ---

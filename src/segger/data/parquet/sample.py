@@ -35,6 +35,7 @@ class STSampleParquet:
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
         sample_type: str = None,
+        weights: pd.DataFrame = None,
     ):
         """
         Initializes the STSampleParquet instance.
@@ -73,8 +74,10 @@ class STSampleParquet:
         self._boundaries_metadata = None
 
         # Setup default embedding for transcripts
+        if weights is not None:
+            self.emb_genes = weights.index.to_list()
         classes = self.transcripts_metadata["feature_names"]
-        self._transcript_embedding = TranscriptEmbedding(np.array(classes))
+        self._transcript_embedding = TranscriptEmbedding(np.array(classes), weights)
 
     @classmethod
     def _get_parquet_metadata(
@@ -167,6 +170,10 @@ class STSampleParquet:
             # Get filtered unique feature names
             table = pq.read_table(self._transcripts_filepath)
             names = pc.unique(table[self.settings.transcripts.label])
+            if self.emb_genes is not None:
+                # Filter substring is extended with the genes missing in the embedding
+                missing_genes = list(set(names.to_pylist()) - set(self.emb_genes))
+                self.settings.transcripts.filter_substrings.extend(missing_genes)
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
             metadata["feature_names"] = pc.filter(names, mask).tolist()
