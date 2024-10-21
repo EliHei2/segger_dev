@@ -25,7 +25,9 @@ help_msg = "Create Segger dataset from spatial transcriptomics data (Xenium or M
     "--sample_type", type=str, default=None, help='The sample type of the raw data, e.g., "xenium" or "merscope".'
 )
 @click.option("--scrnaseq_file", type=Path, default=None, help="Path to the scRNAseq file.")
-@click.option("--celltype_column", type=str, default=None, help="Column name for cell type annotations in the scRNAseq file.")
+@click.option(
+    "--celltype_column", type=str, default=None, help="Column name for cell type annotations in the scRNAseq file."
+)
 @click.option("--k_bd", type=int, default=3, help="Number of nearest neighbors for boundary nodes.")
 @click.option("--dist_bd", type=float, default=15.0, help="Maximum distance for boundary neighbors.")
 @click.option("--k_tx", type=int, default=3, help="Number of nearest neighbors for transcript nodes.")
@@ -60,10 +62,7 @@ def create_dataset(args: Namespace):
         logging.info("Calculating gene and celltype embeddings...")
         scRNAseq = sc.read(args.scrnaseq_file)
         sc.pp.subsample(scRNAseq, 0.1)
-        gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-            scRNAseq,
-            args.celltype_column
-        )
+        gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(scRNAseq, args.celltype_column)
 
     # Initialize the sample class
     logging.info("Initializing sample...")
