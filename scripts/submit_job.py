@@ -64,10 +64,6 @@ def run_data_processing():
             config["preprocessing"]["data_dir"],
             "--sample_type",
             config["preprocessing"]["sample_type"],
-            "--scrnaseq_file",
-            config["preprocessing"]["scrnaseq_file"],
-            "--celltype_column",
-            config["preprocessing"]["celltype_column"],
             "--k_bd",
             str(config["preprocessing"]["k_bd"]),
             "--dist_bd",
@@ -95,6 +91,10 @@ def run_data_processing():
         command.extend(["--tile_width", str(config["preprocessing"]["tile_width"])])
     if config["preprocessing"].get("tile_height") is not None:
         command.extend(["--tile_height", str(config["preprocessing"]["tile_height"])])
+    if config["preprocessing"].get("scrnaseq_file") is not None:
+        command.extend(["--scrnaseq_file", config["preprocessing"]["scrnaseq_file"]])
+    if config["preprocessing"].get("celltype_column") is not None:
+        command.extend(["--celltype_column", config["preprocessing"]["celltype_column"]])
 
     if config.get("use_lsf", False):
         command = [
@@ -179,8 +179,8 @@ def run_training():
             "gpu",
         ] + command
         # only run training after data_processing
-        if "1" in config["pipelines"]:
-            command[4:4] = ["-w", f"done(job_data_processing_{time_stamp})"]
+        if 1 in config["pipelines"]:
+            command[3:3] = ["-w", f"done(job_data_processing_{time_stamp})"]
 
     try:
         print(f"Running command: {command}")
@@ -252,10 +252,10 @@ def run_prediction():
             "gpu",
         ] + command
         # only run prediction after training/data_processing
-        if "2" in config["pipelines"]:
-            command[4:4] = ["-w", f"done(job_training_{time_stamp})"]
-        elif "1" in config["pipelines"]:
-            command[4:4] = ["-w", f"done(job_data_processing_{time_stamp})"]
+        if 2 in config["pipelines"]:
+            command[3:3] = ["-w", f"done(job_training_{time_stamp})"]
+        elif 1 in config["pipelines"]:
+            command[3:3] = ["-w", f"done(job_data_processing_{time_stamp})"]
 
     try:
         print(f"Running command: {command}")
