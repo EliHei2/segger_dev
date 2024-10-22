@@ -58,6 +58,7 @@ def create_dataset(args: Namespace):
     logging.basicConfig(level=logging.INFO, handlers=[ch])
 
     # If scRNAseq file is provided, calculate gene-celltype embeddings
+    gene_celltype_abundance_embedding = None
     if args.scrnaseq_file:
         logging.info("Calculating gene and celltype embeddings...")
         scRNAseq = sc.read(args.scrnaseq_file)
