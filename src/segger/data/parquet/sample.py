@@ -74,6 +74,7 @@ class STSampleParquet:
         self._boundaries_metadata = None
 
         # Setup default embedding for transcripts
+        self.emb_genes = None
         if weights is not None:
             self.emb_genes = weights.index.to_list()
         classes = self.transcripts_metadata["feature_names"]
