@@ -11,6 +11,8 @@ python3 src/segger/cli/create_dataset_fast.py \
     --base_dir /path/to/raw_data \
     --data_dir /path/to/save/processed_data \
     --sample_type xenium \
+    --scrnaseq_file /path/to/scrnaseq_file \
+    --celltype_column celltype_column_name \
     --k_bd 3 \
     --dist_bd 15.0 \
     --k_tx 3 \
@@ -28,15 +30,17 @@ python3 src/segger/cli/create_dataset_fast.py \
 
 | Parameter            | Description                                                                             | Default Value |
 |----------------------|-----------------------------------------------------------------------------------------|---------------|
-| `base_dir`           | Directory containing the raw dataset (e.g., transcripts, boundaries).                   | None          |
-| `data_dir`           | Directory to save the processed Segger dataset (in PyTorch Geometric format).           | None          |
-| `sample_type`        | The sample type of the raw data, e.g., "xenium" or "merscope".                          | `xenium`      |
+| `base_dir`           | Directory containing the raw dataset (e.g., transcripts, boundaries).                   | -             |
+| `data_dir`           | Directory to save the processed Segger dataset (in PyTorch Geometric format).           | -             |
+| `sample_type`        | The sample type of the raw data, e.g., "xenium" or "merscope".                          | None          |
+| `scrnaseq_file`      | Path to the scRNAseq file.                                                              | None          |
+| `celltype_column`    | Column name for cell type annotations in the scRNAseq file.                             | None          |
 | `k_bd`               | Number of nearest neighbors for boundary nodes.                                         | `3`           |
 | `dist_bd`            | Maximum distance for boundary neighbors.                                                | `15.0`        |
 | `k_tx`               | Number of nearest neighbors for transcript nodes.                                       | `3`           |
 | `dist_tx`            | Maximum distance for transcript neighbors.                                              | `5.0`         |
-| `tile_width`         | Width of the tiles in pixels (ignored if `tile_size` is provided).                      | `200`         |
-| `tile_height`        | Height of the tiles in pixels (ignored if `tile_size` is provided).                     | `200`         |
+| `tile_width`         | Width of the tiles in pixels (ignored if `tile_size` is provided).                      | None          |
+| `tile_height`        | Height of the tiles in pixels (ignored if `tile_size` is provided).                     | None          |
 | `neg_sampling_ratio` | Ratio of negative samples.                                                              | `5.0`         |
 | `frac`               | Fraction of the dataset to process. Useful for subsampling large datasets.              | `1.0`         |
 | `val_prob`           | Proportion of the dataset used for validation split.                                    | `0.1`         |
@@ -52,10 +56,11 @@ python3 src/segger/cli/create_dataset_fast.py \
     - **val_prob, test_prob**: Control the dataset portions for validation and testing. Adjust based on your dataset size and evaluation needs.
     - **frac**: Specifies the fraction of the dataset to process. Reducing `frac` can be useful when working with very large datasets, allowing for faster dataset creation by only processing a subset of the data.
 
-
 !!! tip "Faster Dataset Creation"
     Increasing the number of workers (`n_workers`) can significantly accelerate the dataset creation process, especially for large datasets, by taking advantage of parallel processing across multiple CPU cores.
 
+!!! tip "Enhancing Segmentation Accuracy with scRNA-seq"
+    Incorporating single cell RNA sequencing (scRNA-seq) data as features can provide additional biological context, improving the accuracy of the segger model.
 ---
 
 ### 2. Training a Model
@@ -88,9 +93,9 @@ $ python3 src/segger/cli/train_model.py \
 
 | Parameter          | Description                                                                             | Default Value |
 |--------------------|-----------------------------------------------------------------------------------------|---------------|
-| `dataset_dir`      | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | None          |
-| `models_dir`       | Directory to save the trained model and training logs.                                  | None          |
-| `sample_tag`       | Tag used to identify the dataset during training.                                       | None          |
+| `dataset_dir`      | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | -             |
+| `models_dir`       | Directory to save the trained model and training logs.                                  | -             |
+| `sample_tag`       | Tag used to identify the dataset during training.                                       | -             |
 | `init_emb`         | Size of the embedding layer for input data.                                             | `8`           |
 | `hidden_channels`  | Number of hidden units in each layer of the neural network.                             | `32`          |
 | `num_tx_tokens`    | Number of transcript tokens used during training.                                       | `500`         |
@@ -146,10 +151,10 @@ $ python3 src/segger/cli/predict_fast.py \
 
 | Parameter             | Description                                                                              | Default Value |
 |-----------------------|------------------------------------------------------------------------------------------|---------------|
-| `segger_data_dir`     | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | None          |
-| `models_dir`          | Directory containing the trained models.                                                | None          |
-| `benchmarks_dir`      | Directory to save the segmentation results, including cell boundaries and associations. | None          |
-| `transcripts_file`    | Path to the transcripts.parquet file.                                                   | None          |
+| `segger_data_dir`     | Directory containing the processed Segger dataset (in PyTorch Geometric format).        | -             |
+| `models_dir`          | Directory containing the trained models.                                                | -             |
+| `benchmarks_dir`      | Directory to save the segmentation results, including cell boundaries and associations. | -             |
+| `transcripts_file`    | Path to the transcripts.parquet file.                                                   | -             |
 | `batch_size`          | Number of samples to process per batch during prediction.                               | `1`           |
 | `num_workers`         | Number of workers for parallel data loading.                                            | `1`           |
 | `model_version`       | Model version number to load for predictions, corresponding to the version from training logs. | `0`           |
@@ -205,7 +210,7 @@ For users who want a portable, containerized environment, segger supports both D
 You can pull the segger Docker image from Docker Hub with this command:
 
 ```console
-docker pull danielunyi42/segger_dev:latest
+docker pull danielunyi42/segger_dev:cuda121
 ```
 
 To run the pipeline in Docker, make sure your YAML configuration includes the following settings:
@@ -219,13 +224,13 @@ Afterwards, run the pipeline inside the Docker container with the same `submit_j
 For a Singularity environment, pull the image with:
 
 ```console
-singularity pull docker://danielunyi42/segger_dev:latest
+singularity pull docker://danielunyi42/segger_dev:cuda121
 ```
 
 Ensure `use_singularity: true` in the YAML file and specify the Singularity image file (e.g., `segger_dev_latest.sif`) in the `singularity_image` field.
 
 !!! note "Containerization"
-    - The segger Docker image currently supports CUDA 12.1. A CUDA 11.8 compatible version will be added soon.
+    - The segger Docker image currently supports CUDA 11.8 and CUDA 12.1.
 
 ### 6. HPC Environments
 

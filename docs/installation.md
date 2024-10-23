@@ -23,15 +23,16 @@ pip install .
 
 === ":whale: Docker Installation"
 ```bash
-docker pull danielunyi42/segger_dev:latest
+docker pull danielunyi42/segger_dev:cuda121
 ```
 
-The Docker image comes with all required packages pre-installed, including PyTorch, RAPIDS, and PyTorch Geometric. The current image supports CUDA 12.1, and we are working on another image that will support CUDA 11.8 soon.
+The Docker image comes with all required packages pre-installed, including PyTorch, RAPIDS, and PyTorch Geometric.
+The current images support CUDA 11.8 and CUDA 12.1, which can be specified in the image tag.
 
 For users who prefer Singularity:
 
 ```bash
-singularity pull docker://danielunyi42/segger_dev:latest
+singularity pull docker://danielunyi42/segger_dev:cuda121
 ```
 
 === ":octocat: Github Installation"
