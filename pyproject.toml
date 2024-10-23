@@ -37,7 +37,8 @@ dependencies = [
     "pyarrow>=16.1.0,<16.2.0",
     "dask_geopandas>=0.4.0",
     "torch-geometric>=2.2.0",
-    "pqdm>=0.2.0"
+    "pqdm>=0.2.0",
+    "rtree>=1.3.0",
 ]
 
 [project.optional-dependencies]
