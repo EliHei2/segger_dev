@@ -328,7 +328,7 @@ class BoundaryIdentification:
 def generate_boundaries(df, x="x_location", y="y_location", cell_id="segger_cell_id"):
     res = []
     group_df = df.groupby(cell_id)
-    for cell_id, t in tqdm(group_df, total=len(group_df)):
+    for cell_id, t in tqdm(group_df, total=group_df.ngroups):
         res.append({"cell_id": cell_id, "length": len(t), "geom": generate_boundary(t, x=x, y=y)})
 
     return gpd.GeoDataFrame(
