@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>segger.data.utils &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-segger.data.utils">
+<span id="segger-data-utils"></span><h1>segger.data.utils<a class="headerlink" href="#module-segger.data.utils" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.try_import">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">try_import</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#try_import"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.try_import" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.uint32_to_str">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">uint32_to_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_id_uint32</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#uint32_to_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.uint32_to_str" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a 32-bit unsigned integer cell ID to a string with a specific suffix.</p>
+<p>Parameters:
+cell_id_uint32 (int): The 32-bit unsigned integer cell ID.
+dataset_suffix (str): The suffix to append to the string representation of the cell ID.</p>
+<p>Returns:
+str: The string representation of the cell ID with the appended suffix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.filter_transcripts">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">filter_transcripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcripts_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_qv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#filter_transcripts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.filter_transcripts" title="Link to this definition">¶</a></dt>
+<dd><p>Filters transcripts based on quality value and removes unwanted transcripts.</p>
+<p>Parameters:
+transcripts_df (pd.DataFrame): The dataframe containing transcript data.
+min_qv (float): The minimum quality value threshold for filtering transcripts.</p>
+<p>Returns:
+pd.DataFrame: The filtered dataframe.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.compute_transcript_metrics">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">compute_transcript_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">qv_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_id_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cell_id'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#compute_transcript_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.compute_transcript_metrics" title="Link to this definition">¶</a></dt>
+<dd><p>Computes various metrics for a given dataframe of transcript data filtered by quality value threshold.</p>
+<p>Parameters:
+df (pd.DataFrame): The dataframe containing transcript data.
+qv_threshold (float): The quality value threshold for filtering transcripts.
+cell_id_col (str): The name of the column representing the cell ID.</p>
+<p>Returns:
+Dict[str, Any]: A dictionary containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>‘percent_assigned’ (float): The percentage of assigned transcripts.</p></li>
+<li><p>‘percent_cytoplasmic’ (float): The percentage of cytoplasmic transcripts among assigned transcripts.</p></li>
+<li><p>‘percent_nucleus’ (float): The percentage of nucleus transcripts among assigned transcripts.</p></li>
+<li><p>‘percent_non_assigned_cytoplasmic’ (float): The percentage of non-assigned cytoplasmic transcripts among all non-assigned transcripts.</p></li>
+<li><dl class="simple">
+<dt>‘gene_metrics’ (pd.DataFrame): A dataframe containing gene-level metrics:</dt><dd><ul>
+<li><p>‘feature_name’: The gene name.</p></li>
+<li><p>‘percent_assigned’: The percentage of assigned transcripts for each gene.</p></li>
+<li><p>‘percent_cytoplasmic’: The percentage of cytoplasmic transcripts for each gene.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.create_anndata">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">create_anndata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">panel_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_transcripts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_id_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cell_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qv_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cell_area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cell_area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">anndata.AnnData</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#create_anndata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.create_anndata" title="Link to this definition">¶</a></dt>
+<dd><p>Generates an AnnData object from a dataframe of segmented transcriptomics data.</p>
+<p>Parameters:
+df (pd.DataFrame): The dataframe containing segmented transcriptomics data.
+panel_df (Optional[pd.DataFrame]): The dataframe containing panel information.
+min_transcripts (int): The minimum number of transcripts required for a cell to be included.
+cell_id_col (str): The column name representing the cell ID in the input dataframe.
+qv_threshold (float): The quality value threshold for filtering transcripts.
+min_cell_area (float): The minimum cell area to include a cell.
+max_cell_area (float): The maximum cell area to include a cell.</p>
+<p>Returns:
+ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">BuildTxGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'source_to_target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch_geometric.transforms.BaseTransform</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.r"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.r" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.loop">
+<span class="sig-name descname"><span class="pre">loop</span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.loop" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.max_num_neighbors">
+<span class="sig-name descname"><span class="pre">max_num_neighbors</span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.max_num_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.max_num_neighbors" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.flow">
+<span class="sig-name descname"><span class="pre">flow</span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.flow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.flow" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.num_workers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.num_workers" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.utils.BuildTxGraph.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_geometric.data.HeteroData</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch_geometric.data.HeteroData</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#BuildTxGraph.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.BuildTxGraph.forward" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.calculate_gene_celltype_abundance_embedding">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">calculate_gene_celltype_abundance_embedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">anndata.AnnData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">celltype_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><span class="pre">pandas.DataFrame</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#calculate_gene_celltype_abundance_embedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.calculate_gene_celltype_abundance_embedding" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type
+that express the gene (non-zero expression).</p>
+<section id="parameters">
+<h3>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>adata<span class="classifier">AnnData</span></dt><dd><p>An AnnData object containing gene expression data and cell type information.</p>
+</dd>
+<dt>celltype_column<span class="classifier">str</span></dt><dd><p>The column name in <cite>adata.obs</cite> that contains the cell type information.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h3>Returns:<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
+<p>:
+pd.DataFrame</p>
+<blockquote>
+<div><p>A DataFrame where rows are genes and columns are cell types, with each value representing
+the percentage of cells in that cell type expressing the gene.</p>
+</div></blockquote>
+</section>
+<section id="example">
+<h3>Example:<a class="headerlink" href="#example" title="Link to this heading">¶</a></h3>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">adata</span> <span class="o">=</span> <span class="n">AnnData</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># Load your scRNA-seq AnnData object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celltype_column</span> <span class="o">=</span> <span class="s1">&#39;celltype_major&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">abundance_df</span> <span class="o">=</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">celltype_column</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">abundance_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'kd_tree'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using various methods (KD-Tree, FAISS, RAPIDS cuML, cuGraph, or cuSpatial).</p>
+<section id="id1">
+<h3>Parameters:<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+<dt>method<span class="classifier">str, optional</span></dt><dd><p>The method to use (‘kd_tree’, ‘faiss’, ‘rapids’, ‘cugraph’, ‘cuspatial’).</p>
+</dd>
+<dt>gpu<span class="classifier">bool, optional</span></dt><dd><p>Whether to use GPU acceleration (applicable for FAISS).</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h3>Returns:<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_kdtree">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_kdtree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_kdtree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_kdtree" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using KDTree.</p>
+<section id="id3">
+<h3>Parameters:<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h3>Returns:<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_faiss">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_faiss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_faiss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_faiss" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using FAISS.</p>
+<section id="id5">
+<h3>Parameters:<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+<dt>gpu<span class="classifier">bool, optional</span></dt><dd><p>Whether to use GPU acceleration.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h3>Returns:<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_rapids">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_rapids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_rapids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_rapids" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using RAPIDS cuML.</p>
+<section id="id7">
+<h3>Parameters:<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h3>Returns:<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_cugraph">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_cugraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_cugraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_cugraph" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using RAPIDS cuGraph.</p>
+<section id="id9">
+<h3>Parameters:<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h3>Returns:<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_cuspatial">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_cuspatial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_cuspatial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_cuspatial" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using cuSpatial’s spatial join functionality.</p>
+<section id="id11">
+<h3>Parameters:<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates (2D).</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates (2D).</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h3>Returns:<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">SpatialTranscriptomicsDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch_geometric.data.InMemoryDataset</span></code></p>
+<p>A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.root">
+<span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.root" title="Link to this definition">¶</a></dt>
+<dd><p>The root directory where the dataset is stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.transform" title="Link to this definition">¶</a></dt>
+<dd><p>A function/transform that takes in a Data object and returns a transformed version.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.pre_transform">
+<span class="sig-name descname"><span class="pre">pre_transform</span></span><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.pre_transform" title="Link to this definition">¶</a></dt>
+<dd><p>A function/transform that takes in a Data object and returns a transformed version.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.pre_filter">
+<span class="sig-name descname"><span class="pre">pre_filter</span></span><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.pre_filter" title="Link to this definition">¶</a></dt>
+<dd><p>A function that takes in a Data object and returns a boolean indicating whether to keep it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.raw_file_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw_file_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.raw_file_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.raw_file_names" title="Link to this definition">¶</a></dt>
+<dd><p>Return a list of raw file names in the raw directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of raw file names.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.processed_file_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">processed_file_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.processed_file_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.processed_file_names" title="Link to this definition">¶</a></dt>
+<dd><p>Return a list of processed file names in the processed directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of processed file names.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.download">
+<span class="sig-name descname"><span class="pre">download</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.download"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.download" title="Link to this definition">¶</a></dt>
+<dd><p>Download the raw data. This method should be overridden if you need to download the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.process" title="Link to this definition">¶</a></dt>
+<dd><p>Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.len">
+<span class="sig-name descname"><span class="pre">len</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.len"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.len" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of processed files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of processed files.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="segger.data.utils.SpatialTranscriptomicsDataset.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch_geometric.data.Data</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#SpatialTranscriptomicsDataset.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.SpatialTranscriptomicsDataset.get" title="Link to this definition">¶</a></dt>
+<dd><p>Get a processed data object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – Index of the data object to retrieve.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The processed data object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="segger.data.utils.get_edge_index_hnsw">
+<span class="sig-prename descclassname"><span class="pre">segger.data.utils.</span></span><span class="sig-name descname"><span class="pre">get_edge_index_hnsw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">numpy.ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/segger/data/utils.html#get_edge_index_hnsw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#segger.data.utils.get_edge_index_hnsw" title="Link to this definition">¶</a></dt>
+<dd><p>Computes edge indices using the HNSW algorithm.</p>
+<section id="id13">
+<h3>Parameters:<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>coords_1<span class="classifier">np.ndarray</span></dt><dd><p>First set of coordinates.</p>
+</dd>
+<dt>coords_2<span class="classifier">np.ndarray</span></dt><dd><p>Second set of coordinates.</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>Number of nearest neighbors.</p>
+</dd>
+<dt>dist<span class="classifier">int, optional</span></dt><dd><p>Distance threshold.</p>
+</dd>
+</dl>
+</section>
+<section id="id14">
+<h3>Returns:<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>:
+torch.Tensor</p>
+<blockquote>
+<div><p>Edge indices.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../../_sources/api/segger/data/utils/index.rst"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>segger.data.io &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for segger.data.io</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.data</span> <span class="kn">import</span> <span class="n">HeteroData</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">OneHotEncoder</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">KDTree</span><span class="p">,</span> <span class="n">ConvexHull</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">Point</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">segger.data.utils</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">segger.data.constants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">KDTree</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">shapely.affinity</span> <span class="kn">import</span> <span class="n">scale</span>
+<span class="kn">import</span> <span class="nn">dask_geopandas</span> <span class="k">as</span> <span class="nn">dgpd</span>
+<span class="kn">import</span> <span class="nn">dask.dataframe</span> <span class="k">as</span> <span class="nn">dd</span>
+<span class="kn">from</span> <span class="nn">dask</span> <span class="kn">import</span> <span class="n">delayed</span>
+<span class="kn">import</span> <span class="nn">pyarrow.parquet</span> <span class="k">as</span> <span class="nn">pq</span>
+<span class="kn">import</span> <span class="nn">dask</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">LabelEncoder</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.transforms</span> <span class="kn">import</span> <span class="n">RandomLinkSplit</span>
+<span class="kn">from</span> <span class="nn">dask.diagnostics</span> <span class="kn">import</span> <span class="n">ProgressBar</span>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample">[docs]</a>
+<span class="k">class</span> <span class="nc">SpatialTranscriptomicsSample</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transcripts_radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">boundaries_graph</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">keys</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the SpatialTranscriptomicsSample class.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_df : pd.DataFrame, optional</span>
+<span class="sd">            A DataFrame containing transcript data.</span>
+<span class="sd">        transcripts_radius : int, optional</span>
+<span class="sd">            Radius for transcripts in the analysis.</span>
+<span class="sd">        boundaries_graph : bool, optional</span>
+<span class="sd">            Whether to include boundaries (e.g., nucleus, cell) graph information.</span>
+<span class="sd">        keys : Enum, optional</span>
+<span class="sd">            The enum class containing key mappings specific to the dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.transcripts_df">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.transcripts_df">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">transcripts_df</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.transcripts_radius">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.transcripts_radius">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_radius</span> <span class="o">=</span> <span class="n">transcripts_radius</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.boundaries_graph">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.boundaries_graph">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_graph</span> <span class="o">=</span> <span class="n">boundaries_graph</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.keys">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.keys">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.embedding_df">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.embedding_df">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_df</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.current_embedding">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.current_embedding">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_embedding</span> <span class="o">=</span> <span class="s1">&#39;one_hot&#39;</span></div>
+
+
+        <span class="c1"># if self.transcripts_df is not None:</span>
+        <span class="c1">#     self._set_bounds()</span>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._set_bounds">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._set_bounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">_set_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the bounding box limits based on the current transcripts dataframe using lazy evaluation with Dask.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>  <span class="c1"># Lazy execution, no compute yet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>  <span class="c1"># Lazy execution, no compute yet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>  <span class="c1"># Lazy execution, no compute yet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>  <span class="c1"># Lazy execution, no compute yet</span></div>
+
+
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.filter_transcripts">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.filter_transcripts">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_transcripts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">min_qv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Abstract method to filter transcripts based on dataset-specific criteria.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_df : pd.DataFrame</span>
+<span class="sd">            The dataframe containing transcript data.</span>
+<span class="sd">        min_qv : float, optional</span>
+<span class="sd">            The minimum quality value threshold for filtering transcripts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        pd.DataFrame</span>
+<span class="sd">            The filtered dataframe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.set_file_paths">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.set_file_paths">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_file_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">boundaries_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the paths for the transcript and boundary files.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_path : Path</span>
+<span class="sd">            Path to the Parquet file containing transcripts data.</span>
+<span class="sd">        boundaries_path : Path</span>
+<span class="sd">            Path to the Parquet file containing boundaries data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_path</span> <span class="o">=</span> <span class="n">transcripts_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_path</span> <span class="o">=</span> <span class="n">boundaries_path</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set transcripts file path to </span><span class="si">{</span><span class="n">transcripts_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set boundaries file path to </span><span class="si">{</span><span class="n">boundaries_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.load_transcripts">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.load_transcripts">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_transcripts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">base_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transcripts_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">file_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parquet&quot;</span><span class="p">,</span>
+        <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># additional_embeddings: Optional[Dict[str, pd.DataFrame]] = None,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load transcripts from a Parquet file using Dask for efficient chunked processing,</span>
+<span class="sd">        only within the specified bounding box, and return the filtered DataFrame with integer token embeddings.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        base_path : Path, optional</span>
+<span class="sd">            The base directory path where samples are stored.</span>
+<span class="sd">        sample : str, optional</span>
+<span class="sd">            The sample name or identifier.</span>
+<span class="sd">        transcripts_filename : str, optional</span>
+<span class="sd">            The filename of the transcripts file (default is derived from the dataset keys).</span>
+<span class="sd">        path : Path, optional</span>
+<span class="sd">            Specific path to the transcripts file.</span>
+<span class="sd">        file_format : str, optional</span>
+<span class="sd">            Format of the file to load (default is &#39;parquet&#39;).</span>
+<span class="sd">        x_min : float, optional</span>
+<span class="sd">            Minimum X-coordinate for the bounding box.</span>
+<span class="sd">        x_max : float, optional</span>
+<span class="sd">            Maximum X-coordinate for the bounding box.</span>
+<span class="sd">        y_min : float, optional</span>
+<span class="sd">            Minimum Y-coordinate for the bounding box.</span>
+<span class="sd">        y_max : float, optional</span>
+<span class="sd">            Maximum Y-coordinate for the bounding box.</span>
+<span class="sd">        additional_embeddings : Dict[str, pd.DataFrame], optional</span>
+<span class="sd">            A dictionary of additional embeddings for genes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dd.DataFrame</span>
+<span class="sd">            The filtered transcripts DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">file_format</span> <span class="o">!=</span> <span class="s2">&quot;parquet&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This version only supports parquet files with Dask.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set the file path for transcripts</span>
+        <span class="n">transcripts_filename</span> <span class="o">=</span> <span class="n">transcripts_filename</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_FILE</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">path</span> <span class="ow">or</span> <span class="p">(</span><span class="n">base_path</span> <span class="o">/</span> <span class="n">sample</span> <span class="o">/</span> <span class="n">transcripts_filename</span><span class="p">)</span>
+
+        <span class="c1"># Use bounding box values from set_metadata if not explicitly provided</span>
+        <span class="n">x_min</span> <span class="o">=</span> <span class="n">x_min</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="n">x_max</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span>
+        <span class="n">y_min</span> <span class="o">=</span> <span class="n">y_min</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span>
+        <span class="n">y_max</span> <span class="o">=</span> <span class="n">y_max</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span>
+
+        <span class="c1"># Check for available columns in the file&#39;s metadata (without loading the data)</span>
+        <span class="n">parquet_metadata</span> <span class="o">=</span> <span class="n">dd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">meta_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">available_columns</span> <span class="o">=</span> <span class="n">parquet_metadata</span><span class="o">.</span><span class="n">columns</span>
+
+        <span class="c1"># Define the list of columns to read</span>
+        <span class="n">columns_to_read</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_ID</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Check if the QUALITY_VALUE key exists in the dataset, and add it to the columns list if present</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">QUALITY_VALUE</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="n">available_columns</span><span class="p">:</span>
+            <span class="n">columns_to_read</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">QUALITY_VALUE</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="n">available_columns</span><span class="p">:</span>
+            <span class="n">columns_to_read</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Use filters to only load data within the specified bounding box (x_min, x_max, y_min, y_max)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">x_min</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">x_max</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">y_min</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Load the dataset lazily with filters applied for the bounding box</span>
+        <span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">dd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns_to_read</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+        <span class="c1"># Convert transcript and cell IDs to strings lazily</span>
+        <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Convert feature names from bytes to strings if necessary</span>
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_object_dtype</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]):</span>
+            <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1"># Apply dataset-specific filtering (e.g., quality filtering for Xenium)</span>
+        <span class="n">transcripts_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_transcripts</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">)</span>
+
+        <span class="c1"># Handle additional embeddings if provided</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_df</span><span class="p">:</span>
+            <span class="n">valid_genes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_df</span><span class="o">.</span><span class="n">index</span>
+            <span class="c1"># Lazily count the number of rows in the DataFrame before filtering</span>
+            <span class="n">initial_count</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])(</span><span class="n">transcripts_df</span><span class="p">)</span>
+            <span class="c1"># Filter the DataFrame lazily based on valid genes from embeddings</span>
+            <span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span>
+                <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">valid_genes</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">final_count</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])(</span><span class="n">transcripts_df</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropped </span><span class="si">{</span><span class="n">initial_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">final_count</span><span class="si">}</span><span class="s2"> transcripts not found in </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> embedding.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set spatial boundaries for the transcripts dataframe (based on the loaded data)</span>
+        <span class="c1"># self._set_bounds()</span>
+
+        <span class="c1"># # Use the pre-computed tx_encoder to produce integer tokens for the genes</span>
+        <span class="c1"># if hasattr(self, &#39;tx_encoder&#39;):</span>
+        <span class="c1">#     token_encoding = self.tx_encoder.transform(transcripts_df[self.keys.FEATURE_NAME.value])</span>
+        <span class="c1">#     transcripts_df[&#39;one_hot&#39;] = token_encoding  # Store the integer tokens in the &#39;one_hot&#39; column</span>
+
+        <span class="c1"># # Handle additional embeddings lazily as well</span>
+        <span class="c1"># if additional_embeddings:</span>
+        <span class="c1">#     for key, embedding_df in additional_embeddings.items():</span>
+        <span class="c1">#         self.embeddings_dict[key] = delayed(lambda df: embedding_df.loc[</span>
+        <span class="c1">#             df[self.keys.FEATURE_NAME.value].values</span>
+        <span class="c1">#         ].values)(transcripts_df)</span>
+
+        <span class="c1"># Ensure that the &#39;OVERLAPS_BOUNDARY&#39; column is boolean if it exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span> <span class="ow">in</span> <span class="n">transcripts_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">transcripts_df</span></div>
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.load_boundaries">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.load_boundaries">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_boundaries</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> 
+        <span class="n">file_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parquet&quot;</span><span class="p">,</span> 
+        <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load boundaries data lazily using Dask, filtering by the specified bounding box.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        path : Path</span>
+<span class="sd">            Path to the boundaries file.</span>
+<span class="sd">        file_format : str, optional</span>
+<span class="sd">            Format of the file to load. Only &#39;parquet&#39; is supported in this refactor.</span>
+<span class="sd">        x_min : float, optional</span>
+<span class="sd">            Minimum X-coordinate for the bounding box.</span>
+<span class="sd">        x_max : float, optional</span>
+<span class="sd">            Maximum X-coordinate for the bounding box.</span>
+<span class="sd">        y_min : float, optional</span>
+<span class="sd">            Minimum Y-coordinate for the bounding box.</span>
+<span class="sd">        y_max : float, optional</span>
+<span class="sd">            Maximum Y-coordinate for the bounding box.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dd.DataFrame</span>
+<span class="sd">            The filtered boundaries DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">file_format</span> <span class="o">!=</span> <span class="s2">&quot;parquet&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported file format: </span><span class="si">{</span><span class="n">file_format</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Use bounding box values from set_metadata if not explicitly provided</span>
+        <span class="n">x_min</span> <span class="o">=</span> <span class="n">x_min</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="n">x_max</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span>
+        <span class="n">y_min</span> <span class="o">=</span> <span class="n">y_min</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span>
+        <span class="n">y_max</span> <span class="o">=</span> <span class="n">y_max</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span>
+
+        <span class="c1"># Define the list of columns to read</span>
+        <span class="n">columns_to_read</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Use filters to only load data within the specified bounding box (x_min, x_max, y_min, y_max)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">x_min</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">x_max</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">y_min</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Load the dataset lazily with filters applied for the bounding box</span>
+        <span class="n">boundaries_df</span> <span class="o">=</span> <span class="n">dd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns_to_read</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+
+        <span class="c1"># Convert the cell IDs to strings lazily</span>
+        <span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded boundaries from &#39;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; within bounding box (</span><span class="si">{</span><span class="n">x_min</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">x_max</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y_min</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y_max</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">boundaries_df</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.set_metadata">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.set_metadata">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set metadata for the transcript dataset, including bounding box limits and unique gene names,</span>
+<span class="sd">        without reading the entire Parquet file. Additionally, return integer tokens for unique gene names </span>
+<span class="sd">        instead of one-hot encodings and store the lookup table for later mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Load the Parquet file metadata</span>
+        <span class="n">parquet_file</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_path</span><span class="p">)</span>
+
+        <span class="c1"># Get the column names for X, Y, and feature names from the class&#39;s keys</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">y_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">feature_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="c1"># Initialize variables to track min/max values for X and Y</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Extract unique gene names and ensure they&#39;re strings</span>
+        <span class="n">gene_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># Define the filter for unwanted codewords</span>
+        <span class="n">filter_codewords</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;NegControlProbe_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;antisense_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NegControlCodeword_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;BLANK_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DeprecatedCodeword_&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Iterate over row groups to extract statistics and unique gene names</span>
+        <span class="k">for</span> <span class="n">row_group_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">parquet_file</span><span class="o">.</span><span class="n">num_row_groups</span><span class="p">):</span>
+            <span class="n">row_group_table</span> <span class="o">=</span> <span class="n">parquet_file</span><span class="o">.</span><span class="n">read_row_group</span><span class="p">(</span><span class="n">row_group_idx</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">x_col</span><span class="p">,</span> <span class="n">y_col</span><span class="p">,</span> <span class="n">feature_col</span><span class="p">])</span>
+
+            <span class="c1"># Update the bounding box values (min/max)</span>
+            <span class="n">x_values</span> <span class="o">=</span> <span class="n">row_group_table</span><span class="p">[</span><span class="n">x_col</span><span class="p">]</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+            <span class="n">y_values</span> <span class="o">=</span> <span class="n">row_group_table</span><span class="p">[</span><span class="n">y_col</span><span class="p">]</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+
+            <span class="n">x_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span> <span class="n">x_values</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="n">x_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">x_max</span><span class="p">,</span> <span class="n">x_values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="n">y_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">y_min</span><span class="p">,</span> <span class="n">y_values</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="n">y_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">y_max</span><span class="p">,</span> <span class="n">y_values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+            <span class="c1"># Convert feature values (gene names) to strings and filter out unwanted codewords</span>
+            <span class="n">feature_values</span> <span class="o">=</span> <span class="n">row_group_table</span><span class="p">[</span><span class="n">feature_col</span><span class="p">]</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Filter out unwanted codewords</span>
+            <span class="n">filtered_genes</span> <span class="o">=</span> <span class="n">feature_values</span><span class="p">[</span><span class="o">~</span><span class="n">feature_values</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">filter_codewords</span><span class="p">)]</span>
+
+            <span class="c1"># Update the unique gene set</span>
+            <span class="n">gene_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">filtered_genes</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+
+        <span class="c1"># Set bounding box limits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span> <span class="o">=</span> <span class="n">x_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span> <span class="o">=</span> <span class="n">x_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span> <span class="o">=</span> <span class="n">y_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span> <span class="o">=</span> <span class="n">y_max</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bounding box limits set: x_min=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x_min</span><span class="si">}</span><span class="s2">, x_max=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="si">}</span><span class="s2">, y_min=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y_min</span><span class="si">}</span><span class="s2">, y_max=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert the set of unique genes into a sorted list for consistent ordering</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_genes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">gene_set</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_genes</span><span class="p">)</span><span class="si">}</span><span class="s2"> unique gene names for integer tokenization.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize a LabelEncoder to convert unique genes into integer tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span>
+
+        <span class="c1"># Fit the LabelEncoder on the unique genes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_genes</span><span class="p">)</span>
+
+        <span class="c1"># Store the integer tokens mapping to gene names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gene_to_token_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span><span class="o">.</span><span class="n">classes_</span><span class="p">)))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Integer tokens have been computed and stored based on unique gene names.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Optional: Create a reverse mapping for lookup purposes (token to gene)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_to_gene_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gene_to_token_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Lookup tables (gene_to_token_map and token_to_gene_map) have been created.&quot;</span><span class="p">)</span></div>
+
+
+        
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.set_embedding">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.set_embedding">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the current embedding type for the transcripts.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        embedding_name : str</span>
+<span class="sd">            The name of the embedding to use.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">embedding_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_embedding</span> <span class="o">=</span> <span class="n">embedding_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Embedding </span><span class="si">{</span><span class="n">embedding_name</span><span class="si">}</span><span class="s2"> not found in embeddings_dict.&quot;</span><span class="p">)</span></div>
+
+        
+        
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.get_tile_data">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.get_tile_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_tile_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the necessary data for a given tile from the transcripts and boundaries.</span>
+<span class="sd">        Uses Dask&#39;s filtering for chunked processing.</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        x_min : float</span>
+<span class="sd">            Minimum x-coordinate of the tile.</span>
+<span class="sd">        y_min : float</span>
+<span class="sd">            Minimum y-coordinate of the tile.</span>
+<span class="sd">        x_size : float</span>
+<span class="sd">            Width of the tile.</span>
+<span class="sd">        y_size : float</span>
+<span class="sd">            Height of the tile.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        Tuple[dd.DataFrame, dd.DataFrame]</span>
+<span class="sd">            Transcripts and boundaries data for the tile.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="n">x_min</span> <span class="o">+</span> <span class="n">x_size</span>
+        <span class="n">y_max</span> <span class="o">=</span> <span class="n">y_min</span> <span class="o">+</span> <span class="n">y_size</span>
+        <span class="c1"># Use Dask DataFrame filtering to get only the required data</span>
+        <span class="n">tile_transcripts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_min</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">tile_boundaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_min</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">tile_transcripts</span><span class="p">,</span> <span class="n">tile_boundaries</span></div>
+
+    
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.get_bounding_box">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.get_bounding_box">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bounding_box</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SpatialTranscriptomicsSample&#39;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Subsets the transcripts_df and boundaries_df within the specified bounding box using Dask.</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        x_min : float, optional</span>
+<span class="sd">            The minimum x-coordinate of the bounding box.</span>
+<span class="sd">        y_min : float, optional</span>
+<span class="sd">            The minimum y-coordinate of the bounding box.</span>
+<span class="sd">        x_max : float, optional</span>
+<span class="sd">            The maximum x-coordinate of the bounding box.</span>
+<span class="sd">        y_max : float, optional</span>
+<span class="sd">            The maximum y-coordinate of the bounding box.</span>
+<span class="sd">        in_place : bool, optional</span>
+<span class="sd">            If True, modifies the current instance. If False, returns a new instance with the subsetted data.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        Optional[SpatialTranscriptomicsSample]</span>
+<span class="sd">            If in_place is True, returns None after modifying the existing instance.</span>
+<span class="sd">            If in_place is False, returns a new SpatialTranscriptomicsSample instance with the subsetted data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate the bounding box coordinates</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_bbox</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="c1"># Use Dask DataFrame to subset transcripts within the bounding box</span>
+        <span class="n">subset_transcripts_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_min</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">y_max</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="c1"># Subset boundaries_df if it exists using Dask</span>
+        <span class="n">subset_boundaries_df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">subset_boundaries_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_min</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">y_max</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="c1"># Reset the indices lazily using Dask&#39;s `reset_index`</span>
+        <span class="n">subset_transcripts_df</span> <span class="o">=</span> <span class="n">subset_transcripts_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">subset_boundaries_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">subset_boundaries_df</span> <span class="o">=</span> <span class="n">subset_boundaries_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">in_place</span><span class="p">:</span>
+            <span class="c1"># Update the current instance with the subsetted data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">subset_transcripts_df</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_df</span> <span class="o">=</span> <span class="n">subset_boundaries_df</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span> <span class="o">=</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span>
+            <span class="c1"># No need to return a new instance</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subset completed in-place.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Create a new instance of SpatialTranscriptomicsSample with the subsetted data</span>
+            <span class="n">new_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">subset_transcripts_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcripts_radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundaries_graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span>
+            <span class="n">new_instance</span><span class="o">.</span><span class="n">boundaries_df</span> <span class="o">=</span> <span class="n">subset_boundaries_df</span>
+            <span class="n">new_instance</span><span class="o">.</span><span class="n">x_min</span><span class="p">,</span> <span class="n">new_instance</span><span class="o">.</span><span class="n">y_min</span><span class="p">,</span> <span class="n">new_instance</span><span class="o">.</span><span class="n">x_max</span><span class="p">,</span> <span class="n">new_instance</span><span class="o">.</span><span class="n">y_max</span> <span class="o">=</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subset completed with new instance.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_instance</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.create_scaled_polygon">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.create_scaled_polygon">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_scaled_polygon</span><span class="p">(</span><span class="n">group</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Static method to create and scale a polygon from boundary vertices and return a GeoDataFrame.</span>
+
+<span class="sd">        This method ensures that the polygon scaling happens efficiently without requiring</span>
+<span class="sd">        an instance of the class. Keys should be passed to avoid Dask tokenization issues.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        group : pd.DataFrame</span>
+<span class="sd">            Group of boundary coordinates (for a specific cell).</span>
+<span class="sd">        scale_factor : float</span>
+<span class="sd">            The factor by which to scale the polygons.</span>
+<span class="sd">        keys : Enum or dict-like</span>
+<span class="sd">            A collection of keys to access column names for &#39;cell_id&#39;, &#39;vertex_x&#39;, and &#39;vertex_y&#39;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        gpd.GeoDataFrame</span>
+<span class="sd">            A GeoDataFrame containing the scaled Polygon and cell_id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract coordinates and cell ID from the group using keys</span>
+        <span class="n">x_coords</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">keys</span><span class="p">[</span><span class="s1">&#39;vertex_x&#39;</span><span class="p">]]</span>
+        <span class="n">y_coords</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">keys</span><span class="p">[</span><span class="s1">&#39;vertex_y&#39;</span><span class="p">]]</span>
+        <span class="n">cell_id</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">keys</span><span class="p">[</span><span class="s1">&#39;cell_id&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Ensure there are at least 3 points to form a polygon</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_coords</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+
+            <span class="n">polygon</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">polygon</span><span class="o">.</span><span class="n">is_valid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">polygon</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span>
+                <span class="c1"># Scale the polygon by the provided factor</span>
+                <span class="n">scaled_polygon</span> <span class="o">=</span> <span class="n">polygon</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">scaled_polygon</span><span class="o">.</span><span class="n">is_valid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">scaled_polygon</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span>
+                        <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">scaled_polygon</span><span class="p">],</span> 
+                        <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;cell_id&#39;</span><span class="p">]:</span> <span class="p">[</span><span class="n">cell_id</span><span class="p">]</span>
+                    <span class="p">},</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span>
+        <span class="c1"># Return an empty GeoDataFrame if no valid polygon is created</span>
+        <span class="k">return</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span> 
+            <span class="n">keys</span><span class="p">[</span><span class="s1">&#39;cell_id&#39;</span><span class="p">]:</span> <span class="p">[</span><span class="n">cell_id</span><span class="p">]</span>
+        <span class="p">},</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.generate_and_scale_polygons">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.generate_and_scale_polygons">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_and_scale_polygons</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">boundaries_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dgpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate and scale polygons from boundary coordinates using Dask.</span>
+<span class="sd">        Keeps class structure intact by using static method for the core polygon generation.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        boundaries_df : dask.dataframe.DataFrame</span>
+<span class="sd">            DataFrame containing boundary coordinates.</span>
+<span class="sd">        scale_factor : float, optional</span>
+<span class="sd">            The factor by which to scale the polygons (default is 1.0).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask_geopandas.GeoDataFrame</span>
+<span class="sd">            A GeoDataFrame containing scaled Polygon objects and their centroids.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># print(f&quot;No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.&quot;)</span>
+
+        <span class="c1"># Extract required columns from self.keys</span>
+        <span class="n">cell_id_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">vertex_x_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_X</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">vertex_y_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">BOUNDARIES_VERTEX_Y</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="n">create_polygon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_scaled_polygon</span>
+        <span class="c1"># Use a lambda to wrap the static method call and avoid passing the function object directly to Dask</span>
+        <span class="n">polygons_ddf</span> <span class="o">=</span> <span class="n">boundaries_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">cell_id_column</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">group</span><span class="p">:</span> <span class="n">create_polygon</span><span class="p">(</span>
+                <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="n">scale_factor</span><span class="p">,</span>
+                <span class="n">keys</span><span class="o">=</span><span class="p">{</span>  <span class="c1"># Pass keys as a dict for the lambda function</span>
+                    <span class="s1">&#39;vertex_x&#39;</span><span class="p">:</span> <span class="n">vertex_x_column</span><span class="p">,</span>
+                    <span class="s1">&#39;vertex_y&#39;</span><span class="p">:</span> <span class="n">vertex_y_column</span><span class="p">,</span>
+                    <span class="s1">&#39;cell_id&#39;</span><span class="p">:</span> <span class="n">cell_id_column</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        
+
+        <span class="c1"># Convert to a Dask GeoDataFrame</span>
+        <span class="c1"># polygons_gdf = dgpd.from_dask_dataframe(polygons_ddf)</span>
+        <span class="c1"># print(polygons_ddf)</span>
+        <span class="c1"># Lazily compute centroids for each polygon</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding centroids to the polygons...&quot;</span><span class="p">)</span>
+        <span class="n">polygons_ddf</span><span class="p">[</span><span class="s1">&#39;centroid_x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polygons_ddf</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">centroid</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">polygons_ddf</span><span class="p">[</span><span class="s1">&#39;centroid_y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polygons_ddf</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">centroid</span><span class="o">.</span><span class="n">y</span>
+        
+        <span class="n">polygons_ddf</span> <span class="o">=</span> <span class="n">polygons_ddf</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+        <span class="c1"># polygons_ddf = polygons_ddf.to_crs(&quot;EPSG:3857&quot;)</span>
+
+        <span class="k">return</span> <span class="n">polygons_ddf</span></div>
+
+
+
+    
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.compute_transcript_overlap_with_boundaries">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.compute_transcript_overlap_with_boundaries">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_transcript_overlap_with_boundaries</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">boundaries_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">polygons_gdf</span><span class="p">:</span> <span class="n">dgpd</span><span class="o">.</span><span class="n">GeoDataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the overlap of transcript locations with scaled boundary polygons</span>
+<span class="sd">        and assigns corresponding cell IDs to the transcripts using Dask.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_df : dask.dataframe.DataFrame</span>
+<span class="sd">            Dask DataFrame containing transcript data.</span>
+<span class="sd">        boundaries_df : dask.dataframe.DataFrame, optional</span>
+<span class="sd">            Dask DataFrame containing boundary data. Required if polygons_gdf is not provided.</span>
+<span class="sd">        polygons_gdf : dask_geopandas.GeoDataFrame, optional</span>
+<span class="sd">            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.</span>
+<span class="sd">        scale_factor : float, optional</span>
+<span class="sd">            The factor by which to scale the boundary polygons. Default is 1.0.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask.dataframe.DataFrame</span>
+<span class="sd">            The updated DataFrame with overlap information (True for overlap, False for no overlap)</span>
+<span class="sd">            and assigned cell IDs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if polygons_gdf is provided, otherwise compute from boundaries_df</span>
+        <span class="k">if</span> <span class="n">polygons_gdf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">boundaries_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both boundaries_df and polygons_gdf cannot be None. Provide at least one.&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Generate polygons from boundaries_df if polygons_gdf is None</span>
+            <span class="c1"># print(f&quot;No precomputed polygons provided. Computing polygons from boundaries with a scale factor of {scale_factor}.&quot;)</span>
+            <span class="n">polygons_gdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_and_scale_polygons</span><span class="p">(</span><span class="n">boundaries_df</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid polygons were generated from the boundaries.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Polygons are available. Proceeding with overlap computation.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create a delayed function to check if a point is within any polygon</span>
+        <span class="k">def</span> <span class="nf">check_overlap</span><span class="p">(</span><span class="n">transcript</span><span class="p">,</span> <span class="n">polygons_gdf</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">transcript</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">transcript</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+            <span class="n">overlap</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">cell_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Check for point containment lazily within polygons</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">polygon</span> <span class="ow">in</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">polygon</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+                    <span class="n">overlap</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">cell_id</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+                    <span class="k">break</span>
+
+            <span class="k">return</span> <span class="n">overlap</span><span class="p">,</span> <span class="n">cell_id</span>
+
+        <span class="c1"># Apply the check_overlap function in parallel to each row using Dask&#39;s map_partitions</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting overlap computation for transcripts with the boundary polygons.&quot;</span><span class="p">)</span>
+        
+        <span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="o">.</span><span class="n">map_partitions</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                <span class="o">**</span><span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">delayed</span><span class="p">(</span><span class="n">check_overlap</span><span class="p">)(</span><span class="n">row</span><span class="p">,</span> <span class="n">polygons_gdf</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">delayed</span><span class="p">(</span><span class="n">check_overlap</span><span class="p">)(</span><span class="n">row</span><span class="p">,</span> <span class="n">polygons_gdf</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">transcripts_df</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.compute_boundaries_geometries">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.compute_boundaries_geometries">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_boundaries_geometries</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">boundaries_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">polygons_gdf</span><span class="p">:</span> <span class="n">dgpd</span><span class="o">.</span><span class="n">GeoDataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">area</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">convexity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">elongation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">circularity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dgpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes geometries for boundaries (e.g., nuclei, cells) from the dataframe using Dask.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        boundaries_df : dask.dataframe.DataFrame, optional</span>
+<span class="sd">            The dataframe containing boundaries data. Required if polygons_gdf is not provided.</span>
+<span class="sd">        polygons_gdf : dask_geopandas.GeoDataFrame, optional</span>
+<span class="sd">            Precomputed Dask GeoDataFrame containing boundary polygons. If None, will compute from boundaries_df.</span>
+<span class="sd">        scale_factor : float, optional</span>
+<span class="sd">            The factor by which to scale the polygons (default is 1.0, no scaling).</span>
+<span class="sd">        area : bool, optional</span>
+<span class="sd">            Whether to compute area.</span>
+<span class="sd">        convexity : bool, optional</span>
+<span class="sd">            Whether to compute convexity.</span>
+<span class="sd">        elongation : bool, optional</span>
+<span class="sd">            Whether to compute elongation.</span>
+<span class="sd">        circularity : bool, optional</span>
+<span class="sd">            Whether to compute circularity.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask_geopandas.GeoDataFrame</span>
+<span class="sd">            A GeoDataFrame containing computed geometries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if polygons_gdf is provided, otherwise compute from boundaries_df</span>
+        <span class="k">if</span> <span class="n">polygons_gdf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">boundaries_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both boundaries_df and polygons_gdf cannot be None. Provide at least one.&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Generate polygons from boundaries_df if polygons_gdf is None</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No precomputed polygons provided. Computing polygons from boundaries with a scale factor of </span><span class="si">{</span><span class="n">scale_factor</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">polygons_gdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_and_scale_polygons</span><span class="p">(</span><span class="n">boundaries_df</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">)</span>
+        
+        <span class="c1"># Check if the generated polygons_gdf is empty</span>
+        <span class="k">if</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid polygons were generated from the boundaries.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Polygons are available. Proceeding with geometrical computations.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Compute additional geometrical properties</span>
+        <span class="n">polygons</span> <span class="o">=</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">geometry</span>
+
+        <span class="c1"># Compute additional geometrical properties</span>
+        <span class="k">if</span> <span class="n">area</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing area...&quot;</span><span class="p">)</span>
+            <span class="n">polygons_gdf</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polygons</span><span class="o">.</span><span class="n">area</span>
+        <span class="k">if</span> <span class="n">convexity</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing convexity...&quot;</span><span class="p">)</span>
+            <span class="n">polygons_gdf</span><span class="p">[</span><span class="s1">&#39;convexity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polygons</span><span class="o">.</span><span class="n">convex_hull</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="n">polygons</span><span class="o">.</span><span class="n">area</span>
+        <span class="k">if</span> <span class="n">elongation</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing elongation...&quot;</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">polygons</span><span class="o">.</span><span class="n">minimum_rotated_rectangle</span><span class="p">()</span>
+            <span class="n">polygons_gdf</span><span class="p">[</span><span class="s1">&#39;elongation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="n">r</span><span class="o">.</span><span class="n">length</span><span class="p">)</span> <span class="o">/</span> <span class="n">r</span><span class="o">.</span><span class="n">area</span>
+        <span class="k">if</span> <span class="n">circularity</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing circularity...&quot;</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">minimum_bounding_radius</span><span class="p">()</span>
+            <span class="n">polygons_gdf</span><span class="p">[</span><span class="s1">&#39;circularity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polygons</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Geometrical computations completed.&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">polygons_gdf</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._validate_bbox">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._validate_bbox">[docs]</a>
+    <span class="k">def</span> <span class="nf">_validate_bbox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates and sets default values for bounding box coordinates.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_min</span>
+        <span class="k">if</span> <span class="n">y_min</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_min</span>
+        <span class="k">if</span> <span class="n">x_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span>
+        <span class="k">if</span> <span class="n">y_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span>
+        <span class="k">return</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.save_dataset_for_segger">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.save_dataset_for_segger">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_dataset_for_segger</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">processed_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">x_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">y_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">d_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">900</span><span class="p">,</span>
+        <span class="n">d_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">900</span><span class="p">,</span>
+        <span class="n">margin_x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">margin_y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">compute_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">r_tx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">k_tx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">val_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">test_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">neg_sampling_ratio_approx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">sampling_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">receptive_field</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;k_bd&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">&quot;dist_bd&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s2">&quot;k_tx&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="s2">&quot;dist_tx&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;kd_tree&#39;</span><span class="p">,</span>
+        <span class="n">gpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the dataset for Segger in a processed format using Dask for parallel and lazy processing.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        processed_dir : Path</span>
+<span class="sd">            Directory to save the processed dataset.</span>
+<span class="sd">        x_size : float, optional</span>
+<span class="sd">            Width of each tile.</span>
+<span class="sd">        y_size : float, optional</span>
+<span class="sd">            Height of each tile.</span>
+<span class="sd">        d_x : float, optional</span>
+<span class="sd">            Step size in the x direction for tiles.</span>
+<span class="sd">        d_y : float, optional</span>
+<span class="sd">            Step size in the y direction for tiles.</span>
+<span class="sd">        margin_x : float, optional</span>
+<span class="sd">            Margin in the x direction to include transcripts.</span>
+<span class="sd">        margin_y : float, optional</span>
+<span class="sd">            Margin in the y direction to include transcripts.</span>
+<span class="sd">        compute_labels : bool, optional</span>
+<span class="sd">            Whether to compute edge labels for tx_belongs_bd edges.</span>
+<span class="sd">        r_tx : float, optional</span>
+<span class="sd">            Radius for building the transcript-to-transcript graph.</span>
+<span class="sd">        k_tx : int, optional</span>
+<span class="sd">            Number of nearest neighbors for the tx-tx graph.</span>
+<span class="sd">        val_prob : float, optional</span>
+<span class="sd">            Probability of assigning a tile to the validation set.</span>
+<span class="sd">        test_prob : float, optional</span>
+<span class="sd">            Probability of assigning a tile to the test set.</span>
+<span class="sd">        neg_sampling_ratio_approx : float, optional</span>
+<span class="sd">            Approximate ratio of negative samples.</span>
+<span class="sd">        sampling_rate : float, optional</span>
+<span class="sd">            Rate of sampling tiles.</span>
+<span class="sd">        num_workers : int, optional</span>
+<span class="sd">            Number of workers to use for parallel processing.</span>
+<span class="sd">        receptive_field : dict, optional</span>
+<span class="sd">            Dictionary containing the values for &#39;k_bd&#39;, &#39;dist_bd&#39;, &#39;k_tx&#39;, and &#39;dist_tx&#39;.</span>
+<span class="sd">        method : str, optional</span>
+<span class="sd">            Method for computing edge indices (e.g., &#39;kd_tree&#39;, &#39;faiss&#39;).</span>
+<span class="sd">        gpu : bool, optional</span>
+<span class="sd">            Whether to use GPU acceleration for edge index computation.</span>
+<span class="sd">        workers : int, optional</span>
+<span class="sd">            Number of workers to use to compute the neighborhood graph (per tile).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Prepare directories for storing processed tiles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_directories</span><span class="p">(</span><span class="n">processed_dir</span><span class="p">)</span>
+        
+        <span class="c1"># Get x and y coordinate ranges for tiling</span>
+        <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_ranges</span><span class="p">(</span><span class="n">d_x</span><span class="p">,</span> <span class="n">d_y</span><span class="p">)</span>
+        
+        <span class="c1"># Generate parameters for each tile</span>
+        <span class="n">tile_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tile_params</span><span class="p">(</span>
+            <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span><span class="p">,</span> <span class="n">x_size</span><span class="p">,</span> <span class="n">y_size</span><span class="p">,</span> <span class="n">margin_x</span><span class="p">,</span> <span class="n">margin_y</span><span class="p">,</span> <span class="n">compute_labels</span><span class="p">,</span> 
+            <span class="n">r_tx</span><span class="p">,</span> <span class="n">k_tx</span><span class="p">,</span> <span class="n">val_prob</span><span class="p">,</span> <span class="n">test_prob</span><span class="p">,</span> <span class="n">neg_sampling_ratio_approx</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">,</span> 
+            <span class="n">processed_dir</span><span class="p">,</span> <span class="n">receptive_field</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">gpu</span><span class="p">,</span> <span class="n">workers</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Process each tile using Dask to parallelize the task</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting tile processing...&quot;</span><span class="p">)</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_tile</span><span class="p">)(</span><span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">tile_params</span><span class="p">]</span>
+        
+        <span class="k">with</span> <span class="n">ProgressBar</span><span class="p">():</span>
+        <span class="c1"># Use Dask to process all tiles in parallel</span>
+            <span class="n">dask</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tile processing completed.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._prepare_directories">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._prepare_directories">[docs]</a>
+    <span class="k">def</span> <span class="nf">_prepare_directories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">processed_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepares directories for saving tiles.&quot;&quot;&quot;</span>
+        <span class="n">processed_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;train_tiles/processed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;test_tiles/processed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;val_tiles/processed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._get_ranges">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._get_ranges">[docs]</a>
+    <span class="k">def</span> <span class="nf">_get_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">d_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates ranges for tiling.&quot;&quot;&quot;</span>
+        <span class="n">x_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_min</span> <span class="o">//</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_max</span><span class="p">,</span> <span class="n">d_x</span><span class="p">)</span>
+        <span class="n">y_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_min</span> <span class="o">//</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_max</span><span class="p">,</span> <span class="n">d_y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span></div>
+
+    
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._generate_tile_params">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._generate_tile_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">_generate_tile_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_range</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">y_range</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">x_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">y_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">margin_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">margin_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">compute_labels</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">r_tx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">k_tx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">val_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">test_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">neg_sampling_ratio_approx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">sampling_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">processed_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">receptive_field</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">gpu</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates parameters for processing tiles using the bounding box approach.</span>
+<span class="sd">        This version eliminates masks and directly uses the tile ranges and margins.</span>
+
+<span class="sd">        Parameters are the same as the previous version.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">margin_x</span> <span class="o">=</span> <span class="n">margin_x</span> <span class="k">if</span> <span class="n">margin_x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x_size</span> <span class="o">//</span> <span class="mi">10</span>
+        <span class="n">margin_y</span> <span class="o">=</span> <span class="n">margin_y</span> <span class="k">if</span> <span class="n">margin_y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_size</span> <span class="o">//</span> <span class="mi">10</span>
+
+        <span class="c1"># Generate tile parameters based on ranges and margins</span>
+        <span class="n">tile_params</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">x_size</span><span class="p">,</span> <span class="n">y_size</span><span class="p">,</span> <span class="n">x_range</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y_range</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">margin_x</span><span class="p">,</span> <span class="n">margin_y</span><span class="p">,</span> 
+                <span class="n">compute_labels</span><span class="p">,</span> <span class="n">r_tx</span><span class="p">,</span> <span class="n">k_tx</span><span class="p">,</span> <span class="n">neg_sampling_ratio_approx</span><span class="p">,</span> <span class="n">val_prob</span><span class="p">,</span> 
+                <span class="n">test_prob</span><span class="p">,</span> <span class="n">processed_dir</span><span class="p">,</span> <span class="n">receptive_field</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">,</span> 
+                <span class="n">method</span><span class="p">,</span> <span class="n">gpu</span><span class="p">,</span> <span class="n">workers</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_range</span><span class="p">))</span> 
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_range</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">tile_params</span></div>
+
+
+
+
+    <span class="c1"># def _process_tiles(self, tile_params: List[Tuple], num_workers: int) -&gt; None:</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Processes the tiles using Dask&#39;s parallelization utilities.</span>
+        
+    <span class="c1">#     Parameters:</span>
+    <span class="c1">#     -----------</span>
+    <span class="c1">#     tile_params : List[Tuple]</span>
+    <span class="c1">#         List of parameters for each tile to be processed.</span>
+    <span class="c1">#     num_workers : int</span>
+    <span class="c1">#         Number of workers to use for parallel processing.</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     print(&quot;Starting parallel tile processing...&quot;)</span>
+
+    <span class="c1">#     # Create a list of delayed tasks for each tile</span>
+    <span class="c1">#     tasks = [delayed(self._process_tile)(params) for params in tile_params]</span>
+
+    <span class="c1">#     # Execute tasks using Dask&#39;s compute with specified number of workers</span>
+    <span class="c1">#     with ProgressBar():</span>
+    <span class="c1">#         dask.compute(*tasks, num_workers=num_workers)</span>
+
+    <span class="c1">#     print(&quot;Tile processing completed.&quot;)</span>
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample._process_tile">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample._process_tile">[docs]</a>
+    <span class="k">def</span> <span class="nf">_process_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tile_params</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process a single tile using Dask for parallelism and lazy evaluation, and save the data.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        tile_params : tuple</span>
+<span class="sd">            Parameters for the tile processing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">x_size</span><span class="p">,</span> <span class="n">y_size</span><span class="p">,</span> <span class="n">x_loc</span><span class="p">,</span> <span class="n">y_loc</span><span class="p">,</span> <span class="n">margin_x</span><span class="p">,</span> <span class="n">margin_y</span><span class="p">,</span> <span class="n">compute_labels</span><span class="p">,</span> 
+            <span class="n">r_tx</span><span class="p">,</span> <span class="n">k_tx</span><span class="p">,</span> <span class="n">neg_sampling_ratio_approx</span><span class="p">,</span> <span class="n">val_prob</span><span class="p">,</span> <span class="n">test_prob</span><span class="p">,</span> <span class="n">processed_dir</span><span class="p">,</span> 
+            <span class="n">receptive_field</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">gpu</span><span class="p">,</span> <span class="n">workers</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">tile_params</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing tile at location (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">), size (width: </span><span class="si">{</span><span class="n">x_size</span><span class="si">}</span><span class="s2">, height: </span><span class="si">{</span><span class="n">y_size</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Sampling rate to decide if the tile should be processed</span>
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">sampling_rate</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">) due to sampling rate.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Read only the required boundaries and transcripts for this tile using delayed loading</span>
+        <span class="n">boundaries_df</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">)(</span>
+            <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries_path</span><span class="p">,</span>
+            <span class="n">x_min</span><span class="o">=</span><span class="n">x_loc</span> <span class="o">-</span> <span class="n">margin_x</span><span class="p">,</span> 
+            <span class="n">x_max</span><span class="o">=</span><span class="n">x_loc</span> <span class="o">+</span> <span class="n">x_size</span> <span class="o">+</span> <span class="n">margin_x</span><span class="p">,</span> 
+            <span class="n">y_min</span><span class="o">=</span><span class="n">y_loc</span> <span class="o">-</span> <span class="n">margin_y</span><span class="p">,</span> 
+            <span class="n">y_max</span><span class="o">=</span><span class="n">y_loc</span> <span class="o">+</span> <span class="n">y_size</span> <span class="o">+</span> <span class="n">margin_y</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+        
+        <span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">)(</span>
+            <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transcripts_path</span><span class="p">,</span>
+            <span class="n">x_min</span><span class="o">=</span><span class="n">x_loc</span> <span class="o">-</span> <span class="n">margin_x</span><span class="p">,</span>
+            <span class="n">x_max</span><span class="o">=</span><span class="n">x_loc</span> <span class="o">+</span> <span class="n">x_size</span> <span class="o">+</span> <span class="n">margin_x</span><span class="p">,</span>
+            <span class="n">y_min</span><span class="o">=</span><span class="n">y_loc</span> <span class="o">-</span> <span class="n">margin_y</span><span class="p">,</span>
+            <span class="n">y_max</span><span class="o">=</span><span class="n">y_loc</span> <span class="o">+</span> <span class="n">y_size</span> <span class="o">+</span> <span class="n">margin_y</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+        <span class="c1"># If no data is found in transcripts or boundaries, skip the tile</span>
+        <span class="n">boundaries_df_count</span> <span class="o">=</span> <span class="n">boundaries_df</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">transcripts_df_count</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># print(boundaries_df_count)</span>
+        <span class="c1"># print(transcripts_df_count)</span>
+
+        <span class="c1"># If the number of transcripts is less than 20 or the number of nuclei is less than 2, skip the tile</span>
+        <span class="k">if</span> <span class="n">transcripts_df_count</span> <span class="o">&lt;</span> <span class="mi">20</span> <span class="ow">or</span> <span class="n">boundaries_df_count</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropping tile (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">) due to insufficient data (transcripts: </span><span class="si">{</span><span class="n">transcripts_df_count</span><span class="si">}</span><span class="s2">, boundaries: </span><span class="si">{</span><span class="n">boundaries_df_count</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Build PyG data structure from tile-specific data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building PyG data for tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_pyg_data_from_tile</span><span class="p">)(</span>
+            <span class="n">boundaries_df</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">,</span> <span class="n">r_tx</span><span class="o">=</span><span class="n">r_tx</span><span class="p">,</span> <span class="n">k_tx</span><span class="o">=</span><span class="n">k_tx</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="n">workers</span>
+        <span class="p">)</span>
+        
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Probability to assign to train-val-test split</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">compute_labels</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prob</span> <span class="o">&gt;</span> <span class="n">val_prob</span> <span class="o">+</span> <span class="n">test_prob</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing labels for tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
+                <span class="n">transform</span> <span class="o">=</span> <span class="n">RandomLinkSplit</span><span class="p">(</span>
+                    <span class="n">num_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_test</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">is_undirected</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">edge_types</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">)],</span>
+                    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="n">neg_sampling_ratio_approx</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="n">transform</span><span class="p">)(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="c1"># print(data)</span>
+
+            <span class="c1"># Save the tile data to the appropriate directory based on split</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving data for tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;tiles_x</span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">_y</span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">x_size</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_size</span><span class="si">}</span><span class="s2">.pt&quot;</span>
+            <span class="k">if</span> <span class="n">prob</span> <span class="o">&gt;</span> <span class="n">val_prob</span> <span class="o">+</span> <span class="n">test_prob</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;train_tiles&#39;</span> <span class="o">/</span> <span class="s1">&#39;processed&#39;</span> <span class="o">/</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">prob</span> <span class="o">&gt;</span> <span class="n">val_prob</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;test_tiles&#39;</span> <span class="o">/</span> <span class="s1">&#39;processed&#39;</span> <span class="o">/</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">processed_dir</span> <span class="o">/</span> <span class="s1">&#39;val_tiles&#39;</span> <span class="o">/</span> <span class="s1">&#39;processed&#39;</span> <span class="o">/</span> <span class="n">filename</span><span class="p">)</span>
+
+            <span class="c1"># Use Dask to save the file in parallel</span>
+            <span class="c1"># save_task.compute()</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">) processed and saved successfully.&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing tile at (x_min: </span><span class="si">{</span><span class="n">x_loc</span><span class="si">}</span><span class="s2">, y_min: </span><span class="si">{</span><span class="n">y_loc</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="SpatialTranscriptomicsSample.build_pyg_data_from_tile">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.SpatialTranscriptomicsSample.build_pyg_data_from_tile">[docs]</a>
+    <span class="k">def</span> <span class="nf">build_pyg_data_from_tile</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">boundaries_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> 
+        <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> 
+        <span class="n">r_tx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span> 
+        <span class="n">k_tx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> 
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;kd_tree&#39;</span><span class="p">,</span> 
+        <span class="n">gpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+        <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HeteroData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds PyG data from a tile of boundaries and transcripts data using Dask utilities for efficient processing.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        boundaries_df : dd.DataFrame</span>
+<span class="sd">            Dask DataFrame containing boundaries data (e.g., nucleus, cell).</span>
+<span class="sd">        transcripts_df : dd.DataFrame</span>
+<span class="sd">            Dask DataFrame containing transcripts data.</span>
+<span class="sd">        r_tx : float</span>
+<span class="sd">            Radius for building the transcript-to-transcript graph.</span>
+<span class="sd">        k_tx : int</span>
+<span class="sd">            Number of nearest neighbors for the tx-tx graph.</span>
+<span class="sd">        method : str, optional</span>
+<span class="sd">            Method for computing edge indices (e.g., &#39;kd_tree&#39;, &#39;faiss&#39;).</span>
+<span class="sd">        gpu : bool, optional</span>
+<span class="sd">            Whether to use GPU acceleration for edge index computation.</span>
+<span class="sd">        workers : int, optional</span>
+<span class="sd">            Number of workers to use for parallel processing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        HeteroData</span>
+<span class="sd">            PyG Heterogeneous Data object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize the PyG HeteroData object</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">HeteroData</span><span class="p">()</span>
+
+        <span class="c1"># Lazily compute boundaries geometries using Dask</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing boundaries geometries...&quot;</span><span class="p">)</span>
+        <span class="n">bd_gdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_boundaries_geometries</span><span class="p">(</span><span class="n">boundaries_df</span><span class="p">)</span>
+        
+        <span class="c1"># Add boundary node data to PyG HeteroData lazily</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">bd_gdf</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">bd_gdf</span><span class="p">[[</span><span class="s1">&#39;centroid_x&#39;</span><span class="p">,</span> <span class="s1">&#39;centroid_y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+        <span class="n">bd_x</span> <span class="o">=</span> <span class="n">bd_gdf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:]</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">bd_x</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+
+        <span class="c1"># Extract the transcript coordinates lazily</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Preparing transcript features and positions...&quot;</span><span class="p">)</span>
+        <span class="n">x_xyz</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x_xyz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+
+
+                
+        <span class="c1"># Lazily prepare transcript embeddings (if available)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Preparing transcript embeddings..&quot;</span><span class="p">)</span>
+        <span class="n">token_encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_encoder</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+        <span class="n">transcripts_df</span><span class="p">[</span><span class="s1">&#39;one_hot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_encoding</span>  <span class="c1"># Store the integer tokens in the &#39;one_hot&#39; column</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">token_encoding</span><span class="p">)</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="c1"># Handle additional embeddings lazily as well</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_df</span><span class="p">:</span>
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)(</span><span class="n">transcripts_df</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="n">token_encoding</span>
+        <span class="n">x_features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x_features</span>
+
+        <span class="c1"># Check if the overlap column exists, if not, compute it lazily using Dask</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">transcripts_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing overlaps for transcripts...&quot;</span><span class="p">)</span>
+            <span class="n">transcripts_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_transcript_overlap_with_boundaries</span><span class="p">(</span>
+                <span class="n">transcripts_df</span><span class="p">,</span> <span class="n">bd_gdf</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.0</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Connect transcripts with their corresponding boundaries (e.g., nuclei, cells)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connecting transcripts with boundaries...&quot;</span><span class="p">)</span>
+        <span class="n">overlaps</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">OVERLAPS_BOUNDARY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">valid_cell_ids</span> <span class="o">=</span> <span class="n">bd_gdf</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">overlaps</span> <span class="o">&amp;</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">valid_cell_ids</span><span class="p">)</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">tx_bd_edge_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span>
+            <span class="n">ind</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span>
+                <span class="n">valid_cell_ids</span><span class="p">,</span>
+                <span class="n">transcripts_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">CELL_ID</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">))</span>
+
+        <span class="c1"># Add transcript-boundary edge index to PyG HeteroData</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">tx_bd_edge_index</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+
+        <span class="c1"># Compute transcript-to-transcript (tx-tx) edges using Dask (lazy computation)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing tx-tx edges...&quot;</span><span class="p">)</span>
+        <span class="n">tx_positions</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_X</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">TRANSCRIPTS_Y</span><span class="o">.</span><span class="n">value</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">delayed_tx_edge_index</span> <span class="o">=</span> <span class="n">delayed</span><span class="p">(</span><span class="n">get_edge_index</span><span class="p">)(</span>
+            <span class="n">tx_positions</span><span class="p">,</span>
+            <span class="n">tx_positions</span><span class="p">,</span>
+            <span class="n">k</span><span class="o">=</span><span class="n">k_tx</span><span class="p">,</span>
+            <span class="n">dist</span><span class="o">=</span><span class="n">r_tx</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+            <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">workers</span><span class="o">=</span><span class="n">workers</span>
+        <span class="p">)</span>
+        <span class="n">tx_edge_index</span> <span class="o">=</span> <span class="n">delayed_tx_edge_index</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+        <span class="c1"># Add the tx-tx edge index to the PyG HeteroData object</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;neighbors&#39;</span><span class="p">,</span> <span class="s1">&#39;tx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">tx_edge_index</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished building PyG data for the tile.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+</div>
+
+
+
+
+
+
+
+<div class="viewcode-block" id="XeniumSample">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.XeniumSample">[docs]</a>
+<span class="k">class</span> <span class="nc">XeniumSample</span><span class="p">(</span><span class="n">SpatialTranscriptomicsSample</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">transcripts_radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">boundaries_graph</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">,</span> <span class="n">transcripts_radius</span><span class="p">,</span> <span class="n">boundaries_graph</span><span class="p">,</span> <span class="n">XeniumKeys</span><span class="p">)</span>
+
+<div class="viewcode-block" id="XeniumSample.filter_transcripts">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.XeniumSample.filter_transcripts">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_transcripts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">min_qv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters transcripts based on quality value and removes unwanted transcripts for Xenium using Dask.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_df : dd.DataFrame</span>
+<span class="sd">            The Dask DataFrame containing transcript data.</span>
+<span class="sd">        min_qv : float, optional</span>
+<span class="sd">            The minimum quality value threshold for filtering transcripts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dd.DataFrame</span>
+<span class="sd">            The filtered Dask DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filter_codewords</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;NegControlProbe_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;antisense_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NegControlCodeword_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;BLANK_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DeprecatedCodeword_&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Ensure FEATURE_NAME is a string type for proper filtering (compatible with Dask)</span>
+        <span class="c1"># Handle potential bytes to string conversion for Dask DataFrame</span>
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_object_dtype</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]):</span>
+            <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Apply the quality value filter using Dask</span>
+        <span class="n">mask_quality</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">QUALITY_VALUE</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_qv</span>
+
+        <span class="c1"># Apply the filter for unwanted codewords using Dask string functions</span>
+        <span class="n">mask_codewords</span> <span class="o">=</span> <span class="o">~</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">FEATURE_NAME</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">filter_codewords</span><span class="p">)</span>
+
+        <span class="c1"># Combine the filters and return the filtered Dask DataFrame</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask_quality</span> <span class="o">&amp;</span> <span class="n">mask_codewords</span>
+
+        <span class="c1"># Return the filtered DataFrame lazily</span>
+        <span class="k">return</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MerscopeSample">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.MerscopeSample">[docs]</a>
+<span class="k">class</span> <span class="nc">MerscopeSample</span><span class="p">(</span><span class="n">SpatialTranscriptomicsSample</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">transcripts_radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">boundaries_graph</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">transcripts_df</span><span class="p">,</span> <span class="n">transcripts_radius</span><span class="p">,</span> <span class="n">boundaries_graph</span><span class="p">,</span> <span class="n">MerscopeKeys</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MerscopeSample.filter_transcripts">
+<a class="viewcode-back" href="../../../api/segger/data/io/index.html#segger.data.io.MerscopeSample.filter_transcripts">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_transcripts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transcripts_df</span><span class="p">:</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">min_qv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters transcripts based on specific criteria for Merscope using Dask.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        -----------</span>
+<span class="sd">        transcripts_df : dd.DataFrame</span>
+<span class="sd">            The Dask DataFrame containing transcript data.</span>
+<span class="sd">        min_qv : float, optional</span>
+<span class="sd">            The minimum quality value threshold for filtering transcripts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        --------</span>
+<span class="sd">        dd.DataFrame</span>
+<span class="sd">            The filtered Dask DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Add custom Merscope-specific filtering logic if needed</span>
+        <span class="c1"># For now, apply only the quality value filter</span>
+        <span class="k">return</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="n">transcripts_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">QUALITY_VALUE</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_qv</span><span class="p">]</span></div>
+</div>
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
