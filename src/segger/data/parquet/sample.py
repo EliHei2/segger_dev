@@ -74,9 +74,9 @@ class STSampleParquet:
         self._boundaries_metadata = None
 
         # Setup default embedding for transcripts
-        self.emb_genes = None
+        self._emb_genes = None
         if weights is not None:
-            self.emb_genes = weights.index.to_list()
+            self._emb_genes = weights.index.to_list()
         classes = self.transcripts_metadata["feature_names"]
         self._transcript_embedding = TranscriptEmbedding(np.array(classes), weights)
 
@@ -171,9 +171,9 @@ class STSampleParquet:
             # Get filtered unique feature names
             table = pq.read_table(self._transcripts_filepath)
             names = pc.unique(table[self.settings.transcripts.label])
-            if self.emb_genes is not None:
+            if self._emb_genes is not None:
                 # Filter substring is extended with the genes missing in the embedding
-                missing_genes = list(set(names.to_pylist()) - set(self.emb_genes))
+                missing_genes = list(set(names.to_pylist()) - set(self._emb_genes))
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
@@ -530,6 +530,9 @@ class STInMemoryDataset:
             y=self.settings.transcripts.y,
             bounds=bounds,
             extra_columns=self.settings.transcripts.columns,
+        )
+        transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
+            lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
         )
         transcripts = utils.filter_transcripts(
             transcripts,
