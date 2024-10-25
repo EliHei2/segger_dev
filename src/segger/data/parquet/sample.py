@@ -178,7 +178,8 @@ class STSampleParquet:
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
-            metadata["feature_names"] = pc.filter(names, mask).tolist()
+            filtered_names = pc.filter(names, mask).to_pylist()
+            metadata["feature_names"] = [x.decode("utf-8") if isinstance(x, bytes) else x for x in filtered_names]
             self._transcripts_metadata = metadata
         return self._transcripts_metadata
 
