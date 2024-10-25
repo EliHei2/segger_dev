@@ -533,7 +533,7 @@ class STInMemoryDataset:
             extra_columns=self.settings.transcripts.columns,
         )
         transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
-            lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
+            lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
         )
         transcripts = utils.filter_transcripts(
             transcripts,
