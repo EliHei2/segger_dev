@@ -223,13 +223,13 @@ def run_prediction():
             "--file_format",
             config["prediction"]["file_format"],
             "--k_bd",
-            str(config["preprocessing"]["k_bd"]),
+            str(config["prediction"]["k_bd"]),
             "--dist_bd",
-            str(config["preprocessing"]["dist_bd"]),
+            str(config["prediction"]["dist_bd"]),
             "--k_tx",
-            str(config["preprocessing"]["k_tx"]),
+            str(config["prediction"]["k_tx"]),
             "--dist_tx",
-            str(config["preprocessing"]["dist_tx"]),
+            str(config["prediction"]["dist_tx"]),
         ]
     )
 
