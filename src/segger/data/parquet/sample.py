@@ -175,6 +175,7 @@ class STSampleParquet:
                 # Filter substring is extended with the genes missing in the embedding
                 names_str = [x.decode("utf-8") if isinstance(x, bytes) else x for x in names.to_pylist()]
                 missing_genes = list(set(names_str) - set(self._emb_genes))
+                logging.warning(f"Number of missing genes: {len(missing_genes)}")
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
