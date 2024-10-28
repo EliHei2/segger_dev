@@ -213,9 +213,9 @@ def get_similarity_scores(
 
         # Step 1: Get embeddings from the model (on GPU)
         shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
-        
-        if knn_method == 'kd_tree':
-        # Compute edge indices using knn method (still on GPU)
+
+        if knn_method == "kd_tree":
+            # Compute edge indices using knn method (still on GPU)
             edge_index = get_edge_index(
                 batch[to_type].pos[:, :2].cpu(),  # 'tx' positions
                 batch[from_type].pos[:, :2].cpu(),  # 'bd' positions
@@ -231,7 +231,6 @@ def get_similarity_scores(
                 dist=receptive_field[f"dist_{to_type}"],
                 method=knn_method,
             )
-            
 
         # Convert to dense adjacency matrix (on GPU)
         edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
