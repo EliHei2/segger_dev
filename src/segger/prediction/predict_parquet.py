@@ -395,7 +395,7 @@ def predict_batch(
             # Step 4: Convert assignments to Dask-CuDF DataFrame for this batch
             # batch_ddf = dask_cudf.from_cudf(cudf.DataFrame(assignments), npartitions=1)
             assignments = pd.DataFrame(assignments)
-            assignments = assignments[assignments['bound'] == 1]
+            assignments = assignments[assignments["bound"] == 1]
             batch_ddf = delayed(dd.from_pandas)(assignments, npartitions=1)
 
             # Save the updated `output_ddf` asynchronously using Dask delayed

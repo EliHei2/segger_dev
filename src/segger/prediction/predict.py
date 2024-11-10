@@ -271,7 +271,9 @@ def predict_batch(
                 row_cpu = scores_tx.row.get()  # Transfer row indices to CPU (NumPy)
                 col_cpu = scores_tx.col.get()  # Transfer column indices to CPU (NumPy)
                 # Remove from memory
-                scores_tx = get_similarity_scores(lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method)
+                scores_tx = get_similarity_scores(
+                    lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method
+                )
                 # Convert to dense NumPy array
                 data_cpu = scores_tx.data.get()  # Transfer data to CPU (NumPy)
                 row_cpu = scores_tx.row.get()  # Transfer row indices to CPU (NumPy)
