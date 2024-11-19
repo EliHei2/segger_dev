@@ -16,40 +16,39 @@ def train_model(args):
 
     # Import packages
     logging.info("Importing packages...")
-    from segger.data.utils import XeniumDataset
+    from segger.data.parquet.pyg_dataset import STPyGDataset
     from torch_geometric.loader import DataLoader
     from torch_geometric.nn import to_hetero
     from segger.training.train import LitSegger
-    from lightning import Trainer
+    from segger.training.segger_data_module import SeggerDataModule
+    from pytorch_lightning import Trainer
+    from lightning.pytorch.loggers import CSVLogger
+    from pytorch_lightning.plugins.environments import SLURMEnvironment
+    SLURMEnvironment.detect = lambda: False
     logging.info("Done.")
 
     # Load datasets
     logging.info("Loading Xenium datasets...")
-    trn_ds = XeniumDataset(root=Path(args.data_dir) / 'train_tiles')
-    val_ds = XeniumDataset(root=Path(args.data_dir) / 'val_tiles')
-    kwargs = dict(
-        num_workers=0,
-        pin_memory=True,
-    )
-    trn_loader = DataLoader(
-        trn_ds, batch_size=args.batch_size_train, shuffle=True, **kwargs
-    )
-    val_loader = DataLoader(
-        val_ds, batch_size=args.batch_size_val, shuffle=False, **kwargs
+    dm = SeggerDataModule(
+        data_dir=args.data_dir,
+        batch_size=args.batch_size_train,
+        num_workers=1, 
     )
     logging.info("Done.")
 
     # Initialize model
     logging.info("Initializing Segger model and trainer...")
     metadata = (
-        ["tx", "nc"], [("tx", "belongs", "nc"), ("tx", "neighbors", "tx")]
+        ["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]
     )
     lit_segger = LitSegger(
+        num_tx_tokens=args.num_tx_tokens,
         init_emb=args.init_emb,
         hidden_channels=args.hidden_channels,
         out_channels=args.out_channels,
         heads=args.heads,
         aggr=args.aggr,
+        num_mid_layers=args.num_mid_layers,
         metadata=metadata,
     )
 
@@ -61,16 +60,13 @@ def train_model(args):
         devices=args.devices,
         max_epochs=args.epochs,
         default_root_dir=args.model_dir,
+        logger=CSVLogger(args.model_dir),
     )
     logging.info("Done.")
 
     # Train model
     logging.info("Training model...")
-    trainer.fit(
-        model=lit_segger,
-        train_dataloaders=trn_loader,
-        val_dataloaders=val_loader,
-    )
+    trainer.fit(model=lit_segger, datamodule=dm)
     logging.info("Done...")
 
 

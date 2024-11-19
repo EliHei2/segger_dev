@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 from argparse import Namespace
 import time
+import pandas as pd
 
 # TODO: Add arguments: compute_labels, margin, x_min, x_max, y_min, y_max
 
@@ -33,14 +34,17 @@ def create_dataset(args: Namespace):
 
     logging.info("Initializing sample...")
     sample = STSampleParquet(
-        sample_dir=args.sample_dir,
+        base_dir=args.sample_dir,
         n_workers=args.n_workers,
-        sample_type=args.sample_type
+        sample_type=args.sample_type,
     )
+    if args.gene_embedding_weights is not None:
+        weights = pd.read_csv(args.gene_embedding_weights, index_col=0)
+        sample.set_transcript_embedding(weights)
     logging.info("Done.")
 
     logging.info("Saving dataset for Segger...")
-    sample.save(
+    outs = sample.save(
         data_dir=args.data_dir,
         k_bd=args.k_bd,
         dist_bd=args.dist_bd,

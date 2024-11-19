@@ -1,33 +1,79 @@
-dataset_type: xenium
-dataset_dir: data_raw/xenium
-data_dir: data_tidy/pyg_datasets
-sample_tag: Xenium_FFPE_Human_Breast_Cancer_Rep1
-transcripts_file: transcripts.parquet
-boundaries_file: nucleus_boundaries.parquet
-min_qv: 20
-file_format: parquet
+data_dir: 
+  type: str
+  required: true
+  help: "Directory to store raw and processed data."
 
-# Parameters for saving the dataset
-x_size: 200
-y_size: 200
-d_x: 150
-d_y: 150
-margin_x: 20
-margin_y: 20
-compute_labels: true
-r_tx: 5
-val_prob: 0.1
-test_prob: 0.2
-neg_sampling_ratio_approx: 5
-sampling_rate: 1
-workers: 1
+sample_dir: 
+  type: str
+  required: true
+  help: "Path to spatial transcriptomics sample."
 
-# Receptive field parameters
-k_bd: 3
-dist_bd: 15
-k_tx: 10
-dist_tx: 3
+sample_type: 
+  type: str
+  default: null
+  help: "Type of spatial transcriptomics sample (e.g., 'xenium')."
 
-# Method and GPU usage
-method: kd_tree
-gpu: false
+tile_size:
+  type: int
+  default: 100000
+  help: "Maximum no. transcripts per tile."
+
+tile_width:
+  type: int
+  default: null
+  help: "Width of each tile."
+
+tile_height: 
+  type: int
+  default: null
+  help: "Height of each tile."
+
+k_bd: 
+  type: int
+  default: 3
+  help: "Number of nearest neighbors for nuclei."
+
+dist_bd: 
+  type: float
+  default: 4
+  help: "Distance threshold for nuclei."
+
+k_tx: 
+  type: int
+  default: 3
+  help: "Number of nearest neighbors for transcripts."
+
+dist_tx: 
+  type: float
+  default: 1
+  help: "Distance threshold for transcripts."
+
+val_prob: 
+  type: float
+  default: 0.1
+  help: "Probability of assigning a tile to the validation set."
+
+test_prob: 
+  type: float
+  default: 0.1
+  help: "Probability of assigning a tile to the test set."
+
+sampling_rate: 
+  type: float
+  default: 1
+  help: "Rate of sampling tiles."
+
+neg_sampling_ratio:
+  type: float
+  default: 5
+  help: "Ratio of negative edges to sample for training."
+
+gene_embedding_weights:
+  type: str
+  default: null
+  help: "Path to CSV containing gene embedding weights. See Segger docs."
+
+n_workers: 
+  type: int
+  default: 1
+  help: "Number of workers for parallel processing."

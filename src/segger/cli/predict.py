@@ -4,6 +4,7 @@ import os
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging
+import pandas as pd
 
 
 predict_yml = Path(__file__).parent / 'configs' / 'predict' / 'default.yaml'
@@ -22,14 +23,14 @@ def predict(args):
 
     # Import packages
     logging.info("Importing packages...")
-    from segger.data.utils import XeniumDataset
+    from segger.data.parquet.pyg_dataset import STPyGDataset
     from torch_geometric.loader import DataLoader
     from segger.prediction.predict import load_model, predict
     logging.info("Done.")
 
     # Load datasets and model
     logging.info("Loading Xenium datasets and Segger model...")
-    dataset = XeniumDataset(args.dataset_path)
+    dataset = STPyGDataset(args.dataset_path)
     data_loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -46,12 +47,24 @@ def predict(args):
 
     # Make prediction on dataset
     logging.info("Making predictions on data")
+    receptive_field = dict(
+        k_bd=args.k_bd,
+        dist_bd=args.dist_bd,
+        k_tx=args.k_tx,
+        dist_tx=args.dist_tx
+    )
     predictions = predict(
         lit_segger=lit_segger,
         data_loader=data_loader,
         score_cut=args.score_cut,
         use_cc=args.use_cc,
+        receptive_field=receptive_field,
+        knn_method=args.knn_method,
     )
+    predictions = pd.concat(predictions)
+    predictions = predictions.sort_values(
+        ['transcript_id', 'score']
+    ).drop_duplicates('transcript_id', keep='last')
     logging.info("Done.")
 
     # Write predictions to file

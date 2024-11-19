@@ -5,6 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 from typing import Optional, Union
 from numpy.typing import ArrayLike
 import pandas as pd
+import numpy as np
 
 # TODO: Add documentation
 class TranscriptEmbedding(torch.nn.Module):
@@ -59,7 +60,8 @@ class TranscriptEmbedding(torch.nn.Module):
         if weights is None:
             self._weights = None
         else:
-            self._weights = Tensor(weights.loc[classes].values)
+            idx = np.argsort(self._encoder.transform(classes))
+            self._weights = Tensor(weights.loc[classes].iloc[idx].values)
 
     # TODO: Add documentation
     def embed(self, classes: ArrayLike):

@@ -2,6 +2,7 @@ from scipy.spatial import Rectangle
 import shapely
 import numpy as np
 import math
+from typing import Optional
 
 class NDTree():
     """
@@ -27,7 +28,7 @@ class NDTree():
         The root of the NDTree.
     """
 
-    def __init__(self, data, n):
+    def __init__(self, data, n, extents: Optional[shapely.Polygon] = None):
         """
         Initializes the NDTree with the given data and maximum points per leaf
         node.
@@ -38,12 +39,17 @@ class NDTree():
             The input data to be partitioned.
         n : int
             The maximum number of points allowed in a leaf node.
+        extents : shapely.Polygon, optional
+            The maximum extents of the space to partition into regions.
         """
         self.data = np.asarray(data)
         self.n = n
         self.idx = np.arange(data.shape[0])
         self.boxes = []
-        self.rect = Rectangle(data.min(0), data.max(0))
+        if extents is None:
+            self.rect = Rectangle(data.min(0), data.max(0))
+        else:
+            self.rect = Rectangle(extents.bounds[:2], extents.bounds[2:])
         self.tree = innernode(self.n, self.idx, self.rect, self)
 
 class innernode():

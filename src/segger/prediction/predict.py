@@ -270,9 +270,15 @@ def predict(
     })
 
     # Convert the entire data loader to delayed predictions
+    assignments = []
+    for batch in tqdm(data_loader):
+        predictions = predict_batch(
+            lit_segger, batch, score_cut, receptive_field, use_cc, knn_method
+        )
+        assignments.append(predictions)
+    '''
     delayed_assignments = [delayed(predict_batch)(lit_segger, batch, score_cut, receptive_field, use_cc, knn_method)
                            for batch in data_loader]
-    
     # Pass the meta to from_delayed
     assignments_dd = dd.from_delayed(delayed_assignments, meta=meta)
 
@@ -282,8 +288,8 @@ def predict(
         return df.loc[idx].reset_index(drop=True)
 
     final_assignments = assignments_dd.map_partitions(select_max_score_partition, meta=meta)
-
-    return final_assignments
+    '''
+    return assignments
 
 
 

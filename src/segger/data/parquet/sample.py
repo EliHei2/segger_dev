@@ -261,7 +261,7 @@ class STSampleParquet():
             self._boundaries_filepath,
             columns=self.settings.boundaries.xy,
         ).values
-        ndtree = NDTree(data, self.n_workers)
+        ndtree = NDTree(data, self.n_workers, extents=self.extents)
 
         return ndtree.boxes
 
@@ -322,7 +322,7 @@ class STSampleParquet():
             If the provided weights do not match the number of transcript 
             features.
         """
-        classes = self._transcripts_metadata['feature_names']
+        classes = np.array(self._transcripts_metadata['feature_names'])
         self._transcript_embedding = TranscriptEmbedding(classes, weights)
 
 
@@ -427,7 +427,12 @@ class STSampleParquet():
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
-        pqdm(regions, func, n_jobs=self.n_workers)
+        '''
+        for region in regions:
+            func(region)
+        '''
+        outs = pqdm(regions, func, n_jobs=self.n_workers)
+        return outs
 
 
 # TODO: Add documentation for settings
@@ -982,8 +987,9 @@ class STTile:
         dist, idx = tree.query(query_coords, k, max_distance)
 
         # To sparse adjacency
-        edge_index = np.argwhere(dist != np.inf).T
-        edge_index[1] = idx[dist != np.inf]
+        mask = dist != np.inf
+        edge_index = np.argwhere(mask).T
+        edge_index[1] = idx[mask]
         edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
 
         return edge_index
@@ -1135,6 +1141,9 @@ class STTile:
             ----------
             edge_index : torch.Tensor
                 Edge indices in COO format between transcripts and boundaries
+            edge_dist : torch.Tensor
+                Distances between transcripts and boundaries for each edge in 
+                'edge_index'
 
         3. ("tx", "neighbors", "tx")
             Represents the relationship where a transcript is nearby another 
@@ -1144,6 +1153,8 @@ class STTile:
             ----------
             edge_index : torch.Tensor
                 Edge indices in COO format between transcripts and transcripts
+            edge_dist : torch.Tensor
+                Distances between transcripts for each edge in 'edge_index'
         """
         # Initialize an empty HeteroData object
         pyg_data = HeteroData()
@@ -1165,7 +1176,7 @@ class STTile:
         # Set up Transcript nodes
         pyg_data['tx'].id = torch.tensor(
             self.transcripts[self.settings.transcripts.id].values.astype(int),
-            dtype=torch.int,
+            dtype=torch.int64,
         )
         pyg_data['tx'].pos = torch.tensor(
             self.transcripts[self.settings.transcripts.xyz].values,
