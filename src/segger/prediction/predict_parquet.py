@@ -186,6 +186,7 @@ def get_similarity_scores(
     from_type: str,
     to_type: str,
     receptive_field: dict,
+    compute_sigmoid: bool = Ture,
     knn_method: str = "cuda",
     gpu_id: int = 0,  # Added argument for GPU ID
 ) -> coo_matrix:
@@ -248,7 +249,8 @@ def get_similarity_scores(
             del embeddings
             # Sigmoid to get most similar 'to_type' neighbor
             similarity[similarity == 0] = -torch.inf  # ensure zero stays zero
-            similarity = F.sigmoid(similarity)
+            if compute_sigmoid:
+                similarity = F.sigmoid(similarity)
             # Neighbor-filtered similarity scores
             # shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
             indices = torch.argwhere(edge_index != -1).T
@@ -342,7 +344,7 @@ def predict_batch(
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
                 scores_tx = get_similarity_scores(
-                    lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+                    lit_segger.model, batch, "tx", "tx", receptive_field, compute_sigmoid = False, knn_method=knn_method, gpu_id=gpu_id
                 )
 
                 # Stay on GPU and use CuPy sparse matrices
@@ -350,8 +352,10 @@ def predict_batch(
                     (scores_tx.data, (scores_tx.row, scores_tx.col)), shape=scores_tx.shape
                 )
 
+                score_cut_tx = no_id_scores.data.median()
+
                 # Apply threshold on GPU
-                no_id_scores.data[no_id_scores.data < score_cut] = 0  # Apply threshold
+                no_id_scores.data[no_id_scores.data < score_cut_tx] = 0  # Apply threshold
 
                 # Zero out the diagonal on GPU
                 no_id_scores = zero_out_diagonal_gpu(no_id_scores)
