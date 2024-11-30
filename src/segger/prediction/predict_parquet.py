@@ -359,7 +359,7 @@ def predict_batch(
                     (scores_tx.data, (scores_tx.row, scores_tx.col)), shape=scores_tx.shape
                 )
 
-                score_cut_tx = no_id_scores.data.median()
+                score_cut_tx = np.median(no_id_scores.data)
 
                 # Apply threshold on GPU
                 no_id_scores.data[no_id_scores.data < score_cut_tx] = 0  # Apply threshold
