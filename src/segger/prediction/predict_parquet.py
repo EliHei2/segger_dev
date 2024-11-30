@@ -186,7 +186,7 @@ def get_similarity_scores(
     from_type: str,
     to_type: str,
     receptive_field: dict,
-    compute_sigmoid: bool = Ture,
+    compute_sigmoid: bool = True,
     knn_method: str = "cuda",
     gpu_id: int = 0,  # Added argument for GPU ID
 ) -> coo_matrix:
