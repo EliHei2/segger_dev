@@ -344,7 +344,14 @@ def predict_batch(
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
                 scores_tx = get_similarity_scores(
-                    lit_segger.model, batch, "tx", "tx", receptive_field, compute_sigmoid = False, knn_method=knn_method, gpu_id=gpu_id
+                    lit_segger.model,
+                    batch,
+                    "tx",
+                    "tx",
+                    receptive_field,
+                    compute_sigmoid=False,
+                    knn_method=knn_method,
+                    gpu_id=gpu_id,
                 )
 
                 # Stay on GPU and use CuPy sparse matrices
