@@ -194,7 +194,7 @@ class SpatialTranscriptomicsSample(ABC):
             transcripts_df = transcripts_df[transcripts_df[self.keys.FEATURE_NAME.value].isin(valid_genes)]
             final_count = delayed(lambda df: df.shape[0])(transcripts_df)
             if self.verbose:
-                print(f"Dropped {initial_count - final_count} transcripts not found in {key} embedding.")
+                print(f"Dropped {initial_count - final_count} transcripts not found in embedding.")
 
         # Ensure that the 'OVERLAPS_BOUNDARY' column is boolean if it exists
         if self.keys.OVERLAPS_BOUNDARY.value in transcripts_df.columns:
