@@ -344,7 +344,14 @@ def predict_batch(
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
                 scores_tx = get_similarity_scores(
-                    lit_segger.model, batch, "tx", "tx", receptive_field, compute_sigmoid = False, knn_method=knn_method, gpu_id=gpu_id
+                    lit_segger.model,
+                    batch,
+                    "tx",
+                    "tx",
+                    receptive_field,
+                    compute_sigmoid=False,
+                    knn_method=knn_method,
+                    gpu_id=gpu_id,
                 )
 
                 # Stay on GPU and use CuPy sparse matrices
@@ -399,7 +406,7 @@ def predict_batch(
             # Step 4: Convert assignments to Dask-CuDF DataFrame for this batch
             # batch_ddf = dask_cudf.from_cudf(cudf.DataFrame(assignments), npartitions=1)
             assignments = pd.DataFrame(assignments)
-            assignments = assignments[assignments['bound'] == 1]
+            assignments = assignments[assignments["bound"] == 1]
             batch_ddf = delayed(dd.from_pandas)(assignments, npartitions=1)
 
             # Save the updated `output_ddf` asynchronously using Dask delayed

@@ -314,6 +314,10 @@ def get_edge_index_kdtree(
     Returns:
         torch.Tensor: Edge indices.
     """
+    if isinstance(coords_1, torch.Tensor):
+        coords_1 = coords_1.cpu().numpy()
+    if isinstance(coords_2, torch.Tensor):
+        coords_2 = coords_2.cpu().numpy()
     tree = cKDTree(coords_1)
     d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist, workers=workers)
     valid_mask = d_kdtree < dist

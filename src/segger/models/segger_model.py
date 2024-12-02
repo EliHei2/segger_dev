@@ -70,19 +70,19 @@ class Segger(torch.nn.Module):
         x = self.tx_embedding(((x.sum(1) * is_one_dim).int())) * is_one_dim + self.lin0(x.float()) * (1 - is_one_dim)
         # First layer
         x = x.relu()
-        x = self.conv_first(x, edge_index)  + self.lin_first(x)
+        x = self.conv_first(x, edge_index) + self.lin_first(x)
         x = x.relu()
 
         # Middle layers
         if self.num_mid_layers > 0:
             for i in range(self.num_mid_layers):
                 conv_mid = self.conv_mid_layers[i]
-                lin_mid  = self.lin_mid_layers[i]
-                x = conv_mid(x, edge_index)  + lin_mid(x)
+                lin_mid = self.lin_mid_layers[i]
+                x = conv_mid(x, edge_index) + lin_mid(x)
                 x = x.relu()
 
         # Last layer
-        x = self.conv_last(x, edge_index)  + self.lin_last(x)
+        x = self.conv_last(x, edge_index) + self.lin_last(x)
 
         return x
 
