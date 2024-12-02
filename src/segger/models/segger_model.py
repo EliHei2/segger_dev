@@ -76,7 +76,7 @@ class Segger(torch.nn.Module):
         # Middle layers
         if self.num_mid_layers > 0:
             for conv_mid in self.conv_mid_layers:
-                x = conv_mid(x, edge_index)  + lin_mid(x)
+                x = conv_mid(x, edge_index)  + self.lin_mid_layers(x)
                 x = x.relu()
 
         # Last layer
