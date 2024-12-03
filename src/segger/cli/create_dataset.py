@@ -45,7 +45,7 @@ def create_dataset(args: Namespace):
     # Original (square tile)
     if args.mode == 'classic':
         logging.info("Initializing sample...")
-        sample = XeniumSample(verbose=True)
+        sample = XeniumSample(verbose=False)
         if args.gene_embedding_weights is not None:
             weights = pd.read_csv(args.gene_embedding_weights, index_col=0)
             sample.embedding_df = weights

@@ -87,8 +87,8 @@ class SpatialTranscriptomicsSample(ABC):
             transcripts_path (Path): Path to the Parquet file containing transcripts data.
             boundaries_path (Path): Path to the Parquet file containing boundaries data.
         """
-        self.transcripts_path = transcripts_path
-        self.boundaries_path = boundaries_path
+        self.transcripts_path = Path(transcripts_path)
+        self.boundaries_path = Path(boundaries_path)
         
         if self.verbose: print(f"Set transcripts file path to {transcripts_path}")
         if self.verbose: print(f"Set boundaries file path to {boundaries_path}")
@@ -634,6 +634,7 @@ class SpatialTranscriptomicsSample(ABC):
             
         """
         # Prepare directories for storing processed tiles
+        processed_dir = Path(processed_dir)  # by default, convert to Path object
         self._prepare_directories(processed_dir)
         
         # Get x and y coordinate ranges for tiling
@@ -658,7 +659,6 @@ class SpatialTranscriptomicsSample(ABC):
 
     def _prepare_directories(self, processed_dir: Path) -> None:
         """Prepares directories for saving tiles."""
-        processed_dir = Path(processed_dir)  # by default, convert to Path object
         for data_type in ['train', 'test', 'val']:
             for data_stage in ['raw', 'processed']:
                 tile_dir = processed_dir / f'{data_type}_tiles' / data_stage
