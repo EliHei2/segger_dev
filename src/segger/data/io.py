@@ -189,7 +189,7 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df = self.filter_transcripts(transcripts_df)
 
         # Handle additional embeddings if provided
-        if self.embedding_df:
+        if self.embedding_df is not None:
             valid_genes = self.embedding_df.index
             # Lazily count the number of rows in the DataFrame before filtering
             initial_count = delayed(lambda df: df.shape[0])(transcripts_df)
@@ -895,10 +895,11 @@ class SpatialTranscriptomicsSample(ABC):
         transcripts_df['token'] = token_encoding  # Store the integer tokens in the 'token' column
         data['tx'].token = torch.as_tensor(token_encoding).int()
         # Handle additional embeddings lazily as well
-        if self.embedding_df:
+        if self.embedding_df is not None:
             embeddings = delayed(lambda df: self.embedding_df.loc[
                 df[self.keys.FEATURE_NAME.value].values
             ].values)(transcripts_df)
+            embeddings = embeddings.compute()
         else:  
             embeddings = token_encoding
         x_features = torch.as_tensor(embeddings).int()

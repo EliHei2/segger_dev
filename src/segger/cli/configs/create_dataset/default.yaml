@@ -77,3 +77,8 @@ n_workers:
   type: int
   default: 1
   help: "Number of workers for parallel processing."
+
+mode:
+  type: str
+  default: "experimental"
+  help: "Mode to use for creating dataset. Should be one of 'classic' or 'experimental'."
