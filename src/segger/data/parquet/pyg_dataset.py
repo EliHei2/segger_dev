@@ -37,7 +37,8 @@ class STPyGDataset(InMemoryDataset):
         Returns:
             List[str]: List of processed file names.
         """
-        paths = glob.glob(f'{self.processed_dir}/x=*_y=*_w=*_h=*.pt')
+        #paths = glob.glob(f'{self.processed_dir}/x=*_y=*_w=*_h=*.pt')
+        paths = glob.glob(f'{self.processed_dir}/*.pt')
         file_names = list(map(os.path.basename, paths))
         return file_names
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import anndata as ad
+from anndata import AnnData
 from scipy.spatial import ConvexHull
 from typing import Dict, Any, Optional, List, Tuple
 from tqdm import tqdm
@@ -22,7 +22,7 @@ import seaborn as sns
 
 
 def find_markers(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     cell_type_column: str, 
     pos_percentile: float = 5, 
     neg_percentile: float = 10, 
@@ -49,9 +49,9 @@ def find_markers(
             'negative': list of top x% lowly expressed genes.
     """
     markers = {}
-    sc.tl.rank_genes_groups(adata, groupby=cell_type_column)
+    sc.tl.rank_genes_groups(adata, groupby=cell_type_column, use_raw=False)
     genes = adata.var_names
-    for cell_type in adata.obs[cell_type_column].unique():
+    for cell_type in adata.obs[cell_type_column].dropna().unique():
         subset = adata[adata.obs[cell_type_column] == cell_type]
         mean_expression = np.asarray(subset.X.mean(axis=0)).flatten()
         cutoff_high = np.percentile(mean_expression, 100 - pos_percentile)
@@ -70,7 +70,7 @@ def find_markers(
 
 
 def find_mutually_exclusive_genes(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     markers: Dict[str, Dict[str, List[str]]], 
     cell_type_column: str
 ) -> List[Tuple[str, str]]:
@@ -93,7 +93,7 @@ def find_mutually_exclusive_genes(
     exclusive_genes = {}
     all_exclusive = []
     gene_expression = adata.to_df()
-    for cell_type, marker_sets in markers.items():
+    for cell_type, marker_sets in tqdm(markers.items()):
         positive_markers = marker_sets['positive']
         exclusive_genes[cell_type] = []
         for gene in positive_markers:
@@ -115,7 +115,7 @@ def find_mutually_exclusive_genes(
 
 
 def compute_MECR(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     gene_pairs: List[Tuple[str, str]]
 ) -> Dict[Tuple[str, str], float]:
     """Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.
@@ -217,22 +217,22 @@ def compute_quantized_mecr_counts(
 
 
 def annotate_query_with_reference(
-    reference_adata: ad.AnnData, 
-    query_adata: ad.AnnData, 
+    reference_adata: AnnData, 
+    query_adata: AnnData, 
     transfer_column: str
-) -> ad.AnnData:
+) -> AnnData:
     """Annotate query AnnData object using a scRNA-seq reference atlas.
 
     Args:
-    - reference_adata: ad.AnnData
+    - reference_adata: AnnData
         Reference AnnData object containing the scRNA-seq atlas data.
-    - query_adata: ad.AnnData
+    - query_adata: AnnData
         Query AnnData object containing the data to be annotated.
     - transfer_column: str
         The name of the column in the reference atlas's `obs` to transfer to the query dataset.
 
     Returns:
-    - query_adata: ad.AnnData
+    - query_adata: AnnData
         Annotated query AnnData object with transferred labels and UMAP coordinates from the reference.
     """
     common_genes = list(set(reference_adata.var_names) & set(query_adata.var_names))
@@ -251,7 +251,7 @@ def annotate_query_with_reference(
 
 
 def calculate_contamination(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     markers: Dict[str, Dict[str, List[str]]], 
     radius: float = 15, 
     n_neighs: int = 10, 
@@ -261,7 +261,7 @@ def calculate_contamination(
     """Calculate normalized contamination from neighboring cells of different cell types based on positive markers.
 
     Args:
-    - adata: ad.AnnData
+    - adata: AnnData
         Annotated data object with raw counts and cell type information.
     - markers: dict
         Dictionary where keys are cell types and values are dictionaries containing:
@@ -319,7 +319,7 @@ def calculate_contamination(
 
 
 def calculate_sensitivity(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     purified_markers: Dict[str, List[str]], 
     max_cells_per_type: int = 1000
 ) -> Dict[str, List[float]]:
@@ -352,7 +352,7 @@ def calculate_sensitivity(
 
 
 def compute_clustering_scores(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     cell_type_column: str = 'celltype_major', 
     use_pca: bool = True
 ) -> Tuple[float, float]:
@@ -384,7 +384,7 @@ def compute_clustering_scores(
 
 
 def compute_neighborhood_metrics(
-    adata: ad.AnnData, 
+    adata: AnnData, 
     radius: float = 10, 
     celltype_column: str = 'celltype_major',
     n_neighs: int = 20,
@@ -445,7 +445,7 @@ def compute_neighborhood_metrics(
     adata.obs['number_of_neighbors'] = neighbors_full
 
 
-def compute_transcript_density(adata: ad.AnnData) -> None:
+def compute_transcript_density(adata: AnnData) -> None:
     """Compute the transcript density for each cell in the AnnData object.
 
     Args:
@@ -461,7 +461,7 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
 
 
 # def compute_celltype_f1_purity(
-#     adata: ad.AnnData, 
+#     adata: AnnData, 
 #     marker_genes: Dict[str, Dict[str, List[str]]]
 # ) -> Dict[str, float]:
 #     """
@@ -497,7 +497,7 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
 
 
 # def average_log_normalized_expression(
-#     adata: ad.AnnData, 
+#     adata: AnnData, 
 #     celltype_column: str
 # ) -> pd.DataFrame:
 #     """
