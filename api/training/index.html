@@ -1,0 +1,2808 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fast and accurate cell segmentation for single-molecule spatial omics">
+      
+      
+        <meta name="author" content="Elyas Heidari">
+      
+      
+        <link rel="canonical" href="https://EliHei2.github.io/segger_dev/api/training/">
+      
+      
+        <link rel="prev" href="../models/">
+      
+      
+        <link rel="next" href="../prediction/">
+      
+      
+      <link rel="icon" href="../../images/logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
+    
+    
+      
+        <title>Training - segger Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=ubuntu:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"ubuntu";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/termynal@0.0.1/termynal.css">
+    
+      <link rel="stylesheet" href="../../termynal.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#seggertraining" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="segger Documentation" class="md-header__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            segger Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Training
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="segger Documentation" class="md-nav__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    segger Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/data_creation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dataset Creation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/segger_tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction to Segger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#segger.training" class="md-nav__link">
+    <span class="md-ellipsis">
+      training
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segger.training.LitSegger" class="md-nav__link">
+    <span class="md-ellipsis">
+      LitSegger
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LitSegger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger--attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.configure_optimizers" class="md-nav__link">
+    <span class="md-ellipsis">
+      configure_optimizers
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="configure_optimizers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.configure_optimizers--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.forward" class="md-nav__link">
+    <span class="md-ellipsis">
+      forward
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="forward">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.forward--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.forward--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.from_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="from_components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.from_components--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.from_new" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_new
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="from_new">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.from_new--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.training_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      training_step
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="training_step">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.training_step--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.training_step--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.validation_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      validation_step
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="validation_step">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.validation_step--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.LitSegger.validation_step--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segger.training.Segger" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segger
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Segger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.Segger.decode" class="md-nav__link">
+    <span class="md-ellipsis">
+      decode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.Segger.forward" class="md-nav__link">
+    <span class="md-ellipsis">
+      forward
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      SpatialTranscriptomicsDataset
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SpatialTranscriptomicsDataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.processed_file_names" class="md-nav__link">
+    <span class="md-ellipsis">
+      processed_file_names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.raw_file_names" class="md-nav__link">
+    <span class="md-ellipsis">
+      raw_file_names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.download" class="md-nav__link">
+    <span class="md-ellipsis">
+      download
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.get" class="md-nav__link">
+    <span class="md-ellipsis">
+      get
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.len" class="md-nav__link">
+    <span class="md-ellipsis">
+      len
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segger.training.SpatialTranscriptomicsDataset.process" class="md-nav__link">
+    <span class="md-ellipsis">
+      process
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prediction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prediction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="seggertraining">segger.training<a class="headerlink" href="#seggertraining" title="Permanent link">&para;</a></h1>
+<p>training module for Segger.</p>
+<p>Contains the implementation of the Segger model using Graph Neural Networks.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="segger.training"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="segger.training.LitSegger" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">LitSegger</span>
+
+
+<a href="#segger.training.LitSegger" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">LitSegger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pytorch_lightning.LightningModule">LightningModule</span></code></p>
+
+
+        <p>LitSegger is a PyTorch Lightning module for training and validating the Segger model.</p>
+<h5 id="segger.training.LitSegger--attributes">Attributes<a class="headerlink" href="#segger.training.LitSegger--attributes" title="Permanent link">&para;</a></h5>
+<p>model : Segger
+    The Segger model wrapped with PyTorch Geometric's to_hetero for heterogeneous graph support.
+validation_step_outputs : list
+    A list to store outputs from the validation steps.
+criterion : torch.nn.Module
+    The loss function used for training, specifically BCEWithLogitsLoss.</p>
+
+        <p>Initializes the LitSegger module with the given parameters.</p>
+<h5 id="segger.training.LitSegger--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger--parameters" title="Permanent link">&para;</a></h5>
+<p>**kwargs : dict
+    Keyword arguments for initializing the module. Specific parameters
+    depend on whether the module is initialized with new parameters or components.</p>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>src/segger/training/train.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the LitSegger module with the given parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Keyword arguments for initializing the module. Specific parameters</span>
+<span class="sd">        depend on whether the module is initialized with new parameters or components.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+    <span class="n">new_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">from_new</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">cmp_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">from_components</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="c1"># Initialize with new parameters (ensure num_tx_tokens is passed here)</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">new_args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_new</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Initialize with existing components</span>
+    <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">cmp_args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_components</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Handle invalid arguments</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Supplied kwargs do not match either constructor. Should be one of &#39;</span><span class="si">{</span><span class="n">new_args</span><span class="si">}</span><span class="s2">&#39; or &#39;</span><span class="si">{</span><span class="n">cmp_args</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">validation_step_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.configure_optimizers" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">configure_optimizers</span>
+
+
+<a href="#segger.training.LitSegger.configure_optimizers" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">configure_optimizers</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Configures the optimizer for training.</p>
+<h6 id="segger.training.LitSegger.configure_optimizers--returns">Returns<a class="headerlink" href="#segger.training.LitSegger.configure_optimizers--returns" title="Permanent link">&para;</a></h6>
+<p>torch.optim.Optimizer
+    The optimizer for training.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configures the optimizer for training.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.optim.Optimizer</span>
+<span class="sd">        The optimizer for training.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">optimizer</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.forward" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">forward</span>
+
+
+<a href="#segger.training.LitSegger.forward" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">forward</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Forward pass for the batch of data.</p>
+<h6 id="segger.training.LitSegger.forward--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger.forward--parameters" title="Permanent link">&para;</a></h6>
+<p>batch : SpatialTranscriptomicsDataset
+    The batch of data, including node features and edge indices.</p>
+<h6 id="segger.training.LitSegger.forward--returns">Returns<a class="headerlink" href="#segger.training.LitSegger.forward--returns" title="Permanent link">&para;</a></h6>
+<p>torch.Tensor
+    The output of the model.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">SpatialTranscriptomicsDataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Forward pass for the batch of data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    batch : SpatialTranscriptomicsDataset</span>
+<span class="sd">        The batch of data, including node features and edge indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        The output of the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>  <span class="c1"># Example for bipartite graph</span>
+    <span class="k">return</span> <span class="n">output</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.from_components" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_components</span>
+
+
+<a href="#segger.training.LitSegger.from_components" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_components</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initializes the LitSegger module with existing Segger components.</p>
+<h6 id="segger.training.LitSegger.from_components--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger.from_components--parameters" title="Permanent link">&para;</a></h6>
+<p>model : Segger
+    The Segger model to be used.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">from_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Segger</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the LitSegger module with existing Segger components.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Segger</span>
+<span class="sd">        The Segger model to be used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.from_new" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_new</span>
+
+
+<a href="#segger.training.LitSegger.from_new" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_new</span><span class="p">(</span><span class="n">num_tx_tokens</span><span class="p">,</span> <span class="n">init_emb</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">num_mid_layers</span><span class="p">,</span> <span class="n">aggr</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initializes the LitSegger module with new parameters.</p>
+<h6 id="segger.training.LitSegger.from_new--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger.from_new--parameters" title="Permanent link">&para;</a></h6>
+<p>num_tx_tokens : int
+    Number of unique 'tx' tokens for embedding (this must be passed here).
+init_emb : int
+    Initial embedding size.
+hidden_channels : int
+    Number of hidden channels.
+out_channels : int
+    Number of output channels.
+heads : int
+    Number of attention heads.
+aggr : str
+    Aggregation method for heterogeneous graph conversion.
+num_mid_layers: int
+    Number of hidden layers (excluding first and last layers).
+metadata : Union[Tuple, Metadata]
+    Metadata for heterogeneous graph structure.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">from_new</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">num_tx_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">init_emb</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">num_mid_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the LitSegger module with new parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    num_tx_tokens : int</span>
+<span class="sd">        Number of unique &#39;tx&#39; tokens for embedding (this must be passed here).</span>
+<span class="sd">    init_emb : int</span>
+<span class="sd">        Initial embedding size.</span>
+<span class="sd">    hidden_channels : int</span>
+<span class="sd">        Number of hidden channels.</span>
+<span class="sd">    out_channels : int</span>
+<span class="sd">        Number of output channels.</span>
+<span class="sd">    heads : int</span>
+<span class="sd">        Number of attention heads.</span>
+<span class="sd">    aggr : str</span>
+<span class="sd">        Aggregation method for heterogeneous graph conversion.</span>
+<span class="sd">    num_mid_layers: int</span>
+<span class="sd">        Number of hidden layers (excluding first and last layers).</span>
+<span class="sd">    metadata : Union[Tuple, Metadata]</span>
+<span class="sd">        Metadata for heterogeneous graph structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create the Segger model (ensure num_tx_tokens is passed here)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Segger</span><span class="p">(</span>
+        <span class="n">num_tx_tokens</span><span class="o">=</span><span class="n">num_tx_tokens</span><span class="p">,</span>  <span class="c1"># This is required and must be passed here</span>
+        <span class="n">init_emb</span><span class="o">=</span><span class="n">init_emb</span><span class="p">,</span>
+        <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span>
+        <span class="n">out_channels</span><span class="o">=</span><span class="n">out_channels</span><span class="p">,</span>
+        <span class="n">heads</span><span class="o">=</span><span class="n">heads</span><span class="p">,</span>
+        <span class="n">num_mid_layers</span><span class="o">=</span><span class="n">num_mid_layers</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Convert model to handle heterogeneous graphs</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">to_hetero</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="c1"># Save hyperparameters</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.training_step" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">training_step</span>
+
+
+<a href="#segger.training.LitSegger.training_step" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">training_step</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Defines the training step.</p>
+<h6 id="segger.training.LitSegger.training_step--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger.training_step--parameters" title="Permanent link">&para;</a></h6>
+<p>batch : Any
+    The batch of data.
+batch_idx : int
+    The index of the batch.</p>
+<h6 id="segger.training.LitSegger.training_step--returns">Returns<a class="headerlink" href="#segger.training.LitSegger.training_step--returns" title="Permanent link">&para;</a></h6>
+<p>torch.Tensor
+    The loss value for the current training step.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines the training step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    batch : Any</span>
+<span class="sd">        The batch of data.</span>
+<span class="sd">    batch_idx : int</span>
+<span class="sd">        The index of the batch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        The loss value for the current training step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Forward pass to get the logits</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+
+    <span class="c1"># Get edge labels and logits</span>
+    <span class="n">edge_label_index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;belongs&quot;</span><span class="p">,</span> <span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label_index</span>
+    <span class="n">out_values</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="n">edge_label_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_label_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">edge_label</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;belongs&quot;</span><span class="p">,</span> <span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label</span>
+
+    <span class="c1"># Compute binary cross-entropy loss with logits (no sigmoid here)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">out_values</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+
+    <span class="c1"># Log the training loss</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;train_loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loss</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.LitSegger.validation_step" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validation_step</span>
+
+
+<a href="#segger.training.LitSegger.validation_step" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validation_step</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Defines the validation step.</p>
+<h6 id="segger.training.LitSegger.validation_step--parameters">Parameters<a class="headerlink" href="#segger.training.LitSegger.validation_step--parameters" title="Permanent link">&para;</a></h6>
+<p>batch : Any
+    The batch of data.
+batch_idx : int
+    The index of the batch.</p>
+<h6 id="segger.training.LitSegger.validation_step--returns">Returns<a class="headerlink" href="#segger.training.LitSegger.validation_step--returns" title="Permanent link">&para;</a></h6>
+<p>torch.Tensor
+    The loss value for the current validation step.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/training/train.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines the validation step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    batch : Any</span>
+<span class="sd">        The batch of data.</span>
+<span class="sd">    batch_idx : int</span>
+<span class="sd">        The index of the batch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        The loss value for the current validation step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Forward pass to get the logits</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+
+    <span class="c1"># Get edge labels and logits</span>
+    <span class="n">edge_label_index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;belongs&quot;</span><span class="p">,</span> <span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label_index</span>
+    <span class="n">out_values</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="n">edge_label_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_label_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">edge_label</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;belongs&quot;</span><span class="p">,</span> <span class="s2">&quot;bd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label</span>
+
+    <span class="c1"># Compute binary cross-entropy loss with logits (no sigmoid here)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">out_values</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+
+    <span class="c1"># Apply sigmoid to logits for AUROC and F1 metrics</span>
+    <span class="n">out_values_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">out_values</span><span class="p">)</span>
+
+    <span class="c1"># Compute metrics</span>
+    <span class="n">auroc</span> <span class="o">=</span> <span class="n">torchmetrics</span><span class="o">.</span><span class="n">AUROC</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+    <span class="n">auroc_res</span> <span class="o">=</span> <span class="n">auroc</span><span class="p">(</span><span class="n">out_values_prob</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+
+    <span class="n">f1</span> <span class="o">=</span> <span class="n">F1Score</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">f1_res</span> <span class="o">=</span> <span class="n">f1</span><span class="p">(</span><span class="n">out_values_prob</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+
+    <span class="c1"># Log validation metrics</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_auroc&quot;</span><span class="p">,</span> <span class="n">auroc_res</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_f1&quot;</span><span class="p">,</span> <span class="n">f1_res</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">loss</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="segger.training.Segger" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Segger</span>
+
+
+<a href="#segger.training.Segger" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Segger</span><span class="p">(</span><span class="n">num_tx_tokens</span><span class="p">,</span> <span class="n">init_emb</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_mid_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">heads</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="torch.nn.Module">Module</span></code></p>
+
+
+        <p>Initializes the Segger model.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_tx_tokens</code>
+            </td>
+            <td>
+                  <code>int)  </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of unique 'tx' tokens for embedding.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>init_emb</code>
+            </td>
+            <td>
+                  <code>int)       </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial embedding size for both 'tx' and boundary (non-token) nodes.</p>
+              </div>
+            </td>
+            <td>
+                  <code>16</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hidden_channels</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of hidden channels.</p>
+              </div>
+            </td>
+            <td>
+                  <code>32</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_mid_layers</code>
+            </td>
+            <td>
+                  <code>int) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of hidden layers (excluding first and last layers).</p>
+              </div>
+            </td>
+            <td>
+                  <code>3</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>out_channels</code>
+            </td>
+            <td>
+                  <code>int)   </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of output channels.</p>
+              </div>
+            </td>
+            <td>
+                  <code>32</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>heads</code>
+            </td>
+            <td>
+                  <code>int)          </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of attention heads.</p>
+              </div>
+            </td>
+            <td>
+                  <code>3</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>src/segger/models/segger_model.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">num_tx_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">init_emb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+    <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">num_mid_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the Segger model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        num_tx_tokens (int)  : Number of unique &#39;tx&#39; tokens for embedding.</span>
+<span class="sd">        init_emb (int)       : Initial embedding size for both &#39;tx&#39; and boundary (non-token) nodes.</span>
+<span class="sd">        hidden_channels (int): Number of hidden channels.</span>
+<span class="sd">        num_mid_layers (int) : Number of hidden layers (excluding first and last layers).</span>
+<span class="sd">        out_channels (int)   : Number of output channels.</span>
+<span class="sd">        heads (int)          : Number of attention heads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="c1"># Embedding for &#39;tx&#39; (transcript) nodes</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">tx_embedding</span> <span class="o">=</span> <span class="n">Embedding</span><span class="p">(</span><span class="n">num_tx_tokens</span><span class="p">,</span> <span class="n">init_emb</span><span class="p">)</span>
+
+    <span class="c1"># Linear layer for boundary (non-token) nodes</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lin0</span> <span class="o">=</span> <span class="n">Linear</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">init_emb</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># First GATv2Conv layer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">conv_first</span> <span class="o">=</span> <span class="n">GATv2Conv</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">heads</span><span class="o">=</span><span class="n">heads</span><span class="p">,</span> <span class="n">add_self_loops</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lin_first</span> <span class="o">=</span> <span class="n">Linear</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">hidden_channels</span> <span class="o">*</span> <span class="n">heads</span><span class="p">)</span>
+
+    <span class="c1"># Middle GATv2Conv layers</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">num_mid_layers</span> <span class="o">=</span> <span class="n">num_mid_layers</span>
+    <span class="k">if</span> <span class="n">num_mid_layers</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_mid_layers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lin_mid_layers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_mid_layers</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv_mid_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GATv2Conv</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">heads</span><span class="o">=</span><span class="n">heads</span><span class="p">,</span> <span class="n">add_self_loops</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lin_mid_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Linear</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">hidden_channels</span> <span class="o">*</span> <span class="n">heads</span><span class="p">))</span>
+
+    <span class="c1"># Last GATv2Conv layer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">conv_last</span> <span class="o">=</span> <span class="n">GATv2Conv</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">heads</span><span class="o">=</span><span class="n">heads</span><span class="p">,</span> <span class="n">add_self_loops</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lin_last</span> <span class="o">=</span> <span class="n">Linear</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_channels</span> <span class="o">*</span> <span class="n">heads</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.Segger.decode" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">decode</span>
+
+
+<a href="#segger.training.Segger.decode" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">decode</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Decode the node embeddings to predict edge values.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>z</code>
+            </td>
+            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Node embeddings.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>edge_index</code>
+            </td>
+            <td>
+                  <code>EdgeIndex</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Edge label indices.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Tensor</code></td>            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Predicted edge values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/models/segger_model.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decode the node embeddings to predict edge values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        z (Tensor): Node embeddings.</span>
+<span class="sd">        edge_index (EdgeIndex): Edge label indices.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Predicted edge values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">z</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.Segger.forward" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">forward</span>
+
+
+<a href="#segger.training.Segger.forward" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Forward pass for the Segger model.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>x</code>
+            </td>
+            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Node features.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>edge_index</code>
+            </td>
+            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Edge indices.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Tensor</code></td>            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output node embeddings.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/models/segger_model.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Forward pass for the Segger model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (Tensor): Node features.</span>
+<span class="sd">        edge_index (Tensor): Edge indices.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Output node embeddings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">is_one_dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span>
+    <span class="c1"># x = x[:, None]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_embedding</span><span class="p">(((</span><span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">is_one_dim</span><span class="p">)</span><span class="o">.</span><span class="n">int</span><span class="p">()))</span> <span class="o">*</span> <span class="n">is_one_dim</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin0</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">float</span><span class="p">())</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">is_one_dim</span><span class="p">)</span>
+    <span class="c1"># First layer</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">relu</span><span class="p">()</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_first</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">)</span>  <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_first</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">relu</span><span class="p">()</span>
+
+    <span class="c1"># Middle layers</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_mid_layers</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_mid_layers</span><span class="p">):</span>
+            <span class="n">conv_mid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_mid_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">lin_mid</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_mid_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">conv_mid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">)</span>  <span class="o">+</span> <span class="n">lin_mid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">relu</span><span class="p">()</span>
+
+    <span class="c1"># Last layer</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_last</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">)</span>  <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_last</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">x</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="segger.training.SpatialTranscriptomicsDataset" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">SpatialTranscriptomicsDataset</span>
+
+
+<a href="#segger.training.SpatialTranscriptomicsDataset" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">SpatialTranscriptomicsDataset</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pre_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="torch_geometric.data.InMemoryDataset">InMemoryDataset</span></code></p>
+
+
+        <p>A dataset class for handling SpatialTranscriptomics spatial transcriptomics data.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="segger.training.SpatialTranscriptomicsDataset.root">root</span></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The root directory where the dataset is stored.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="segger.training.SpatialTranscriptomicsDataset.transform">transform</span></code></td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function/transform that takes in a Data object and returns a transformed version.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="segger.training.SpatialTranscriptomicsDataset.pre_transform">pre_transform</span></code></td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function/transform that takes in a Data object and returns a transformed version.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="segger.training.SpatialTranscriptomicsDataset.pre_filter">pre_filter</span></code></td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function that takes in a Data object and returns a boolean indicating whether to keep it.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Initialize the SpatialTranscriptomicsDataset.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>root</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Root directory where the dataset is stored.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>transform</code>
+            </td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>pre_transform</code>
+            </td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>pre_filter</code>
+            </td>
+            <td>
+                  <code>callable</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>src/segger/data/utils.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pre_filter</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the SpatialTranscriptomicsDataset.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (str): Root directory where the dataset is stored.</span>
+<span class="sd">        transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</span>
+<span class="sd">        pre_transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version. Defaults to None.</span>
+<span class="sd">        pre_filter (callable, optional): A function that takes in a Data object and returns a boolean indicating whether to keep it. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">pre_filter</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.processed_file_names" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">processed_file_names</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.processed_file_names" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">processed_file_names</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a list of processed file names in the processed directory.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[str]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[str]: List of processed file names.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.raw_file_names" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">raw_file_names</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.raw_file_names" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">raw_file_names</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a list of raw file names in the raw directory.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[str]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[str]: List of raw file names.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.download" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">download</span>
+
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.download" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">download</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Download the raw data. This method should be overridden if you need to download the data.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/data/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download the raw data. This method should be overridden if you need to download the data.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.get" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get</span>
+
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.get" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get a processed data object.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>idx</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Index of the data object to retrieve.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Data</code></td>            <td>
+                  <code><span title="torch_geometric.data.Data">Data</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The processed data object.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/data/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a processed data object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        idx (int): Index of the data object to retrieve.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Data: The processed data object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_file_names</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tx&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_dense</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">data</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.len" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">len</span>
+
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.len" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">len</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the number of processed files.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>int</code></td>            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of processed files.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/data/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the number of processed files.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Number of processed files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_file_names</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="segger.training.SpatialTranscriptomicsDataset.process" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">process</span>
+
+
+<a href="#segger.training.SpatialTranscriptomicsDataset.process" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">process</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/segger/data/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process the raw data and save it to the processed directory. This method should be overridden if you need to process the data.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+        <script src="../../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://unpkg.com/termynal@0.0.1/termynal.js"></script>
+      
+        <script src="../../termynal.js"></script>
+      
+    
+  </body>
+</html>
