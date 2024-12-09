@@ -647,14 +647,14 @@ def segment(
             step_start_time = time()
             print(f"Saving transcirpts.parquet...")
         transcripts_save_path = save_dir / "segger_transcripts.parquet"
-        transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
+        # transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
         transcripts_df_filtered.to_parquet(
             transcripts_save_path,
             engine="pyarrow",  # PyArrow is faster and recommended
             compression="snappy",  # Use snappy compression for speed
-            write_index=False,  # Skip writing index if not needed
-            append=False,  # Set to True if you're appending to an existing Parquet file
-            overwrite=True,
+            # write_index=False,  # Skip writing index if not needed
+            # append=False,  # Set to True if you're appending to an existing Parquet file
+            # overwrite=True,
         )  # Dask handles Parquet well
         if verbose:
             elapsed_time = time() - step_start_time
@@ -665,7 +665,7 @@ def segment(
             step_start_time = time()
             print(f"Saving anndata object...")
         anndata_save_path = save_dir / "segger_adata.h5ad"
-        segger_adata = create_anndata(transcripts_df_filtered.compute(), **anndata_kwargs)  # Compute for AnnData
+        segger_adata = create_anndata(transcripts_df_filtered, **anndata_kwargs)  # Compute for AnnData
         segger_adata.write(anndata_save_path)
         if verbose:
             elapsed_time = time() - step_start_time
