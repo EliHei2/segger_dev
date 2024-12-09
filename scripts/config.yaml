@@ -43,6 +43,10 @@ training:
   num_workers: 12
   accelerator: "cuda"
   max_epochs: 200
+  save_best_model: true
+  learning_rate: 1e-3
+  pretrained_model_dir: null
+  pretrained_model_version: 0
   devices: 8
   strategy: "auto"
   precision: "16-mixed"
@@ -50,7 +54,7 @@ training:
   gpu_memory: "8G" # this is ignored if use_lsf is false
 
 prediction:
-  output_log: "predict_parquet_final_output.log"
+  output_log: "predict_parquet_output.log"
   segger_data_dir: "data_segger"
   models_dir: "model_dir"
   benchmarks_dir: "benchmark_dir"

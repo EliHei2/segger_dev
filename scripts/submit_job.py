@@ -151,6 +151,10 @@ def run_training():
             config["training"]["accelerator"],
             "--max_epochs",
             str(config["training"]["max_epochs"]),
+            "--save_best_model",
+            str(config["training"]["save_best_model"]),
+            "--learning_rate",
+            str(config["training"]["learning_rate"]),
             "--devices",
             str(config["training"]["devices"]),
             "--strategy",
@@ -159,6 +163,11 @@ def run_training():
             config["training"]["precision"],
         ]
     )
+
+    if config["training"].get("pretrained_model_dir") is not None:
+        command.extend(["--pretrained_model_dir", config["training"]["pretrained_model_dir"]])
+    if config["training"].get("pretrained_model_version") is not None:
+        command.extend(["--pretrained_model_version", str(config["training"]["pretrained_model_version"])])
 
     if config.get("use_lsf", False):
         command = [
