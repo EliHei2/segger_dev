@@ -1,0 +1,1202 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fast and accurate cell segmentation for single-molecule spatial omics">
+      
+      
+        <meta name="author" content="Elyas Heidari">
+      
+      
+        <link rel="canonical" href="https://EliHei2.github.io/segger_dev/user_guide/data_creation/">
+      
+      
+        <link rel="prev" href="../../installation/">
+      
+      
+        <link rel="next" href="../training/">
+      
+      
+      <link rel="icon" href="../../images/logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
+    
+    
+      
+        <title>Dataset Creation - segger Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=ubuntu:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"ubuntu";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/termynal@0.0.1/termynal.css">
+    
+      <link rel="stylesheet" href="../../termynal.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-preparation-for-segger" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="segger Documentation" class="md-header__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            segger Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dataset Creation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="segger Documentation" class="md-nav__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    segger Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Dataset Creation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Dataset Creation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Steps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-spatialtranscriptomicssample-abstract-base-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. SpatialTranscriptomicsSample (Abstract Base Class)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. SpatialTranscriptomicsSample (Abstract Base Class)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Methods:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-xeniumsample-and-merscopesample-child-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. XeniumSample and MerscopeSample (Child Classes)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-data-loading-and-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Data Loading and Filtering
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-tiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Tiling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-graph-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Graph Construction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-label-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Label Computation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-train-test-validation-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Train, Test, Validation Splitting
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xenium-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Xenium Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#merscope-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Merscope Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/segger_tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction to Segger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/prediction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prediction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="data-preparation-for-segger">Data Preparation for <code>segger</code><a class="headerlink" href="#data-preparation-for-segger" title="Permanent link">&para;</a></h1>
+<p>The <code>segger</code> package provides a comprehensive data preparation module for cell segmentation and subsequent graph-based deep learning tasks by leveraging scalable and efficient processing tools. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently, <code>segger</code> supports <strong>Xenium</strong> and <strong>Merscope</strong> datasets. </p>
+</div>
+<h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
+<p>The data preparation module offers the following key functionalities:</p>
+<ol>
+<li><strong>Lazy Loading of Large Datasets</strong>: Utilizes <strong>Dask</strong> to handle large-scale transcriptomics and boundary datasets efficiently, avoiding memory bottlenecks.</li>
+<li><strong>Initial Filtering</strong>: Filters transcripts based on quality metrics and dataset-specific criteria to ensure data integrity and relevance.</li>
+<li><strong>Tiling</strong>: Divides datasets into spatial tiles, essential for localized graph-based models and parallel processing.</li>
+<li><strong>Graph Construction</strong>: Converts spatial data into graph formats using <strong>PyTorch Geometric (PyG)</strong>, enabling the application of graph neural networks (GNNs).</li>
+<li><strong>Boundary Processing</strong>: Handles polygons, performs spatial geometrical calculations, and checks transcript overlaps with boundaries.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Key Technologies</p>
+<ul>
+<li><strong>Dask</strong>: Facilitates parallel and lazy data processing, enabling scalable handling of large datasets.</li>
+<li><strong>PyTorch Geometric (PyG)</strong>: Enables the construction of graph-based data representations suitable for GNNs.</li>
+<li><strong>Shapely &amp; Geopandas</strong>: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.</li>
+<li><strong>Dask-Geopandas</strong>: Extends Geopandas for parallel processing of geospatial data, enhancing scalability.</li>
+</ul>
+</div>
+<h2 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">&para;</a></h2>
+<h3 id="1-spatialtranscriptomicssample-abstract-base-class">1. <code>SpatialTranscriptomicsSample</code> (Abstract Base Class)<a class="headerlink" href="#1-spatialtranscriptomicssample-abstract-base-class" title="Permanent link">&para;</a></h3>
+<p>This abstract class defines the foundational structure for managing spatial transcriptomics datasets. It provides essential methods for:</p>
+<ul>
+<li><strong>Loading Data</strong>: Scalable loading of transcript and boundary data using Dask.</li>
+<li><strong>Filtering Transcripts</strong>: Applying quality-based or dataset-specific filtering criteria.</li>
+<li><strong>Spatial Relationships</strong>: Computing overlaps and spatial relationships between transcripts and boundaries.</li>
+<li><strong>Tiling</strong>: Dividing datasets into smaller spatial tiles for localized processing.</li>
+<li><strong>Graph Preparation</strong>: Converting data tiles into <code>PyTorch Geometric</code> graph structures.</li>
+</ul>
+<h4 id="key-methods">Key Methods:<a class="headerlink" href="#key-methods" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong><code>load_transcripts()</code></strong>: Loads transcriptomic data from Parquet files, applies quality filtering, and incorporates additional gene embeddings.</li>
+<li><strong><code>load_boundaries()</code></strong>: Loads boundary data (e.g., cell or nucleus boundaries) from Parquet files.</li>
+<li><strong><code>get_tile_data()</code></strong>: Retrieves transcriptomic and boundary data within specified spatial bounds.</li>
+<li><strong><code>generate_and_scale_polygons()</code></strong>: Creates and scales polygon representations of boundaries for spatial computations.</li>
+<li><strong><code>compute_transcript_overlap_with_boundaries()</code></strong>: Determines the association of transcripts with boundary polygons.</li>
+<li><strong><code>build_pyg_data_from_tile()</code></strong>: Converts tile-specific data into <code>HeteroData</code> objects suitable for PyG models.</li>
+</ul>
+<h3 id="2-xeniumsample-and-merscopesample-child-classes">2. <code>XeniumSample</code> and <code>MerscopeSample</code> (Child Classes)<a class="headerlink" href="#2-xeniumsample-and-merscopesample-child-classes" title="Permanent link">&para;</a></h3>
+<p>These classes inherit from <code>SpatialTranscriptomicsSample</code> and implement dataset-specific processing logic:</p>
+<ul>
+<li><strong><code>XeniumSample</code></strong>: Tailored for <strong>Xenium</strong> datasets, it includes specific filtering rules to exclude unwanted transcripts based on naming patterns (e.g., <code>NegControlProbe_</code>, <code>BLANK_</code>).</li>
+<li><strong><code>MerscopeSample</code></strong>: Designed for <strong>Merscope</strong> datasets, allowing for custom filtering and processing logic as needed.</li>
+</ul>
+<h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
+<p>The dataset creation and processing workflow involves several key steps, each ensuring that the spatial transcriptomics data is appropriately prepared for downstream machine learning tasks.</p>
+<h3 id="step-1-data-loading-and-filtering">Step 1: Data Loading and Filtering<a class="headerlink" href="#step-1-data-loading-and-filtering" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Transcriptomic Data</strong>: Loaded lazily using Dask to handle large datasets efficiently. Custom filtering rules specific to the dataset (Xenium or Merscope) are applied to ensure data quality.</li>
+<li><strong>Boundary Data</strong>: Loaded similarly using Dask, representing spatial structures such as cell or nucleus boundaries.</li>
+</ul>
+<h3 id="step-2-tiling">Step 2: Tiling<a class="headerlink" href="#step-2-tiling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Spatial Segmentation</strong>: The dataset is divided into smaller, manageable tiles of size <span class="arithmatex">\(x_{\text{size}} \times y_{\text{size}}\)</span>, defined by their top-left corner coordinates <span class="arithmatex">\((x_i, y_j)\)</span>.</li>
+</ul>
+<div class="arithmatex">\[
+n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
+\]</div>
+<p>Where:
+  - <span class="arithmatex">\(x_{\text{min}}, y_{\text{min}}\)</span>: Minimum spatial coordinates.
+  - <span class="arithmatex">\(x_{\text{max}}, y_{\text{max}}\)</span>: Maximum spatial coordinates.
+  - <span class="arithmatex">\(d_x, d_y\)</span>: Step sizes along the <span class="arithmatex">\(x\)</span>- and <span class="arithmatex">\(y\)</span>-axes, respectively.</p>
+<ul>
+<li><strong>Transcript and Boundary Inclusion</strong>: For each tile, transcripts and boundaries within the spatial bounds (with optional margins) are included:</li>
+</ul>
+<div class="arithmatex">\[ 
+x_i - \text{margin}_x \leq x_t &lt; x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t &lt; y_j + y_{\text{size}} + \text{margin}_y 
+\]</div>
+<p>Where:
+  - <span class="arithmatex">\(x_t, y_t\)</span>: Transcript coordinates.
+  - <span class="arithmatex">\(\text{margin}_x, \text{margin}_y\)</span>: Optional margins to include contextual data.</p>
+<h3 id="step-3-graph-construction">Step 3: Graph Construction<a class="headerlink" href="#step-3-graph-construction" title="Permanent link">&para;</a></h3>
+<p>For each tile, a graph <span class="arithmatex">\(G\)</span> is constructed with:</p>
+<ul>
+<li><strong>Nodes (<span class="arithmatex">\(V\)</span>)</strong>:</li>
+<li><strong>Transcripts</strong>: Represented by their spatial coordinates <span class="arithmatex">\((x_t, y_t)\)</span> and feature vectors <span class="arithmatex">\(\mathbf{f}_t\)</span>.</li>
+<li>
+<p><strong>Boundaries</strong>: Represented by centroid coordinates <span class="arithmatex">\((x_b, y_b)\)</span> and associated properties (e.g., area).</p>
+</li>
+<li>
+<p><strong>Edges (<span class="arithmatex">\(E\)</span>)</strong>:</p>
+</li>
+<li>Created based on spatial proximity using methods like KD-Tree or FAISS.</li>
+<li>Defined by a distance threshold <span class="arithmatex">\(d\)</span> and the number of nearest neighbors <span class="arithmatex">\(k\)</span>:</li>
+</ul>
+<div class="arithmatex">\[ 
+E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) &lt; d, \, v_i \in V, \, v_j \in V \}
+\]</div>
+<h3 id="step-4-label-computation">Step 4: Label Computation<a class="headerlink" href="#step-4-label-computation" title="Permanent link">&para;</a></h3>
+<p>If enabled, edges can be labeled based on relationships, such as whether a transcript belongs to a boundary:</p>
+<div class="arithmatex">\[
+\text{label}(t, b) = 
+\begin{cases}
+1 &amp; \text{if } t \text{ belongs to } b \\
+0 &amp; \text{otherwise}
+\end{cases}
+\]</div>
+<h3 id="step-5-train-test-validation-splitting">Step 5: Train, Test, Validation Splitting<a class="headerlink" href="#step-5-train-test-validation-splitting" title="Permanent link">&para;</a></h3>
+<p>The dataset is partitioned into training, validation, and test sets based on predefined probabilities <span class="arithmatex">\(p_{\text{train}}, p_{\text{val}}, p_{\text{test}}\)</span>:</p>
+<div class="arithmatex">\[
+p_{\text{train}} + p_{\text{val}} + p_{\text{test}} = 1
+\]</div>
+<p>Each tile is randomly assigned to one of these sets according to the specified probabilities.</p>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<p>The final output consists of a set of tiles, each containing a graph representation of the spatial transcriptomics data. These tiles are stored in designated directories (<code>train_tiles</code>, <code>val_tiles</code>, <code>test_tiles</code>) and are ready for integration into machine learning pipelines.</p>
+<h2 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">&para;</a></h2>
+<p>Below are examples demonstrating how to utilize the <code>segger</code> data preparation module for both Xenium and Merscope datasets.</p>
+<h3 id="xenium-data">Xenium Data<a class="headerlink" href="#xenium-data" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data</span> <span class="kn">import</span> <span class="n">XeniumSample</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+
+<span class="c1"># Set up the file paths</span>
+<span class="n">raw_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/xenium_output&quot;</span><span class="p">)</span>
+<span class="n">processed_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/processed_files&quot;</span><span class="p">)</span>
+<span class="n">sample_tag</span> <span class="o">=</span> <span class="s2">&quot;sample/tag&quot;</span>
+
+<span class="c1"># Load scRNA-seq data using Scanpy and subsample for efficiency</span>
+<span class="n">scRNAseq_path</span> <span class="o">=</span> <span class="s2">&quot;path/to/scRNAseq.h5ad&quot;</span>
+<span class="n">scRNAseq</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">scRNAseq_path</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">scRNAseq</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="c1"># Calculate gene cell type abundance embedding from scRNA-seq data</span>
+<span class="kn">from</span> <span class="nn">segger.utils</span> <span class="kn">import</span> <span class="n">calculate_gene_celltype_abundance_embedding</span>
+
+<span class="n">celltype_column</span> <span class="o">=</span> <span class="s2">&quot;celltype_column&quot;</span>
+<span class="n">gene_celltype_abundance_embedding</span> <span class="o">=</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span>
+    <span class="n">scRNAseq</span><span class="p">,</span> <span class="n">celltype_column</span>
+<span class="p">)</span>
+
+<span class="c1"># Create a XeniumSample instance for spatial transcriptomics processing</span>
+<span class="n">xenium_sample</span> <span class="o">=</span> <span class="n">XeniumSample</span><span class="p">()</span>
+
+<span class="c1"># Load transcripts and include the calculated cell type abundance embedding</span>
+<span class="n">xenium_sample</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">(</span>
+    <span class="n">base_path</span><span class="o">=</span><span class="n">raw_data_dir</span><span class="p">,</span>
+    <span class="n">sample</span><span class="o">=</span><span class="n">sample_tag</span><span class="p">,</span>
+    <span class="n">transcripts_filename</span><span class="o">=</span><span class="s2">&quot;transcripts.parquet&quot;</span><span class="p">,</span>
+    <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">,</span>
+    <span class="n">additional_embeddings</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cell_type_abundance&quot;</span><span class="p">:</span> <span class="n">gene_celltype_abundance_embedding</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="c1"># Set the embedding to &quot;cell_type_abundance&quot; to use it in further processing</span>
+<span class="n">xenium_sample</span><span class="o">.</span><span class="n">set_embedding</span><span class="p">(</span><span class="s2">&quot;cell_type_abundance&quot;</span><span class="p">)</span>
+
+<span class="c1"># Load nuclei data to define boundaries</span>
+<span class="n">nuclei_path</span> <span class="o">=</span> <span class="n">raw_data_dir</span> <span class="o">/</span> <span class="n">sample_tag</span> <span class="o">/</span> <span class="s2">&quot;nucleus_boundaries.parquet&quot;</span>
+<span class="n">xenium_sample</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">nuclei_path</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
+
+<span class="c1"># Build PyTorch Geometric (PyG) data from a tile of the dataset</span>
+<span class="n">tile_pyg_data</span> <span class="o">=</span> <span class="n">xenium_sample</span><span class="o">.</span><span class="n">build_pyg_data_from_tile</span><span class="p">(</span>
+    <span class="n">boundaries_df</span><span class="o">=</span><span class="n">xenium_sample</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">,</span>
+    <span class="n">transcripts_df</span><span class="o">=</span><span class="n">xenium_sample</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">,</span>
+    <span class="n">r_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">use_precomputed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Save dataset in processed format for segmentation</span>
+<span class="n">xenium_sample</span><span class="o">.</span><span class="n">save_dataset_for_segger</span><span class="p">(</span>
+    <span class="n">processed_dir</span><span class="o">=</span><span class="n">processed_data_dir</span><span class="p">,</span>
+    <span class="n">x_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+    <span class="n">y_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+    <span class="n">d_x</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
+    <span class="n">d_y</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
+    <span class="n">margin_x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">margin_y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">compute_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">r_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">neg_sampling_ratio_approx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">sampling_rate</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="merscope-data">Merscope Data<a class="headerlink" href="#merscope-data" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data</span> <span class="kn">import</span> <span class="n">MerscopeSample</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Set up the file paths</span>
+<span class="n">raw_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/merscope_outputs&quot;</span><span class="p">)</span>
+<span class="n">processed_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/processed_files&quot;</span><span class="p">)</span>
+<span class="n">sample_tag</span> <span class="o">=</span> <span class="s2">&quot;sample_tag&quot;</span>
+
+<span class="c1"># Create a MerscopeSample instance for spatial transcriptomics processing</span>
+<span class="n">merscope_sample</span> <span class="o">=</span> <span class="n">MerscopeSample</span><span class="p">()</span>
+
+<span class="c1"># Load transcripts from a CSV file</span>
+<span class="n">merscope_sample</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">(</span>
+    <span class="n">base_path</span><span class="o">=</span><span class="n">raw_data_dir</span><span class="p">,</span>
+    <span class="n">sample</span><span class="o">=</span><span class="n">sample_tag</span><span class="p">,</span>
+    <span class="n">transcripts_filename</span><span class="o">=</span><span class="s2">&quot;transcripts.csv&quot;</span><span class="p">,</span>
+    <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Optionally load cell boundaries</span>
+<span class="n">cell_boundaries_path</span> <span class="o">=</span> <span class="n">raw_data_dir</span> <span class="o">/</span> <span class="n">sample_tag</span> <span class="o">/</span> <span class="s2">&quot;cell_boundaries.parquet&quot;</span>
+<span class="n">merscope_sample</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">cell_boundaries_path</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
+
+<span class="c1"># Filter transcripts based on specific criteria</span>
+<span class="n">filtered_transcripts</span> <span class="o">=</span> <span class="n">merscope_sample</span><span class="o">.</span><span class="n">filter_transcripts</span><span class="p">(</span>
+    <span class="n">merscope_sample</span><span class="o">.</span><span class="n">transcripts_df</span>
+<span class="p">)</span>
+
+<span class="c1"># Build PyTorch Geometric (PyG) data from a tile of the dataset</span>
+<span class="n">tile_pyg_data</span> <span class="o">=</span> <span class="n">merscope_sample</span><span class="o">.</span><span class="n">build_pyg_data_from_tile</span><span class="p">(</span>
+    <span class="n">boundaries_df</span><span class="o">=</span><span class="n">merscope_sample</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">,</span>
+    <span class="n">transcripts_df</span><span class="o">=</span><span class="n">filtered_transcripts</span><span class="p">,</span>
+    <span class="n">r_tx</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+    <span class="n">use_precomputed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Save dataset in processed format for segmentation</span>
+<span class="n">merscope_sample</span><span class="o">.</span><span class="n">save_dataset_for_segger</span><span class="p">(</span>
+    <span class="n">processed_dir</span><span class="o">=</span><span class="n">processed_data_dir</span><span class="p">,</span>
+    <span class="n">x_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+    <span class="n">y_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+    <span class="n">d_x</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
+    <span class="n">d_y</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
+    <span class="n">margin_x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">margin_y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">compute_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">r_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">neg_sampling_ratio_approx</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">sampling_rate</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">num_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+        <script src="../../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://unpkg.com/termynal@0.0.1/termynal.js"></script>
+      
+        <script src="../../termynal.js"></script>
+      
+    
+  </body>
+</html>
