@@ -223,5 +223,5 @@ class LitSegger(LightningModule):
         torch.optim.Optimizer
             The optimizer for training.
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, eps=10e-4)
         return optimizer
