@@ -50,6 +50,22 @@ max_epochs:
   type: int
   default: 200
   help: Number of epochs for training.
+save_best_model:
+  type: bool
+  default: true
+  help: Whether to save the best model.
+learning_rate:
+  type: float
+  default: 1e-3
+  help: Learning rate for training.
+pretrained_model_dir:
+  type: Path
+  default: null
+  help: Directory containing the pretrained model to use (if any).
+pretrained_model_version:
+  type: int
+  default: null
+  help: Version of pretrained model.
 devices:
   type: int
   default: 4

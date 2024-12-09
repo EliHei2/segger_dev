@@ -29,12 +29,14 @@ class LitSegger(LightningModule):
         The loss function used for training, specifically BCEWithLogitsLoss.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, learning_rate: float = 1e-3, **kwargs):
         """
         Initializes the LitSegger module with the given parameters.
 
         Parameters
         ----------
+        learning_rate : float
+            The learning rate for the optimizer.
         **kwargs : dict
             Keyword arguments for initializing the module. Specific parameters
             depend on whether the module is initialized with new parameters or components.
@@ -59,6 +61,7 @@ class LitSegger(LightningModule):
 
         self.validation_step_outputs = []
         self.criterion = torch.nn.BCEWithLogitsLoss()
+        self.learning_rate = learning_rate
 
     def from_new(
         self,
@@ -223,5 +226,5 @@ class LitSegger(LightningModule):
         torch.optim.Optimizer
             The optimizer for training.
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer

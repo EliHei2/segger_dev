@@ -31,6 +31,10 @@ help_msg = "Train the Segger segmentation model."
     "--accelerator", type=str, default="cuda", help='Device type to use for training (e.g., "cuda", "cpu").'
 )  # Ask for accelerator
 @click.option("--max_epochs", type=int, default=200, help="Number of epochs for training.")
+@click.option("--save_best_model", type=bool, default=True, help="Whether to save the best model.") # unused for now
+@click.option("--learning_rate", type=float, default=1e-3, help="Learning rate for training.")
+@click.option("--pretrained_model_dir", type=Path, default=None, help="Directory containing the pretrained modelDirectory containing the pretrained model to use (if any).")
+@click.option("--pretrained_model_version", type=int, default=None, help="Version of pretrained model.")
 @click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
 @click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
 @click.option("--precision", type=str, default="16-mixed", help="Precision for training.")
@@ -65,20 +69,28 @@ def train_model(args: Namespace):
     # Initialize model
     logging.info("Initializing Segger model and trainer...")
     metadata = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
-    ls = LitSegger(
-        num_tx_tokens=args.num_tx_tokens,
-        init_emb=args.init_emb,
-        hidden_channels=args.hidden_channels,
-        out_channels=args.out_channels,  # Hard-coded value
-        heads=args.heads,  # Hard-coded value
-        num_mid_layers=args.num_mid_layers,  # Hard-coded value
-        aggr="sum",  # Hard-coded value
-        metadata=metadata,
-    )
+
+    if args.pretrained_model_dir is not None:
+        logging.info("Loading pretrained model...")
+        from segger.prediction.predict_parquet import load_model
+        
+        ls = load_model(args.pretrained_model_dir / "lightning_logs" / f"version_{args.model_version}" / "checkpoints")
+    else:
+        ls = LitSegger(
+            num_tx_tokens=args.num_tx_tokens,
+            init_emb=args.init_emb,
+            hidden_channels=args.hidden_channels,
+            out_channels=args.out_channels,  # Hard-coded value
+            heads=args.heads,  # Hard-coded value
+            num_mid_layers=args.num_mid_layers,  # Hard-coded value
+            aggr="sum",  # Hard-coded value
+            learning_rate=args.learning_rate,
+            metadata=metadata,
+        )
 
     # Forward pass to initialize the model
     if args.devices > 1:
-        batch = dm.train[0]
+        batch = dm.train[0].to(ls.device)
         ls.forward(batch)
 
     # Initialize the Lightning trainer
