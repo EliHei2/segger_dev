@@ -62,7 +62,7 @@ prediction:
   min_transcripts: 5
   cell_id_col: segger_cell_id
   use_cc: false
-  knn_method: "cuda"
+  knn_method: "kd_tree"
   file_format: "anndata"
   k_bd: 4
   dist_bd: 15.0
