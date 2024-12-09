@@ -496,34 +496,6 @@ def segment(
     val_dataloader = dm.val_dataloader()
     test_dataloader = dm.test_dataloader()
 
-    # # Initialize Dask DataFrame for assignments
-    # output_ddf = None
-
-    # @dask.delayed
-    # def process_batch(batch, gpu_id):
-    #     # Assume you're using CuPy, and you need to use a specific GPU
-    #     predict_batch(
-    #         model,
-    #         batch,
-    #         score_cut,
-    #         receptive_field,
-    #         use_cc=use_cc,
-    #         knn_method=knn_method,
-    #         edge_index_save_path=edge_index_save_path,
-    #         output_ddf_save_path=output_ddf_save_path,
-    #         gpu_id=gpu_id
-    #     )
-
-    # delayed_tasks = [process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(dm.train)]
-    # # pqdm(delayed_tasks, n_jobs=len(gpu_ids), argument_type='delayed', progress_bar=True)
-    # # dask.compute(*delayed_tasks)
-    # # delayed_tasks = [process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(batches)]
-
-    # # Use tqdm for progress bar
-    # with ProgressBar():
-    #     # Execute the delayed tasks with a Dask compute call
-    #     dask.compute(*delayed_tasks)
-
     # Loop through the data loaders (train, val, and test)
     for loader_name, loader in zip(
         ["Train", "Validation", "Test"], [train_dataloader, val_dataloader, test_dataloader]
@@ -551,124 +523,122 @@ def segment(
         elapsed_time = time() - step_start_time
         print(f"Batch processing completed in {elapsed_time:.2f} seconds.")
 
-    # Load the full saved segmentation results
-    seg_final_dd = dd.read_parquet(output_ddf_save_path)
-    seg_final_dd = seg_final_dd.set_index("transcript_id", sorted=False)
-
+    seg_final_dd = pd.read_parquet(output_ddf_save_path)
+    seg_final_dd = seg_final_dd.set_index("transcript_id")
+    
     step_start_time = time()
     if verbose:
         print(f"Applying max score selection logic...")
-
+    
     # Step 1: Find max bound indices (bound == 1) and max unbound indices (bound == 0)
     max_bound_idx = seg_final_dd[seg_final_dd["bound"] == 1].groupby("transcript_id")["score"].idxmax()
     max_unbound_idx = seg_final_dd[seg_final_dd["bound"] == 0].groupby("transcript_id")["score"].idxmax()
-
+    
     # Step 2: Combine indices, prioritizing bound=1 scores
-    final_idx = max_bound_idx.combine_first(max_unbound_idx).compute()
-    print(final_idx)
-
+    final_idx = max_bound_idx.combine_first(max_unbound_idx)
+    
     # Step 3: Use the computed final_idx to select the best assignments
     # Make sure you are using the divisions and set the index correctly before loc
-    # seg_final_dd = seg_final_dd.set_index('transcript_id', sorted=True)
-    seg_final_filtered = seg_final_dd.loc[final_idx].compute()
-
+    seg_final_filtered = seg_final_dd.loc[final_idx]
+    
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Max score selection completed in {elapsed_time:.2f} seconds.")
-
+    
     # Step 3: Load the transcripts DataFrame and merge results
-
+    
     if verbose:
         print(f"Loading transcripts from {transcript_file}...")
-
-    transcripts_df = dd.read_parquet(transcript_file)
+    
+    transcripts_df = pd.read_parquet(transcript_file)
     transcripts_df["transcript_id"] = transcripts_df["transcript_id"].astype(str)
-
+    
     step_start_time = time()
     if verbose:
         print(f"Merging segmentation results with transcripts...")
-
+    
     # Outer merge to include all transcripts, even those without assigned cell ids
     transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
-
+    
     if verbose:
         elapsed_time = time() - step_start_time
-        print(f"Merging segmentation results with transcripts completed in {elapsed_time:.2f} seconds.")
+        print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")
+    
+    step_start_time = time()
+    if verbose:
+        print(f"Computing connected components for unassigned transcripts...")
+    # Load edge indices from saved Parquet
+    edge_index_dd = pd.read_parquet(edge_index_save_path)
+    
+    # Step 2: Get unique transcript_ids from edge_index_dd and their positional indices
+    transcript_ids_in_edges = pd.concat([edge_index_dd["source"], edge_index_dd["target"]]).unique()
+    
+    # Create a lookup table with unique indices
+    lookup_table = pd.Series(data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges).to_dict()
+    
+    # Map source and target to positional indices
+    edge_index_dd["index_source"] = edge_index_dd["source"].map(lookup_table)
+    edge_index_dd["index_target"] = edge_index_dd["target"].map(lookup_table)
+    # Step 3: Compute connected components for transcripts involved in edges
+    source_indices = np.asarray(edge_index_dd["index_source"])
+    target_indices = np.asarray(edge_index_dd["index_target"])
+    data_cp = np.ones(len(source_indices), dtype=np.float32)
+    
+    # Create the sparse COO matrix
+    coo_cp_matrix = scipy_coo_matrix(
+        (data_cp, (source_indices, target_indices)),
+        shape=(len(transcript_ids_in_edges), len(transcript_ids_in_edges)),
+    )
+    
+    # Use CuPy's connected components algorithm to compute components
+    n, comps = cc(coo_cp_matrix, directed=True, connection="strong")
+    if verbose:
+        elapsed_time = time() - step_start_time
+        print(f"Computed connected components for unassigned transcripts in {elapsed_time:.2f} seconds.")
+    
+    step_start_time = time()
+    if verbose:
+        print(f"The rest...")
+    # # Step 4: Map back the component labels to the original transcript_ids
+    
+    def _get_id():
+        """Generate a random Xenium-style ID."""
+        return "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
+    
+    new_ids = np.array([_get_id() for _ in range(n)])
+    comp_labels = new_ids[comps]
+    comp_labels = pd.Series(comp_labels, index=transcript_ids_in_edges)
+    # Step 5: Handle only unassigned transcripts in transcripts_df_filtered
+    unassigned_mask = transcripts_df_filtered["segger_cell_id"].isna()
+    
+    unassigned_transcripts_df = transcripts_df_filtered.loc[unassigned_mask, ["transcript_id"]]
+    
+    # Step 6: Map component labels only to unassigned transcript_ids
+    new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(comp_labels)
+    
+    # Step 7: Create a DataFrame with updated 'segger_cell_id' for unassigned transcripts
+    unassigned_transcripts_df = unassigned_transcripts_df.assign(segger_cell_id=new_segger_cell_ids)
+    
+    # Step 8: Merge this DataFrame back into the original to update only the unassigned segger_cell_id
+    
+    # Merging the updates back to the original DataFrame
+    transcripts_df_filtered = transcripts_df_filtered.merge(
+        unassigned_transcripts_df[["transcript_id", "segger_cell_id"]],
+        on="transcript_id",
+        how="left",  # Perform a left join to only update the unassigned rows
+        suffixes=("", "_new"),  # Suffix for new column to avoid overwriting
+    )
+    
+    # Step 9: Fill missing segger_cell_id values with the updated values from the merge
+    transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna(
+        transcripts_df_filtered["segger_cell_id_new"]
+    )
 
-    # Step 4: Handle unassigned transcripts using connected components (if use_cc=True)
-    if use_cc:
-
-        step_start_time = time()
-        if verbose:
-            print(f"Computing connected components for unassigned transcripts...")
-        # Load edge indices from saved Parquet
-        edge_index_dd = dd.read_parquet(edge_index_save_path)
-
-        # Step 2: Get unique transcript_ids from edge_index_dd and their positional indices
-        transcript_ids_in_edges = dd.concat([edge_index_dd["source"], edge_index_dd["target"]]).unique().compute()
-
-        # Create a lookup table with unique indices
-        lookup_table = pd.Series(data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges).to_dict()
-
-        # Map source and target to positional indices
-        edge_index_dd["index_source"] = edge_index_dd["source"].map(lookup_table)
-        edge_index_dd["index_target"] = edge_index_dd["target"].map(lookup_table)
-        # Step 3: Compute connected components for transcripts involved in edges
-        source_indices = np.asarray(edge_index_dd["index_source"].compute())
-        target_indices = np.asarray(edge_index_dd["index_target"].compute())
-        data_cp = np.ones(len(source_indices), dtype=cp.float32)
-
-        # Create the sparse COO matrix
-        coo_cp_matrix = scipy_coo_matrix(
-            (data_cp, (source_indices, target_indices)),
-            shape=(len(transcript_ids_in_edges), len(transcript_ids_in_edges)),
-        )
-
-        # Use CuPy's connected components algorithm to compute components
-        n, comps = cc(coo_cp_matrix, directed=True, connection="weak")
-
-        # Step 4: Map back the component labels to the original transcript_ids
-        comp_labels = pd.Series(comps, index=transcript_ids_in_edges)
-        # Step 5: Handle only unassigned transcripts in transcripts_df_filtered
-        unassigned_mask = transcripts_df_filtered["segger_cell_id"].isna()
-
-        unassigned_transcripts_df = transcripts_df_filtered.loc[unassigned_mask, ["transcript_id"]]
-
-        # Step 6: Map component labels only to unassigned transcript_ids
-        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(comp_labels)
-
-        # Step 7: Create a DataFrame with updated 'segger_cell_id' for unassigned transcripts
-        unassigned_transcripts_df = unassigned_transcripts_df.assign(segger_cell_id=new_segger_cell_ids)
-
-        # Step 8: Merge this DataFrame back into the original to update only the unassigned segger_cell_id
-        # We perform a left join so that only the rows in unassigned_transcripts_df are updated
-        # transcripts_df_filtered = transcripts_df_filtered.drop(columns='segger_cell_id')
-
-        # Merging the updates back to the original DataFrame
-        transcripts_df_filtered = transcripts_df_filtered.merge(
-            unassigned_transcripts_df[["transcript_id", "segger_cell_id"]],
-            on="transcript_id",
-            how="left",  # Perform a left join to only update the unassigned rows
-            suffixes=("", "_new"),  # Suffix for new column to avoid overwriting
-        )
-
-        # Step 9: Fill missing segger_cell_id values with the updated values from the merge
-        transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna(
-            transcripts_df_filtered["segger_cell_id_new"]
-        )
-
-        # Step 10: Clean up by dropping the temporary 'segger_cell_id_new' column
-        transcripts_df_filtered = transcripts_df_filtered.drop(columns=["segger_cell_id_new"])
-
-        # Fill the NaN values in segger_cell_id with the already existing (assigned) values
-        # transcripts_df_filtered['segger_cell_id'] = transcripts_df_filtered['segger_cell_id'].fillna(transcripts_df_filtered['segger_cell_id_target'])
-
-        # Drop any temporary columns used during the merge
-        # transcripts_df_filtered = transcripts_df_filtered.drop(columns=['segger_cell_id_target'])
-
-        if verbose:
-            elapsed_time = time() - step_start_time
-            print(f"Connected components computed in {elapsed_time:.2f} seconds.")
+    transcripts_df_filtered = transcripts_df_filtered.drop(columns=["segger_cell_id_new"])
+    
+    if verbose:
+        elapsed_time = time() - step_start_time
+        print(f"The rest computed in {elapsed_time:.2f} seconds.")
 
     # Step 5: Save the merged results based on options
 
