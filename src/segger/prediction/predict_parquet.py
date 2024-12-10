@@ -304,7 +304,7 @@ def predict_batch(
         """Generate a random Xenium-style ID."""
         return "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
 
-    print(gpu_id)
+    # print(gpu_id)
     with cp.cuda.Device(gpu_id):
         # Move the batch to the specified GPU
         batch = batch.to(f"cuda:{gpu_id}")
