@@ -1159,7 +1159,7 @@ class STTile:
 
         # If there are no tx-neighbors-tx edges, skip saving tile
         if nbrs_edge_idx.shape[1] == 0:
-            logging.warning(f"No tx-neighbors-tx edges found in tile {self.uid}.")
+            # logging.warning(f"No tx-neighbors-tx edges found in tile {self.uid}.")
             return None
 
         pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
@@ -1188,7 +1188,7 @@ class STTile:
 
         # If there are no tx-neighbors-bd edges, we put the tile automatically in test set
         if nbrs_edge_idx.numel() == 0:
-            logging.warning(f"No tx-neighbors-bd edges found in tile {self.uid}.")
+            # logging.warning(f"No tx-neighbors-bd edges found in tile {self.uid}.")
             pyg_data["tx", "belongs", "bd"].edge_index = torch.tensor([], dtype=torch.long)
             return pyg_data
 
@@ -1209,7 +1209,7 @@ class STTile:
 
         # If there are no tx-belongs-bd edges, flag tile as test only (cannot be used for training)
         if blng_edge_idx.numel() == 0:
-            logging.warning(f"No tx-belongs-bd edges found in tile {self.uid}.")
+            # logging.warning(f"No tx-belongs-bd edges found in tile {self.uid}.")
             return pyg_data
 
         # If there are tx-bd edges, add negative edges for training
