@@ -4,6 +4,6 @@ Prediction module for Segger.
 Contains prediction scripts and utilities for the Segger model.
 """
 
-__all__ = ["load_model", "predict"]
+__all__ = ["load_model", "segment"]
 
-from .predict import load_model, predict_parquet
+from .predict_parquet import load_model, segmenet
