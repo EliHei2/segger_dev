@@ -1151,8 +1151,8 @@ class STTile:
 
         # Set up Transcript-Transcript neighbor edges
         nbrs_edge_idx = self.get_kdtree_edge_index(
-            self.transcripts[self.settings.transcripts.xy],
-            self.transcripts[self.settings.transcripts.xy],
+            self.transcripts[self.settings.transcripts.xyz],
+            self.transcripts[self.settings.transcripts.xyz],
             k=k_tx,
             max_distance=dist_tx,
         )
