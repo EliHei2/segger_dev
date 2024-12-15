@@ -1,6 +1,4 @@
 import click
-import typing
-import os
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging
@@ -53,8 +51,10 @@ def train_model(args: Namespace):
 
     # Import packages
     logging.info("Importing packages...")
+    import torch
     from segger.training.train import LitSegger
     from segger.training.segger_data_module import SeggerDataModule
+    from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
     from pytorch_lightning import Trainer
 
@@ -72,31 +72,38 @@ def train_model(args: Namespace):
     logging.info("Done.")
 
     # Initialize model
-    logging.info("Initializing Segger model and trainer...")
-    metadata = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
-
     if args.pretrained_model_dir is not None:
         logging.info("Loading pretrained model...")
-        from segger.prediction.predict_parquet import load_model
-
         ls = load_model(args.pretrained_model_dir / "lightning_logs" / f"version_{args.model_version}" / "checkpoints")
     else:
+        logging.info("Creating new model...")
+        is_token_based = dm.train[0].x_dict["tx"].ndim == 1
+        if is_token_based:
+            # if the model is token-based, the input is a 1D tensor of token indices
+            assert dm.train[0].x_dict["tx"].ndim == 1
+            assert dm.train[0].x_dict["tx"].dtype == torch.long
+            num_tx_features = args.num_tx_tokens
+            print("Using token-based embeddings as node features, number of tokens: ", num_tx_features)
+        else:
+            # if the model is not token-based, the input is a 2D tensor of scRNAseq embeddings
+            assert dm.train[0].x_dict["tx"].ndim == 2
+            assert dm.train[0].x_dict["tx"].dtype == torch.float32
+            num_tx_features = dm.train[0].x_dict["tx"].shape[1]
+            print("Using scRNAseq embeddings as node features, number of features: ", num_tx_features)
+        num_bd_features = dm.train[0].x_dict["bd"].shape[1]
+        print("Number of boundary node features: ", num_bd_features)
         ls = LitSegger(
-            num_tx_tokens=args.num_tx_tokens,
+            is_token_based=is_token_based,
+            num_node_features={"tx": num_tx_features, "bd": num_bd_features},
             init_emb=args.init_emb,
             hidden_channels=args.hidden_channels,
-            out_channels=args.out_channels,  # Hard-coded value
-            heads=args.heads,  # Hard-coded value
-            num_mid_layers=args.num_mid_layers,  # Hard-coded value
+            out_channels=args.out_channels,
+            heads=args.heads,
+            num_mid_layers=args.num_mid_layers,
             aggr="sum",  # Hard-coded value
             learning_rate=args.learning_rate,
-            metadata=metadata,
         )
-
-    # Forward pass to initialize the model
-    if args.devices > 1:
-        batch = dm.train[0].to(ls.device)
-        ls.forward(batch)
+    logging.info("Done.")
 
     # Initialize the Lightning trainer
     trainer = Trainer(
