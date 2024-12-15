@@ -1,6 +1,4 @@
 import click
-import typing
-import os
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging
@@ -31,6 +29,15 @@ help_msg = "Train the Segger segmentation model."
     "--accelerator", type=str, default="cuda", help='Device type to use for training (e.g., "cuda", "cpu").'
 )  # Ask for accelerator
 @click.option("--max_epochs", type=int, default=200, help="Number of epochs for training.")
+@click.option("--save_best_model", type=bool, default=True, help="Whether to save the best model.")  # unused for now
+@click.option("--learning_rate", type=float, default=1e-3, help="Learning rate for training.")
+@click.option(
+    "--pretrained_model_dir",
+    type=Path,
+    default=None,
+    help="Directory containing the pretrained modelDirectory containing the pretrained model to use (if any).",
+)
+@click.option("--pretrained_model_version", type=int, default=None, help="Version of pretrained model.")
 @click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
 @click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
 @click.option("--precision", type=str, default="16-mixed", help="Precision for training.")
@@ -44,8 +51,10 @@ def train_model(args: Namespace):
 
     # Import packages
     logging.info("Importing packages...")
+    import torch
     from segger.training.train import LitSegger
     from segger.training.segger_data_module import SeggerDataModule
+    from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
     from pytorch_lightning import Trainer
 
@@ -63,23 +72,38 @@ def train_model(args: Namespace):
     logging.info("Done.")
 
     # Initialize model
-    logging.info("Initializing Segger model and trainer...")
-    metadata = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
-    ls = LitSegger(
-        num_tx_tokens=args.num_tx_tokens,
-        init_emb=args.init_emb,
-        hidden_channels=args.hidden_channels,
-        out_channels=args.out_channels,  # Hard-coded value
-        heads=args.heads,  # Hard-coded value
-        num_mid_layers=args.num_mid_layers,  # Hard-coded value
-        aggr="sum",  # Hard-coded value
-        metadata=metadata,
-    )
-
-    # Forward pass to initialize the model
-    if args.devices > 1:
-        batch = dm.train[0]
-        ls.forward(batch)
+    if args.pretrained_model_dir is not None:
+        logging.info("Loading pretrained model...")
+        ls = load_model(args.pretrained_model_dir / "lightning_logs" / f"version_{args.model_version}" / "checkpoints")
+    else:
+        logging.info("Creating new model...")
+        is_token_based = dm.train[0].x_dict["tx"].ndim == 1
+        if is_token_based:
+            # if the model is token-based, the input is a 1D tensor of token indices
+            assert dm.train[0].x_dict["tx"].ndim == 1
+            assert dm.train[0].x_dict["tx"].dtype == torch.long
+            num_tx_features = args.num_tx_tokens
+            print("Using token-based embeddings as node features, number of tokens: ", num_tx_features)
+        else:
+            # if the model is not token-based, the input is a 2D tensor of scRNAseq embeddings
+            assert dm.train[0].x_dict["tx"].ndim == 2
+            assert dm.train[0].x_dict["tx"].dtype == torch.float32
+            num_tx_features = dm.train[0].x_dict["tx"].shape[1]
+            print("Using scRNAseq embeddings as node features, number of features: ", num_tx_features)
+        num_bd_features = dm.train[0].x_dict["bd"].shape[1]
+        print("Number of boundary node features: ", num_bd_features)
+        ls = LitSegger(
+            is_token_based=is_token_based,
+            num_node_features={"tx": num_tx_features, "bd": num_bd_features},
+            init_emb=args.init_emb,
+            hidden_channels=args.hidden_channels,
+            out_channels=args.out_channels,
+            heads=args.heads,
+            num_mid_layers=args.num_mid_layers,
+            aggr="sum",  # Hard-coded value
+            learning_rate=args.learning_rate,
+        )
+    logging.info("Done.")
 
     # Initialize the Lightning trainer
     trainer = Trainer(
