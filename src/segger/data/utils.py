@@ -222,7 +222,7 @@ def create_anndata(
 
 
 def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_column: str) -> pd.DataFrame:
-    """Calculate the cell type abundance embedding for each gene based on the percentage of cells in each cell type
+    """Calculate the cell type abundance embedding for each gene based on the fraction of cells in each cell type
     that express the gene (non-zero expression).
 
     Parameters:
@@ -231,7 +231,7 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
 
     Returns:
         pd.DataFrame: A DataFrame where rows are genes and columns are cell types, with each value representing
-            the percentage of cells in that cell type expressing the gene.
+            the fraction of cells in that cell type expressing the gene.
 
     Example:
         >>> adata = AnnData(...)  # Load your scRNA-seq AnnData object
@@ -249,13 +249,13 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
     # Perform one-hot encoding on the cell types
     encoder = OneHotEncoder(sparse_output=False)
     cell_type_encoded = encoder.fit_transform(cell_types.reshape(-1, 1))
-    # Calculate the percentage of cells expressing each gene per cell type
+    # Calculate the fraction of cells expressing each gene per cell type
     cell_type_abundance_list = []
     for i in range(cell_type_encoded.shape[1]):
         # Extract cells of the current cell type
         cell_type_mask = cell_type_encoded[:, i] == 1
         # Calculate the abundance: sum of non-zero expressions in this cell type / total cells in this cell type
-        abundance = gene_expression_df[cell_type_mask].mean(axis=0) * 100
+        abundance = gene_expression_df[cell_type_mask].mean(axis=0)
         cell_type_abundance_list.append(abundance)
     # Create a DataFrame for the cell type abundance with gene names as rows and cell types as columns
     cell_type_abundance_df = pd.DataFrame(
