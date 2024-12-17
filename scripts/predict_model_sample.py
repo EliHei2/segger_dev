@@ -16,8 +16,12 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-segger_data_dir = Path("./data_tidy/pyg_datasets/bc_embedding_1001")
-models_dir = Path("./models/bc_embedding_1001_small")
+
+seg_tag = "bc_fast_data_emb_major"
+model_version = 1
+
+segger_data_dir = Path('data_tidy/pyg_datasets') / seg_tag
+models_dir = Path("./models") / seg_tag 
 benchmarks_dir = Path("/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc")
 transcripts_file = "data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet"
 # Initialize the Lightning data module
@@ -30,63 +34,28 @@ dm = SeggerDataModule(
 dm.setup()
 
 
-model_version = 0
-
 # Load in latest checkpoint
 model_path = models_dir / "lightning_logs" / f"version_{model_version}"
 model = load_model(model_path / "checkpoints")
 
-receptive_field = {"k_bd": 4, "dist_bd": 20, "k_tx": 5, "dist_tx": 3}
+receptive_field = {"k_bd": 4, "dist_bd": 15, "k_tx": 5, "dist_tx": 3}
 
 segment(
     model,
     dm,
     save_dir=benchmarks_dir,
-    seg_tag="parquet_test_big",
+    seg_tag=seg_tag,
     transcript_file=transcripts_file,
     # file_format='anndata',
     receptive_field=receptive_field,
     min_transcripts=5,
-    score_cut=0.5,
+    score_cut=0.1,
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
-    use_cc=True,
-    knn_method="cuda",
+    use_cc=False,
+    knn_method="kd_tree",
     verbose=True,
     gpu_ids=["0"],
     # client=client
 )
 
-
-# if __name__ == "__main__":
-#     cluster = LocalCUDACluster(
-#         # CUDA_VISIBLE_DEVICES="0",
-#         n_workers=1,
-#         dashboard_address=":8080",
-#         memory_limit='30GB',  # Adjust based on system memory
-#         lifetime="2 hours",  # Increase worker lifetime
-#         lifetime_stagger="75 minutes",
-#         local_directory='.', # Stagger worker restarts
-#         lifetime_restart=True  # Automatically restart workers
-#     )
-#     client = Client(cluster)
-
-# segment(
-#     model,
-#     dm,
-#     save_dir=benchmarks_dir,
-#     seg_tag='segger_embedding_0926_mega_0.5_20',
-#     transcript_file=transcripts_file,
-#     file_format='anndata',
-#     receptive_field = receptive_field,
-#     min_transcripts=5,
-#     score_cut=0.5,
-#     # max_transcripts=1500,
-#     cell_id_col='segger_cell_id',
-#     use_cc=False,
-#     knn_method='cuda',
-#     # client=client
-# )
-
-#     client.close()
-#     cluster.close()
