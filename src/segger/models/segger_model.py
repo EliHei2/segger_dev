@@ -1,6 +1,7 @@
 import torch
 from torch_geometric.nn import HeteroConv, GATv2Conv, HeteroDictLinear
 from torch import nn
+import torch.nn.functional as F
 from torch import Tensor
 from typing import Union
 
@@ -11,7 +12,7 @@ class SkipGAT(nn.Module):
         self.apply_activation = apply_activation
         self.conv = HeteroConv(
             {
-                ("tx", "neighbors", "tx"): GATv2Conv(in_channels, out_channels, heads=heads, add_self_loops=False),
+                ("tx", "neighbors", "tx"): GATv2Conv(in_channels, out_channels, heads=heads),
                 ("tx", "belongs", "bd"): GATv2Conv(in_channels, out_channels, heads=heads, add_self_loops=False),
             },
             aggr="sum",
@@ -23,7 +24,7 @@ class SkipGAT(nn.Module):
         x_lin = self.lin(x_dict)
         x_dict = {key: x_conv[key] + x_lin[key] for key in x_dict}
         if self.apply_activation:
-            x_dict = {key: x_dict[key].relu() for key in x_dict}
+            x_dict = {key: F.leaky_relu(x) for key, x in x_dict.items()}
         return x_dict
 
 
@@ -88,8 +89,9 @@ class Segger(nn.Module):
 
         # # Edge probability predictor
         # self.edge_predictor = nn.Sequential(
+        #     nn.LeakyReLU(),
         #     nn.Linear(2 * out_channels, out_channels),
-        #     nn.ReLU(),
+        #     nn.LeakyReLU(),
         #     nn.Linear(out_channels, 1),
         # )
 
@@ -107,6 +109,8 @@ class Segger(nn.Module):
         """
 
         x_dict = {key: self.node_init[key](x) for key, x in x_dict.items()}
+
+        x_dict = {key: F.leaky_relu(x) for key, x in x_dict.items()}
 
         x_dict = self.conv1(x_dict, edge_index_dict)
 
