@@ -18,6 +18,7 @@ def get_xy_extents(
 ) -> shapely.Polygon:
     """
     Get the bounding box of the x and y coordinates from a Parquet file.
+    If the min/max statistics are not available, compute them efficiently from the data.
 
     Parameters
     ----------
@@ -33,22 +34,38 @@ def get_xy_extents(
     shapely.Polygon
         A polygon representing the bounding box of the x and y coordinates.
     """
-    # Get index of columns of parquet file
+    # Process row groups
     metadata = pq.read_metadata(filepath)
     schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
-
     # Find min and max values across all row groups
     x_max = -1
     x_min = sys.maxsize
     y_max = -1
     y_min = sys.maxsize
-    for i in range(metadata.num_row_groups):
-        group = metadata.row_group(i)
-        x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
-        x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
-        y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
-        y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
-    bounds = shapely.box(x_min, y_min, x_max, y_max)
+    group = metadata.row_group(0)
+    try:
+        for i in range(metadata.num_row_groups):
+            # print('*1')
+            group = metadata.row_group(i)
+            x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
+            x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
+            y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
+            y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
+            bounds = shapely.box(x_min, y_min, x_max, y_max)
+    # If statistics are not available, compute them manually from the data
+    except:
+        import gc
+        print("metadata lacks the statistics of the tile's bounding box, computing might take longer!")
+        parquet_file = pd.read_parquet(filepath)
+        x_col = parquet_file.loc[:, x]
+        y_col = parquet_file.loc[:, y]
+        del parquet_file
+        gc.collect()
+        x_min = x_col.min()
+        x_min = y_col.min()
+        x_max = x_col.max()
+        x_max = y_col.max()
+    bounds = shapely.geometry.box(x_min, y_min, x_max, y_max)
     return bounds
 
 
