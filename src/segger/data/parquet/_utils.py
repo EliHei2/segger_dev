@@ -62,9 +62,9 @@ def get_xy_extents(
         del parquet_file
         gc.collect()
         x_min = x_col.min()
-        x_min = y_col.min()
+        y_min = y_col.min()
         x_max = x_col.max()
-        x_max = y_col.max()
+        y_max = y_col.max()
     bounds = shapely.geometry.box(x_min, y_min, x_max, y_max)
     return bounds
 
