@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>utils &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-utils">
+<span id="utils"></span><h1>utils<a class="headerlink" href="#module-utils" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.add_options">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">add_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/os.html#os.PathLike" title="(in Python v3.12)"><span class="pre">os.PathLike</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils.html#add_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.add_options" title="Link to this definition">¶</a></dt>
+<dd><p>A decorator to add command-line options to a Click command from a YAML
+configuration file.</p>
+<p>Parameters:
+config_path (os.PathLike): The path to the YAML configuration file
+containing the options.
+show_default (bool): Whether to show default values in help.</p>
+<p>Returns:
+function: A decorator function that adds the options to the Click command.</p>
+<p>The YAML configuration file should have the following format:
+<a href="#id1"><span class="problematic" id="id2">``</span></a>`
+option_name:</p>
+<blockquote>
+<div><p>type: “type_name”  # Optional, the type of the option
+(e.g., “str”, “int”)
+help: “description”  # Optional, the help text for the option
+default: value  # Optional, the default value for the option
+required: true/false  # Optional, whether the option is required
+…</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">Example</span> <span class="pre">usage:</span>
+<span class="pre">`</span></code>
+# config.yaml
+name:</p>
+<blockquote>
+<div><p>type: “str”
+help: “Your name”
+required: true</p>
+</div></blockquote>
+<dl class="simple">
+<dt>age:</dt><dd><p>type: “int”
+help: “Your age”
+default: 30</p>
+</dd>
+</dl>
+<p># script.py
+&#64;add_options(‘config.yaml’)
+&#64;click.command()
+def greet(args):</p>
+<blockquote>
+<div><p>click.echo(f”Hello, {args.name}! You are {args.age} years old.”)</p>
+</div></blockquote>
+<p><a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="utils.CustomFormatter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">CustomFormatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datefmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaults</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils.html#CustomFormatter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Formatter" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logging.Formatter</span></code></a></p>
+<p>Custom logging formatter to add color-coded log levels to the log messages.</p>
+<p>Attributes:
+grey (str): ANSI escape code for grey color.
+yellow (str): ANSI escape code for yellow color.
+red (str): ANSI escape code for red color.
+bold_red (str): ANSI escape code for bold red color.
+reset (str): ANSI escape code to reset color.
+format (str): The format string for log messages.
+FORMATS (dict): A dictionary mapping log levels to their respective
+color-coded format strings.</p>
+<p>Methods:
+format(record):</p>
+<blockquote>
+<div><p>Format the specified record as text, applying color codes based on the
+log level.</p>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.grey">
+<span class="sig-name descname"><span class="pre">grey</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[38;20m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.grey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.grey" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.green">
+<span class="sig-name descname"><span class="pre">green</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[32;20m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.green"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.green" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.yellow">
+<span class="sig-name descname"><span class="pre">yellow</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[33;20m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.yellow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.yellow" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.red">
+<span class="sig-name descname"><span class="pre">red</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[31;20m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.red"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.red" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.bold_red">
+<span class="sig-name descname"><span class="pre">bold_red</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[31;1m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.bold_red"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.bold_red" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x1b[0m'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.reset" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.format">
+<span class="sig-name descname"><span class="pre">format</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'%(asctime)s</span> <span class="pre">%(levelname)s:</span> <span class="pre">%(message)s'</span></em><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.format" title="Link to this definition">¶</a></dt>
+<dd><p>Format the specified record as text.</p>
+<p>The record’s attribute dictionary is used as the operand to a
+string formatting operation which yields the returned string.
+Before formatting the dictionary, a couple of preparatory steps
+are carried out. The message attribute of the record is computed
+using LogRecord.getMessage(). If the formatting string uses the
+time (as determined by a call to usesTime(), formatTime() is
+called to format the event time. If there is exception information,
+it is formatted using formatException() and appended to the message.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.CustomFormatter.FORMATS">
+<span class="sig-name descname"><span class="pre">FORMATS</span></span><a class="reference internal" href="../../_modules/utils.html#CustomFormatter.FORMATS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.CustomFormatter.FORMATS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/api/utils/index.rst"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
