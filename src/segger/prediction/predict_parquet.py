@@ -189,7 +189,7 @@ def get_similarity_scores(
     to_type: str,
     receptive_field: dict,
     compute_sigmoid: bool = True,
-    knn_method: str = "cuda",
+    knn_method: str = "kd_tree",
     gpu_id: int = 0,  # Added argument for GPU ID
 ) -> coo_matrix:
     """
@@ -217,19 +217,24 @@ def get_similarity_scores(
         # Step 1: Get embeddings from the model (on GPU)
         shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
 
+        if from_type == to_type:
+            coords_1 = coords_2 = batch[to_type].pos
+        else:
+            coords_1 = batch[to_type].pos[:, :2]  # 'tx' positions
+            coords_2 = batch[from_type].pos[:, :2] 
         if knn_method == "kd_tree":
             # Compute edge indices using knn method (still on GPU)
             edge_index = get_edge_index(
-                batch[to_type].pos[:, :2].cpu(),  # 'tx' positions
-                batch[from_type].pos[:, :2].cpu(),  # 'bd' positions
+                coords_1.cpu(),
+                coords_2.cpu(),
                 k=receptive_field[f"k_{to_type}"],
                 dist=receptive_field[f"dist_{to_type}"],
                 method=knn_method,
             )
         else:
             edge_index = get_edge_index(
-                batch[to_type].pos[:, :2],  # 'tx' positions
-                batch[from_type].pos[:, :2],  # 'bd' positions
+                coords_1,
+                coords_2,
                 k=receptive_field[f"k_{to_type}"],
                 dist=receptive_field[f"dist_{to_type}"],
                 method=knn_method,
@@ -239,7 +244,15 @@ def get_similarity_scores(
         edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
 
         with torch.no_grad():
-            embeddings = model(batch.x_dict, batch.edge_index_dict)
+            if from_type != to_type: 
+                embeddings = model(batch.x_dict, batch.edge_index_dict)
+            else: # to go with the inital embeddings for tx-tx
+                embeddings = {key: model.node_init[key](x) for key, x in batch.x_dict.items()}
+                norms = embeddings[to_type].norm(dim=1, keepdim=True)
+                # Avoid division by zero in case there are zero vectors
+                norms = torch.where(norms == 0, torch.ones_like(norms), norms)
+                # Normalize
+                embeddings[to_type] = embeddings[to_type] / norms
 
         def sparse_multiply(embeddings, edge_index, shape) -> coo_matrix:
             m = torch.nn.ZeroPad2d((0, 0, 0, 1))  # pad bottom with zeros
