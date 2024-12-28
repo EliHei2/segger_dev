@@ -2,6 +2,11 @@
 
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/EliHei2/segger_dev/main.svg)](https://results.pre-commit.ci/latest/github/EliHei2/segger_dev/main)
 
+
+
+**Important note (Dec 2024)**: As segger is currently undergoing constant development we highly recommending installing segger directly via github.
+
+
 **segger** is a cutting-edge tool for **cell segmentation** in **single-molecule spatial omics** datasets. By leveraging **graph neural networks (GNNs)** and heterogeneous graphs, segger offers unmatched accuracy and scalability.
 
 # How segger Works
@@ -47,7 +52,9 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 ---
 
-## Installation Options
+## Installation 
+
+**Important note (Dec 2024)**: As segger is currently undergoing constant development we highly recommending installing segger directly via github.
 
 ### Important: PyTorch Geometric Dependencies
 
@@ -71,28 +78,10 @@ pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -
 
 Afterwards choose the installation method that best suits your needs.
 
-### Micromamba Installation
-
-To set up Segger with `micromamba` and install the required dependencies, use the following commands:
-
-```bash
-micromamba create -n segger-rapids --channel-priority 1 \
-    -c rapidsai -c conda-forge -c nvidia -c pytorch -c pyg \
-    rapids=24.08 python=3.* 'cuda-version>=11.4,<=11.8' jupyterlab \
-    'pytorch=*=*cuda*' 'pyg=*=*cu118' pyg-lib pytorch-sparse
-micromamba install -n segger-rapids --channel-priority 1 --file mamba_environment.yml
-micromamba run -n segger-rapids pip install --no-deps ./
-```
 
 ### GitHub Installation
 
 For a straightforward local installation from GitHub, clone the repository and install the package using `pip`:
-
-```bash
-git clone https://github.com/EliHei2/segger_dev.git
-cd segger_dev
-pip install -e "."
-```
 
 #### Pip Installation (RAPIDS and CUDA 11)
 
