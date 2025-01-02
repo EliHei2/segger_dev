@@ -13,7 +13,6 @@ transcripts:
     - "BLANK_"
     - "DeprecatedCodeword_"
     - "UnassignedCodeword_"
-    - "Human_"
   xy:
     - "x_location"
     - "y_location"
