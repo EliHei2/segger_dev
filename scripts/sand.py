@@ -32,7 +32,7 @@ def process_group(group, area_low, area_high):
     cell_boundary = generate_boundary(seg_cell)
     if isinstance(cell_boundary, MultiPolygon):
         # polygons = sorted(cell_boundary, key=lambda p: p.area, reverse=True)
-            # Extract the largest polygon (by area) from MultiPolygon
+        # Extract the largest polygon (by area) from MultiPolygon
         # cell_boundary = polygons[0]
         # cell_boundary = unary_union(cell_boundary)
         # polygons = sorted(cell_boundary, key=lambda p: p.area, reverse=True)
@@ -72,7 +72,6 @@ def process_group(group, area_low, area_high):
         },
         "seg_mask_value": uint_cell_id,
     }
-    
 
 
 def get_coordinates(boundary):
@@ -86,8 +85,8 @@ def get_coordinates(boundary):
     elif isinstance(boundary, Polygon):
         # Return coordinates from a single Polygon
         return list(boundary.exterior.coords)
-    
-    
+
+
 def get_flatten_version(polygon_vertices, max_value=21):
     """
     Flattens and standardizes the shape of polygon vertices to a fixed length.
@@ -108,8 +107,11 @@ def get_flatten_version(polygon_vertices, max_value=21):
             flattened.append(vertices + [(0.0, 0.0)] * (max_value - len(vertices)))
     return np.array(flattened, dtype=np.float32)
 
+
 from segger.validation.xenium_explorer import *
 from segger.prediction.boundary import *
+
+
 def seg2explorer(
     seg_df: pd.DataFrame,
     source_path: str,
@@ -155,18 +157,13 @@ def seg2explorer(
     cell_id = [res["uint_cell_id"] for res in results]
     cell_summary = [res["cell_summary"] for res in results]
     # print('********************************1')
-    polygon_num_vertices = [
-        len(res["cell_boundary"].exterior.coords) for res in results
-    ]
+    polygon_num_vertices = [len(res["cell_boundary"].exterior.coords) for res in results]
     print(polygon_num_vertices)
     # polygon_vertices = np.array(
     #     [list(res["cell_boundary"].exterior.coords) for res in results],
     #     dtype=object
     # )
-    polygon_vertices = np.array(
-        [list(res["cell_boundary"].exterior.coords) for res in results],
-        dtype=object
-    )
+    polygon_vertices = np.array([list(res["cell_boundary"].exterior.coords) for res in results], dtype=object)
     # polygon_vertices = get_flatten_version(
     #     [get_coordinates(res["cell_boundary"]) for res in results],
     #     max_value=21,
@@ -182,7 +179,7 @@ def seg2explorer(
         "polygon_vertices": np.array(polygon_vertices).astype(np.float32),
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
-    print(len(cells['cell_id']))
+    print(len(cells["cell_id"]))
     # Save cells data
     existing_store = zarr.open(source_path / "cells.zarr.zip", mode="r")
     new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
@@ -194,7 +191,7 @@ def seg2explorer(
     new_store.attrs["number_cells"] = len(cells["cell_id"])
     print(new_store)
     new_store.store.close()
-    
+
     print(cells["polygon_vertices"])
     # # Save analysis data
     if analysis_df is None:
@@ -242,8 +239,6 @@ def seg2explorer(
     )
 
 
-
-
 def seg2explorer(
     seg_df: pd.DataFrame,
     source_path: str,
@@ -274,6 +269,7 @@ def seg2explorer(
     """
     import zarr
     import json
+
     source_path = Path(source_path)
     storage = Path(output_dir)
     cell_id2old_id = {}
@@ -297,9 +293,9 @@ def seg2explorer(
         cell_convex_hull = get_boundary(seg_cell)
         # print(cell_convex_hull)
         if isinstance(cell_convex_hull, MultiPolygon):
-        # polygons = sorted(cell_boundary, key=lambda p: p.area, reverse=True)
+            # polygons = sorted(cell_boundary, key=lambda p: p.area, reverse=True)
             # Extract the largest polygon (by area) from MultiPolygon
-        # cell_boundary = polygons[0]
+            # cell_boundary = polygons[0]
             # cell_convex_hull = unary_union(cell_convex_hull)
             # print('****************1')
             # polygons = sorted(cell_convex_hull.geoms, key=lambda p: p.area, reverse=True)
@@ -404,100 +400,96 @@ def seg2explorer(
         cells_name=cells_filename,
         analysis_name=analysis_filename,
     )
-    
-    
 
 
-ddf = dd.read_parquet('/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc/parquet_train_big_0.5_False_3_10_5_3_20241030/segger_transcripts.parquet').compute()
+ddf = dd.read_parquet(
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc/parquet_train_big_0.5_False_3_10_5_3_20241030/segger_transcripts.parquet"
+).compute()
 ddf = ddf.dropna()
-ddf = ddf[ddf.segger_cell_id != 'None']
-ddf = ddf.sort_values('segger_cell_id')
+ddf = ddf[ddf.segger_cell_id != "None"]
+ddf = ddf.sort_values("segger_cell_id")
 df = ddf.iloc[:10000, :]
 
 
-
-df_path = Path('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep1_v9_segger.csv.gz')
+df_path = Path("data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep1_v9_segger.csv.gz")
 df_v9 = dd.read_csv(df_path)
-df_main = dd.read_parquet('data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs/transcripts.parquet')
+df_main = dd.read_parquet("data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs/transcripts.parquet")
 
-ddf = df_v9.merge(df_main, on='transcript_id')
+ddf = df_v9.merge(df_main, on="transcript_id")
 ddf = ddf.compute()
-ddf = ddf[ddf.segger_cell_id != 'None']
-ddf = ddf.sort_values('segger_cell_id')
-df = ddf.loc[(ddf.x_location > 250) & (ddf.x_location < 1500) & (ddf.y_location > 500) & (ddf.y_location < 1500),:]
+ddf = ddf[ddf.segger_cell_id != "None"]
+ddf = ddf.sort_values("segger_cell_id")
+df = ddf.loc[(ddf.x_location > 250) & (ddf.x_location < 1500) & (ddf.y_location > 500) & (ddf.y_location < 1500), :]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
 
 seg2explorer(
-    seg_df = df,
-    source_path = 'data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs',
-    output_dir = 'data_tidy/explorer/rep1sis',
-    cells_filename = "segger_cells_seg_roi1",
-    analysis_filename = "segger_analysis_seg_roi1",
-    xenium_filename = "segger_experiment_seg_roi1.xenium",
-    analysis_df = None,
-    cell_id_columns = "segger_cell_id",
-    area_low = 10,
-    area_high= 1000,
+    seg_df=df,
+    source_path="data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs",
+    output_dir="data_tidy/explorer/rep1sis",
+    cells_filename="segger_cells_seg_roi1",
+    analysis_filename="segger_analysis_seg_roi1",
+    xenium_filename="segger_experiment_seg_roi1.xenium",
+    analysis_df=None,
+    cell_id_columns="segger_cell_id",
+    area_low=10,
+    area_high=1000,
 )
 
 
-
-df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550),:]
+df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550), :]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
 
 seg2explorer(
-    seg_df = df,
-    source_path = 'data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs',
-    output_dir = 'data_tidy/explorer/rep1sis',
-    cells_filename = "segger_cells_seg_roi2",
-    analysis_filename = "segger_analysis_seg_roi2",
-    xenium_filename = "segger_experiment_seg_roi2.xenium",
-    analysis_df = None,
-    cell_id_columns = "segger_cell_id",
-    area_low = 10,
-    area_high= 1000,
+    seg_df=df,
+    source_path="data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs",
+    output_dir="data_tidy/explorer/rep1sis",
+    cells_filename="segger_cells_seg_roi2",
+    analysis_filename="segger_analysis_seg_roi2",
+    xenium_filename="segger_experiment_seg_roi2.xenium",
+    analysis_df=None,
+    cell_id_columns="segger_cell_id",
+    area_low=10,
+    area_high=1000,
 )
 
 
-
-df = ddf.loc[(ddf.x_location > 4000) & (ddf.x_location < 4500) & (ddf.y_location > 1000) & (ddf.y_location < 1500),:]
+df = ddf.loc[(ddf.x_location > 4000) & (ddf.x_location < 4500) & (ddf.y_location > 1000) & (ddf.y_location < 1500), :]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
 
 seg2explorer(
-    seg_df = df,
-    source_path = 'data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs',
-    output_dir = 'data_tidy/explorer/rep1sis',
-    cells_filename = "segger_cells_seg_roi3",
-    analysis_filename = "segger_analysis_seg_roi3",
-    xenium_filename = "segger_experiment_seg_roi3.xenium",
-    analysis_df = None,
-    cell_id_columns = "segger_cell_id",
-    area_low = 10,
-    area_high= 1000,
+    seg_df=df,
+    source_path="data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs",
+    output_dir="data_tidy/explorer/rep1sis",
+    cells_filename="segger_cells_seg_roi3",
+    analysis_filename="segger_analysis_seg_roi3",
+    xenium_filename="segger_experiment_seg_roi3.xenium",
+    analysis_df=None,
+    cell_id_columns="segger_cell_id",
+    area_low=10,
+    area_high=1000,
 )
 
 
-df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550),:]
+df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550), :]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
 
 seg2explorer(
-    seg_df = df,
-    source_path = 'data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs',
-    output_dir = 'data_tidy/explorer/rep1sis',
-    cells_filename = "segger_cells_seg_roi2",
-    analysis_filename = "segger_analysis_seg_roi2",
-    xenium_filename = "segger_experiment_seg_roi2.xenium",
-    analysis_df = None,
-    cell_id_columns = "segger_cell_id",
-    area_low = 10,
-    area_high= 1000,
+    seg_df=df,
+    source_path="data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs",
+    output_dir="data_tidy/explorer/rep1sis",
+    cells_filename="segger_cells_seg_roi2",
+    analysis_filename="segger_analysis_seg_roi2",
+    xenium_filename="segger_experiment_seg_roi2.xenium",
+    analysis_df=None,
+    cell_id_columns="segger_cell_id",
+    area_low=10,
+    area_high=1000,
 )
-

@@ -2,10 +2,7 @@
 
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/EliHei2/segger_dev/main.svg)](https://results.pre-commit.ci/latest/github/EliHei2/segger_dev/main)
 
-
-
 **Important note (Dec 2024)**: As segger is currently undergoing constant development we highly recommending installing segger directly via github.
-
 
 **segger** is a cutting-edge tool for **cell segmentation** in **single-molecule spatial omics** datasets. By leveraging **graph neural networks (GNNs)** and heterogeneous graphs, segger offers unmatched accuracy and scalability.
 
@@ -52,7 +49,7 @@ segger tackles these with a **graph-based approach**, achieving superior segment
 
 ---
 
-## Installation 
+## Installation
 
 **Important note (Dec 2024)**: As segger is currently undergoing constant development we highly recommending installing segger directly via github.
 
@@ -77,7 +74,6 @@ pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -
 ```
 
 Afterwards choose the installation method that best suits your needs.
-
 
 ### GitHub Installation
 

@@ -15,7 +15,7 @@ import scanpy as sc
 import os
 
 
-segger_data_dir = segger_data_dir = Path('data_tidy/pyg_datasets/bc_fast_data_emb_minor')
+segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/bc_fast_data_emb_minor")
 models_dir = Path("./models/bc_fast_data_emb_minor")
 
 dm = SeggerDataModule(

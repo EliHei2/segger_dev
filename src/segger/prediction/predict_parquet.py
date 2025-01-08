@@ -221,7 +221,7 @@ def get_similarity_scores(
             coords_1 = coords_2 = batch[to_type].pos
         else:
             coords_1 = batch[to_type].pos[:, :2]  # 'tx' positions
-            coords_2 = batch[from_type].pos[:, :2] 
+            coords_2 = batch[from_type].pos[:, :2]
         if knn_method == "kd_tree":
             # Compute edge indices using knn method (still on GPU)
             edge_index = get_edge_index(
@@ -244,9 +244,9 @@ def get_similarity_scores(
         edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
 
         with torch.no_grad():
-            if from_type != to_type: 
+            if from_type != to_type:
                 embeddings = model(batch.x_dict, batch.edge_index_dict)
-            else: # to go with the inital embeddings for tx-tx
+            else:  # to go with the inital embeddings for tx-tx
                 embeddings = {key: model.node_init[key](x) for key, x in batch.x_dict.items()}
                 norms = embeddings[to_type].norm(dim=1, keepdim=True)
                 # Avoid division by zero in case there are zero vectors
