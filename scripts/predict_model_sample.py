@@ -16,12 +16,11 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-
 seg_tag = "bc_fast_data_emb_major"
 model_version = 1
 
-segger_data_dir = Path('data_tidy/pyg_datasets') / seg_tag
-models_dir = Path("./models") / seg_tag 
+segger_data_dir = Path("data_tidy/pyg_datasets") / seg_tag
+models_dir = Path("./models") / seg_tag
 benchmarks_dir = Path("/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc")
 transcripts_file = "data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet"
 # Initialize the Lightning data module
@@ -58,4 +57,3 @@ segment(
     gpu_ids=["0"],
     # client=client
 )
-
