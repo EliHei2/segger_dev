@@ -14,7 +14,6 @@ from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from segger.data.utils import (
-    get_edge_index_cuda,
     get_edge_index,
     format_time,
     create_anndata,

@@ -43,19 +43,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-faiss = [
-    "faiss-cpu>=1.7.0",
-    "faiss-gpu>=1.7.0"
+
+cuda11 = [
+    "cupy-cuda11x"
 ]
 
-rapids11 = [
-    "cupy-cuda11x",
-    "cuvs-cu11==24.4.*",
-]
-
-rapids12 = [
-    "cupy-cuda12x",
-    "cuvs-cu12==24.4.*",
+cuda12 = [
+    "cupy-cuda12x"
 ]
 
 multiprocessing = ["multiprocessing"]
