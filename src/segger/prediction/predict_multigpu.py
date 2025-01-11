@@ -713,7 +713,7 @@ def segment(
     if save_transcripts:
         if verbose:
             step_start_time = time()
-            print(f"Saving transcirpts.parquet...")
+            print(f"Saving transcripts.parquet...")
         transcripts_save_path = save_dir / "segger_transcripts.parquet"
         # transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
         transcripts_df_filtered.to_parquet(
