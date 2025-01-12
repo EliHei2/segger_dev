@@ -64,21 +64,14 @@ dev = [
 ]
 
 docs = [
-    "docutils>=0.8,!=0.18.*,!=0.19.*",
-    "sphinx>=4.1",
-    "sphinx-book-theme>=1.0.0",
-    "myst-nb",
-    "myst-parser",
-    "sphinxcontrib-bibtex>=1.0.0",
-    "sphinx-autodoc-typehints",
-    "sphinx_rtd_theme",
-    "sphinxext-opengraph",
-    "sphinx-copybutton",
-    "sphinx-design",
-    "sphinx-hoverxref",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-autorefs",
+    "mkdocstrings[python]",
+    "mkdocs-jupyter",
+    "termynal",
     "ipykernel",
     "ipython",
-    "pandas"
 ]
 
 tests = [
