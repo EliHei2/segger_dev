@@ -14,7 +14,6 @@ from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from segger.data.utils import (
-    get_edge_index_cuda,
     get_edge_index,
     format_time,
     create_anndata,
@@ -333,7 +332,7 @@ def predict_batch(
         transcript_id = batch["tx"].id.cpu().numpy().astype("str")
         assignments = {"transcript_id": transcript_id}
 
-        if len(batch["bd"].pos) >= 10:
+        if len(batch["bd"].pos) >= 10 and len(batch["tx"].pos) >= 1000:
             # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
             scores = get_similarity_scores(
                 lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
@@ -682,7 +681,7 @@ def segment(
     if save_transcripts:
         if verbose:
             step_start_time = time()
-            print(f"Saving transcirpts.parquet...")
+            print(f"Saving transcripts.parquet...")
         transcripts_save_path = save_dir / "segger_transcripts.parquet"
         # transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
         transcripts_df_filtered.to_parquet(
