@@ -329,7 +329,7 @@ def predict_batch(
         transcript_id = batch["tx"].id.cpu().numpy().astype("str")
         assignments = {"transcript_id": transcript_id}
 
-        if len(batch["bd"].pos) >= 10:
+        if len(batch["bd"].pos) >= 10 and len(batch["tx"].pos) >= 1000:
             # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
             scores = get_similarity_scores(
                 lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
