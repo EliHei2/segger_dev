@@ -79,6 +79,14 @@ Afterwards choose the installation method that best suits your needs.
 
 For a straightforward local installation from GitHub, clone the repository and install the package using `pip`:
 
+#### Clone the repo
+
+```bash
+git clone https://github.com/EliHei2/segger_dev.git
+git cd segger_dev
+```
+
+
 #### Pip Installation (RAPIDS and CUDA 11)
 
 For installations requiring RAPIDS and CUDA 11 support, run:
