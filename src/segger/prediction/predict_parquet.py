@@ -442,7 +442,6 @@ def segment(
     seg_tag: str,
     transcript_file: Union[str, Path],
     score_cut: float = 0.5,
-    qv: float = 30,
     use_cc: bool = True,
     file_format: str = "",
     save_transcripts: bool = True,
@@ -466,7 +465,6 @@ def segment(
         transcript_file (Union[str, Path]): Path to the transcripts Parquet file.
         score_cut (float, optional): The threshold for assigning transcripts to cells based on
                                      similarity scores. Defaults to 0.5.
-        qv (float, optional):The minimum quality value threshold for filtering transcripts.
         use_cc (bool, optional): If True, perform connected components analysis for unassigned
                                  transcripts. Defaults to True.
         save_transcripts (bool, optional): Whether to save the transcripts as Parquet. Defaults to True.
@@ -657,7 +655,7 @@ def segment(
 
     # Step 5: Save the merged results based on options
     transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna("UNASSIGNED")
-    transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)
+    # transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)
 
     if save_transcripts:
         if verbose:
