@@ -61,7 +61,7 @@ class LitSegger(LightningModule):
 
     def from_new(
         self,
-        is_token_based: int,
+        is_token_based: bool,
         num_node_features: dict[str, int],
         init_emb: int,
         hidden_channels: int,
@@ -75,7 +75,7 @@ class LitSegger(LightningModule):
 
         Parameters
         ----------
-        is_token_based : int
+        is_token_based : bool
             Whether the model is using token-based embeddings or scRNAseq embeddings.
         num_node_features : dict[str, int]
             Number of node features for each node type.
