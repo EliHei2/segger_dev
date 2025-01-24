@@ -14,7 +14,6 @@ from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from segger.data.utils import (
-    get_edge_index_cuda,
     get_edge_index,
     format_time,
     create_anndata,
@@ -221,7 +220,7 @@ def get_similarity_scores(
             coords_1 = coords_2 = batch[to_type].pos
         else:
             coords_1 = batch[to_type].pos[:, :2]  # 'tx' positions
-            coords_2 = batch[from_type].pos[:, :2] 
+            coords_2 = batch[from_type].pos[:, :2]
         if knn_method == "kd_tree":
             # Compute edge indices using knn method (still on GPU)
             edge_index = get_edge_index(
@@ -244,9 +243,9 @@ def get_similarity_scores(
         edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
 
         with torch.no_grad():
-            if from_type != to_type: 
+            if from_type != to_type:
                 embeddings = model(batch.x_dict, batch.edge_index_dict)
-            else: # to go with the inital embeddings for tx-tx
+            else:  # to go with the inital embeddings for tx-tx
                 embeddings = {key: model.node_init[key](x) for key, x in batch.x_dict.items()}
                 norms = embeddings[to_type].norm(dim=1, keepdim=True)
                 # Avoid division by zero in case there are zero vectors
@@ -329,7 +328,7 @@ def predict_batch(
         transcript_id = batch["tx"].id.cpu().numpy().astype("str")
         assignments = {"transcript_id": transcript_id}
 
-        if len(batch["bd"].pos) >= 10:
+        if len(batch["bd"].pos) >= 10 and len(batch["tx"].pos) >= 1000:
             # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
             scores = get_similarity_scores(
                 lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
@@ -545,16 +544,16 @@ def segment(
     if verbose:
         print(f"Applying max score selection logic...")
 
-    # Step 1: Find max bound indices (bound == 1) and max unbound indices (bound == 0)
-    max_bound_idx = seg_final_dd[seg_final_dd["bound"] == 1].groupby("transcript_id")["score"].idxmax()
-    max_unbound_idx = seg_final_dd[seg_final_dd["bound"] == 0].groupby("transcript_id")["score"].idxmax()
+    max_bound = seg_final_dd[seg_final_dd["bound"] == 1]
+    max_bound = max_bound.loc[max_bound.groupby("transcript_id")["score"].idxmax()]
+    
+    # Step 2: Filter by 'bound' == 0 and find the maximum score for each transcript_id
+    max_unbound = seg_final_dd[seg_final_dd["bound"] != 1]
+    max_unbound = max_unbound.loc[max_unbound.groupby("transcript_id")["score"].idxmax()]
 
-    # Step 2: Combine indices, prioritizing bound=1 scores
-    final_idx = max_bound_idx.combine_first(max_unbound_idx)
-
-    # Step 3: Use the computed final_idx to select the best assignments
-    # Make sure you are using the divisions and set the index correctly before loc
-    seg_final_filtered = seg_final_dd.loc[final_idx]
+    seg_final_filtered = pd.concat([max_bound, max_unbound]).sort_values(
+        "score", ascending=False
+    ).drop_duplicates(subset="transcript_id", keep="first")
 
     if verbose:
         elapsed_time = time() - step_start_time
@@ -574,6 +573,7 @@ def segment(
 
     # Outer merge to include all transcripts, even those without assigned cell ids
     transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
+    
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")
@@ -657,11 +657,12 @@ def segment(
             print(f"The rest computed in {elapsed_time:.2f} seconds.")
 
     # Step 5: Save the merged results based on options
+    transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna("UNASSIGNED")
 
     if save_transcripts:
         if verbose:
             step_start_time = time()
-            print(f"Saving transcirpts.parquet...")
+            print(f"Saving transcripts.parquet...")
         transcripts_save_path = save_dir / "segger_transcripts.parquet"
         # transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
         transcripts_df_filtered.to_parquet(

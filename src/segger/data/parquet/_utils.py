@@ -55,6 +55,7 @@ def get_xy_extents(
     # If statistics are not available, compute them manually from the data
     except:
         import gc
+
         print("metadata lacks the statistics of the tile's bounding box, computing might take longer!")
         parquet_file = pd.read_parquet(filepath)
         x_col = parquet_file.loc[:, x]

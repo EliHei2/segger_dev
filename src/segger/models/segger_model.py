@@ -133,7 +133,7 @@ class Segger(nn.Module):
         Decode the node embeddings to predict edge values.
 
         Args:
-            z (dict[str, Tensor]): Node embeddings for each node type.
+            z_dict (dict[str, Tensor]): Node embeddings for each node type.
             edge_index (EdgeIndex): Edge label indices.
 
         Returns:

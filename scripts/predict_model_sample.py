@@ -16,9 +16,11 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-
 seg_tag = "bc_rep1_emb_final"
 model_version = 6
+
+seg_tag = "bc_fast_data_emb_major"
+model_version = 1
 
 segger_data_dir = Path('data_tidy/pyg_datasets') / seg_tag
 models_dir = Path("./models") / seg_tag 
@@ -58,4 +60,3 @@ segment(
     gpu_ids=["0"],
     # client=client
 )
-

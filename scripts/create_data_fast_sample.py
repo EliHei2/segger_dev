@@ -21,25 +21,22 @@ gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
 sample = STSampleParquet(
     base_dir=xenium_data_dir,
     n_workers=4,
-    sample_type='xenium',
-    weights=gene_celltype_abundance_embedding, # uncomment if gene-celltype embeddings are available
+    sample_type="xenium",
+    weights=gene_celltype_abundance_embedding,  # uncomment if gene-celltype embeddings are available
 )
 
-transcripts = pd.read_parquet(
-    xenium_data_dir / 'transcripts.parquet',
-    filters=[[('overlaps_nucleus', '=', 1)]]
-)
-boundaries = pd.read_parquet(xenium_data_dir / 'nucleus_boundaries.parquet')
+transcripts = pd.read_parquet(xenium_data_dir / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]])
+boundaries = pd.read_parquet(xenium_data_dir / "nucleus_boundaries.parquet")
 
-sizes = transcripts.groupby('cell_id').size()
-polygons = get_polygons_from_xy(boundaries, 'vertex_x', 'vertex_y', 'cell_id')
+sizes = transcripts.groupby("cell_id").size()
+polygons = get_polygons_from_xy(boundaries, "vertex_x", "vertex_y", "cell_id")
 densities = polygons[sizes.index].area / sizes
 bd_width = polygons.minimum_bounding_radius().median() * 2
 
 # 1/4 median boundary diameter
 dist_tx = bd_width / 4
 # 90th percentile density of bounding circle with radius=dist_tx
-k_tx = math.ceil(np.quantile(dist_tx ** 2 * np.pi * densities, 0.9)) 
+k_tx = math.ceil(np.quantile(dist_tx**2 * np.pi * densities, 0.9))
 
 print(k_tx)
 print(dist_tx)
@@ -73,21 +70,18 @@ sample = STSampleParquet(
 )
 
 
-transcripts = pd.read_parquet(
-    xenium_data_dir / 'transcripts.parquet',
-    filters=[[('overlaps_nucleus', '=', 1)]]
-)
-boundaries = pd.read_parquet(xenium_data_dir / 'nucleus_boundaries.parquet')
+transcripts = pd.read_parquet(xenium_data_dir / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]])
+boundaries = pd.read_parquet(xenium_data_dir / "nucleus_boundaries.parquet")
 
-sizes = transcripts.groupby('cell_id').size()
-polygons = get_polygons_from_xy(boundaries, 'vertex_x', 'vertex_y', 'cell_id')
+sizes = transcripts.groupby("cell_id").size()
+polygons = get_polygons_from_xy(boundaries, "vertex_x", "vertex_y", "cell_id")
 densities = polygons[sizes.index].area / sizes
 bd_width = polygons.minimum_bounding_radius().median() * 2
 
 # 1/4 median boundary diameter
 dist_tx = bd_width / 4
 # 90th percentile density of bounding circle with radius=dist_tx
-k_tx = math.ceil(np.quantile(dist_tx ** 2 * np.pi * densities, 0.9)) 
+k_tx = math.ceil(np.quantile(dist_tx**2 * np.pi * densities, 0.9))
 
 print(k_tx)
 print(dist_tx)

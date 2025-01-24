@@ -13,7 +13,6 @@ from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from segger.data.utils import (
-    get_edge_index_cuda,
     get_edge_index,
     format_time,
     create_anndata,
@@ -714,7 +713,7 @@ def segment(
     if save_transcripts:
         if verbose:
             step_start_time = time()
-            print(f"Saving transcirpts.parquet...")
+            print(f"Saving transcripts.parquet...")
         transcripts_save_path = save_dir / "segger_transcripts.parquet"
         # transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)
         transcripts_df_filtered.to_parquet(
