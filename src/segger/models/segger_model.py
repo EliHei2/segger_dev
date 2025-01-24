@@ -31,25 +31,25 @@ class SkipGAT(nn.Module):
 class Segger(nn.Module):
     def __init__(
         self,
-        is_token_based: bool,
         num_node_features: dict[str, int],
         init_emb: int = 16,
         hidden_channels: int = 32,
         num_mid_layers: int = 3,
         out_channels: int = 32,
         heads: int = 3,
+        is_token_based: bool = True,
     ):
         """
         Initializes the Segger model.
 
         Args:
-            is_token_based (bool)  : Whether the model is using token-based embeddings or scRNAseq embeddings.
             num_node_features (dict[str, int]): Number of node features for each node type.
             init_emb (int)         : Initial embedding size for both 'tx' and boundary (non-token) nodes.
             hidden_channels (int)  : Number of hidden channels.
             num_mid_layers (int)   : Number of hidden layers (excluding first and last layers).
             out_channels (int)     : Number of output channels.
             heads (int)            : Number of attention heads.
+            is_token_based (bool)  : Whether the model is using token-based embeddings or scRNAseq embeddings.
         """
         super().__init__()
 
