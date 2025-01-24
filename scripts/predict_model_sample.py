@@ -17,8 +17,8 @@ import dask.dataframe as dd
 
 
 
-seg_tag = "bc_fast_data_emb_major"
-model_version = 1
+seg_tag = "bc_rep1_emb_final"
+model_version = 6
 
 segger_data_dir = Path('data_tidy/pyg_datasets') / seg_tag
 models_dir = Path("./models") / seg_tag 
@@ -49,7 +49,7 @@ segment(
     # file_format='anndata',
     receptive_field=receptive_field,
     min_transcripts=5,
-    score_cut=0.1,
+    score_cut=0.4,
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
     use_cc=False,
