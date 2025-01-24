@@ -18,6 +18,7 @@ from segger.data.utils import (
     format_time,
     create_anndata,
     coo_to_dense_adj,
+    filter_transcripts
 )
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
@@ -557,22 +558,18 @@ def segment(
     client.gather(delayed_write_output_ddf_futures)
     assert os.path.exists(output_ddf_save_path)
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
-    seg_final_dd = seg_final_dd.set_index("transcript_id")
 
     step_start_time = time()
     if verbose:
         print(f"Applying max score selection logic...")
-
-    # Step 1: Find max bound indices (bound == 1) and max unbound indices (bound == 0)
-    max_bound_idx = seg_final_dd[seg_final_dd["bound"] == 1].groupby("transcript_id")["score"].idxmax()
-    max_unbound_idx = seg_final_dd[seg_final_dd["bound"] == 0].groupby("transcript_id")["score"].idxmax()
-
-    # Step 2: Combine indices, prioritizing bound=1 scores
-    final_idx = max_bound_idx.combine_first(max_unbound_idx)
-
-    # Step 3: Use the computed final_idx to select the best assignments
-    # Make sure you are using the divisions and set the index correctly before loc
-    seg_final_filtered = seg_final_dd.loc[final_idx]
+    output_ddf_save_path = save_dir / "transcripts_df.parquet"
+    
+    
+    seg_final_dd = pd.read_parquet(output_ddf_save_path)
+    
+    seg_final_filtered = seg_final_dd.sort_values(
+        "score", ascending=False
+    ).drop_duplicates(subset="transcript_id", keep="first")
 
     if verbose:
         elapsed_time = time() - step_start_time
@@ -592,6 +589,7 @@ def segment(
 
     # Outer merge to include all transcripts, even those without assigned cell ids
     transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
+    
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")
@@ -677,6 +675,8 @@ def segment(
             print(f"The rest computed in {elapsed_time:.2f} seconds.")
 
     # Step 5: Save the merged results based on options
+    transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna("UNASSIGNED")
+    # transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)
 
     if save_transcripts:
         if verbose:
