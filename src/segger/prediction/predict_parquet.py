@@ -18,6 +18,7 @@ from segger.data.utils import (
     format_time,
     create_anndata,
     coo_to_dense_adj,
+    filter_transcripts
 )
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
@@ -441,6 +442,7 @@ def segment(
     seg_tag: str,
     transcript_file: Union[str, Path],
     score_cut: float = 0.5,
+    qv: float = 30,
     use_cc: bool = True,
     file_format: str = "",
     save_transcripts: bool = True,
@@ -464,6 +466,7 @@ def segment(
         transcript_file (Union[str, Path]): Path to the transcripts Parquet file.
         score_cut (float, optional): The threshold for assigning transcripts to cells based on
                                      similarity scores. Defaults to 0.5.
+        qv (float, optional):The minimum quality value threshold for filtering transcripts.
         use_cc (bool, optional): If True, perform connected components analysis for unassigned
                                  transcripts. Defaults to True.
         save_transcripts (bool, optional): Whether to save the transcripts as Parquet. Defaults to True.
@@ -538,20 +541,16 @@ def segment(
         print(f"Batch processing completed in {elapsed_time:.2f} seconds.")
 
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
-    seg_final_dd = seg_final_dd.set_index("transcript_id")
 
     step_start_time = time()
     if verbose:
         print(f"Applying max score selection logic...")
-
-    max_bound = seg_final_dd[seg_final_dd["bound"] == 1]
-    max_bound = max_bound.loc[max_bound.groupby("transcript_id")["score"].idxmax()]
+    output_ddf_save_path = save_dir / "transcripts_df.parquet"
     
-    # Step 2: Filter by 'bound' == 0 and find the maximum score for each transcript_id
-    max_unbound = seg_final_dd[seg_final_dd["bound"] != 1]
-    max_unbound = max_unbound.loc[max_unbound.groupby("transcript_id")["score"].idxmax()]
-
-    seg_final_filtered = pd.concat([max_bound, max_unbound]).sort_values(
+    
+    seg_final_dd = pd.read_parquet(output_ddf_save_path)
+    
+    seg_final_filtered = seg_final_dd.sort_values(
         "score", ascending=False
     ).drop_duplicates(subset="transcript_id", keep="first")
 
@@ -658,6 +657,7 @@ def segment(
 
     # Step 5: Save the merged results based on options
     transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna("UNASSIGNED")
+    transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)
 
     if save_transcripts:
         if verbose:
