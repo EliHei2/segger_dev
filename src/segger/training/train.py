@@ -61,7 +61,6 @@ class LitSegger(LightningModule):
 
     def from_new(
         self,
-        is_token_based: int,
         num_node_features: dict[str, int],
         init_emb: int,
         hidden_channels: int,
@@ -69,14 +68,13 @@ class LitSegger(LightningModule):
         heads: int,
         num_mid_layers: int,
         aggr: str,
+        is_token_based: bool = True,
     ):
         """
         Initializes the LitSegger module with new parameters.
 
         Parameters
         ----------
-        is_token_based : int
-            Whether the model is using token-based embeddings or scRNAseq embeddings.
         num_node_features : dict[str, int]
             Number of node features for each node type.
         init_emb : int
@@ -87,22 +85,22 @@ class LitSegger(LightningModule):
             Number of output channels.
         heads : int
             Number of attention heads.
-        aggr : str
-            Aggregation method for heterogeneous graph conversion.
         num_mid_layers: int
             Number of hidden layers (excluding first and last layers).
-        metadata : Union[Tuple, Metadata]
-            Metadata for heterogeneous graph structure.
+        aggr : str
+            Aggregation method for heterogeneous graph conversion.
+        is_token_based : bool
+            Whether the model is using token-based embeddings or scRNAseq embeddings.
         """
         # Create the Segger model (ensure num_tx_tokens is passed here)
         self.model = Segger(
-            is_token_based=is_token_based,
             num_node_features=num_node_features,
             init_emb=init_emb,
             hidden_channels=hidden_channels,
             out_channels=out_channels,
             heads=heads,
             num_mid_layers=num_mid_layers,
+            is_token_based=is_token_based,
         )
         # Save hyperparameters
         self.save_hyperparameters()
