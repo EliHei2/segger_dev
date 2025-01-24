@@ -143,14 +143,16 @@ def create_anndata(
     Returns:
         ad.AnnData: The generated AnnData object containing the transcriptomics data and metadata.
     """
-    # df_filtered = filter_transcripts(df, min_qv=qv_threshold)
-    df_filtered = df
-    # metrics = compute_transcript_metrics(df_filtered, qv_threshold, cell_id_col)
-    df_filtered = df_filtered[df_filtered[cell_id_col].astype(str) != "-1"]
+    # Filter out unassigned cells
+    df_filtered = df[df[cell_id_col].astype(str) != "UNASSIGNED"]
+
+    # Create pivot table for gene expression counts per cell
     pivot_df = df_filtered.rename(columns={cell_id_col: "cell", "feature_name": "gene"})[["cell", "gene"]].pivot_table(
         index="cell", columns="gene", aggfunc="size", fill_value=0
     )
     pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
+
+    # Summarize cell metrics
     cell_summary = []
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
@@ -159,28 +161,17 @@ def create_anndata(
         cell_area = cell_convex_hull.area
         if cell_area < min_cell_area or cell_area > max_cell_area:
             continue
-        # if 'nucleus_distance' in cell_data:
-        #     nucleus_data = cell_data[cell_data['nucleus_distance'] == 0]
-        # else:
-        #     nucleus_data = cell_data[cell_data['overlaps_nucleus'] == 1]
-        # if len(nucleus_data) >= 3:
-        #     nucleus_convex_hull = ConvexHull(nucleus_data[['x_location', 'y_location']])
-        # else:
-        #     nucleus_convex_hull = None
         cell_summary.append(
             {
                 "cell": cell_id,
                 "cell_centroid_x": cell_data["x_location"].mean(),
                 "cell_centroid_y": cell_data["y_location"].mean(),
                 "cell_area": cell_area,
-                # "nucleus_centroid_x": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-                # "nucleus_centroid_y": nucleus_data['x_location'].mean() if len(nucleus_data) > 0 else cell_data['x_location'].mean(),
-                # "nucleus_area": nucleus_convex_hull.area if nucleus_convex_hull else 0,
-                # "percent_cytoplasmic": len(cell_data[cell_data['overlaps_nucleus'] != 1]) / len(cell_data) * 100,
-                # "has_nucleus": len(nucleus_data) > 0
             }
         )
     cell_summary = pd.DataFrame(cell_summary).set_index("cell")
+
+    # Add genes from panel_df (if provided) to the pivot table
     if panel_df is not None:
         panel_df = panel_df.sort_values("gene")
         genes = panel_df["gene"].values
@@ -188,11 +179,13 @@ def create_anndata(
             if gene not in pivot_df:
                 pivot_df[gene] = 0
         pivot_df = pivot_df[genes.tolist()]
+
+    # Create var DataFrame
     if panel_df is None:
         var_df = pd.DataFrame(
             [
-                {"gene": i, "feature_types": "Gene Expression", "genome": "Unknown"}
-                for i in np.unique(pivot_df.columns.values)
+                {"gene": gene, "feature_types": "Gene Expression", "genome": "Unknown"}
+                for gene in np.unique(pivot_df.columns.values)
             ]
         ).set_index("gene")
     else:
@@ -200,8 +193,14 @@ def create_anndata(
         var_df["feature_types"] = "Gene Expression"
         var_df["genome"] = "Unknown"
         var_df = var_df.set_index("gene")
-    # gene_metrics = metrics['gene_metrics'].set_index('feature_name')
-    # var_df = var_df.join(gene_metrics, how='left').fillna(0)
+
+    # Compute total assigned and unassigned transcript counts for each gene
+    assigned_counts = df_filtered.groupby("feature_name")["feature_name"].count()
+    unassigned_counts = df[df[cell_id_col].astype(str) == "UNASSIGNED"].groupby("feature_name")["feature_name"].count()
+    var_df["total_assigned"] = var_df.index.map(assigned_counts).fillna(0).astype(int)
+    var_df["total_unassigned"] = var_df.index.map(unassigned_counts).fillna(0).astype(int)
+
+    # Filter cells and create the AnnData object
     cells = list(set(pivot_df.index) & set(cell_summary.index))
     pivot_df = pivot_df.loc[cells, :]
     cell_summary = cell_summary.loc[cells, :]
@@ -211,12 +210,7 @@ def create_anndata(
     adata.obs["unique_transcripts"] = (pivot_df > 0).sum(axis=1).values
     adata.obs_names = pivot_df.index.values.tolist()
     adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names, :], left_index=True, right_index=True)
-    # adata.uns['metrics'] = {
-    #     'percent_assigned': metrics['percent_assigned'],
-    #     'percent_cytoplasmic': metrics['percent_cytoplasmic'],
-    #     'percent_nucleus': metrics['percent_nucleus'],
-    #     'percent_non_assigned_cytoplasmic': metrics['percent_non_assigned_cytoplasmic']
-    # }
+
     return adata
 
 
