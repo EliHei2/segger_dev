@@ -110,10 +110,12 @@ def train_model(args: Namespace):
     # Add EarlyStopping callback
     callbacks = []
     if args.early_stopping:
-        callbacks.append(EarlyStopping(
-            monitor="validation_loss",
-            patience=20,
-        ))
+        callbacks.append(
+            EarlyStopping(
+                monitor="validation_loss",
+                patience=20,
+            )
+        )
 
     # Initialize the Lightning trainer
     trainer = Trainer(
