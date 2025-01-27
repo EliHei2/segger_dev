@@ -50,10 +50,10 @@ max_epochs:
   type: int
   default: 200
   help: Number of epochs for training.
-save_best_model:
+early_stopping:
   type: bool
   default: true
-  help: Whether to save the best model.
+  help: Whether to use early stopping.
 learning_rate:
   type: float
   default: 1e-3
