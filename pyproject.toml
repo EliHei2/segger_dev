@@ -7,7 +7,9 @@ name = "segger"
 version = "0.1.0"
 description = "Fast and accurate cell segmentation for single-molecule spatial omics"
 authors = [
-    { name = "Elyas Heidari", email = "elyas.heidari@dkfz-heidelberg.de" }
+    { name = "Elyas Heidari", email = "elyas.heidari@dkfz-heidelberg.de" },
+    { name = "Andrew Moorman", email = "moormana@mskcc.org" },
+    { name = "Daniel Unyi", email = "daniel.unyi.42@gmail.com" }
 ]
 license = { text = "MIT" }
 readme = "README.md"
