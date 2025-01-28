@@ -42,6 +42,10 @@ use_cc:
   type: bool
   default: false
   help: Use connected components if specified.
+score_cut:
+  type: float
+  default: 0.7
+  help: Minimum confidence threshold for assigning transcripts to cells.
 knn_method:
   type: str
   default: "cuda"

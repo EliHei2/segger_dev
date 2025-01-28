@@ -61,11 +61,11 @@ learning_rate:
 pretrained_model_dir:
   type: Path
   default: null
-  help: Directory containing the pretrained model to use (if any).
+  help: Directory containing the pretrained model to load for transfer learning (if any).
 pretrained_model_version:
   type: int
   default: null
-  help: Version of pretrained model.
+  help: Version of the pretrained model to load for transfer learning (if any).
 devices:
   type: int
   default: 4

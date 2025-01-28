@@ -227,6 +227,8 @@ def run_prediction():
             str(config["prediction"]["cell_id_col"]),
             "--use_cc",
             str(config["prediction"]["use_cc"]),
+            "--score_cut",
+            str(config["prediction"]["score_cut"]),
             "--knn_method",
             config["prediction"]["knn_method"],
             "--file_format",

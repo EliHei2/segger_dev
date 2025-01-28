@@ -36,9 +36,14 @@ help_msg = "Train the Segger segmentation model."
     "--pretrained_model_dir",
     type=Path,
     default=None,
-    help="Directory containing the pretrained modelDirectory containing the pretrained model to use (if any).",
+    help="Directory containing the pretrained model to load for transfer learning (if any).",
 )
-@click.option("--pretrained_model_version", type=int, default=None, help="Version of pretrained model.")
+@click.option(
+    "--pretrained_model_version",
+    type=int,
+    default=None,
+    help="Version of the pre-trained model to load for transfer learning (if any).",
+)
 @click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
 @click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
 @click.option("--precision", type=str, default="16-mixed", help="Precision for training.")

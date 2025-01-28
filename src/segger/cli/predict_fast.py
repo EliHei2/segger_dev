@@ -28,6 +28,7 @@ help_msg = "Run the Segger segmentation model."
 @click.option("--min_transcripts", type=int, default=5, help="Minimum number of transcripts for segmentation.")
 @click.option("--cell_id_col", type=str, default="segger_cell_id", help="Column name for cell IDs.")
 @click.option("--use_cc", type=bool, default=False, help="Use connected components if specified.")
+@click.option("--score_cut", type=float, default=0.7, help="Minimum confidence threshold for assigning transcripts to cells.")
 @click.option("--knn_method", type=str, default="cuda", help="Method for KNN computation.")
 @click.option("--file_format", type=str, default="anndata", help="File format for output data.")
 @click.option("--k_bd", type=int, default=4, help="K value for boundary computation.")
@@ -61,6 +62,7 @@ def run_segmentation(args: Namespace):
         dm,
         save_dir=args.benchmarks_dir,
         seg_tag=args.save_tag,
+        score_cut=args.score_cut,
         transcript_file=args.transcripts_file,
         file_format=args.file_format,
         receptive_field={"k_bd": args.k_bd, "dist_bd": args.dist_bd, "k_tx": args.k_tx, "dist_tx": args.dist_tx},
