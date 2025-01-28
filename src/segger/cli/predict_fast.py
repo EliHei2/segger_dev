@@ -28,7 +28,9 @@ help_msg = "Run the Segger segmentation model."
 @click.option("--min_transcripts", type=int, default=5, help="Minimum number of transcripts for segmentation.")
 @click.option("--cell_id_col", type=str, default="segger_cell_id", help="Column name for cell IDs.")
 @click.option("--use_cc", type=bool, default=False, help="Use connected components if specified.")
-@click.option("--score_cut", type=float, default=0.7, help="Minimum confidence threshold for assigning transcripts to cells.")
+@click.option(
+    "--score_cut", type=float, default=0.7, help="Minimum confidence threshold for assigning transcripts to cells."
+)
 @click.option("--knn_method", type=str, default="cuda", help="Method for KNN computation.")
 @click.option("--file_format", type=str, default="anndata", help="File format for output data.")
 @click.option("--k_bd", type=int, default=4, help="K value for boundary computation.")
