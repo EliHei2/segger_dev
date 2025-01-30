@@ -36,7 +36,7 @@ help_msg = "Create Segger dataset from spatial transcriptomics data (Xenium or M
     "--tile_size",
     type=int,
     default=None,
-    help="If provided, specifies the size of the tile. Overrides `tile_width` and `tile_height`.",
+    help="Specifies the expected number of transcripts per tile. Overrides `tile_width` and `tile_height`.",
 )
 @click.option(
     "--tile_width", type=int, default=None, help="Width of the tiles in pixels. Ignored if `tile_size` is provided."
@@ -73,6 +73,28 @@ def create_dataset(args: Namespace):
         sample_type=args.sample_type,
         weights=gene_celltype_abundance_embedding,
     )
+
+
+    import math
+    import numpy as np
+    import pandas as pd
+    from segger.data.parquet._utils import get_polygons_from_xy
+    transcripts = pd.read_parquet(
+        Path(args.base_dir) / 'transcripts.parquet',
+        filters=[[('overlaps_nucleus', '=', 1)]]
+    )
+    boundaries = pd.read_parquet(Path(args.base_dir) / 'nucleus_boundaries.parquet')
+    sizes = transcripts.groupby('cell_id').size()
+    polygons = get_polygons_from_xy(boundaries, 'vertex_x', 'vertex_y', 'cell_id')
+    densities = polygons[sizes.index].area / sizes
+    bd_width = polygons.minimum_bounding_radius().median() * 2
+    # 1/4 median boundary diameter
+    args.dist_tx = bd_width / 4
+    # 90th percentile density of bounding circle with radius=dist_tx
+    args.k_tx = math.ceil(np.quantile(args.dist_tx ** 2 * np.pi * densities, 0.9))
+    print(f'k_tx: {args.k_tx}, dist_tx: {args.dist_tx}')
+
+
 
     # Save Segger dataset
     logging.info("Saving dataset for Segger...")
