@@ -37,7 +37,7 @@ dist_tx:
 tile_size:
   type: int
   default: null
-  help: If provided, specifies the size of the tile. Overrides `tile_width` and `tile_height`.
+  help: Specifies the expected number of transcripts per tile. Overrides `tile_width` and `tile_height`.
 tile_width:
   type: int
   default: null

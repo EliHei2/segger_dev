@@ -43,7 +43,7 @@ import torch.utils.dlpack as dlpack
 from datetime import timedelta
 
 
-def filter_transcripts( #ONLY FOR XENIUM
+def filter_transcripts(  # ONLY FOR XENIUM
     transcripts_df: pd.DataFrame,
     min_qv: float = 20.0,
 ) -> pd.DataFrame:
@@ -65,14 +65,14 @@ def filter_transcripts( #ONLY FOR XENIUM
         "DeprecatedCodeword_",
         "UnassignedCodeword_",
     )
-    
-    transcripts_df['feature_name'] = transcripts_df['feature_name'].apply(
+
+    transcripts_df["feature_name"] = transcripts_df["feature_name"].apply(
         lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
     )
-    mask_quality = transcripts_df['qv'] >= min_qv
+    mask_quality = transcripts_df["qv"] >= min_qv
 
     # Apply the filter for unwanted codewords using Dask string functions
-    mask_codewords = ~transcripts_df['feature_name'].str.startswith(filter_codewords)
+    mask_codewords = ~transcripts_df["feature_name"].str.startswith(filter_codewords)
 
     # Combine the filters and return the filtered Dask DataFrame
     mask = mask_quality & mask_codewords

@@ -49,7 +49,7 @@ python3 src/segger/cli/create_dataset_fast.py \
 
 
 #### Key Updates
-- **Faster Dataset Creation** This method is way faster due to the use of ND-tree-based partitioning and parallel processing.
+- **Fast Dataset Creation** This method is really fast due to the use of ND-tree-based partitioning and parallel processing.
 
 !!! note "Customizing Your Dataset"
     - **dataset_type**: Defines the type of spatial transcriptomics data. Currently, **xenium** and **merscope** are supported and have been tested.
@@ -84,6 +84,10 @@ $ python3 src/segger/cli/train_model.py \
     --num_workers 2 \
     --accelerator cuda \
     --max_epochs 200 \
+    --early_stopping True \
+    --learning_rate 1e-3 \
+    --pretrained_model_dir None \
+    --pretrained_model_version None \
     --devices 4 \
     --strategy auto \
     --precision 16-mixed
@@ -106,6 +110,10 @@ $ python3 src/segger/cli/train_model.py \
 | `num_workers`      | Number of workers to use for parallel data loading.                                     | `2`           |
 | `accelerator`      | Device used for training (e.g., `cuda` for GPU or `cpu`).                               | `cuda`        |
 | `max_epochs`       | Number of training epochs.                                                              | `200`         |
+| `early_stopping`   | Whether to use early stopping during training.                                          | `True`        |
+| `learning_rate`    | Learning rate used for training.                                                        | `1e-3`        |
+| `pretrained_model_dir` | Directory containing the pretrained model to load for transfer learning (if any).                       | `None`        |
+| `pretrained_model_version` | Version of the pre-trained model to load for transfer learning (if any).                      | `None`        |
 | `devices`          | Number of devices (GPUs) to use during training.                                        | `4`           |
 | `strategy`         | Strategy used for training (e.g., `ddp` for distributed training or `auto`).            | `auto`        |
 | `precision`        | Precision used for training (e.g., `16-mixed` for mixed precision training).            | `16-mixed`    |
@@ -115,8 +123,8 @@ $ python3 src/segger/cli/train_model.py \
     - **batch_size**: A larger batch size can speed up training, but requires more memory. Adjust based on your hardware capabilities.
     - **epochs**: Increasing the number of epochs can improve model performance by allowing more learning cycles, but it will also extend the overall training time. Balance this based on your time constraints and hardware capacity.
 
-!!! warning "Ensure Correct CUDA and PyTorch Setup"
-    Before using the `--accelerator cuda` flag, ensure your system has CUDA installed and configured correctly. Also, check that the installed CUDA version is compatible with your PyTorch and PyTorch Geometric versions.
+!!! warning "Ensure correct CUDA and PyTorch setup"
+    Before using the `--accelerator cuda` flag, ensure your system has CUDA installed and configured correctly. Also, check that the installed CUDA version is compatible with your PyTorch and CuPy versions.
 
 ---
 
@@ -173,8 +181,13 @@ $ python3 src/segger/cli/predict_fast.py \
     - **batch_size**: A larger batch size can speed up training, but requires more memory. Adjust based on your hardware capabilities.
     - **use_cc**: Enabling connected component analysis can improve the accuracy of transcript assignments.
 
-!!! warning "Ensure Correct CUDA, cuVS, and PyTorch Setup"
-    Before using the `knn_method cuda` flag, ensure your system has CUDA installed and configured properly. Also, verify that the installed CUDA version is compatible with your cuPy, cuVS, PyTorch, and PyTorch Geometric versions.
+!!! tip "Key Parameters for Segmentation"
+    - **dist_bd** controls the cell size by defining the cell boundary distance (e.g., set to {nucleus_average_radius} + 1 if it's ~1μm from the nucleus).
+    - **score_cut** can be adjusted to set the confidence threshold for transcript assignment, with higher values resulting in smaller but more confident cells.
+
+!!! tip "Key Parameters for Segmentation"
+    - **dist_bd**: Defines the cell boundary distance. For a boundary ~1μm from the nucleus, setting `dist_bd` to `{nucleus_average_radius} + 1` is a reasonable choice.
+    - **score_cut**: Sets the confidence threshold for transcript assignment. Higher values result in smaller but more confidently defined cells.
 
 ---
 
@@ -203,14 +216,20 @@ python3 submit_job.py --config_file=filename.yaml
 
 ### 5. Containerization
 
-For users who want a portable, containerized environment, segger supports both Docker and Singularity containers. These containers provide a consistent runtime environment with all dependencies pre-installed.
+For users seeking a portable, containerized environment, segger provides a Docker image with all dependencies pre-installed. The current images support **CUDA 11.8** and **CUDA 12.1**, which can be specified in the image tag.
 
 #### Using Docker
 
-You can pull the segger Docker image from Docker Hub with this command:
+First, pull the Docker image from Docker Hub:
 
 ```console
 docker pull danielunyi42/segger_dev:cuda121
+```
+
+Then run the Docker container on your machine:
+
+```console
+docker run --gpus all -it danielunyi42/segger_dev:cuda121
 ```
 
 To run the pipeline in Docker, make sure your YAML configuration includes the following settings:
@@ -218,22 +237,20 @@ To run the pipeline in Docker, make sure your YAML configuration includes the fo
 - `use_singularity`: false
 - `use_lsf`: false
 
-Afterwards, run the pipeline inside the Docker container with the same `submit_job.py` command.
+Afterwards, run the pipeline inside the Docker container with the `submit_job.py` command.
 
 #### Using Singularity
-For a Singularity environment, pull the image with:
+For a Singularity environment, pull and run with:
 
 ```console
 singularity pull docker://danielunyi42/segger_dev:cuda121
+singularity exec --nv segger_dev_cuda121.sif
 ```
 
 Ensure `use_singularity: true` in the YAML file and specify the Singularity image file (e.g., `segger_dev_latest.sif`) in the `singularity_image` field.
 
-!!! note "Containerization"
-    - The segger Docker image currently supports CUDA 11.8 and CUDA 12.1.
-
 ### 6. HPC Environments
 
-Segger also supports HPC environments with LSF job scheduling. To run the pipeline on an HPC cluster using LSF, set `use_lsf: true` in your YAML configuration.
+segger also supports HPC environments with LSF job scheduling. To run the pipeline on an HPC cluster using LSF, set `use_lsf: true` in your YAML configuration.
 
 If your HPC system supports Slurm, a similar setup is planned and will be introduced soon.
