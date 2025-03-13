@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>predict &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for predict</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">segger.cli.utils</span> <span class="kn">import</span> <span class="n">add_options</span><span class="p">,</span> <span class="n">CustomFormatter</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="predict_yml">
+<a class="viewcode-back" href="../api/predict/index.html#predict.predict_yml">[docs]</a>
+<span class="n">predict_yml</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;predict&#39;</span> <span class="o">/</span> <span class="s1">&#39;default.yaml&#39;</span></div>
+
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;predict&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Predict using the Segger model&quot;</span><span class="p">)</span>
+<span class="c1">#@click.option(&#39;--foo&#39;, default=&quot;bar&quot;)  # add more options above, not below</span>
+<div class="viewcode-block" id="predict">
+<a class="viewcode-back" href="../api/predict/index.html#predict.predict">[docs]</a>
+<span class="nd">@add_options</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">predict_yml</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="c1"># Setup</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">CustomFormatter</span><span class="p">())</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span>
+
+    <span class="c1"># Import packages</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Importing packages...&quot;</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">segger.data.utils</span> <span class="kn">import</span> <span class="n">XeniumDataset</span>
+    <span class="kn">from</span> <span class="nn">torch_geometric.loader</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+    <span class="kn">from</span> <span class="nn">segger.prediction.predict</span> <span class="kn">import</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">predict</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load datasets and model</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading Xenium datasets and Segger model...&quot;</span><span class="p">)</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">XeniumDataset</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">)</span>
+    <span class="n">data_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">num_workers</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">workers</span><span class="p">,</span>
+        <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_loader</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Nothing to predict: No data found at &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">lit_segger</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">checkpoint_path</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Make prediction on dataset</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Making predictions on data&quot;</span><span class="p">)</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span>
+        <span class="n">lit_segger</span><span class="o">=</span><span class="n">lit_segger</span><span class="p">,</span>
+        <span class="n">data_loader</span><span class="o">=</span><span class="n">data_loader</span><span class="p">,</span>
+        <span class="n">score_cut</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">score_cut</span><span class="p">,</span>
+        <span class="n">use_cc</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">use_cc</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Write predictions to file</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving predictions to file&quot;</span><span class="p">)</span>
+    <span class="n">predictions</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
