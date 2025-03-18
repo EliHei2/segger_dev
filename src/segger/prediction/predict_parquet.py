@@ -13,13 +13,7 @@ import glob
 from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
-from segger.data.utils import (
-    get_edge_index,
-    format_time,
-    create_anndata,
-    coo_to_dense_adj,
-    filter_transcripts
-)
+from segger.data.utils import get_edge_index, format_time, create_anndata, coo_to_dense_adj, filter_transcripts
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.boundary import generate_boundaries
@@ -544,13 +538,12 @@ def segment(
     if verbose:
         print(f"Applying max score selection logic...")
     output_ddf_save_path = save_dir / "transcripts_df.parquet"
-    
-    
+
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
-    
-    seg_final_filtered = seg_final_dd.sort_values(
-        "score", ascending=False
-    ).drop_duplicates(subset="transcript_id", keep="first")
+
+    seg_final_filtered = seg_final_dd.sort_values("score", ascending=False).drop_duplicates(
+        subset="transcript_id", keep="first"
+    )
 
     if verbose:
         elapsed_time = time() - step_start_time
@@ -570,7 +563,7 @@ def segment(
 
     # Outer merge to include all transcripts, even those without assigned cell ids
     transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
-    
+
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")

@@ -43,7 +43,7 @@ training:
   num_workers: 12
   accelerator: "cuda"
   max_epochs: 200
-  save_best_model: true
+  early_stopping: true
   learning_rate: 1e-3
   pretrained_model_dir: null
   pretrained_model_version: 0

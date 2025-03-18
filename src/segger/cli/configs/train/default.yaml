@@ -50,10 +50,10 @@ max_epochs:
   type: int
   default: 200
   help: Number of epochs for training.
-save_best_model:
+early_stopping:
   type: bool
   default: true
-  help: Whether to save the best model.
+  help: Whether to use early stopping.
 learning_rate:
   type: float
   default: 1e-3
@@ -61,11 +61,11 @@ learning_rate:
 pretrained_model_dir:
   type: Path
   default: null
-  help: Directory containing the pretrained model to use (if any).
+  help: Directory containing the pretrained model to load for transfer learning (if any).
 pretrained_model_version:
   type: int
   default: null
-  help: Version of pretrained model.
+  help: Version of the pretrained model to load for transfer learning (if any).
 devices:
   type: int
   default: 4

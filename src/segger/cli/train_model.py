@@ -29,15 +29,21 @@ help_msg = "Train the Segger segmentation model."
     "--accelerator", type=str, default="cuda", help='Device type to use for training (e.g., "cuda", "cpu").'
 )  # Ask for accelerator
 @click.option("--max_epochs", type=int, default=200, help="Number of epochs for training.")
-@click.option("--save_best_model", type=bool, default=True, help="Whether to save the best model.")  # unused for now
+@click.option("--early_stopping", type=bool, default=True, help="Whether to use early stopping.")
+# @click.option("--save_best_model", type=bool, default=True, help="Whether to save the best model.")
 @click.option("--learning_rate", type=float, default=1e-3, help="Learning rate for training.")
 @click.option(
     "--pretrained_model_dir",
     type=Path,
     default=None,
-    help="Directory containing the pretrained modelDirectory containing the pretrained model to use (if any).",
+    help="Directory containing the pretrained model to load for transfer learning (if any).",
 )
-@click.option("--pretrained_model_version", type=int, default=None, help="Version of pretrained model.")
+@click.option(
+    "--pretrained_model_version",
+    type=int,
+    default=None,
+    help="Version of the pre-trained model to load for transfer learning (if any).",
+)
 @click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
 @click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
 @click.option("--precision", type=str, default="16-mixed", help="Precision for training.")
@@ -56,6 +62,7 @@ def train_model(args: Namespace):
     from segger.training.segger_data_module import SeggerDataModule
     from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
+    from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import Trainer
 
     logging.info("Done.")
@@ -105,6 +112,16 @@ def train_model(args: Namespace):
         )
     logging.info("Done.")
 
+    # Add EarlyStopping callback
+    callbacks = []
+    if args.early_stopping:
+        callbacks.append(
+            EarlyStopping(
+                monitor="validation_loss",
+                patience=20,
+            )
+        )
+
     # Initialize the Lightning trainer
     trainer = Trainer(
         accelerator=args.accelerator,  # Directly use the specified accelerator
@@ -114,6 +131,7 @@ def train_model(args: Namespace):
         max_epochs=args.max_epochs,  # Hard-coded value
         default_root_dir=args.models_dir,
         logger=CSVLogger(args.models_dir),
+        callbacks=callbacks,
     )
 
     logging.info("Done.")
