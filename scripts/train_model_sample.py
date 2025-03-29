@@ -15,7 +15,7 @@ import scanpy as sc
 import os
 
 
-segger_data_dir = segger_data_dir = Path('data_tidy/pyg_datasets/bc_rep1_emb_final_200')
+segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/bc_rep1_emb_final_200")
 models_dir = Path("./models/bc_rep1_emb_final_200")
 
 # Base directory to store Pytorch Lightning models
@@ -35,37 +35,34 @@ dm.setup()
 
 # If you use custom gene embeddings, use the following two lines instead:
 is_token_based = False
-num_tx_tokens = dm.train[0].x_dict["tx"].shape[1] # Set the number of tokens to the number of genes
+num_tx_tokens = dm.train[0].x_dict["tx"].shape[1]  # Set the number of tokens to the number of genes
 
 
 num_bd_features = dm.train[0].x_dict["bd"].shape[1]
 
 # Initialize the Lightning model
 ls = LitSegger(
-    is_token_based = is_token_based,
-    num_node_features = {"tx": num_tx_tokens, "bd": num_bd_features},
-    init_emb=8,    
+    is_token_based=is_token_based,
+    num_node_features={"tx": num_tx_tokens, "bd": num_bd_features},
+    init_emb=8,
     hidden_channels=64,
     out_channels=16,
     heads=4,
     num_mid_layers=3,
-    aggr='sum',
-    learning_rate=1e-3
+    aggr="sum",
+    learning_rate=1e-3,
 )
 
 # Initialize the Lightning trainer
 trainer = Trainer(
-    accelerator='cuda',
-    strategy='auto',
-    precision='16-mixed',
-    devices=2, # set higher number if more gpus are available
+    accelerator="cuda",
+    strategy="auto",
+    precision="16-mixed",
+    devices=2,  # set higher number if more gpus are available
     max_epochs=400,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )
 
 
-trainer.fit(
-    model=ls,
-    datamodule=dm
-)
+trainer.fit(model=ls, datamodule=dm)
