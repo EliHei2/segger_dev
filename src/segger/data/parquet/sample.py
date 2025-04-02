@@ -15,7 +15,6 @@ from itertools import compress
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import RandomLinkSplit
 import torch
-from pqdm.threads import pqdm
 import random
 from segger.data.parquet.transcript_embedding import TranscriptEmbedding
 
@@ -434,7 +433,10 @@ class STSampleParquet:
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
-        pqdm(regions, func, n_jobs=self.n_workers)
+        outs = []
+        for region in regions:
+            outs.append(func(region))
+        return outs
 
 
 # TODO: Add documentation for settings

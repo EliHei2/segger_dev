@@ -56,10 +56,10 @@ def train_model(args: Namespace):
     from segger.training.segger_data_module import SeggerDataModule
     from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
-    from pytorch_lightning import Trainer
+    from lightning import Trainer
 
     logging.info("Done.")
-
+uv a
     # Load datasets
     logging.info("Loading Xenium datasets...")
     dm = SeggerDataModule(
