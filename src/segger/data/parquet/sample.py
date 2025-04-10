@@ -16,6 +16,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.transforms import RandomLinkSplit
 import torch
 import random
+from tqdm.auto import tqdm
 from segger.data.parquet.transcript_embedding import TranscriptEmbedding
 
 
@@ -334,6 +335,7 @@ class STSampleParquet:
         frac: float = 1.0,
         val_prob: float = 0.1,
         test_prob: float = 0.2,
+        pbar: bool = False,
     ):
         """
         Saves the tiles of the sample as PyTorch geometric datasets. See
@@ -369,6 +371,8 @@ class STSampleParquet:
             Proportion of data for use for validation split.
         test_prob: float, optional, default 0.2
             Proportion of data for use for test split.
+        pbar: bool, default False
+            Whether to show a tqdm progress bar.
 
         Raises
         ------
@@ -426,8 +430,9 @@ class STSampleParquet:
 
         # TODO: Add Dask backend
         regions = self._get_balanced_regions()
+#        if pbar: regions = 
         outs = []
-        for region in regions:
+        for region in tqdm(regions):
             outs.append(func(region))
         return outs
 

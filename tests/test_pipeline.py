@@ -60,9 +60,8 @@ def test_train(workspace: Workspace):
     """Run segger model training"""
     dm = SeggerDataModule(workspace.dataset, batch_size=1, num_workers=1)
     model = Segger(num_tx_tokens=500, hidden_channels=2, num_mid_layers=1,
-                   init_emb=2, out_channels=2, heads=1)
-    md = (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")])
-    ls = LitSegger(to_hetero(model, metadata=md, aggr='sum'))
+                   in_channels=2, out_channels=2, heads=1)
+    ls = LitSegger(model)
     logger = CSVLogger(workspace.model)
     trainer = Trainer(default_root_dir=workspace.model, logger=logger,
                       min_epochs=5, max_epochs=5)
