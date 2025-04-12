@@ -6,6 +6,7 @@ transcripts:
   id: "transcript_id"
   label: "feature_name"
   nuclear: "overlaps_nucleus"
+  qv_column: "qv"
   filter_substrings:
     - "NegControlProbe_"
     - "antisense_"

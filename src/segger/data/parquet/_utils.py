@@ -136,6 +136,7 @@ def get_polygons_from_xy(
     x: str,
     y: str,
     label: str,
+    buffer_ratio: float = 1.0,
 ) -> gpd.GeoSeries:
     """
     Convert boundary coordinates from a cuDF DataFrame to a GeoSeries of
@@ -152,7 +153,10 @@ def get_polygons_from_xy(
         The name of the column representing the y-coordinate.
     label : str
         The name of the column representing the cell or nucleus label.
-
+    buffer_ratio : float, optional
+        A ratio to expand or shrink the polygons. A value of 1.0 means no change,
+        greater than 1.0 expands the polygons, and less than 1.0 shrinks the polygons
+        (default is 1.0).
 
     Returns
     -------
@@ -174,7 +178,61 @@ def get_polygons_from_xy(
     )
     gs = gpd.GeoSeries(polygons, index=np.unique(ids))
 
+    if buffer_ratio != 1.:
+        # Apply buffer ratio
+        gs = gs.buffer(buffer_ratio)
+
     return gs
+
+
+def compute_nuclear_transcripts(polygons: gpd.GeoSeries, transcripts: pd.DataFrame, x_col: str, y_col: str) -> np.ndarray:
+    """
+    Compute which transcripts are nuclear based on their overlap with boundary polygons.
+    
+    Parameters
+    ----------
+    polygons : gpd.GeoSeries
+        GeoSeries containing the boundary polygons.
+    transcripts : pd.DataFrame
+        DataFrame containing transcript coordinates.
+    x_col : str
+        Name of the x-coordinate column in transcripts.
+    y_col : str
+        Name of the y-coordinate column in transcripts.
+        
+    Returns
+    -------
+    np.ndarray
+        Boolean array indicating which transcripts are nuclear.
+    """
+    try:
+        # Create points from transcript coordinates
+        transcript_points = gpd.GeoSeries([
+            shapely.Point(x, y) 
+            for x, y in zip(transcripts[x_col], transcripts[y_col])
+        ])
+
+        # Create spatial index and compute point-in-polygon relationships
+        spatial_index = polygons.sindex
+        is_nuclear = []
+        
+        for point in transcript_points:
+            try:
+                possible_matches_index = list(spatial_index.intersection(point.bounds))
+                if not possible_matches_index:
+                    is_nuclear.append(False)
+                    continue
+                    
+                possible_matches = polygons.iloc[possible_matches_index]
+                is_inside = any(possible_matches.contains(point))
+                is_nuclear.append(is_inside)
+            except Exception:
+                is_nuclear.append(False)
+
+        return np.array(is_nuclear)
+
+    except Exception as e:
+        raise ValueError(f"Error computing nuclear transcripts: {str(e)}")
 
 
 def filter_boundaries(
@@ -256,6 +314,7 @@ def filter_transcripts(
     transcripts_df: pd.DataFrame,
     label: Optional[str] = None,
     filter_substrings: Optional[List[str]] = None,
+    qv_column: Optional[str] = None,
     min_qv: Optional[float] = None,
 ) -> pd.DataFrame:
     """
@@ -269,6 +328,8 @@ def filter_transcripts(
         The label of transcript features.
     filter_substrings : Optional[str]
         The list of feature substrings to remove.
+    qv_column : Optional[str]
+        The name of the column representing the quality value.
     min_qv : Optional[float]
         The minimum quality value threshold for filtering transcripts.
 
@@ -280,8 +341,8 @@ def filter_transcripts(
     mask = pd.Series(True, index=transcripts_df.index)
     if filter_substrings is not None and label is not None:
         mask &= ~transcripts_df[label].str.startswith(tuple(filter_substrings))
-    if min_qv is not None:
-        mask &= transcripts_df["qv"].ge(min_qv)
+    if min_qv is not None and qv_column is not None:
+        mask &= transcripts_df[qv_column].ge(min_qv)
     return transcripts_df[mask]
 
 
