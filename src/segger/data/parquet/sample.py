@@ -34,9 +34,9 @@ class STSampleParquet:
         self,
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
+        buffer_ratio: Optional[float] = 1.,
         sample_type: str = None,
         weights: pd.DataFrame = None,
-        buffer_ratio: Optional[float] = None,
     ):
         """
         Initializes the STSampleParquet instance.
@@ -70,9 +70,12 @@ class STSampleParquet:
         boundaries_fn = self.settings.boundaries.filename
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
-
+        self.settings.boundaries.buffer_ratio = 1
+        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
+            print("Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation.")
         # Set buffer ratio if provided
-        if buffer_ratio is not None:
+        if buffer_ratio != 1.:
             self.settings.boundaries.buffer_ratio = buffer_ratio
 
         # Setup logging
@@ -479,90 +482,74 @@ class STSampleParquet:
         print(f"- val_prob: {val_prob}")
         print(f"- test_prob: {test_prob}")
 
-        try:
-            # Setup directory structure to save tiles
-            data_dir = Path(data_dir)
-            STSampleParquet._setup_directory(data_dir)
-            print(f"\nOutput directory: {data_dir}")
+        # Setup directory structure to save tiles
+        data_dir = Path(data_dir)
+        STSampleParquet._setup_directory(data_dir)
+        print(f"\nOutput directory: {data_dir}")
 
-            # Get regions to process
-            regions = self._get_balanced_regions()
-            print(f"\nTotal regions to process: {len(regions)}")
-            print("Region bounds:")
-            for i, region in enumerate(regions):
-                print(f"Region {i+1}: {region.bounds}")
+        # Get regions to process
+        regions = self._get_balanced_regions()
+        print(f"\nTotal regions to process: {len(regions)}")
+        print("Region bounds:")
+        for i, region in enumerate(regions):
+            print(f"Region {i+1}: {region.bounds}")
 
-            # Process each region sequentially
-            for region_idx, region in enumerate(regions):
-                print(f"\n=== Processing Region {region_idx + 1}/{len(regions)} ===")
-                print(f"Region bounds: {region.bounds}")
-                
-                try:
-                    xm = STInMemoryDataset(sample=self, extents=region)
-                    tiles = xm._tile(tile_width, tile_height, None)
-                    print(f"Generated {len(tiles)} tiles for this region")
-                    
-                    if frac < 1:
-                        tiles = random.sample(tiles, int(len(tiles) * frac))
-                        print(f"After sampling: {len(tiles)} tiles")
-                    
-                    # Process each tile
-                    for tile_idx, tile in enumerate(tiles):
-                        print(f"\n--- Processing Tile {tile_idx + 1}/{len(tiles)} ---")
-                        print(f"Tile bounds: {tile.bounds}")
-                        
-                        try:
-                            # Choose training, test, or validation datasets
-                            data_type = np.random.choice(
-                                a=["train_tiles", "test_tiles", "val_tiles"],
-                                p=[1 - (test_prob + val_prob), test_prob, val_prob],
-                            )
-                            print(f"Assigned to: {data_type}")
-                            
-                            xt = STTile(dataset=xm, extents=tile)
-                            print(f"Tile UID: {xt.uid}")
-                            
-                            pyg_data = xt.to_pyg_dataset(
-                                k_bd=k_bd,
-                                dist_bd=dist_bd,
-                                k_tx=k_tx,
-                                dist_tx=dist_tx,
-                                neg_sampling_ratio=neg_sampling_ratio,
-                            )
-                            
-                            if pyg_data is not None:
-                                if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
-                                    data_type = "test_tiles"
-                                    print("No tx-belongs-bd edges found, reassigning to test_tiles")
-                                
-                                filepath = data_dir / data_type / "processed" / f"{xt.uid}.pt"
-                                torch.save(pyg_data, filepath)
-                                print(f"Saved to: {filepath}")
-                                
-                                # Print some statistics about the generated data
-                                print(f"Data statistics:")
-                                print(f"- Number of transcripts: {pyg_data['tx'].num_nodes}")
-                                print(f"- Number of boundaries: {pyg_data['bd'].num_nodes}")
-                                print(f"- Number of tx-tx edges: {pyg_data['tx', 'neighbors', 'tx'].edge_index.shape[1]}")
-                                print(f"- Number of tx-bd edges: {pyg_data['tx', 'neighbors', 'bd'].edge_index.shape[1]}")
-                                print(f"- Number of tx-belongs-bd edges: {pyg_data['tx', 'belongs', 'bd'].edge_index.shape[1]}")
-                            else:
-                                print("Skipping tile - no valid data generated")
-                                
-                        except Exception as e:
-                            print(f"Error processing tile {tile_idx + 1}: {str(e)}")
-                            continue
-                            
-                except Exception as e:
-                    print(f"Error processing region {region_idx + 1}: {str(e)}")
-                    continue
-
-            print("\n=== Debug Tile Generation Completed ===")
+        # Process each region sequentially
+        for region_idx, region in enumerate(regions):
+            print(f"\n=== Processing Region {region_idx + 1}/{len(regions)} ===")
+            print(f"Region bounds: {region.bounds}")
             
-        except Exception as e:
-            print(f"\n=== Error in Debug Tile Generation ===")
-            print(f"Error: {str(e)}")
-            raise
+            xm = STInMemoryDataset(sample=self, extents=region)
+            tiles = xm._tile(tile_width, tile_height, None)
+            print(f"Generated {len(tiles)} tiles for this region")
+            
+            if frac < 1:
+                tiles = random.sample(tiles, int(len(tiles) * frac))
+                print(f"After sampling: {len(tiles)} tiles")
+            
+            # Process each tile
+            for tile_idx, tile in enumerate(tiles):
+                print(f"\n--- Processing Tile {tile_idx + 1}/{len(tiles)} ---")
+                print(f"Tile bounds: {tile.bounds}")
+                
+                # Choose training, test, or validation datasets
+                data_type = np.random.choice(
+                    a=["train_tiles", "test_tiles", "val_tiles"],
+                    p=[1 - (test_prob + val_prob), test_prob, val_prob],
+                )
+                print(f"Assigned to: {data_type}")
+                
+                xt = STTile(dataset=xm, extents=tile)
+                print(f"Tile UID: {xt.uid}")
+                
+                pyg_data = xt.to_pyg_dataset(
+                    k_bd=k_bd,
+                    dist_bd=dist_bd,
+                    k_tx=k_tx,
+                    dist_tx=dist_tx,
+                    neg_sampling_ratio=neg_sampling_ratio,
+                )
+                
+                if pyg_data is not None:
+                    if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
+                        data_type = "test_tiles"
+                        print("No tx-belongs-bd edges found, reassigning to test_tiles")
+                    
+                    filepath = data_dir / data_type / "processed" / f"{xt.uid}.pt"
+                    torch.save(pyg_data, filepath)
+                    print(f"Saved to: {filepath}")
+                    
+                    # Print some statistics about the generated data
+                    print(f"Data statistics:")
+                    print(f"- Number of transcripts: {pyg_data['tx'].num_nodes}")
+                    print(f"- Number of boundaries: {pyg_data['bd'].num_nodes}")
+                    print(f"- Number of tx-tx edges: {pyg_data['tx', 'neighbors', 'tx'].edge_index.shape[1]}")
+                    print(f"- Number of tx-bd edges: {pyg_data['tx', 'neighbors', 'bd'].edge_index.shape[1]}")
+                    # print(f"- Number of tx-belongs-bd edges: {pyg_data['tx', 'belongs', 'bd'].edge_index.shape[1]}")
+                else:
+                    print("Skipping tile - no valid data generated")
+
+        print("\n=== Debug Tile Generation Completed ===")
 
 
 # TODO: Add documentation for settings
@@ -665,7 +652,7 @@ class STInMemoryDataset:
         transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
             lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
         )
-        qv_column = self.settings.transcripts.qv_column if 'qv_column' in self.settings.transcripts else None
+        qv_column = getattr(self.settings.transcripts, 'qv_column', None)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,
@@ -1176,102 +1163,14 @@ class STTile:
         circularity: bool = True,
     ) -> HeteroData:
         """
-        Converts the sample data to a PyG HeteroData object (more information
-        on the structure of the object below).
-
-        Parameters
-        ----------
-        train: bool
-            Whether a sample is part of the training dataset. If True, add
-            negative edges to dataset.
-        k_bd : int, optional
-            The number of nearest neighbors for the 'bd' nodes (default is 4).
-        dist_bd : float, optional
-            The maximum distance for neighbors of 'bd' nodes (default is 20).
-        k_tx : int, optional
-            The number of nearest neighbors for the 'tx' nodes (default is 4).
-        dist_tx : float, optional
-            The maximum distance for neighbors of 'tx' nodes (default is 20).
-        area : bool, optional
-            If True, compute the area of each polygon (default is True).
-        convexity : bool, optional
-            If True, compute the convexity of each polygon (default is True).
-        elongation : bool, optional
-            If True, compute the elongation of each polygon (default is True).
-        circularity : bool, optional
-            If True, compute the circularity of each polygon (default is True).
-
-        Returns
-        -------
-        data : HeteroData
-            A PyG HeteroData object containing the sample data.
-
-        Segger PyG HeteroData Spec
-        --------------------------
-        A heterogenous graph with two node types and two edge types.
-
-        Node Types
-        ----------
-        1. Boundary ("bd")
-            Represents boundaries (typically cells) in the ST dataset.
-
-            Attributes
-            ----------
-            id : str
-                Cell ID originating from the ST sample.
-            pos : np.ndarray
-                X, Y coordinates of the centroid of the polygon boundary.
-            x : torch.tensor
-                May include area, convexity, elongation, and circularity
-                of the polygon boundary (user-specified).
-
-        2. Transcript ("tx")
-            Represents transcripts in the ST dataset.
-
-            Attributes
-            ----------
-            id : int64
-                Transcript ID originating from ST sample.
-            pos : np.ndarray
-                X, Y, Z coordinates of the transcript.
-            x : torch.tensor
-                Sparse one-hot encoding of the transcript gene name.
-
-        Edge Types
-        ----------
-        1. ("tx", "belongs", "bd")
-            Represents the relationship where a transcript is contained within
-            a boundary.
-
-            Attributes
-            ----------
-            edge_index : torch.Tensor
-                Edge indices in COO format between transcripts and nuclei
-
-        2. ("tx", "neighbors", "bd")
-            Represents the relationship where a transcript is nearby but not
-            within a boundary.
-
-            Attributes
-            ----------
-            edge_index : torch.Tensor
-                Edge indices in COO format between transcripts and boundaries
-
-        3. ("tx", "neighbors", "tx")
-            Represents the relationship where a transcript is nearby another
-            transcript.
-
-            Attributes
-            ----------
-            edge_index : torch.Tensor
-                Edge indices in COO format between transcripts and transcripts
+        Converts the sample data to a PyG HeteroData object.
         """
         # Initialize an empty HeteroData object
         pyg_data = HeteroData()
 
         # Set up Transcript nodes
-        # Get transcript IDs
-        transcript_id_column = self.settings.transcripts.id
+        # Get transcript IDs - use getattr to safely check for id attribute
+        transcript_id_column = getattr(self.settings.transcripts, 'id', None)
         if transcript_id_column is None or transcript_id_column not in self.transcripts.columns:
             # Create unique IDs based on x,y coordinates
             x_coords = self.transcripts[self.settings.transcripts.x].values
@@ -1311,7 +1210,6 @@ class STTile:
 
         # If there are no tx-neighbors-tx edges, skip saving tile
         if nbrs_edge_idx.shape[1] == 0:
-            # logging.warning(f"No tx-neighbors-tx edges found in tile {self.uid}.")
             return None
 
         pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
@@ -1341,7 +1239,6 @@ class STTile:
 
         # If there are no tx-neighbors-bd edges, we put the tile automatically in test set
         if nbrs_edge_idx.numel() == 0:
-            # logging.warning(f"No tx-neighbors-bd edges found in tile {self.uid}.")
             pyg_data["tx", "belongs", "bd"].edge_index = torch.tensor([], dtype=torch.long)
             return pyg_data
 
@@ -1351,8 +1248,11 @@ class STTile:
         # Find nuclear transcripts
         tx_cell_ids = self.transcripts[self.settings.boundaries.id]
         cell_ids_map = {idx: i for (i, idx) in enumerate(polygons.index)}
-        if self.settings.transcripts.nuclear is None:
-            print("Nuclear transcript information not pre-computed. Computing now...")
+        
+        # Use getattr to safely check for nuclear attribute
+        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
+            # print("Nuclear transcript information not pre-computed. Computing now...")
             is_nuclear = utils.compute_nuclear_transcripts(
                 polygons=polygons,
                 transcripts=self.transcripts,
@@ -1360,7 +1260,7 @@ class STTile:
                 y_col=self.settings.transcripts.y
             )
         else:
-            is_nuclear = self.transcripts[self.settings.transcripts.nuclear].astype(bool)
+            is_nuclear = self.transcripts[nuclear_column].astype(bool)
         is_nuclear &= tx_cell_ids.isin(polygons.index)
 
         # Set up overlap edges
@@ -1371,11 +1271,9 @@ class STTile:
 
         # If there are no tx-belongs-bd edges, flag tile as test only (cannot be used for training)
         if blng_edge_idx.numel() == 0:
-            # logging.warning(f"No tx-belongs-bd edges found in tile {self.uid}.")
             return pyg_data
 
         # If there are tx-bd edges, add negative edges for training
-        # Need more time-efficient solution than this
         transform = RandomLinkSplit(
             num_val=0,
             num_test=0,

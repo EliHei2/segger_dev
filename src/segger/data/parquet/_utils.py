@@ -139,8 +139,7 @@ def get_polygons_from_xy(
     buffer_ratio: float = 1.0,
 ) -> gpd.GeoSeries:
     """
-    Convert boundary coordinates from a cuDF DataFrame to a GeoSeries of
-    polygons.
+    Convert boundary coordinates from a DataFrame to a GeoSeries of polygons.
 
     Parameters
     ----------
@@ -178,9 +177,16 @@ def get_polygons_from_xy(
     )
     gs = gpd.GeoSeries(polygons, index=np.unique(ids))
 
-    if buffer_ratio != 1.:
-        # Apply buffer ratio
-        gs = gs.buffer(buffer_ratio)
+    if buffer_ratio != 1.0:
+        # Calculate buffer distance based on polygon area
+        areas = gs.area
+        # Use the square root of the area to get a linear distance
+        buffer_distances = np.sqrt(areas / np.pi) * (buffer_ratio - 1.0)
+        # Apply buffer to each polygon with its specific distance
+        gs = gpd.GeoSeries([
+            geom.buffer(dist) if dist != 0 else geom
+            for geom, dist in zip(gs, buffer_distances)
+        ], index=gs.index)
 
     return gs
 

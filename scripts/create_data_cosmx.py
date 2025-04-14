@@ -38,7 +38,7 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path('data_raw/cosmx/human_pancreas/processed/')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas')
+SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_buffer')
 # SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
 # CELLTYPE_COLUMN = 'annot_v1'
 
@@ -52,7 +52,8 @@ SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas')
 sample = STSampleParquet(
     base_dir=XENIUM_DATA_DIR,
     n_workers=4,
-    sample_type="cosmx"
+    sample_type="cosmx",
+    buffer_ratio=1.2,
     # weights=gene_celltype_abundance_embedding
 )
 
@@ -85,7 +86,7 @@ print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 # - tile_width/height: Size of spatial tiles for processing
 # - neg_sampling_ratio: Ratio of negative to positive samples
 # - val_prob: Fraction of data for validation
-sample.save_debug(
+sample.save(
     data_dir=SEGGER_DATA_DIR,
     k_bd=3,          # Number of boundary points to connect
     dist_bd=15,      # Maximum distance for boundary connections
