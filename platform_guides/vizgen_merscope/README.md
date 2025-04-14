@@ -33,5 +33,6 @@ vpt run-segmentation \
 ```
 
 The resulting segmentation files can be used as input to Segger:
+
 - transcripts: `${OUTPUTS_DIR}/detected_transcripts.csv`
 - segmentation boundaries: `${OUTPUTS_DIR}/cellpose_nucleus_micron_space.parquet`

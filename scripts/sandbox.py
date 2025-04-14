@@ -33,7 +33,9 @@ sensitivity_boxplot_data = pd.read_csv(sensitivity_boxplot_data)
 
 # Cell counts barplot
 cell_counts_data.rename(columns={"Unnamed: 0": "Method"}, inplace=True)
-cell_counts_data = cell_counts_data[~cell_counts_data["Method"].isin(["segger_n0", "segger_n1"])]
+cell_counts_data = cell_counts_data[
+    ~cell_counts_data["Method"].isin(["segger_n0", "segger_n1"])
+]
 
 
 sensitivity_results.csv
@@ -42,7 +44,9 @@ sensitivity_results.csv
 # Finally, the MCER plot
 
 mcer_methods_final = method_colors.keys()
-mcer_data_filtered = mcer_box_data[mcer_box_data["Segmentation Method"].isin(mcer_methods_final)]
+mcer_data_filtered = mcer_box_data[
+    mcer_box_data["Segmentation Method"].isin(mcer_methods_final)
+]
 
 
 import seaborn as sns
@@ -54,7 +58,9 @@ sns.set_context("paper", font_scale=1.2)
 
 
 mcer_methods_final = method_colors.keys()
-cell_area_log2_data = cell_area_log2_data[cell_area_log2_data["Segmentation Method"].isin(mcer_methods_final)]
+cell_area_log2_data = cell_area_log2_data[
+    cell_area_log2_data["Segmentation Method"].isin(mcer_methods_final)
+]
 
 # Create the boxplot with the size 4x6 inches and show only the outliers
 plt.figure(figsize=(2, 4))
@@ -169,11 +175,25 @@ ax.set_xlabel("")
 plt.tight_layout()
 
 # Save the updated plot as both PNG and PDF
-sensitivity_boxplot_data_boxplot_pdf_path = figures_path / "sensitivity_boxplot_data.pdf"
-sensitivity_boxplot_data_boxplot_png_path = figures_path / "sensitivity_boxplot_data.png"
+sensitivity_boxplot_data_boxplot_pdf_path = (
+    figures_path / "sensitivity_boxplot_data.pdf"
+)
+sensitivity_boxplot_data_boxplot_png_path = (
+    figures_path / "sensitivity_boxplot_data.png"
+)
 
-plt.savefig(sensitivity_boxplot_data_boxplot_pdf_path, format="pdf", bbox_inches="tight", dpi=300)
-plt.savefig(sensitivity_boxplot_data_boxplot_png_path, format="png", bbox_inches="tight", dpi=300)
+plt.savefig(
+    sensitivity_boxplot_data_boxplot_pdf_path,
+    format="pdf",
+    bbox_inches="tight",
+    dpi=300,
+)
+plt.savefig(
+    sensitivity_boxplot_data_boxplot_png_path,
+    format="png",
+    bbox_inches="tight",
+    dpi=300,
+)
 
 # Close the figure
 plt.close()
@@ -312,7 +332,9 @@ for method in method_colors.keys():
     # Use a "cool" colormap like "coolwarm" or "plasma" for a smoother effect
     # vmax=np.percentile(cell_area, 90)
     # vmin=np.percentile(cell_area, 50)
-    hb = plt.hexbin(x, y, gridsize=50, cmap="mako", mincnt=1, norm=mcolors.LogNorm(vmin=vmin))
+    hb = plt.hexbin(
+        x, y, gridsize=50, cmap="mako", mincnt=1, norm=mcolors.LogNorm(vmin=vmin)
+    )
     # Add a colorbar with a minimalistic design
     cb = plt.colorbar(hb, orientation="vertical")
     cb.set_label("# Cells", fontsize=10)

@@ -68,7 +68,11 @@ class STPyGDataset(InMemoryDataset):
         # this is an issue in PyG's RandomLinkSplit, dimensions are not consistent if there is only one edge in the graph
         if hasattr(data["tx", "belongs", "bd"], "edge_label_index"):
             if data["tx", "belongs", "bd"].edge_label_index.dim() == 1:
-                data["tx", "belongs", "bd"].edge_label_index = data["tx", "belongs", "bd"].edge_label_index.unsqueeze(1)
-                data["tx", "belongs", "bd"].edge_label = data["tx", "belongs", "bd"].edge_label.unsqueeze(0)
+                data["tx", "belongs", "bd"].edge_label_index = data[
+                    "tx", "belongs", "bd"
+                ].edge_label_index.unsqueeze(1)
+                data["tx", "belongs", "bd"].edge_label = data[
+                    "tx", "belongs", "bd"
+                ].edge_label.unsqueeze(0)
             assert data["tx", "belongs", "bd"].edge_label_index.dim() == 2
         return data

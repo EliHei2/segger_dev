@@ -56,7 +56,9 @@ def get_xy_extents(
     except:
         import gc
 
-        print("metadata lacks the statistics of the tile's bounding box, computing might take longer!")
+        print(
+            "metadata lacks the statistics of the tile's bounding box, computing might take longer!"
+        )
         parquet_file = pd.read_parquet(filepath)
         x_col = parquet_file.loc[:, x]
         y_col = parquet_file.loc[:, y]
@@ -311,7 +313,10 @@ def load_settings(sample_type: str) -> SimpleNamespace:
     # Convert sample_type to lowercase and check if it matches any filename
     sample_type = sample_type.lower()
     if sample_type not in filenames:
-        msg = f"Sample type '{sample_type}' not found in settings. " f"Available options: {', '.join(filenames)}"
+        msg = (
+            f"Sample type '{sample_type}' not found in settings. "
+            f"Available options: {', '.join(filenames)}"
+        )
         raise FileNotFoundError(msg)
     # Load the matching YAML file
     yaml_file_path = settings_dir / f"{sample_type}.yaml"

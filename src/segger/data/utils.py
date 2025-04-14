@@ -3,7 +3,9 @@ def try_import(module_name):
     try:
         globals()[module_name] = __import__(module_name)
     except ImportError:
-        print(f"Warning: {module_name} is not installed. Please install it to use this functionality.")
+        print(
+            f"Warning: {module_name} is not installed. Please install it to use this functionality."
+        )
 
 
 # Standard imports
@@ -43,7 +45,7 @@ import torch.utils.dlpack as dlpack
 from datetime import timedelta
 
 
-def filter_transcripts( #ONLY FOR XENIUM
+def filter_transcripts(  # ONLY FOR XENIUM
     transcripts_df: pd.DataFrame,
     min_qv: float = 20.0,
 ) -> pd.DataFrame:
@@ -65,14 +67,14 @@ def filter_transcripts( #ONLY FOR XENIUM
         "DeprecatedCodeword_",
         "UnassignedCodeword_",
     )
-    
-    transcripts_df['feature_name'] = transcripts_df['feature_name'].apply(
+
+    transcripts_df["feature_name"] = transcripts_df["feature_name"].apply(
         lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
     )
-    mask_quality = transcripts_df['qv'] >= min_qv
+    mask_quality = transcripts_df["qv"] >= min_qv
 
     # Apply the filter for unwanted codewords using Dask string functions
-    mask_codewords = ~transcripts_df['feature_name'].str.startswith(filter_codewords)
+    mask_codewords = ~transcripts_df["feature_name"].str.startswith(filter_codewords)
 
     # Combine the filters and return the filtered Dask DataFrame
     mask = mask_quality & mask_codewords
@@ -102,22 +104,32 @@ def compute_transcript_metrics(
     total_transcripts = len(df_filtered)
     assigned_transcripts = df_filtered[df_filtered[cell_id_col] != -1]
     percent_assigned = len(assigned_transcripts) / (total_transcripts + 1) * 100
-    cytoplasmic_transcripts = assigned_transcripts[assigned_transcripts["overlaps_nucleus"] != 1]
-    percent_cytoplasmic = len(cytoplasmic_transcripts) / (len(assigned_transcripts) + 1) * 100
+    cytoplasmic_transcripts = assigned_transcripts[
+        assigned_transcripts["overlaps_nucleus"] != 1
+    ]
+    percent_cytoplasmic = (
+        len(cytoplasmic_transcripts) / (len(assigned_transcripts) + 1) * 100
+    )
     percent_nucleus = 100 - percent_cytoplasmic
     non_assigned_transcripts = df_filtered[df_filtered[cell_id_col] == -1]
-    non_assigned_cytoplasmic = non_assigned_transcripts[non_assigned_transcripts["overlaps_nucleus"] != 1]
-    percent_non_assigned_cytoplasmic = len(non_assigned_cytoplasmic) / (len(non_assigned_transcripts) + 1) * 100
+    non_assigned_cytoplasmic = non_assigned_transcripts[
+        non_assigned_transcripts["overlaps_nucleus"] != 1
+    ]
+    percent_non_assigned_cytoplasmic = (
+        len(non_assigned_cytoplasmic) / (len(non_assigned_transcripts) + 1) * 100
+    )
     gene_group_assigned = assigned_transcripts.groupby("feature_name")
     gene_group_all = df_filtered.groupby("feature_name")
-    gene_percent_assigned = (gene_group_assigned.size() / (gene_group_all.size() + 1) * 100).reset_index(
-        names="percent_assigned"
-    )
+    gene_percent_assigned = (
+        gene_group_assigned.size() / (gene_group_all.size() + 1) * 100
+    ).reset_index(names="percent_assigned")
     cytoplasmic_gene_group = cytoplasmic_transcripts.groupby("feature_name")
-    gene_percent_cytoplasmic = (cytoplasmic_gene_group.size() / (len(cytoplasmic_transcripts) + 1) * 100).reset_index(
-        name="percent_cytoplasmic"
-    )
-    gene_metrics = pd.merge(gene_percent_assigned, gene_percent_cytoplasmic, on="feature_name", how="outer").fillna(0)
+    gene_percent_cytoplasmic = (
+        cytoplasmic_gene_group.size() / (len(cytoplasmic_transcripts) + 1) * 100
+    ).reset_index(name="percent_cytoplasmic")
+    gene_metrics = pd.merge(
+        gene_percent_assigned, gene_percent_cytoplasmic, on="feature_name", how="outer"
+    ).fillna(0)
     results = {
         "percent_assigned": percent_assigned,
         "percent_cytoplasmic": percent_cytoplasmic,
@@ -156,7 +168,9 @@ def create_anndata(
     df_filtered = df[df[cell_id_col].astype(str) != "UNASSIGNED"]
 
     # Create pivot table for gene expression counts per cell
-    pivot_df = df_filtered.rename(columns={cell_id_col: "cell", "feature_name": "gene"})[["cell", "gene"]].pivot_table(
+    pivot_df = df_filtered.rename(
+        columns={cell_id_col: "cell", "feature_name": "gene"}
+    )[["cell", "gene"]].pivot_table(
         index="cell", columns="gene", aggfunc="size", fill_value=0
     )
     pivot_df = pivot_df[pivot_df.sum(axis=1) >= min_transcripts]
@@ -166,7 +180,9 @@ def create_anndata(
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
             continue
-        cell_convex_hull = ConvexHull(cell_data[["x_location", "y_location"]], qhull_options="QJ")
+        cell_convex_hull = ConvexHull(
+            cell_data[["x_location", "y_location"]], qhull_options="QJ"
+        )
         cell_area = cell_convex_hull.area
         if cell_area < min_cell_area or cell_area > max_cell_area:
             continue
@@ -205,9 +221,15 @@ def create_anndata(
 
     # Compute total assigned and unassigned transcript counts for each gene
     assigned_counts = df_filtered.groupby("feature_name")["feature_name"].count()
-    unassigned_counts = df[df[cell_id_col].astype(str) == "UNASSIGNED"].groupby("feature_name")["feature_name"].count()
+    unassigned_counts = (
+        df[df[cell_id_col].astype(str) == "UNASSIGNED"]
+        .groupby("feature_name")["feature_name"]
+        .count()
+    )
     var_df["total_assigned"] = var_df.index.map(assigned_counts).fillna(0).astype(int)
-    var_df["total_unassigned"] = var_df.index.map(unassigned_counts).fillna(0).astype(int)
+    var_df["total_unassigned"] = (
+        var_df.index.map(unassigned_counts).fillna(0).astype(int)
+    )
 
     # Filter cells and create the AnnData object
     cells = list(set(pivot_df.index) & set(cell_summary.index))
@@ -218,12 +240,19 @@ def create_anndata(
     adata.obs["transcripts"] = pivot_df.sum(axis=1).values
     adata.obs["unique_transcripts"] = (pivot_df > 0).sum(axis=1).values
     adata.obs_names = pivot_df.index.values.tolist()
-    adata.obs = pd.merge(adata.obs, cell_summary.loc[adata.obs_names, :], left_index=True, right_index=True)
+    adata.obs = pd.merge(
+        adata.obs,
+        cell_summary.loc[adata.obs_names, :],
+        left_index=True,
+        right_index=True,
+    )
 
     return adata
 
 
-def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_column: str) -> pd.DataFrame:
+def calculate_gene_celltype_abundance_embedding(
+    adata: ad.AnnData, celltype_column: str
+) -> pd.DataFrame:
     """Calculate the cell type abundance embedding for each gene based on the fraction of cells in each cell type
     that express the gene (non-zero expression).
 
@@ -247,7 +276,9 @@ def calculate_gene_celltype_abundance_embedding(adata: ad.AnnData, celltype_colu
     # Create a binary matrix for gene expression (1 if non-zero, 0 otherwise)
     gene_expression_binary = (expression_data > 0).astype(int)
     # Convert the binary matrix to a DataFrame
-    gene_expression_df = pd.DataFrame(gene_expression_binary, index=adata.obs_names, columns=adata.var_names)
+    gene_expression_df = pd.DataFrame(
+        gene_expression_binary, index=adata.obs_names, columns=adata.var_names
+    )
     # Perform one-hot encoding on the cell types
     encoder = OneHotEncoder(sparse_output=False)
     cell_type_encoded = encoder.fit_transform(cell_types.reshape(-1, 1))
@@ -288,7 +319,9 @@ def get_edge_index(
         torch.Tensor: Edge indices.
     """
     if method == "kd_tree":
-        return get_edge_index_kdtree(coords_1, coords_2, k=k, dist=dist, workers=workers)
+        return get_edge_index_kdtree(
+            coords_1, coords_2, k=k, dist=dist, workers=workers
+        )
     # elif method == "cuda":
     #     return get_edge_index_cuda(coords_1, coords_2, k=k, dist=dist)
     else:
@@ -297,7 +330,11 @@ def get_edge_index(
 
 
 def get_edge_index_kdtree(
-    coords_1: np.ndarray, coords_2: np.ndarray, k: int = 5, dist: int = 10, workers: int = 1
+    coords_1: np.ndarray,
+    coords_2: np.ndarray,
+    k: int = 5,
+    dist: int = 10,
+    workers: int = 1,
 ) -> torch.Tensor:
     """
     Computes edge indices using KDTree.
@@ -316,14 +353,18 @@ def get_edge_index_kdtree(
     if isinstance(coords_2, torch.Tensor):
         coords_2 = coords_2.cpu().numpy()
     tree = cKDTree(coords_1)
-    d_kdtree, idx_out = tree.query(coords_2, k=k, distance_upper_bound=dist, workers=workers)
+    d_kdtree, idx_out = tree.query(
+        coords_2, k=k, distance_upper_bound=dist, workers=workers
+    )
     valid_mask = d_kdtree < dist
     edges = []
 
     for idx, valid in enumerate(valid_mask):
         valid_indices = idx_out[idx][valid]
         if valid_indices.size > 0:
-            edges.append(np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T)
+            edges.append(
+                np.vstack((np.full(valid_indices.shape, idx), valid_indices)).T
+            )
 
     edge_index = torch.tensor(np.vstack(edges), dtype=torch.long).contiguous()
     return edge_index
@@ -400,7 +441,11 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
     """
 
     def __init__(
-        self, root: str, transform: Callable = None, pre_transform: Callable = None, pre_filter: Callable = None
+        self,
+        root: str,
+        transform: Callable = None,
+        pre_transform: Callable = None,
+        pre_filter: Callable = None,
     ):
         """Initialize the SpatialTranscriptomicsDataset.
 
@@ -455,7 +500,9 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
         Returns:
             Data: The processed data object.
         """
-        data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
+        data = torch.load(
+            os.path.join(self.processed_dir, self.processed_file_names[idx])
+        )
         data["tx"].x = data["tx"].x.to_dense()
         return data
 
@@ -509,7 +556,8 @@ def coo_to_dense_adj(
     # Check COO format
     if not edge_index.shape[0] == 2:
         msg = (
-            "Edge index is not in COO format. First dimension should have " f"size 2, but found {edge_index.shape[0]}."
+            "Edge index is not in COO format. First dimension should have "
+            f"size 2, but found {edge_index.shape[0]}."
         )
         raise ValueError(msg)
 

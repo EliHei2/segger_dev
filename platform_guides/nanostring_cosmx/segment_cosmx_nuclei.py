@@ -14,11 +14,12 @@ from skimage.transform import ProjectiveTransform, AffineTransform
 
 NUCLEUS_CODE = 1
 MPP = 0.12028
-TOL_FRAC = 1. / 50  # Fraction of area to simplify by
+TOL_FRAC = 1.0 / 50  # Fraction of area to simplify by
 
 # NOTE: In CosMX, there is a bug in their segmentation where cell masks overlap
-# with compartment masks from other cells (e.g. a cell mask A overlaps with 
+# with compartment masks from other cells (e.g. a cell mask A overlaps with
 # nuclear mask for cell B).
+
 
 def masks_to_contours(masks: np.ndarray) -> np.ndarray:
     """
@@ -40,19 +41,21 @@ def masks_to_contours(masks: np.ndarray) -> np.ndarray:
     for i, p in enumerate(props):
         # Get largest contour with label
         lbl_contours = cv2.findContours(
-            np.pad(p.image, 0).astype('uint8'),
+            np.pad(p.image, 0).astype("uint8"),
             cv2.RETR_LIST,
             cv2.CHAIN_APPROX_SIMPLE,
         )[0]
         contour = sorted(lbl_contours, key=lambda c: c.shape[0])[-1]
         if contour.shape[0] > 2:
-            contour = np.hstack([
-                np.squeeze(contour)[:, ::-1] + p.bbox[:2],  # vertices
-                np.full((contour.shape[0], 1), i)  # ID
-            ])
+            contour = np.hstack(
+                [
+                    np.squeeze(contour)[:, ::-1] + p.bbox[:2],  # vertices
+                    np.full((contour.shape[0], 1), i),  # ID
+                ]
+            )
             contours.append(contour)
     contours = np.concatenate(contours)
-    
+
     return contours
 
 
@@ -86,7 +89,7 @@ def contours_to_polygons(
     part_offset = np.arange(len(np.unique(ids)) + 1)
     polygons = shapely.from_ragged_array(
         shapely.GeometryType.POLYGON,
-        coords=contours[:2].T.copy(order='C'),
+        coords=contours[:2].T.copy(order="C"),
         offsets=(geometry_offset, part_offset),
     )
     if transform:
@@ -136,17 +139,19 @@ def write_nuclear_polygons(data_dir: os.PathLike):
         Root directory containing CosMX output including FOV CSV and
         label TIFFs. Output will be saved to this directory as well.
     """
-    filepath = get_file_match(data_dir, '*_fov_positions_file.csv')
-    fov_info = pd.read_csv(filepath, index_col='FOV')
+    filepath = get_file_match(data_dir, "*_fov_positions_file.csv")
+    fov_info = pd.read_csv(filepath, index_col="FOV")
 
     polygons = []
     for fov, row in fov_info.iterrows():
         # Convert mask array to polygons
         fov_id = str.zfill(str(fov), 3)
         cell_labels = tifffile.imread(
-            data_dir / 'CellLabels' / f'CellLabels_F{fov_id}.tif')
+            data_dir / "CellLabels" / f"CellLabels_F{fov_id}.tif"
+        )
         comp_labels = tifffile.imread(
-            data_dir / 'CompartmentLabels' / f'CompartmentLabels_F{fov_id}.tif')
+            data_dir / "CompartmentLabels" / f"CompartmentLabels_F{fov_id}.tif"
+        )
         masks = np.where(comp_labels == NUCLEUS_CODE, cell_labels, 0)
         contours = masks_to_contours(masks)
         fov_poly = contours_to_polygons(contours)
@@ -155,32 +160,33 @@ def write_nuclear_polygons(data_dir: os.PathLike):
         tol = np.sqrt(fov_poly.area).mean() * TOL_FRAC
         fov_poly = fov_poly.simplify(tolerance=tol)
         fov_poly = fov_poly.get_coordinates().reset_index()
-        fov_poly.columns = ['cellID', 'x_local_px', 'y_local_px']
+        fov_poly.columns = ["cellID", "x_local_px", "y_local_px"]
 
         # Transform from local px to global px
-        tx = row['X_mm'] * 1e3 / MPP
-        ty = row['Y_mm'] * 1e3 / MPP
+        tx = row["X_mm"] * 1e3 / MPP
+        ty = row["Y_mm"] * 1e3 / MPP
         tm = AffineTransform(
             scale=[1, -1],  # local coords are relative to the top of FOV
             translation=[tx, ty],  # move to global FOV position
         )
-        fov_poly[['x_global_px', 'y_global_px']] = tm(
-            fov_poly[['x_local_px', 'y_local_px']])
+        fov_poly[["x_global_px", "y_global_px"]] = tm(
+            fov_poly[["x_local_px", "y_local_px"]]
+        )
 
         # Prepare data in format of CosMX polygons file
-        fov_poly['fov'] = fov
+        fov_poly["fov"] = fov
         prefix = f"c_{row['Slide']}_{fov}_"
-        fov_poly['cell'] = prefix + fov_poly['cellID'].astype(str)
+        fov_poly["cell"] = prefix + fov_poly["cellID"].astype(str)
         polygons.append(fov_poly)
 
     # Save to Parquet file
-    polygons = pd.concat(polygons).sort_values(['fov', 'cell'])
-    run_name = fov_info['Run_Tissue_name'].unique()[0]
+    polygons = pd.concat(polygons).sort_values(["fov", "cell"])
+    run_name = fov_info["Run_Tissue_name"].unique()[0]
     polygons.to_parquet(
-        data_dir / f'{run_name}_nucleus_boundaries.parquet',
+        data_dir / f"{run_name}_nucleus_boundaries.parquet",
         row_group_size=1000,
-        engine='pyarrow',
-        compression='snappy',
+        engine="pyarrow",
+        compression="snappy",
     )
 
 

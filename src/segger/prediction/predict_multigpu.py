@@ -86,7 +86,10 @@ def zero_out_diagonal_gpu(sparse_matrix):
     sparse_matrix_no_diag = cupyx.scipy.sparse.coo_matrix(
         (
             sparse_matrix.data[non_diagonal_mask],
-            (sparse_matrix.row[non_diagonal_mask], sparse_matrix.col[non_diagonal_mask]),
+            (
+                sparse_matrix.row[non_diagonal_mask],
+                sparse_matrix.col[non_diagonal_mask],
+            ),
         ),
         shape=sparse_matrix.shape,
     )
@@ -130,7 +133,9 @@ def subset_sparse_matrix(sparse_matrix, row_idx, col_idx):
     col_mapped = cp.searchsorted(col_idx, col_filtered)
 
     # Return the new subset sparse matrix
-    return coo_matrix((data_filtered, (row_mapped, col_mapped)), shape=(len(row_idx), len(col_idx)))
+    return coo_matrix(
+        (data_filtered, (row_mapped, col_mapped)), shape=(len(row_idx), len(col_idx))
+    )
 
 
 def load_model(checkpoint_path: str) -> LitSegger:
@@ -221,7 +226,9 @@ def get_similarity_scores(
         )
 
         # Convert to dense adjacency matrix (on GPU)
-        edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
+        edge_index = coo_to_dense_adj(
+            edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"]
+        )
 
         with torch.no_grad():
             embeddings = model(batch.x_dict, batch.edge_index_dict)
@@ -246,7 +253,9 @@ def get_similarity_scores(
             # print(rows)
             del indices
             values = similarity[edge_index != -1].flatten()
-            sparse_result = coo_matrix((cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape)
+            sparse_result = coo_matrix(
+                (cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape
+            )
             return sparse_result
             # Free GPU memory after computation
 
@@ -305,7 +314,13 @@ def predict_batch(
                 try:
                     # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
                     scores = get_similarity_scores(
-                        lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+                        lit_segger.model,
+                        batch,
+                        "tx",
+                        "bd",
+                        receptive_field,
+                        knn_method=knn_method,
+                        gpu_id=gpu_id,
                     )
                     break
                 except Exception as e:
@@ -323,23 +338,34 @@ def predict_batch(
 
             mask = assignments["score"] >= score_cut  # Mask for assigned transcripts
             all_ids = batch["bd"].id  # Boundary IDs as NumPy array
-            assignments["segger_cell_id"] = np.where(mask, all_ids[cp.argmax(dense_scores, axis=1).get()], None)
+            assignments["segger_cell_id"] = np.where(
+                mask, all_ids[cp.argmax(dense_scores, axis=1).get()], None
+            )
             # Clear memory after score processing
             del dense_scores
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
 
-            assignments["bound"] = np.where(mask, 1, 0)  # Mark as 'bound' (1 if assigned, 0 if unassigned)
+            assignments["bound"] = np.where(
+                mask, 1, 0
+            )  # Mark as 'bound' (1 if assigned, 0 if unassigned)
 
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
                 scores_tx = get_similarity_scores(
-                    lit_segger.model, batch, "tx", "tx", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+                    lit_segger.model,
+                    batch,
+                    "tx",
+                    "tx",
+                    receptive_field,
+                    knn_method=knn_method,
+                    gpu_id=gpu_id,
                 )
 
                 # Stay on GPU and use CuPy sparse matrices
                 no_id_scores = cupyx.scipy.sparse.coo_matrix(
-                    (scores_tx.data, (scores_tx.row, scores_tx.col)), shape=scores_tx.shape
+                    (scores_tx.data, (scores_tx.row, scores_tx.col)),
+                    shape=scores_tx.shape,
                 )
 
                 # Apply threshold on GPU
@@ -357,12 +383,16 @@ def predict_batch(
                 if len(no_id) > 0:  # Only compute if there are unassigned transcripts
                     # Apply score cut-off to unassigned transcripts
                     no_id_scores = subset_sparse_matrix(no_id_scores, no_id, no_id)
-                    no_id_scores.data[no_id_scores.data < score_cut] = 0  # Apply threshold
+                    no_id_scores.data[no_id_scores.data < score_cut] = (
+                        0  # Apply threshold
+                    )
                     no_id_scores.eliminate_zeros()  # Clean up zeros
 
                     # Find the non-zero entries in the no_id_scores to construct edge_index
                     non_zero_rows, non_zero_cols, _ = find(no_id_scores)
-                    unassigned_ids = transcript_id[no_id.get()]  # Unassigned transcript IDs
+                    unassigned_ids = transcript_id[
+                        no_id.get()
+                    ]  # Unassigned transcript IDs
 
                     # Construct edge index (source, target) based on non-zero connections in no_id_scores
                     source_nodes = unassigned_ids[non_zero_rows.get()]
@@ -372,12 +402,15 @@ def predict_batch(
                         try:
                             # # Save edge_index using CuDF and Dask-CuDF for GPU acceleration
                             edge_index_ddf = delayed(dd.from_pandas)(
-                                pd.DataFrame({"source": source_nodes, "target": target_nodes}), npartitions=1
+                                pd.DataFrame(
+                                    {"source": source_nodes, "target": target_nodes}
+                                ),
+                                npartitions=1,
                             )
                             # Use delayed for asynchronous disk writing of edge_index in Dask DataFrame
-                            delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(
-                                edge_index_save_path, append=True, ignore_divisions=True
-                            )
+                            delayed_write_edge_index = delayed(
+                                edge_index_ddf.to_parquet
+                            )(edge_index_save_path, append=True, ignore_divisions=True)
                             delayed_write_edge_index.compute()  # Schedule writing
                             # break
                         except Exception as e:
@@ -386,7 +419,9 @@ def predict_batch(
             assignments = {
                 "transcript_id": assignments["transcript_id"].astype("str"),
                 "score": assignments["score"].astype("float32"),
-                "segger_cell_id": assignments["segger_cell_id"].astype("str"),  # Ensure 'string' dtype
+                "segger_cell_id": assignments["segger_cell_id"].astype(
+                    "str"
+                ),  # Ensure 'string' dtype
                 "bound": assignments["bound"].astype("int8"),  # Ensure 'int64' dtype
             }
             # Step 4: Convert assignments to Dask-CuDF DataFrame for this batch
@@ -394,7 +429,9 @@ def predict_batch(
             if len(assignments["transcript_id"]) > 10:
                 # while True:
                 try:
-                    batch_ddf = delayed(dd.from_pandas)(pd.DataFrame(assignments), npartitions=1)
+                    batch_ddf = delayed(dd.from_pandas)(
+                        pd.DataFrame(assignments), npartitions=1
+                    )
 
                     # Save the updated `output_ddf` asynchronously using Dask delayed
                     delayed_write_output_ddf = delayed(batch_ddf.to_parquet)(
@@ -490,7 +527,9 @@ def segment(
     # output_ddf = None
     cluster = LocalCUDACluster(
         CUDA_VISIBLE_DEVICES=gpu_ids,
-        n_workers=len(gpu_ids),  # Number of workers to use (adjust based on your available CPUs/GPUs)
+        n_workers=len(
+            gpu_ids
+        ),  # Number of workers to use (adjust based on your available CPUs/GPUs)
         threads_per_worker=1,  # Each worker will use 1 thread
     )
 
@@ -518,7 +557,8 @@ def segment(
         ind_min = j * 100
         ind_max = min((j + 1) * 100, len(dm.train))
         delayed_tasks = [
-            process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(dm.train[ind_min:ind_max])
+            process_batch(batch, gpu_ids[i % len(gpu_ids)])
+            for i, batch in enumerate(dm.train[ind_min:ind_max])
         ]
         future = dask.persist(*delayed_tasks)
         progress(future)
@@ -530,7 +570,8 @@ def segment(
         ind_min = j * 50
         ind_max = min((j + 1) * 50, len(dm.val))
         delayed_tasks = [
-            process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(dm.val[ind_min:ind_max])
+            process_batch(batch, gpu_ids[i % len(gpu_ids)])
+            for i, batch in enumerate(dm.val[ind_min:ind_max])
         ]
         future = dask.persist(*delayed_tasks)
         progress(future)
@@ -542,7 +583,8 @@ def segment(
         ind_min = j * 50
         ind_max = min((j + 1) * 50, len(dm.test))
         delayed_tasks = [
-            process_batch(batch, gpu_ids[i % len(gpu_ids)]) for i, batch in enumerate(dm.test[ind_min:ind_max])
+            process_batch(batch, gpu_ids[i % len(gpu_ids)])
+            for i, batch in enumerate(dm.test[ind_min:ind_max])
         ]
         future = dask.persist(*delayed_tasks)
         progress(future)
@@ -599,8 +641,16 @@ def segment(
         print(f"Applying max score selection logic...")
 
     # Step 1: Find max bound indices (bound == 1) and max unbound indices (bound == 0)
-    max_bound_idx = seg_final_dd[seg_final_dd["bound"] == 1].groupby("transcript_id")["score"].idxmax()
-    max_unbound_idx = seg_final_dd[seg_final_dd["bound"] == 0].groupby("transcript_id")["score"].idxmax()
+    max_bound_idx = (
+        seg_final_dd[seg_final_dd["bound"] == 1]
+        .groupby("transcript_id")["score"]
+        .idxmax()
+    )
+    max_unbound_idx = (
+        seg_final_dd[seg_final_dd["bound"] == 0]
+        .groupby("transcript_id")["score"]
+        .idxmax()
+    )
 
     # Step 2: Combine indices, prioritizing bound=1 scores
     final_idx = max_bound_idx.combine_first(max_unbound_idx).compute()
@@ -627,11 +677,15 @@ def segment(
         print(f"Merging segmentation results with transcripts...")
 
     # Outer merge to include all transcripts, even those without assigned cell ids
-    transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
+    transcripts_df_filtered = transcripts_df.merge(
+        seg_final_filtered, on="transcript_id", how="outer"
+    )
 
     if verbose:
         elapsed_time = time() - step_start_time
-        print(f"Merging segmentation results with transcripts completed in {elapsed_time:.2f} seconds.")
+        print(
+            f"Merging segmentation results with transcripts completed in {elapsed_time:.2f} seconds."
+        )
 
     # Step 4: Handle unassigned transcripts using connected components (if use_cc=True)
     if use_cc:
@@ -643,10 +697,16 @@ def segment(
         edge_index_dd = dd.read_parquet(edge_index_save_path)
 
         # Step 2: Get unique transcript_ids from edge_index_dd and their positional indices
-        transcript_ids_in_edges = dd.concat([edge_index_dd["source"], edge_index_dd["target"]]).unique().compute()
+        transcript_ids_in_edges = (
+            dd.concat([edge_index_dd["source"], edge_index_dd["target"]])
+            .unique()
+            .compute()
+        )
 
         # Create a lookup table with unique indices
-        lookup_table = pd.Series(data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges).to_dict()
+        lookup_table = pd.Series(
+            data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges
+        ).to_dict()
 
         # Map source and target to positional indices
         edge_index_dd["index_source"] = edge_index_dd["source"].map(lookup_table)
@@ -670,13 +730,19 @@ def segment(
         # Step 5: Handle only unassigned transcripts in transcripts_df_filtered
         unassigned_mask = transcripts_df_filtered["segger_cell_id"].isna()
 
-        unassigned_transcripts_df = transcripts_df_filtered.loc[unassigned_mask, ["transcript_id"]]
+        unassigned_transcripts_df = transcripts_df_filtered.loc[
+            unassigned_mask, ["transcript_id"]
+        ]
 
         # Step 6: Map component labels only to unassigned transcript_ids
-        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(comp_labels)
+        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(
+            comp_labels
+        )
 
         # Step 7: Create a DataFrame with updated 'segger_cell_id' for unassigned transcripts
-        unassigned_transcripts_df = unassigned_transcripts_df.assign(segger_cell_id=new_segger_cell_ids)
+        unassigned_transcripts_df = unassigned_transcripts_df.assign(
+            segger_cell_id=new_segger_cell_ids
+        )
 
         # Step 8: Merge this DataFrame back into the original to update only the unassigned segger_cell_id
         # We perform a left join so that only the rows in unassigned_transcripts_df are updated
@@ -691,12 +757,14 @@ def segment(
         )
 
         # Step 9: Fill missing segger_cell_id values with the updated values from the merge
-        transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna(
-            transcripts_df_filtered["segger_cell_id_new"]
-        )
+        transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered[
+            "segger_cell_id"
+        ].fillna(transcripts_df_filtered["segger_cell_id_new"])
 
         # Step 10: Clean up by dropping the temporary 'segger_cell_id_new' column
-        transcripts_df_filtered = transcripts_df_filtered.drop(columns=["segger_cell_id_new"])
+        transcripts_df_filtered = transcripts_df_filtered.drop(
+            columns=["segger_cell_id_new"]
+        )
 
         # Fill the NaN values in segger_cell_id with the already existing (assigned) values
         # transcripts_df_filtered['segger_cell_id'] = transcripts_df_filtered['segger_cell_id'].fillna(transcripts_df_filtered['segger_cell_id_target'])
@@ -706,7 +774,9 @@ def segment(
 
         if verbose:
             elapsed_time = time() - step_start_time
-            print(f"Regrouped the unassigned transcripts in {elapsed_time:.2f} seconds.")
+            print(
+                f"Regrouped the unassigned transcripts in {elapsed_time:.2f} seconds."
+            )
 
     # Step 5: Save the merged results based on options
 
@@ -733,7 +803,9 @@ def segment(
             step_start_time = time()
             print(f"Saving anndata object...")
         anndata_save_path = save_dir / "segger_adata.h5ad"
-        segger_adata = create_anndata(transcripts_df_filtered.compute(), **anndata_kwargs)  # Compute for AnnData
+        segger_adata = create_anndata(
+            transcripts_df_filtered.compute(), **anndata_kwargs
+        )  # Compute for AnnData
         segger_adata.write(anndata_save_path)
         if verbose:
             elapsed_time = time() - step_start_time

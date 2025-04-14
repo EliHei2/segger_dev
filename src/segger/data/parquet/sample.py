@@ -172,14 +172,19 @@ class STSampleParquet:
             names = pc.unique(table[self.settings.transcripts.label])
             if self._emb_genes is not None:
                 # Filter substring is extended with the genes missing in the embedding
-                names_str = [x.decode("utf-8") if isinstance(x, bytes) else x for x in names.to_pylist()]
+                names_str = [
+                    x.decode("utf-8") if isinstance(x, bytes) else x
+                    for x in names.to_pylist()
+                ]
                 missing_genes = list(set(names_str) - set(self._emb_genes))
                 logging.warning(f"Number of missing genes: {len(missing_genes)}")
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
             filtered_names = pc.filter(names, mask).to_pylist()
-            metadata["feature_names"] = [x.decode("utf-8") if isinstance(x, bytes) else x for x in filtered_names]
+            metadata["feature_names"] = [
+                x.decode("utf-8") if isinstance(x, bytes) else x for x in filtered_names
+            ]
             self._transcripts_metadata = metadata
         return self._transcripts_metadata
 
@@ -509,7 +514,9 @@ class STInMemoryDataset:
         self._load_boundaries(self.sample._boundaries_filepath)
 
         # Pre-load KDTrees
-        self.kdtree_tx = KDTree(self.transcripts[self.settings.transcripts.xy], leafsize=100)
+        self.kdtree_tx = KDTree(
+            self.transcripts[self.settings.transcripts.xy], leafsize=100
+        )
 
     def _load_transcripts(self, path: os.PathLike, min_qv: float = 30.0):
         """
@@ -536,9 +543,9 @@ class STInMemoryDataset:
             bounds=bounds,
             extra_columns=self.settings.transcripts.columns,
         )
-        transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
-            lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
-        )
+        transcripts[self.settings.transcripts.label] = transcripts[
+            self.settings.transcripts.label
+        ].apply(lambda x: x.decode("utf-8") if isinstance(x, bytes) else x)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,
@@ -698,7 +705,10 @@ class STInMemoryDataset:
         else:
             args = list(compress(locals().keys(), locals().values()))
             args.remove("self")
-            msg = "Function requires either 'max_size' or both " f"'width' and 'height'. Found: {', '.join(args)}."
+            msg = (
+                "Function requires either 'max_size' or both "
+                f"'width' and 'height'. Found: {', '.join(args)}."
+            )
             logging.error(msg)
             raise ValueError
 
@@ -1176,7 +1186,9 @@ class STTile:
         centroids = polygons.centroid.get_coordinates()
         pyg_data["bd"].id = polygons.index.to_numpy()
         pyg_data["bd"].pos = torch.tensor(centroids.values, dtype=torch.float32)
-        pyg_data["bd"].x = self.get_boundary_props(area, convexity, elongation, circularity)
+        pyg_data["bd"].x = self.get_boundary_props(
+            area, convexity, elongation, circularity
+        )
 
         # Set up Boundary-Transcript neighbor edges
         dist = np.sqrt(polygons.area.max()) * 10  # heuristic distance
@@ -1191,7 +1203,9 @@ class STTile:
         # If there are no tx-neighbors-bd edges, we put the tile automatically in test set
         if nbrs_edge_idx.numel() == 0:
             # logging.warning(f"No tx-neighbors-bd edges found in tile {self.uid}.")
-            pyg_data["tx", "belongs", "bd"].edge_index = torch.tensor([], dtype=torch.long)
+            pyg_data["tx", "belongs", "bd"].edge_index = torch.tensor(
+                [], dtype=torch.long
+            )
             return pyg_data
 
         # Now we identify and split the tx-belongs-bd edges
@@ -1228,7 +1242,9 @@ class STTile:
         # Refilter negative edges to include only transcripts in the
         # original positive edges (still need a memory-efficient solution)
         edges = pyg_data[edge_type]
-        mask = edges.edge_label_index[0].unsqueeze(1) == edges.edge_index[0].unsqueeze(0)
+        mask = edges.edge_label_index[0].unsqueeze(1) == edges.edge_index[0].unsqueeze(
+            0
+        )
         mask = torch.nonzero(torch.any(mask, 1)).squeeze()
         edges.edge_label_index = edges.edge_label_index[:, mask]
         edges.edge_label = edges.edge_label[mask]

@@ -3,17 +3,19 @@
 **segger** is a GNN-based method for segmenting image-based spatial transcriptomics data. It models transcripts and cells as a heterogeneous graph and treats cell segmentation as a link prediction problem, connecting transcripts to cells. For more information, visit our [bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.03.14.643160v1).
 
 ---
+
 # Installation
 
 Before installing **segger**, please install versions of PyTorch and Lightning compatible with your system.  
 Optionally, also install PyG-lib to accelerate heterogeneous graph operations.
-*Note: PyG-lib only supports CUDA ≤ 12.4 and PyTorch ≤ 2.5.0.*
+_Note: PyG-lib only supports CUDA ≤ 12.4 and PyTorch ≤ 2.5.0._
 
-- **PyTorch:** [Installation guide](https://pytorch.org/get-started/locally/)  
-- **Lightning:** [Documentation](https://lightning.ai/docs/pytorch/stable/)  
+- **PyTorch:** [Installation guide](https://pytorch.org/get-started/locally/)
+- **Lightning:** [Documentation](https://lightning.ai/docs/pytorch/stable/)
 - **PyG-lib:** [README](https://github.com/pyg-team/pyg-lib)
 
 For example, on Linux with CUDA 12.1 and PyTorch 2.5.0:
+
 ```bash
 # Install PyTorch and torchvision for CUDA 12.1
 pip install torch==2.5.0 torchvision==0.20.0 --index-url https://download.pytorch.org/whl/cu121
@@ -32,6 +34,7 @@ pip install -e .
 ```
 
 ---
+
 # Contributions
 
 segger is **open-source** and welcomes contributions. Join us in advancing spatial omics segmentation!

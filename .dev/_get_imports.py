@@ -9,12 +9,14 @@ import pathlib
 from importlib.metadata import distributions
 import tomllib
 
+
 def extract_third_party_imports(root_dir: str) -> pd.DataFrame:
     """
     Walk codebase and collect third-party root import names.
     """
-    stdlib = (set(sys.stdlib_module_names)
-              if hasattr(sys, "stdlib_module_names") else set())
+    stdlib = (
+        set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
+    )
     rows = []
 
     for dirpath, _, filenames in os.walk(root_dir):
@@ -28,19 +30,18 @@ def extract_third_party_imports(root_dir: str) -> pd.DataFrame:
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Import):
                         for alias in node.names:
-                            name = alias.name.split('.')[0]
+                            name = alias.name.split(".")[0]
                             if name not in stdlib:
                                 rows.append((full_path, name))
                     elif isinstance(node, ast.ImportFrom):
                         if node.module:
-                            name = node.module.split('.')[0]
+                            name = node.module.split(".")[0]
                             if name not in stdlib:
                                 rows.append((full_path, name))
             except (SyntaxError, UnicodeDecodeError):
                 continue
 
-    return pd.DataFrame(rows,
-                        columns=["filename", "root_package"]).drop_duplicates()
+    return pd.DataFrame(rows, columns=["filename", "root_package"]).drop_duplicates()
 
 
 def _extract_pkg_name(dep: str) -> str:
@@ -56,9 +57,7 @@ def _get_import_names(declared: set[str]) -> set[str]:
     import_names = set()
 
     for dep in declared:
-        dep_matches = {
-            k for k, v in dist_map.items() if dep in v
-        }
+        dep_matches = {k for k, v in dist_map.items() if dep in v}
         if dep_matches:
             import_names.update(dep_matches)
         else:
@@ -83,7 +82,7 @@ def find_missing_dependencies(project_path: os.PathLike) -> set[str]:
         in pyproject.toml.
     """
     project_path = pathlib.Path(project_path)
-    with open(project_path / 'pyproject.toml', "rb") as f:
+    with open(project_path / "pyproject.toml", "rb") as f:
         toml = tomllib.load(f)
 
     declared = {_extract_pkg_name(d) for d in toml["project"]["dependencies"]}
@@ -94,7 +93,7 @@ def find_missing_dependencies(project_path: os.PathLike) -> set[str]:
     declared.add(project_name)
     declared = _get_import_names(declared)
 
-    imports = extract_third_party_imports(project_path / 'src')
+    imports = extract_third_party_imports(project_path / "src")
 
     return imports[~imports["root_package"].isin(declared)]
 
@@ -102,17 +101,18 @@ def find_missing_dependencies(project_path: os.PathLike) -> set[str]:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Find undeclared third-party imports."
-    )
+    parser = argparse.ArgumentParser(description="Find undeclared third-party imports.")
     parser.add_argument(
-        "--base", type=str,
+        "--base",
+        type=str,
         help="Path to the base Python package or source root.",
-        default="./"
+        default="./",
     )
     parser.add_argument(
-        "--exclude", nargs="*", default=[],
-        help="List of package names to exclude from the check."
+        "--exclude",
+        nargs="*",
+        default=[],
+        help="List of package names to exclude from the check.",
     )
 
     args = parser.parse_args()
