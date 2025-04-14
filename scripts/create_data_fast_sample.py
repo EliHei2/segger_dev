@@ -6,6 +6,7 @@ import pandas as pd
 import math
 import numpy as np
 from segger.data.parquet._utils import get_polygons_from_xy
+
 """
 This script preprocesses Xenium spatial transcriptomics data for SEGGER cell segmentation model.
 
@@ -37,10 +38,12 @@ Usage:
 # CELLTYPE_COLUMN = 'celltype_minor'
 
 
-XENIUM_DATA_DIR = Path('/omics/odcf/analysis/OE0606_projects_temp/oncolgy_data_exchange/analysis_domenico/project_24/output-XETG00423__0053177__mng_04_TMA__20250306__170821')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/MNG_0053177')
-SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
-CELLTYPE_COLUMN = 'annot_v1'
+XENIUM_DATA_DIR = Path(
+    "/omics/odcf/analysis/OE0606_projects_temp/oncolgy_data_exchange/analysis_domenico/project_24/output-XETG00423__0053177__mng_04_TMA__20250306__170821"
+)
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/MNG_0053177")
+SCRNASEQ_FILE = Path("/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad")
+CELLTYPE_COLUMN = "annot_v1"
 
 # Calculate gene-celltype embeddings from reference data
 # gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
@@ -57,10 +60,7 @@ sample = STSampleParquet(
 )
 
 # Load and filter data
-transcripts = pd.read_parquet(
-    XENIUM_DATA_DIR / "transcripts.parquet", 
-    filters=[[("overlaps_nucleus", "=", 1)]]
-)
+transcripts = pd.read_parquet(XENIUM_DATA_DIR / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]])
 boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
 
 # Calculate optimal neighborhood parameters
@@ -71,10 +71,9 @@ nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
 
 # Set neighborhood parameters
 dist_tx = nucleus_diameter / 4  # Search radius = 1/4 nucleus diameter
-k_tx = math.ceil(np.quantile(
-    dist_tx**2 * np.pi * transcript_densities, 
-    0.9
-))  # Sample size based on 90th percentile density
+k_tx = math.ceil(
+    np.quantile(dist_tx**2 * np.pi * transcript_densities, 0.9)
+)  # Sample size based on 90th percentile density
 
 print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 
@@ -87,16 +86,14 @@ print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 # - val_prob: Fraction of data for validation
 sample.save(
     data_dir=SEGGER_DATA_DIR,
-    k_bd=3,          # Number of boundary points to connect
-    dist_bd=15,      # Maximum distance for boundary connections
-    k_tx=k_tx,       # Use calculated optimal transcript neighbors
-    dist_tx=dist_tx, # Use calculated optimal search radius
+    k_bd=3,  # Number of boundary points to connect
+    dist_bd=15,  # Maximum distance for boundary connections
+    k_tx=k_tx,  # Use calculated optimal transcript neighbors
+    dist_tx=dist_tx,  # Use calculated optimal search radius
     tile_width=100,  # Tile size for processing
     tile_height=100,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
-    frac=1.0,        # Use all data
-    val_prob=0.3,    # 30% validation set
-    test_prob=0,     # No test set
+    frac=1.0,  # Use all data
+    val_prob=0.3,  # 30% validation set
+    test_prob=0,  # No test set
 )
-
-

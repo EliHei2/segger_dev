@@ -34,7 +34,7 @@ class STSampleParquet:
         self,
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
-        buffer_ratio: Optional[float] = 1.,
+        buffer_ratio: Optional[float] = 1.0,
         sample_type: str = None,
         weights: pd.DataFrame = None,
     ):
@@ -71,11 +71,13 @@ class STSampleParquet:
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
         self.settings.boundaries.buffer_ratio = 1
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
-            print("Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation.")
+        nuclear_column = getattr(self.settings.transcripts, "nuclear", None)
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
+            print(
+                "Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation."
+            )
         # Set buffer ratio if provided
-        if buffer_ratio != 1.:
+        if buffer_ratio != 1.0:
             self.settings.boundaries.buffer_ratio = buffer_ratio
 
         # Setup logging
@@ -93,7 +95,6 @@ class STSampleParquet:
             self._emb_genes = weights.index.to_list()
         classes = self.transcripts_metadata["feature_names"]
         self._transcript_embedding = TranscriptEmbedding(np.array(classes), weights)
-
 
     @classmethod
     def _get_parquet_metadata(
@@ -498,30 +499,30 @@ class STSampleParquet:
         for region_idx, region in enumerate(regions):
             print(f"\n=== Processing Region {region_idx + 1}/{len(regions)} ===")
             print(f"Region bounds: {region.bounds}")
-            
+
             xm = STInMemoryDataset(sample=self, extents=region)
             tiles = xm._tile(tile_width, tile_height, None)
             print(f"Generated {len(tiles)} tiles for this region")
-            
+
             if frac < 1:
                 tiles = random.sample(tiles, int(len(tiles) * frac))
                 print(f"After sampling: {len(tiles)} tiles")
-            
+
             # Process each tile
             for tile_idx, tile in enumerate(tiles):
                 print(f"\n--- Processing Tile {tile_idx + 1}/{len(tiles)} ---")
                 print(f"Tile bounds: {tile.bounds}")
-                
+
                 # Choose training, test, or validation datasets
                 data_type = np.random.choice(
                     a=["train_tiles", "test_tiles", "val_tiles"],
                     p=[1 - (test_prob + val_prob), test_prob, val_prob],
                 )
                 print(f"Assigned to: {data_type}")
-                
+
                 xt = STTile(dataset=xm, extents=tile)
                 print(f"Tile UID: {xt.uid}")
-                
+
                 pyg_data = xt.to_pyg_dataset(
                     k_bd=k_bd,
                     dist_bd=dist_bd,
@@ -529,16 +530,16 @@ class STSampleParquet:
                     dist_tx=dist_tx,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
-                
+
                 if pyg_data is not None:
                     if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
                         data_type = "test_tiles"
                         print("No tx-belongs-bd edges found, reassigning to test_tiles")
-                    
+
                     filepath = data_dir / data_type / "processed" / f"{xt.uid}.pt"
                     torch.save(pyg_data, filepath)
                     print(f"Saved to: {filepath}")
-                    
+
                     # Print some statistics about the generated data
                     print(f"Data statistics:")
                     print(f"- Number of transcripts: {pyg_data['tx'].num_nodes}")
@@ -652,7 +653,7 @@ class STInMemoryDataset:
         transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
             lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
         )
-        qv_column = getattr(self.settings.transcripts, 'qv_column', None)
+        qv_column = getattr(self.settings.transcripts, "qv_column", None)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,
@@ -1170,30 +1171,27 @@ class STTile:
 
         # Set up Transcript nodes
         # Get transcript IDs - use getattr to safely check for id attribute
-        transcript_id_column = getattr(self.settings.transcripts, 'id', None)
+        transcript_id_column = getattr(self.settings.transcripts, "id", None)
         if transcript_id_column is None or transcript_id_column not in self.transcripts.columns:
             # Create unique IDs based on x,y coordinates
             x_coords = self.transcripts[self.settings.transcripts.x].values
             y_coords = self.transcripts[self.settings.transcripts.y].values
-            
+
             # Combine x and y coordinates into a single string and hash it
             # We multiply by 1000 and round to handle floating point precision
             # This ensures same coordinates get same ID
             coords_str = np.char.add(
-                np.char.add(
-                    np.round(x_coords * 1000).astype(int).astype(str),
-                    '_'
-                ),
-                np.round(y_coords * 1000).astype(int).astype(str)
+                np.char.add(np.round(x_coords * 1000).astype(int).astype(str), "_"),
+                np.round(y_coords * 1000).astype(int).astype(str),
             )
-            
+
             # Create unique IDs by hashing the coordinate strings
             tx_ids = np.array([hash(s) % (2**32) for s in coords_str], dtype=np.int64)
         else:
             tx_ids = self.transcripts[transcript_id_column].values.astype(int)
 
         # Assign IDs to PyG data
-        pyg_data["tx"].id = torch.tensor(tx_ids, dtype=torch.long)  
+        pyg_data["tx"].id = torch.tensor(tx_ids, dtype=torch.long)
         pyg_data["tx"].pos = torch.tensor(
             self.transcripts[self.settings.transcripts.xyz].values,
             dtype=torch.float32,
@@ -1248,16 +1246,16 @@ class STTile:
         # Find nuclear transcripts
         tx_cell_ids = self.transcripts[self.settings.boundaries.id]
         cell_ids_map = {idx: i for (i, idx) in enumerate(polygons.index)}
-        
+
         # Use getattr to safely check for nuclear attribute
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
+        nuclear_column = getattr(self.settings.transcripts, "nuclear", None)
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
             # print("Nuclear transcript information not pre-computed. Computing now...")
             is_nuclear = utils.compute_nuclear_transcripts(
                 polygons=polygons,
                 transcripts=self.transcripts,
                 x_col=self.settings.transcripts.x,
-                y_col=self.settings.transcripts.y
+                y_col=self.settings.transcripts.y,
             )
         else:
             is_nuclear = self.transcripts[nuclear_column].astype(bool)

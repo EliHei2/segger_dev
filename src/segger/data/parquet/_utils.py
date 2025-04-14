@@ -183,18 +183,19 @@ def get_polygons_from_xy(
         # Use the square root of the area to get a linear distance
         buffer_distances = np.sqrt(areas / np.pi) * (buffer_ratio - 1.0)
         # Apply buffer to each polygon with its specific distance
-        gs = gpd.GeoSeries([
-            geom.buffer(dist) if dist != 0 else geom
-            for geom, dist in zip(gs, buffer_distances)
-        ], index=gs.index)
+        gs = gpd.GeoSeries(
+            [geom.buffer(dist) if dist != 0 else geom for geom, dist in zip(gs, buffer_distances)], index=gs.index
+        )
 
     return gs
 
 
-def compute_nuclear_transcripts(polygons: gpd.GeoSeries, transcripts: pd.DataFrame, x_col: str, y_col: str) -> np.ndarray:
+def compute_nuclear_transcripts(
+    polygons: gpd.GeoSeries, transcripts: pd.DataFrame, x_col: str, y_col: str
+) -> np.ndarray:
     """
     Compute which transcripts are nuclear based on their overlap with boundary polygons.
-    
+
     Parameters
     ----------
     polygons : gpd.GeoSeries
@@ -205,7 +206,7 @@ def compute_nuclear_transcripts(polygons: gpd.GeoSeries, transcripts: pd.DataFra
         Name of the x-coordinate column in transcripts.
     y_col : str
         Name of the y-coordinate column in transcripts.
-        
+
     Returns
     -------
     np.ndarray
@@ -213,22 +214,19 @@ def compute_nuclear_transcripts(polygons: gpd.GeoSeries, transcripts: pd.DataFra
     """
     try:
         # Create points from transcript coordinates
-        transcript_points = gpd.GeoSeries([
-            shapely.Point(x, y) 
-            for x, y in zip(transcripts[x_col], transcripts[y_col])
-        ])
+        transcript_points = gpd.GeoSeries([shapely.Point(x, y) for x, y in zip(transcripts[x_col], transcripts[y_col])])
 
         # Create spatial index and compute point-in-polygon relationships
         spatial_index = polygons.sindex
         is_nuclear = []
-        
+
         for point in transcript_points:
             try:
                 possible_matches_index = list(spatial_index.intersection(point.bounds))
                 if not possible_matches_index:
                     is_nuclear.append(False)
                     continue
-                    
+
                 possible_matches = polygons.iloc[possible_matches_index]
                 is_inside = any(possible_matches.contains(point))
                 is_nuclear.append(is_inside)
