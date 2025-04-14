@@ -15,8 +15,8 @@ import scanpy as sc
 import os
 
 
-segger_data_dir = segger_data_dir = Path('data_tidy/pyg_datasets/bc_rep1_emb_final_200')
-models_dir = Path("./models/bc_rep1_emb_final_200")
+segger_data_dir = segger_data_dir = Path('data_tidy/pyg_datasets/cosmx_pancreas')
+models_dir = Path("./models/cosmx_pancreas")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -24,7 +24,7 @@ models_dir = Path("./models/bc_rep1_emb_final_200")
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=1,
+    batch_size=2,
     num_workers=2,
 )
 
@@ -35,7 +35,7 @@ dm.setup()
 
 # If you use custom gene embeddings, use the following two lines instead:
 is_token_based = False
-num_tx_tokens = dm.train[0].x_dict["tx"].shape[1] # Set the number of tokens to the number of genes
+num_tx_tokens = len(dm.train[0].x_dict["tx"]) # Set the number of tokens to the number of genes
 
 
 num_bd_features = dm.train[0].x_dict["bd"].shape[1]
@@ -55,11 +55,11 @@ ls = LitSegger(
 
 # Initialize the Lightning trainer
 trainer = Trainer(
-    accelerator='cuda',
+    accelerator='cpu',
     strategy='auto',
     precision='16-mixed',
-    devices=2, # set higher number if more gpus are available
-    max_epochs=400,
+    devices=4, # set higher number if more gpus are available
+    max_epochs=100,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )

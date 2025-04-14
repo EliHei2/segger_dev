@@ -6,6 +6,8 @@ transcripts:
     label: "target"
     filter_substrings:
       - "NegPrb_"
+      - "SystemControl"
+      - "Negative"
     xy:
       - "x_global_px"
       - "y_global_px"
