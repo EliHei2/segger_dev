@@ -9,6 +9,8 @@ import sys
 from types import SimpleNamespace
 from pathlib import Path
 import yaml
+import os
+import pyarrow as pa
 
 
 def get_xy_extents(
@@ -191,54 +193,48 @@ def get_polygons_from_xy(
     return gs
 
 
-def compute_nuclear_transcripts(polygons: gpd.GeoSeries, transcripts: pd.DataFrame, x_col: str, y_col: str) -> np.ndarray:
+def compute_nuclear_transcripts(
+    polygons: gpd.GeoSeries,
+    transcripts: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    nuclear_column: str = None,
+    nuclear_value: str = None,
+) -> pd.Series:
     """
-    Compute which transcripts are nuclear based on their overlap with boundary polygons.
-    
+    Computes which transcripts are nuclear based on their coordinates and the
+    nuclear polygons.
+
     Parameters
     ----------
     polygons : gpd.GeoSeries
-        GeoSeries containing the boundary polygons.
+        The nuclear polygons
     transcripts : pd.DataFrame
-        DataFrame containing transcript coordinates.
+        The transcripts DataFrame
     x_col : str
-        Name of the x-coordinate column in transcripts.
+        The x-coordinate column name
     y_col : str
-        Name of the y-coordinate column in transcripts.
-        
+        The y-coordinate column name
+    nuclear_column : str, optional
+        The column name that indicates if a transcript is nuclear
+    nuclear_value : str, optional
+        The value in nuclear_column that indicates a nuclear transcript
+
     Returns
     -------
-    np.ndarray
-        Boolean array indicating which transcripts are nuclear.
+    pd.Series
+        A boolean series indicating which transcripts are nuclear
     """
-    try:
-        # Create points from transcript coordinates
-        transcript_points = gpd.GeoSeries([
-            shapely.Point(x, y) 
-            for x, y in zip(transcripts[x_col], transcripts[y_col])
-        ])
-
-        # Create spatial index and compute point-in-polygon relationships
-        spatial_index = polygons.sindex
-        is_nuclear = []
-        
-        for point in transcript_points:
-            try:
-                possible_matches_index = list(spatial_index.intersection(point.bounds))
-                if not possible_matches_index:
-                    is_nuclear.append(False)
-                    continue
-                    
-                possible_matches = polygons.iloc[possible_matches_index]
-                is_inside = any(possible_matches.contains(point))
-                is_nuclear.append(is_inside)
-            except Exception:
-                is_nuclear.append(False)
-
-        return np.array(is_nuclear)
-
-    except Exception as e:
-        raise ValueError(f"Error computing nuclear transcripts: {str(e)}")
+    # If nuclear_column and nuclear_value are provided, use them
+    if nuclear_column is not None and nuclear_value is not None:
+        if nuclear_column in transcripts.columns:
+            return transcripts[nuclear_column].eq(nuclear_value)
+    
+    # Otherwise compute based on coordinates
+    points = gpd.GeoSeries(
+        gpd.points_from_xy(transcripts[x_col], transcripts[y_col])
+    )
+    return points.apply(lambda p: any(p.within(poly) for poly in polygons))
 
 
 def filter_boundaries(
@@ -397,3 +393,103 @@ def _dict_to_namespace(d):
         d = {k: _dict_to_namespace(v) for k, v in d.items()}
         return SimpleNamespace(**d)
     return d
+
+
+def add_transcript_ids(
+    transcripts_df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    id_col: str = "transcript_id",
+    precision: int = 1000,
+) -> pd.DataFrame:
+    """
+    Adds unique transcript IDs to a DataFrame based on x,y coordinates.
+    
+    Parameters
+    ----------
+    transcripts_df : pd.DataFrame
+        DataFrame containing transcript data with x,y coordinates
+    x_col : str
+        Name of the x-coordinate column
+    y_col : str
+        Name of the y-coordinate column
+    id_col : str, optional
+        Name of the column to store the transcript IDs, default "transcript_id"
+    precision : int, optional
+        Precision multiplier for coordinate values to handle floating point precision,
+        default 1000
+        
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with added transcript_id column
+    """
+    # Create coordinate strings with specified precision
+    x_coords = np.round(transcripts_df[x_col] * precision).astype(int).astype(str)
+    y_coords = np.round(transcripts_df[y_col] * precision).astype(int).astype(str)
+    coords_str = x_coords +  '_' + y_coords
+
+    
+    # Generate unique IDs using a deterministic hash function
+    def hash_coords(s):
+        # Use a fixed seed for reproducibility
+        seed = 1996
+        # Combine string with seed and take modulo to get an 8-digit integer
+        return abs(hash(s + str(seed))) % 100000000
+    
+    tx_ids = np.array([hash_coords(s) for s in coords_str], dtype=np.int32)
+    
+    # Add IDs to DataFrame
+    transcripts_df = transcripts_df.copy()
+    transcripts_df[id_col] = tx_ids
+    
+    return transcripts_df
+
+
+def ensure_transcript_ids(
+    parquet_path: os.PathLike,
+    x_col: str,
+    y_col: str,
+    id_col: str = "transcript_id",
+    precision: int = 1000,
+) -> None:
+    """
+    Ensures that a parquet file has transcript IDs by adding them if missing.
+    
+    Parameters
+    ----------
+    parquet_path : os.PathLike
+        Path to the parquet file
+    x_col : str
+        Name of the x-coordinate column
+    y_col : str
+        Name of the y-coordinate column
+    id_col : str, optional
+        Name of the column to store the transcript IDs, default "transcript_id"
+    precision : int, optional
+        Precision multiplier for coordinate values to handle floating point precision,
+        default 1000
+    """
+    # Read the parquet file
+    df = pd.read_parquet(parquet_path)
+    
+    # Check if transcript_id column exists
+    if id_col not in df.columns:
+        # Add transcript IDs
+        df = add_transcript_ids(df, x_col, y_col, id_col, precision)
+        
+        # Convert to Arrow table with explicit schema
+        schema = pa.schema([
+            (col, pa.from_numpy_dtype(df[col].dtype)) 
+            for col in df.columns
+        ])
+        table = pa.Table.from_pandas(df, schema=schema)
+        
+        # Write back to parquet with proper metadata
+        pq.write_table(
+            table,
+            parquet_path,
+            version='2.6',  # Use latest stable version
+            write_statistics=True,  # Ensure statistics are written
+            compression='snappy'  # Use snappy compression for better performance
+        )

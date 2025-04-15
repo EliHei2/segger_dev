@@ -1,4 +1,4 @@
-from segger.data.parquet.sample import STSampleParquet
+from segger.data.parquet.sample import STSampleParquet, STInMemoryDataset
 from path import Path
 from segger.data.utils import calculate_gene_celltype_abundance_embedding
 import scanpy as sc
@@ -38,7 +38,7 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path('data_raw/cosmx/human_pancreas/processed/')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_buffer')
+SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_500')
 # SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
 # CELLTYPE_COLUMN = 'annot_v1'
 
@@ -53,7 +53,7 @@ sample = STSampleParquet(
     base_dir=XENIUM_DATA_DIR,
     n_workers=4,
     sample_type="cosmx",
-    buffer_ratio=1.,
+    buffer_ratio=1,
     # weights=gene_celltype_abundance_embedding
 )
 
@@ -92,8 +92,8 @@ sample.save(
     dist_bd=15,      # Maximum distance for boundary connections
     k_tx=20,       # Use calculated optimal transcript neighbors
     dist_tx=70, # Use calculated optimal search radius
-    tile_width=100,  # Tile size for processing
-    tile_height=100,
+    tile_width=500,  # Tile size for processing
+    tile_height=500,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
     frac=1.0,        # Use all data
     val_prob=0.3,    # 30% validation set

@@ -3,7 +3,10 @@ transcripts:
     x: "x_global_px"
     y: "y_global_px"
     z: "z"
+    id: "transcript_id"
     label: "target"
+    nuclear_column: "CellComp"
+    nuclear_value: "Nuclear"
     filter_substrings:
       - "NegPrb_"
       - "SystemControl"
@@ -21,6 +24,8 @@ transcripts:
       - "z"
       - "target"
       - "cell"
+      - "CellComp"
+      - "transcript_id"
 
 boundaries:
     filename: "nucleus_boundaries.parquet"

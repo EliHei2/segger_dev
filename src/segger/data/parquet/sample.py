@@ -71,12 +71,20 @@ class STSampleParquet:
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
         self.settings.boundaries.buffer_ratio = 1
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
+        nuclear_column = getattr(self.settings.transcripts, 'nuclear_column', None)
         if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
             print("Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation.")
         # Set buffer ratio if provided
         if buffer_ratio != 1.:
             self.settings.boundaries.buffer_ratio = buffer_ratio
+
+        # Ensure transcript IDs exist
+        utils.ensure_transcript_ids(
+            self._transcripts_filepath,
+            self.settings.transcripts.x,
+            self.settings.transcripts.y,
+            self.settings.transcripts.id
+        )
 
         # Setup logging
         logging.basicConfig(level=logging.INFO)
@@ -1171,29 +1179,14 @@ class STTile:
         # Set up Transcript nodes
         # Get transcript IDs - use getattr to safely check for id attribute
         transcript_id_column = getattr(self.settings.transcripts, 'id', None)
-        if transcript_id_column is None or transcript_id_column not in self.transcripts.columns:
-            # Create unique IDs based on x,y coordinates
-            x_coords = self.transcripts[self.settings.transcripts.x].values
-            y_coords = self.transcripts[self.settings.transcripts.y].values
-            
-            # Combine x and y coordinates into a single string and hash it
-            # We multiply by 1000 and round to handle floating point precision
-            # This ensures same coordinates get same ID
-            coords_str = np.char.add(
-                np.char.add(
-                    np.round(x_coords * 1000).astype(int).astype(str),
-                    '_'
-                ),
-                np.round(y_coords * 1000).astype(int).astype(str)
+        if transcript_id_column is None:
+            raise ValueError(
+                "Transcript IDs not found in DataFrame. Please run add_transcript_ids() "
+                "as a preprocessing step before creating the dataset."
             )
-            
-            # Create unique IDs by hashing the coordinate strings
-            tx_ids = np.array([hash(s) % (2**32) for s in coords_str], dtype=np.int64)
-        else:
-            tx_ids = self.transcripts[transcript_id_column].values.astype(int)
-
+        
         # Assign IDs to PyG data
-        pyg_data["tx"].id = torch.tensor(tx_ids, dtype=torch.long)  
+        pyg_data["tx"].id = torch.tensor(self.transcripts[transcript_id_column].values, dtype=torch.long)
         pyg_data["tx"].pos = torch.tensor(
             self.transcripts[self.settings.transcripts.xyz].values,
             dtype=torch.float32,
@@ -1249,18 +1242,21 @@ class STTile:
         tx_cell_ids = self.transcripts[self.settings.boundaries.id]
         cell_ids_map = {idx: i for (i, idx) in enumerate(polygons.index)}
         
-        # Use getattr to safely check for nuclear attribute
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear', None)
+        # Get nuclear column and value from settings
+        nuclear_column = getattr(self.settings.transcripts, 'nuclear_column', None)
+        nuclear_value = getattr(self.settings.transcripts, 'nuclear_value', None)
+        
         if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
-            # print("Nuclear transcript information not pre-computed. Computing now...")
             is_nuclear = utils.compute_nuclear_transcripts(
                 polygons=polygons,
                 transcripts=self.transcripts,
                 x_col=self.settings.transcripts.x,
-                y_col=self.settings.transcripts.y
+                y_col=self.settings.transcripts.y,
+                nuclear_column=nuclear_column,
+                nuclear_value=nuclear_value
             )
         else:
-            is_nuclear = self.transcripts[nuclear_column].astype(bool)
+            is_nuclear = self.transcripts[nuclear_column].eq(nuclear_value)
         is_nuclear &= tx_cell_ids.isin(polygons.index)
 
         # Set up overlap edges
