@@ -228,11 +228,9 @@ def compute_nuclear_transcripts(
     if nuclear_column is not None and nuclear_value is not None:
         if nuclear_column in transcripts.columns:
             return transcripts[nuclear_column].eq(nuclear_value)
-    
+
     # Otherwise compute based on coordinates
-    points = gpd.GeoSeries(
-        gpd.points_from_xy(transcripts[x_col], transcripts[y_col])
-    )
+    points = gpd.GeoSeries(gpd.points_from_xy(transcripts[x_col], transcripts[y_col]))
     return points.apply(lambda p: any(p.within(poly) for poly in polygons))
 
 
@@ -403,7 +401,7 @@ def add_transcript_ids(
 ) -> pd.DataFrame:
     """
     Adds unique transcript IDs to a DataFrame based on x,y coordinates.
-    
+
     Parameters
     ----------
     transcripts_df : pd.DataFrame
@@ -417,7 +415,7 @@ def add_transcript_ids(
     precision : int, optional
         Precision multiplier for coordinate values to handle floating point precision,
         default 1000
-        
+
     Returns
     -------
     pd.DataFrame
@@ -426,22 +424,21 @@ def add_transcript_ids(
     # Create coordinate strings with specified precision
     x_coords = np.round(transcripts_df[x_col] * precision).astype(int).astype(str)
     y_coords = np.round(transcripts_df[y_col] * precision).astype(int).astype(str)
-    coords_str = x_coords +  '_' + y_coords
+    coords_str = x_coords + "_" + y_coords
 
-    
     # Generate unique IDs using a deterministic hash function
     def hash_coords(s):
         # Use a fixed seed for reproducibility
         seed = 1996
         # Combine string with seed and take modulo to get an 8-digit integer
         return abs(hash(s + str(seed))) % 100000000
-    
+
     tx_ids = np.array([hash_coords(s) for s in coords_str], dtype=np.int32)
-    
+
     # Add IDs to DataFrame
     transcripts_df = transcripts_df.copy()
     transcripts_df[id_col] = tx_ids
-    
+
     return transcripts_df
 
 
@@ -454,7 +451,7 @@ def ensure_transcript_ids(
 ) -> None:
     """
     Ensures that a parquet file has transcript IDs by adding them if missing.
-    
+
     Parameters
     ----------
     parquet_path : os.PathLike
@@ -471,30 +468,27 @@ def ensure_transcript_ids(
     """
     # Read the parquet file
     df = pd.read_parquet(parquet_path)
-    
+
     # Check if transcript_id column exists
     if id_col not in df.columns:
         # Add transcript IDs
         df = add_transcript_ids(df, x_col, y_col, id_col, precision)
-        
+
         # Read existing metadata to preserve it
         metadata = pq.read_metadata(parquet_path)
-        
+
         # Create new schema that includes all columns
-        schema = pa.schema([
-            (col, pa.from_numpy_dtype(df[col].dtype)) 
-            for col in df.columns
-        ])
-        
+        schema = pa.schema([(col, pa.from_numpy_dtype(df[col].dtype)) for col in df.columns])
+
         # Create Arrow table with the new schema
         table = pa.Table.from_pandas(df, schema=schema)
-        
+
         # Write back to parquet with proper metadata
         pq.write_table(
             table,
             parquet_path,
-            version='2.6',  # Use latest stable version
+            version="2.6",  # Use latest stable version
             write_statistics=True,  # Ensure statistics are written
-            compression='snappy',  # Use snappy compression for better performance
-            metadata_collector=metadata.metadata  # Preserve existing metadata
+            compression="snappy",  # Use snappy compression for better performance
+            metadata_collector=metadata.metadata,  # Preserve existing metadata
         )

@@ -71,9 +71,11 @@ class STSampleParquet:
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
         self.settings.boundaries.buffer_ratio = 1
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear_column', None)
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
-            print("Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation.")
+        nuclear_column = getattr(self.settings.transcripts, "nuclear_column", None)
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
+            print(
+                "Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation."
+            )
         # Set buffer ratio if provided
         if buffer_ratio != 1.0:
             self.settings.boundaries.buffer_ratio = buffer_ratio
@@ -83,7 +85,7 @@ class STSampleParquet:
             self._transcripts_filepath,
             self.settings.transcripts.x,
             self.settings.transcripts.y,
-            self.settings.transcripts.id
+            self.settings.transcripts.id,
         )
 
         # Setup logging
@@ -1177,13 +1179,13 @@ class STTile:
 
         # Set up Transcript nodes
         # Get transcript IDs - use getattr to safely check for id attribute
-        transcript_id_column = getattr(self.settings.transcripts, 'id', None)
+        transcript_id_column = getattr(self.settings.transcripts, "id", None)
         if transcript_id_column is None:
             raise ValueError(
                 "Transcript IDs not found in DataFrame. Please run add_transcript_ids() "
                 "as a preprocessing step before creating the dataset."
             )
-        
+
         # Assign IDs to PyG data
         pyg_data["tx"].id = torch.tensor(self.transcripts[transcript_id_column].values, dtype=torch.long)
         pyg_data["tx"].pos = torch.tensor(
@@ -1240,19 +1242,19 @@ class STTile:
         # Find nuclear transcripts
         tx_cell_ids = self.transcripts[self.settings.boundaries.id]
         cell_ids_map = {idx: i for (i, idx) in enumerate(polygons.index)}
-        
+
         # Get nuclear column and value from settings
-        nuclear_column = getattr(self.settings.transcripts, 'nuclear_column', None)
-        nuclear_value = getattr(self.settings.transcripts, 'nuclear_value', None)
-        
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
+        nuclear_column = getattr(self.settings.transcripts, "nuclear_column", None)
+        nuclear_value = getattr(self.settings.transcripts, "nuclear_value", None)
+
+        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
             is_nuclear = utils.compute_nuclear_transcripts(
                 polygons=polygons,
                 transcripts=self.transcripts,
                 x_col=self.settings.transcripts.x,
                 y_col=self.settings.transcripts.y,
                 nuclear_column=nuclear_column,
-                nuclear_value=nuclear_value
+                nuclear_value=nuclear_value,
             )
         else:
             is_nuclear = self.transcripts[nuclear_column].eq(nuclear_value)

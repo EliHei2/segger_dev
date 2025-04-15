@@ -38,8 +38,8 @@ Usage:
 # CELLTYPE_COLUMN = 'celltype_minor'
 
 
-XENIUM_DATA_DIR = Path('data_raw/cosmx/human_pancreas/processed/')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_500')
+XENIUM_DATA_DIR = Path("data_raw/cosmx/human_pancreas/processed/")
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/cosmx_pancreas_500")
 # SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
 # CELLTYPE_COLUMN = 'annot_v1'
 
@@ -86,10 +86,10 @@ print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 # - val_prob: Fraction of data for validation
 sample.save(
     data_dir=SEGGER_DATA_DIR,
-    k_bd=3,          # Number of boundary points to connect
-    dist_bd=15,      # Maximum distance for boundary connections
-    k_tx=20,       # Use calculated optimal transcript neighbors
-    dist_tx=70, # Use calculated optimal search radius
+    k_bd=3,  # Number of boundary points to connect
+    dist_bd=15,  # Maximum distance for boundary connections
+    k_tx=20,  # Use calculated optimal transcript neighbors
+    dist_tx=70,  # Use calculated optimal search radius
     tile_width=500,  # Tile size for processing
     tile_height=500,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
