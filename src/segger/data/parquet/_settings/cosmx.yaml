@@ -28,16 +28,15 @@ transcripts:
       - "transcript_id"
 
 boundaries:
-    filename: "nucleus_boundaries.parquet"
-    x: "x_global_px"
-    y: "y_global_px"
-    id: "cell"
-    label: "cell"
-    xy:
-      - "x_global_px"
-      - "y_global_px"
-    columns:
-      - "x_global_px"
-      - "y_global_px"
-      - "cell"
-  
+  filename: "nucleus_boundaries.parquet"
+  x: "x_global_px"
+  y: "y_global_px"
+  id: "cell"
+  label: "cell"
+  xy:
+    - "x_global_px"
+    - "y_global_px"
+  columns:
+    - "x_global_px"
+    - "y_global_px"
+    - "cell"

@@ -34,7 +34,7 @@ class STSampleParquet:
         self,
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
-        buffer_ratio: Optional[float] = 1.,
+        buffer_ratio: Optional[float] = 1.0,
         sample_type: str = None,
         weights: pd.DataFrame = None,
     ):
@@ -75,7 +75,7 @@ class STSampleParquet:
         if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.:
             print("Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation.")
         # Set buffer ratio if provided
-        if buffer_ratio != 1.:
+        if buffer_ratio != 1.0:
             self.settings.boundaries.buffer_ratio = buffer_ratio
 
         # Ensure transcript IDs exist
@@ -101,7 +101,6 @@ class STSampleParquet:
             self._emb_genes = weights.index.to_list()
         classes = self.transcripts_metadata["feature_names"]
         self._transcript_embedding = TranscriptEmbedding(np.array(classes), weights)
-
 
     @classmethod
     def _get_parquet_metadata(
@@ -506,30 +505,30 @@ class STSampleParquet:
         for region_idx, region in enumerate(regions):
             print(f"\n=== Processing Region {region_idx + 1}/{len(regions)} ===")
             print(f"Region bounds: {region.bounds}")
-            
+
             xm = STInMemoryDataset(sample=self, extents=region)
             tiles = xm._tile(tile_width, tile_height, None)
             print(f"Generated {len(tiles)} tiles for this region")
-            
+
             if frac < 1:
                 tiles = random.sample(tiles, int(len(tiles) * frac))
                 print(f"After sampling: {len(tiles)} tiles")
-            
+
             # Process each tile
             for tile_idx, tile in enumerate(tiles):
                 print(f"\n--- Processing Tile {tile_idx + 1}/{len(tiles)} ---")
                 print(f"Tile bounds: {tile.bounds}")
-                
+
                 # Choose training, test, or validation datasets
                 data_type = np.random.choice(
                     a=["train_tiles", "test_tiles", "val_tiles"],
                     p=[1 - (test_prob + val_prob), test_prob, val_prob],
                 )
                 print(f"Assigned to: {data_type}")
-                
+
                 xt = STTile(dataset=xm, extents=tile)
                 print(f"Tile UID: {xt.uid}")
-                
+
                 pyg_data = xt.to_pyg_dataset(
                     k_bd=k_bd,
                     dist_bd=dist_bd,
@@ -537,16 +536,16 @@ class STSampleParquet:
                     dist_tx=dist_tx,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
-                
+
                 if pyg_data is not None:
                     if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
                         data_type = "test_tiles"
                         print("No tx-belongs-bd edges found, reassigning to test_tiles")
-                    
+
                     filepath = data_dir / data_type / "processed" / f"{xt.uid}.pt"
                     torch.save(pyg_data, filepath)
                     print(f"Saved to: {filepath}")
-                    
+
                     # Print some statistics about the generated data
                     print(f"Data statistics:")
                     print(f"- Number of transcripts: {pyg_data['tx'].num_nodes}")
@@ -660,7 +659,7 @@ class STInMemoryDataset:
         transcripts[self.settings.transcripts.label] = transcripts[self.settings.transcripts.label].apply(
             lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
         )
-        qv_column = getattr(self.settings.transcripts, 'qv_column', None)
+        qv_column = getattr(self.settings.transcripts, "qv_column", None)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,

@@ -6,6 +6,7 @@ import pandas as pd
 import math
 import numpy as np
 from segger.data.parquet._utils import get_polygons_from_xy
+
 """
 This script preprocesses Xenium spatial transcriptomics data for SEGGER cell segmentation model.
 
@@ -58,9 +59,7 @@ sample = STSampleParquet(
 )
 
 # Load and filter data
-transcripts = pd.read_parquet(
-    XENIUM_DATA_DIR / "transcripts.parquet"
-)
+transcripts = pd.read_parquet(XENIUM_DATA_DIR / "transcripts.parquet")
 boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
 
 # Calculate optimal neighborhood parameters
@@ -72,10 +71,9 @@ nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
 
 # Set neighborhood parameters
 dist_tx = nucleus_diameter / 4  # Search radius = 1/4 nucleus diameter
-k_tx = math.ceil(np.quantile(
-    dist_tx**2 * np.pi * transcript_densities, 
-    0.9
-))  # Sample size based on 90th percentile density
+k_tx = math.ceil(
+    np.quantile(dist_tx**2 * np.pi * transcript_densities, 0.9)
+)  # Sample size based on 90th percentile density
 
 print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 
@@ -95,9 +93,7 @@ sample.save(
     tile_width=500,  # Tile size for processing
     tile_height=500,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
-    frac=1.0,        # Use all data
-    val_prob=0.3,    # 30% validation set
-    test_prob=0,     # No test set
+    frac=1.0,  # Use all data
+    val_prob=0.3,  # 30% validation set
+    test_prob=0,  # No test set
 )
-
-

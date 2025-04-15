@@ -185,10 +185,9 @@ def get_polygons_from_xy(
         # Use the square root of the area to get a linear distance
         buffer_distances = np.sqrt(areas / np.pi) * (buffer_ratio - 1.0)
         # Apply buffer to each polygon with its specific distance
-        gs = gpd.GeoSeries([
-            geom.buffer(dist) if dist != 0 else geom
-            for geom, dist in zip(gs, buffer_distances)
-        ], index=gs.index)
+        gs = gpd.GeoSeries(
+            [geom.buffer(dist) if dist != 0 else geom for geom, dist in zip(gs, buffer_distances)], index=gs.index
+        )
 
     return gs
 
