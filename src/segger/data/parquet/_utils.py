@@ -478,11 +478,16 @@ def ensure_transcript_ids(
         # Add transcript IDs
         df = add_transcript_ids(df, x_col, y_col, id_col, precision)
         
-        # Convert to Arrow table with explicit schema
+        # Read existing metadata to preserve it
+        metadata = pq.read_metadata(parquet_path)
+        
+        # Create new schema that includes all columns
         schema = pa.schema([
             (col, pa.from_numpy_dtype(df[col].dtype)) 
             for col in df.columns
         ])
+        
+        # Create Arrow table with the new schema
         table = pa.Table.from_pandas(df, schema=schema)
         
         # Write back to parquet with proper metadata
@@ -491,5 +496,6 @@ def ensure_transcript_ids(
             parquet_path,
             version='2.6',  # Use latest stable version
             write_statistics=True,  # Ensure statistics are written
-            compression='snappy'  # Use snappy compression for better performance
+            compression='snappy',  # Use snappy compression for better performance
+            metadata_collector=metadata.metadata  # Preserve existing metadata
         )
