@@ -584,7 +584,6 @@ def segment(
         "score", ascending=False
     ).drop_duplicates(subset="transcript_id", keep="first")
 
-
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Max score selection completed in {elapsed_time:.2f} seconds.")

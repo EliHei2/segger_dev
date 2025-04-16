@@ -559,8 +559,12 @@ class STSampleParquet:
                     print(f"Data statistics:")
                     print(f"- Number of transcripts: {pyg_data['tx'].num_nodes}")
                     print(f"- Number of boundaries: {pyg_data['bd'].num_nodes}")
-                    print(f"- Number of tx-tx edges: {pyg_data['tx', 'neighbors', 'tx'].edge_index.shape[1]}")
-                    print(f"- Number of tx-bd edges: {pyg_data['tx', 'neighbors', 'bd'].edge_index.shape[1]}")
+                    print(
+                        f"- Number of tx-tx edges: {pyg_data['tx', 'neighbors', 'tx'].edge_index.shape[1]}"
+                    )
+                    print(
+                        f"- Number of tx-bd edges: {pyg_data['tx', 'neighbors', 'bd'].edge_index.shape[1]}"
+                    )
                     # print(f"- Number of tx-belongs-bd edges: {pyg_data['tx', 'belongs', 'bd'].edge_index.shape[1]}")
                 else:
                     print("Skipping tile - no valid data generated")
@@ -1198,7 +1202,9 @@ class STTile:
             )
 
         # Assign IDs to PyG data
-        pyg_data["tx"].id = torch.tensor(self.transcripts[transcript_id_column].values, dtype=torch.long)
+        pyg_data["tx"].id = torch.tensor(
+            self.transcripts[transcript_id_column].values, dtype=torch.long
+        )
         pyg_data["tx"].pos = torch.tensor(
             self.transcripts[self.settings.transcripts.xyz].values,
             dtype=torch.float32,
