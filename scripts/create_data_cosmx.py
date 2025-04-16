@@ -86,10 +86,10 @@ print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 # - val_prob: Fraction of data for validation
 sample.save(
     data_dir=SEGGER_DATA_DIR,
-    k_bd=3,          # Number of boundary points to connect
-    dist_bd=15,      # Maximum distance for boundary connections
-    k_tx=20,       # Use calculated optimal transcript neighbors
-    dist_tx=70, # Use calculated optimal search radius
+    k_bd=3,  # Number of boundary points to connect
+    dist_bd=15,  # Maximum distance for boundary connections
+    k_tx=20,  # Use calculated optimal transcript neighbors
+    dist_tx=70,  # Use calculated optimal search radius
     tile_width=500,  # Tile size for processing
     tile_height=500,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
