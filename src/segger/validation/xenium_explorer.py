@@ -67,7 +67,9 @@ def get_indices_indptr(input_array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]
     return indices, indptr
 
 
-def save_cell_clustering(merged: pd.DataFrame, zarr_path: str, columns: List[str]) -> None:
+def save_cell_clustering(
+    merged: pd.DataFrame, zarr_path: str, columns: List[str]
+) -> None:
     """Save cell clustering information to a Zarr file.
 
     Args:
@@ -84,7 +86,12 @@ def save_cell_clustering(merged: pd.DataFrame, zarr_path: str, columns: List[str
     for index, column in enumerate(columns):
         new_zarr["cell_groups"].create_group(index)
         classes = list(np.unique(merged[column].astype(str)))
-        mapping_dict = {key: i for i, key in zip(range(1, len(classes)), [k for k in classes if k != "nan"])}
+        mapping_dict = {
+            key: i
+            for i, key in zip(
+                range(1, len(classes)), [k for k in classes if k != "nan"]
+            )
+        }
         mapping_dict["nan"] = 0
 
         clusters = merged[column].astype(str).replace(mapping_dict).values.astype(int)
@@ -101,7 +108,10 @@ def save_cell_clustering(merged: pd.DataFrame, zarr_path: str, columns: List[str
             "number_groupings": len(columns),
             "grouping_names": columns,
             "group_names": [
-                [k for k, v in sorted(mapping_dict.items(), key=lambda item: item[1])][1:] for mapping_dict in mappings
+                [k for k, v in sorted(mapping_dict.items(), key=lambda item: item[1])][
+                    1:
+                ]
+                for mapping_dict in mappings
             ],
         }
     )
@@ -140,8 +150,12 @@ def get_leiden_umap(adata, draw: bool = False):
 
     gene_names = adata.var_names
     mean_expression_values = adata.X.mean(axis=0)
-    gene_mean_expression_df = pd.DataFrame({"gene_name": gene_names, "mean_expression": mean_expression_values})
-    top_genes = gene_mean_expression_df.sort_values(by="mean_expression", ascending=False).head(30)
+    gene_mean_expression_df = pd.DataFrame(
+        {"gene_name": gene_names, "mean_expression": mean_expression_values}
+    )
+    top_genes = gene_mean_expression_df.sort_values(
+        by="mean_expression", ascending=False
+    ).head(30)
     top_gene_names = top_genes["gene_name"].tolist()
 
     sc.pp.normalize_total(adata)
@@ -192,12 +206,15 @@ def get_median_expression_table(adata, column: str = "leiden") -> pd.DataFrame:
         cluster_cells = adata[clusters == cluster].X
         cluster_expression = cluster_cells[:, top_gene_indices]
         gene_medians = [
-            pd.Series(cluster_expression[:, gene_idx]).median() for gene_idx in range(len(top_gene_indices))
+            pd.Series(cluster_expression[:, gene_idx]).median()
+            for gene_idx in range(len(top_gene_indices))
         ]
         cluster_data[f"Cluster_{cluster}"] = gene_medians
 
     cluster_expression_df = pd.DataFrame(cluster_data, index=top_genes)
-    sorted_columns = sorted(cluster_expression_df.columns.values, key=lambda x: int(x.split("_")[-1]))
+    sorted_columns = sorted(
+        cluster_expression_df.columns.values, key=lambda x: int(x.split("_")[-1])
+    )
     cluster_expression_df = cluster_expression_df[sorted_columns]
     return cluster_expression_df.T.style.background_gradient(cmap="Greens")
 
@@ -245,7 +262,9 @@ def seg2explorer(
     tma_id = []
 
     grouped_by = seg_df.groupby(cell_id_columns)
-    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(enumerate(grouped_by), total=len(grouped_by)):
+    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(
+        enumerate(grouped_by), total=len(grouped_by)
+    ):
         if len(seg_cell) < 5:
             continue
 
@@ -276,10 +295,16 @@ def seg2explorer(
         )
 
         polygon_num_vertices[0].append(len(cell_convex_hull.vertices))
-        polygon_num_vertices[1].append(len(nucleus_convex_hull.vertices) if len(seg_nucleous) >= 3 else 0)
-        polygon_vertices[0].append(seg_cell[["x_location", "y_location"]].values[cell_convex_hull.vertices])
+        polygon_num_vertices[1].append(
+            len(nucleus_convex_hull.vertices) if len(seg_nucleous) >= 3 else 0
+        )
+        polygon_vertices[0].append(
+            seg_cell[["x_location", "y_location"]].values[cell_convex_hull.vertices]
+        )
         polygon_vertices[1].append(
-            seg_nucleous[["x_location", "y_location"]].values[nucleus_convex_hull.vertices]
+            seg_nucleous[["x_location", "y_location"]].values[
+                nucleus_convex_hull.vertices
+            ]
             if len(seg_nucleous) >= 3
             else np.array([[], []]).T
         )
@@ -289,7 +314,9 @@ def seg2explorer(
     nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=21)
 
     cells = {
-        "cell_id": np.array([np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32).T,
+        "cell_id": np.array(
+            [np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32
+        ).T,
         "cell_summary": pd.DataFrame(cell_summary).values.astype(np.float64),
         "polygon_num_vertices": np.array(
             [
@@ -298,7 +325,9 @@ def seg2explorer(
             ],
             dtype=np.int32,
         ),
-        "polygon_vertices": np.array([nucl_polygon_vertices, cell_polygon_vertices]).astype(np.float32),
+        "polygon_vertices": np.array(
+            [nucl_polygon_vertices, cell_polygon_vertices]
+        ).astype(np.float32),
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
 
@@ -315,10 +344,14 @@ def seg2explorer(
     new_store.store.close()
 
     if analysis_df is None:
-        analysis_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+        analysis_df = pd.DataFrame(
+            [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+        )
         analysis_df["default"] = "seg"
 
-    zarr_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+    zarr_df = pd.DataFrame(
+        [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+    )
     clustering_df = pd.merge(zarr_df, analysis_df, how="left", on=cell_id_columns)
 
     clusters_names = [i for i in analysis_df.columns if i != cell_id_columns]
@@ -336,7 +369,10 @@ def seg2explorer(
     new_zarr = zarr.open(storage / (analysis_filename + ".zarr.zip"), mode="w")
     new_zarr.create_group("/cell_groups")
 
-    clusters = [[clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])] for cluster in clusters_names]
+    clusters = [
+        [clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])]
+        for cluster in clusters_names
+    ]
 
     for i in range(len(clusters)):
         new_zarr["cell_groups"].create_group(i)
@@ -351,7 +387,11 @@ def seg2explorer(
             "number_groupings": len(clusters_names),
             "grouping_names": clusters_names,
             "group_names": [
-                [x[0] for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])] for cluster in clusters_names
+                [
+                    x[0]
+                    for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])
+                ]
+                for cluster in clusters_names
             ],
         }
     )
@@ -394,7 +434,10 @@ def get_flatten_version(polygons: List[np.ndarray], max_value: int = 21) -> np.n
 
 
 def generate_experiment_file(
-    template_path: str, output_path: str, cells_name: str = "seg_cells", analysis_name: str = "seg_analysis"
+    template_path: str,
+    output_path: str,
+    cells_name: str = "seg_cells",
+    analysis_name: str = "seg_analysis",
 ) -> None:
     """Generate the experiment file for Xenium.
 
@@ -412,9 +455,13 @@ def generate_experiment_file(
     experiment["images"].pop("morphology_filepath")
     experiment["images"].pop("morphology_focus_filepath")
 
-    experiment["xenium_explorer_files"]["cells_zarr_filepath"] = f"{cells_name}.zarr.zip"
+    experiment["xenium_explorer_files"][
+        "cells_zarr_filepath"
+    ] = f"{cells_name}.zarr.zip"
     experiment["xenium_explorer_files"].pop("cell_features_zarr_filepath")
-    experiment["xenium_explorer_files"]["analysis_zarr_filepath"] = f"{analysis_name}.zarr.zip"
+    experiment["xenium_explorer_files"][
+        "analysis_zarr_filepath"
+    ] = f"{analysis_name}.zarr.zip"
 
     with open(output_path, "w") as f:
         json.dump(experiment, f, indent=2)

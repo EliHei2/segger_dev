@@ -5,7 +5,9 @@ import os
 import time
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", default="config.yaml", help="Path to the configuration YAML file")
+parser.add_argument(
+    "--config", default="config.yaml", help="Path to the configuration YAML file"
+)
 args = parser.parse_args()
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +18,11 @@ with open(config_file_path, "r") as file:
     config = yaml.safe_load(file)
 
 # Get the base directory
-repo_dir = config["container_dir"] if config.get("use_singularity", False) else config["local_repo_dir"]
+repo_dir = (
+    config["container_dir"]
+    if config.get("use_singularity", False)
+    else config["local_repo_dir"]
+)
 
 time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
@@ -94,7 +100,9 @@ def run_data_processing():
     if config["preprocessing"].get("scrnaseq_file") is not None:
         command.extend(["--scrnaseq_file", config["preprocessing"]["scrnaseq_file"]])
     if config["preprocessing"].get("celltype_column") is not None:
-        command.extend(["--celltype_column", config["preprocessing"]["celltype_column"]])
+        command.extend(
+            ["--celltype_column", config["preprocessing"]["celltype_column"]]
+        )
 
     if config.get("use_lsf", False):
         command = [
@@ -165,9 +173,16 @@ def run_training():
     )
 
     if config["training"].get("pretrained_model_dir") is not None:
-        command.extend(["--pretrained_model_dir", config["training"]["pretrained_model_dir"]])
+        command.extend(
+            ["--pretrained_model_dir", config["training"]["pretrained_model_dir"]]
+        )
     if config["training"].get("pretrained_model_version") is not None:
-        command.extend(["--pretrained_model_version", str(config["training"]["pretrained_model_version"])])
+        command.extend(
+            [
+                "--pretrained_model_version",
+                str(config["training"]["pretrained_model_version"]),
+            ]
+        )
 
     if config.get("use_lsf", False):
         command = [

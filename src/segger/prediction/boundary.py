@@ -223,7 +223,8 @@ class BoundaryIdentification:
                 simplex_id = list(edges[current_edge]["simplices"].keys())[0]
                 simplex = d.simplices[simplex_id]
                 if (
-                    edges[current_edge]["length"] > 1.5 * d_max and edges[current_edge]["simplices"][simplex_id] > 90
+                    edges[current_edge]["length"] > 1.5 * d_max
+                    and edges[current_edge]["simplices"][simplex_id] > 90
                 ) or edges[current_edge]["simplices"][simplex_id] > 180 - 180 / 16:
 
                     # delete edge and the simplex start
@@ -259,7 +260,9 @@ class BoundaryIdentification:
             if len(cycles) == 1:
                 geom = Polygon(self.d.points[cycles[0]])
             else:
-                geom = MultiPolygon([Polygon(self.d.points[c]) for c in cycles if len(c) >= 3])
+                geom = MultiPolygon(
+                    [Polygon(self.d.points[c]) for c in cycles if len(c) >= 3]
+                )
         except Exception as e:
             print(e, cycles)
             return None
@@ -329,7 +332,13 @@ def generate_boundaries(df, x="x_location", y="y_location", cell_id="segger_cell
     res = []
     group_df = df.groupby(cell_id)
     for cell_id, t in tqdm(group_df, total=group_df.ngroups):
-        res.append({"cell_id": cell_id, "length": len(t), "geom": generate_boundary(t, x=x, y=y)})
+        res.append(
+            {
+                "cell_id": cell_id,
+                "length": len(t),
+                "geom": generate_boundary(t, x=x, y=y),
+            }
+        )
 
     return gpd.GeoDataFrame(
         data=[[b["cell_id"], b["length"]] for b in res],

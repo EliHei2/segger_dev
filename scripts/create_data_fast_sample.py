@@ -42,7 +42,9 @@ XENIUM_DATA_DIR = Path(
     "/omics/odcf/analysis/OE0606_projects_temp/oncolgy_data_exchange/analysis_domenico/project_24/output-XETG00423__0053177__mng_04_TMA__20250306__170821"
 )
 SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/MNG_0053177")
-SCRNASEQ_FILE = Path("/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad")
+SCRNASEQ_FILE = Path(
+    "/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad"
+)
 CELLTYPE_COLUMN = "annot_v1"
 
 # Calculate gene-celltype embeddings from reference data
@@ -60,13 +62,17 @@ sample = STSampleParquet(
 )
 
 # Load and filter data
-transcripts = pd.read_parquet(XENIUM_DATA_DIR / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]])
+transcripts = pd.read_parquet(
+    XENIUM_DATA_DIR / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]]
+)
 boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
 
 # Calculate optimal neighborhood parameters
 transcript_counts = transcripts.groupby("cell_id").size()
 nucleus_polygons = get_polygons_from_xy(boundaries, "vertex_x", "vertex_y", "cell_id")
-transcript_densities = nucleus_polygons[transcript_counts.index].area / transcript_counts
+transcript_densities = (
+    nucleus_polygons[transcript_counts.index].area / transcript_counts
+)
 nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
 
 # Set neighborhood parameters

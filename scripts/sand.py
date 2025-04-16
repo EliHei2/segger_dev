@@ -40,7 +40,11 @@ def process_group(group, area_low, area_high):
         cell_boundary = max(cell_boundary, key=lambda p: p.area)
     print(cell_boundary.area)
     # print(cell_boundary.area)
-    if cell_boundary is None or cell_boundary.area > area_high or cell_boundary.area < area_low:
+    if (
+        cell_boundary is None
+        or cell_boundary.area > area_high
+        or cell_boundary.area < area_low
+    ):
         # print('**********************************')
         # print(cell_boundary.area)
         # print('**********************************')
@@ -138,7 +142,9 @@ def seg2explorer(
     #     n_jobs=n_jobs,
     # )
     results = []
-    for idx, group in tqdm(enumerate(grouped_by), desc="Processing Cells", total=len(grouped_by)):
+    for idx, group in tqdm(
+        enumerate(grouped_by), desc="Processing Cells", total=len(grouped_by)
+    ):
         try:
             res = process_group((idx, group), area_low, area_high)
             if isinstance(res, dict):  # Only keep valid results
@@ -157,13 +163,17 @@ def seg2explorer(
     cell_id = [res["uint_cell_id"] for res in results]
     cell_summary = [res["cell_summary"] for res in results]
     # print('********************************1')
-    polygon_num_vertices = [len(res["cell_boundary"].exterior.coords) for res in results]
+    polygon_num_vertices = [
+        len(res["cell_boundary"].exterior.coords) for res in results
+    ]
     print(polygon_num_vertices)
     # polygon_vertices = np.array(
     #     [list(res["cell_boundary"].exterior.coords) for res in results],
     #     dtype=object
     # )
-    polygon_vertices = np.array([list(res["cell_boundary"].exterior.coords) for res in results], dtype=object)
+    polygon_vertices = np.array(
+        [list(res["cell_boundary"].exterior.coords) for res in results], dtype=object
+    )
     # polygon_vertices = get_flatten_version(
     #     [get_coordinates(res["cell_boundary"]) for res in results],
     #     max_value=21,
@@ -173,7 +183,9 @@ def seg2explorer(
     seg_mask_value = [res["seg_mask_value"] for res in results]
     # Convert results to Zarr
     cells = {
-        "cell_id": np.array([np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32).T,
+        "cell_id": np.array(
+            [np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32
+        ).T,
         "cell_summary": pd.DataFrame(cell_summary).values.astype(np.float64),
         "polygon_num_vertices": np.array(polygon_num_vertices).astype(np.int32),
         "polygon_vertices": np.array(polygon_vertices).astype(np.float32),
@@ -195,9 +207,13 @@ def seg2explorer(
     print(cells["polygon_vertices"])
     # # Save analysis data
     if analysis_df is None:
-        analysis_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+        analysis_df = pd.DataFrame(
+            [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+        )
         analysis_df["default"] = "seg"
-    zarr_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+    zarr_df = pd.DataFrame(
+        [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+    )
     clustering_df = pd.merge(zarr_df, analysis_df, how="left", on=cell_id_columns)
     clusters_names = [i for i in analysis_df.columns if i != cell_id_columns]
     clusters_dict = {
@@ -212,7 +228,10 @@ def seg2explorer(
     }
     new_zarr = zarr.open(storage / (analysis_filename + ".zarr.zip"), mode="w")
     new_zarr.create_group("/cell_groups")
-    clusters = [[clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])] for cluster in clusters_names]
+    clusters = [
+        [clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])]
+        for cluster in clusters_names
+    ]
     for i in range(len(clusters)):
         new_zarr["cell_groups"].create_group(i)
         indices, indptr = get_indices_indptr(np.array(clusters[i]))
@@ -225,7 +244,11 @@ def seg2explorer(
             "number_groupings": len(clusters_names),
             "grouping_names": clusters_names,
             "group_names": [
-                [x[0] for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])] for cluster in clusters_names
+                [
+                    x[0]
+                    for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])
+                ]
+                for cluster in clusters_names
             ],
         }
     )
@@ -280,7 +303,9 @@ def seg2explorer(
     seg_mask_value = []
     tma_id = []
     grouped_by = seg_df.groupby(cell_id_columns)
-    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(enumerate(grouped_by), total=len(grouped_by)):
+    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(
+        enumerate(grouped_by), total=len(grouped_by)
+    ):
         if len(seg_cell) < 5:
             continue
         # print('****************1')
@@ -326,10 +351,14 @@ def seg2explorer(
             }
         )
         polygon_num_vertices[0].append(len(cell_convex_hull.exterior.coords))
-        polygon_num_vertices[1].append(len(nucleus_convex_hull.vertices) if len(seg_nucleous) >= 3 else 0)
+        polygon_num_vertices[1].append(
+            len(nucleus_convex_hull.vertices) if len(seg_nucleous) >= 3 else 0
+        )
         polygon_vertices[0].append(cell_convex_hull.exterior.coords)
         polygon_vertices[1].append(
-            seg_nucleous[["x_location", "y_location"]].values[nucleus_convex_hull.vertices]
+            seg_nucleous[["x_location", "y_location"]].values[
+                nucleus_convex_hull.vertices
+            ]
             if len(seg_nucleous) >= 3
             else np.array([[], []]).T
         )
@@ -337,7 +366,9 @@ def seg2explorer(
     cell_polygon_vertices = get_flatten_version(polygon_vertices[0], max_value=128)
     nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=128)
     cells = {
-        "cell_id": np.array([np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32).T,
+        "cell_id": np.array(
+            [np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32
+        ).T,
         "cell_summary": pd.DataFrame(cell_summary).values.astype(np.float64),
         "polygon_num_vertices": np.array(
             [
@@ -346,7 +377,9 @@ def seg2explorer(
             ],
             dtype=np.int32,
         ),
-        "polygon_vertices": np.array([nucl_polygon_vertices, cell_polygon_vertices]).astype(np.float32),
+        "polygon_vertices": np.array(
+            [nucl_polygon_vertices, cell_polygon_vertices]
+        ).astype(np.float32),
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
     existing_store = zarr.open(source_path / "cells.zarr.zip", mode="r")
@@ -359,9 +392,13 @@ def seg2explorer(
     new_store.attrs["number_cells"] = len(cells["cell_id"])
     new_store.store.close()
     if analysis_df is None:
-        analysis_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+        analysis_df = pd.DataFrame(
+            [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+        )
         analysis_df["default"] = "seg"
-    zarr_df = pd.DataFrame([cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns])
+    zarr_df = pd.DataFrame(
+        [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+    )
     clustering_df = pd.merge(zarr_df, analysis_df, how="left", on=cell_id_columns)
     clusters_names = [i for i in analysis_df.columns if i != cell_id_columns]
     clusters_dict = {
@@ -376,7 +413,10 @@ def seg2explorer(
     }
     new_zarr = zarr.open(storage / (analysis_filename + ".zarr.zip"), mode="w")
     new_zarr.create_group("/cell_groups")
-    clusters = [[clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])] for cluster in clusters_names]
+    clusters = [
+        [clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])]
+        for cluster in clusters_names
+    ]
     for i in range(len(clusters)):
         new_zarr["cell_groups"].create_group(i)
         indices, indptr = get_indices_indptr(np.array(clusters[i]))
@@ -389,7 +429,11 @@ def seg2explorer(
             "number_groupings": len(clusters_names),
             "grouping_names": clusters_names,
             "group_names": [
-                [x[0] for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])] for cluster in clusters_names
+                [
+                    x[0]
+                    for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])
+                ]
+                for cluster in clusters_names
             ],
         }
     )
@@ -413,13 +457,21 @@ df = ddf.iloc[:10000, :]
 
 df_path = Path("data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep1_v9_segger.csv.gz")
 df_v9 = dd.read_csv(df_path)
-df_main = dd.read_parquet("data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs/transcripts.parquet")
+df_main = dd.read_parquet(
+    "data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs/transcripts.parquet"
+)
 
 ddf = df_v9.merge(df_main, on="transcript_id")
 ddf = ddf.compute()
 ddf = ddf[ddf.segger_cell_id != "None"]
 ddf = ddf.sort_values("segger_cell_id")
-df = ddf.loc[(ddf.x_location > 250) & (ddf.x_location < 1500) & (ddf.y_location > 500) & (ddf.y_location < 1500), :]
+df = ddf.loc[
+    (ddf.x_location > 250)
+    & (ddf.x_location < 1500)
+    & (ddf.y_location > 500)
+    & (ddf.y_location < 1500),
+    :,
+]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
@@ -438,7 +490,13 @@ seg2explorer(
 )
 
 
-df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550), :]
+df = ddf.loc[
+    (ddf.x_location > 1550)
+    & (ddf.x_location < 3250)
+    & (ddf.y_location > 2250)
+    & (ddf.y_location < 3550),
+    :,
+]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
@@ -457,7 +515,13 @@ seg2explorer(
 )
 
 
-df = ddf.loc[(ddf.x_location > 4000) & (ddf.x_location < 4500) & (ddf.y_location > 1000) & (ddf.y_location < 1500), :]
+df = ddf.loc[
+    (ddf.x_location > 4000)
+    & (ddf.x_location < 4500)
+    & (ddf.y_location > 1000)
+    & (ddf.y_location < 1500),
+    :,
+]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')
@@ -476,7 +540,13 @@ seg2explorer(
 )
 
 
-df = ddf.loc[(ddf.x_location > 1550) & (ddf.x_location < 3250) & (ddf.y_location > 2250) & (ddf.y_location < 3550), :]
+df = ddf.loc[
+    (ddf.x_location > 1550)
+    & (ddf.x_location < 3250)
+    & (ddf.y_location > 2250)
+    & (ddf.y_location < 3550),
+    :,
+]
 
 # tx_df = dd.read_csv('data_tidy/Xenium_FFPE_Human_Breast_Cancer_Rep2_v9_segger.csv.gz')
 # ddf = tx_df.merge(df_main, on='transcript_id')

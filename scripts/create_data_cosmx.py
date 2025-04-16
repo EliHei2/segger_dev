@@ -64,9 +64,13 @@ boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
 
 # Calculate optimal neighborhood parameters
 transcript_counts = transcripts.groupby("cell").size()
-nucleus_polygons = get_polygons_from_xy(boundaries, "x_global_px", "y_global_px", "cell")
+nucleus_polygons = get_polygons_from_xy(
+    boundaries, "x_global_px", "y_global_px", "cell"
+)
 
-transcript_densities = nucleus_polygons[transcript_counts.index].area / transcript_counts
+transcript_densities = (
+    nucleus_polygons[transcript_counts.index].area / transcript_counts
+)
 nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
 
 # Set neighborhood parameters

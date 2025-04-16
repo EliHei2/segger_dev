@@ -13,7 +13,14 @@ import glob
 from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
-from segger.data.utils import get_edge_index, format_time, create_anndata, coo_to_dense_adj, filter_transcripts
+from segger.data.utils import (
+    get_edge_index,
+    format_time,
+    create_anndata,
+    coo_to_dense_adj,
+    filter_transcripts,
+)
+
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.boundary import generate_boundaries
@@ -83,7 +90,10 @@ def zero_out_diagonal_gpu(sparse_matrix):
     sparse_matrix_no_diag = cupyx.scipy.sparse.coo_matrix(
         (
             sparse_matrix.data[non_diagonal_mask],
-            (sparse_matrix.row[non_diagonal_mask], sparse_matrix.col[non_diagonal_mask]),
+            (
+                sparse_matrix.row[non_diagonal_mask],
+                sparse_matrix.col[non_diagonal_mask],
+            ),
         ),
         shape=sparse_matrix.shape,
     )
@@ -127,7 +137,9 @@ def subset_sparse_matrix(sparse_matrix, row_idx, col_idx):
     col_mapped = cp.searchsorted(col_idx, col_filtered)
 
     # Return the new subset sparse matrix
-    return coo_matrix((data_filtered, (row_mapped, col_mapped)), shape=(len(row_idx), len(col_idx)))
+    return coo_matrix(
+        (data_filtered, (row_mapped, col_mapped)), shape=(len(row_idx), len(col_idx))
+    )
 
 
 def load_model(checkpoint_path: str) -> LitSegger:
@@ -235,13 +247,17 @@ def get_similarity_scores(
             )
 
         # Convert to dense adjacency matrix (on GPU)
-        edge_index = coo_to_dense_adj(edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"])
+        edge_index = coo_to_dense_adj(
+            edge_index.T, num_nodes=shape[0], num_nbrs=receptive_field[f"k_{to_type}"]
+        )
 
         with torch.no_grad():
             if from_type != to_type:
                 embeddings = model(batch.x_dict, batch.edge_index_dict)
             else:  # to go with the inital embeddings for tx-tx
-                embeddings = {key: model.node_init[key](x) for key, x in batch.x_dict.items()}
+                embeddings = {
+                    key: model.node_init[key](x) for key, x in batch.x_dict.items()
+                }
                 norms = embeddings[to_type].norm(dim=1, keepdim=True)
                 # Avoid division by zero in case there are zero vectors
                 norms = torch.where(norms == 0, torch.ones_like(norms), norms)
@@ -269,7 +285,9 @@ def get_similarity_scores(
             # print(rows)
             del indices
             values = similarity[edge_index != -1].flatten()
-            sparse_result = coo_matrix((cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape)
+            sparse_result = coo_matrix(
+                (cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape
+            )
             return sparse_result
             # Free GPU memory after computation
 
@@ -326,7 +344,13 @@ def predict_batch(
         if len(batch["bd"].pos) >= 10 and len(batch["tx"].pos) >= 1000:
             # Step 1: Compute similarity scores between 'tx' (transcripts) and 'bd' (boundaries)
             scores = get_similarity_scores(
-                lit_segger.model, batch, "tx", "bd", receptive_field, knn_method=knn_method, gpu_id=gpu_id
+                lit_segger.model,
+                batch,
+                "tx",
+                "bd",
+                receptive_field,
+                knn_method=knn_method,
+                gpu_id=gpu_id,
             )
             torch.cuda.empty_cache()
 
@@ -341,14 +365,18 @@ def predict_batch(
 
             mask = assignments["score"] >= score_cut  # Mask for assigned transcripts
             all_ids = np.concatenate(batch["bd"].id)  # Boundary IDs as NumPy array
-            assignments["segger_cell_id"] = np.where(mask, all_ids[cp.argmax(dense_scores, axis=1).get()], None)
+            assignments["segger_cell_id"] = np.where(
+                mask, all_ids[cp.argmax(dense_scores, axis=1).get()], None
+            )
 
             # Clear memory after score processing
             del dense_scores
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
 
-            assignments["bound"] = np.where(mask, 1, 0)  # Mark as 'bound' (1 if assigned, 0 if unassigned)
+            assignments["bound"] = np.where(
+                mask, 1, 0
+            )  # Mark as 'bound' (1 if assigned, 0 if unassigned)
 
             # Step 3: Handle unassigned transcripts with connected components (if use_cc=True)
             if use_cc:
@@ -365,13 +393,16 @@ def predict_batch(
 
                 # Stay on GPU and use CuPy sparse matrices
                 no_id_scores = cupyx.scipy.sparse.coo_matrix(
-                    (scores_tx.data, (scores_tx.row, scores_tx.col)), shape=scores_tx.shape
+                    (scores_tx.data, (scores_tx.row, scores_tx.col)),
+                    shape=scores_tx.shape,
                 )
 
                 score_cut_tx = np.median(no_id_scores.data)
 
                 # Apply threshold on GPU
-                no_id_scores.data[no_id_scores.data < score_cut_tx] = 0  # Apply threshold
+                no_id_scores.data[no_id_scores.data < score_cut_tx] = (
+                    0  # Apply threshold
+                )
 
                 # Zero out the diagonal on GPU
                 no_id_scores = zero_out_diagonal_gpu(no_id_scores)
@@ -385,12 +416,16 @@ def predict_batch(
                 if len(no_id) > 0:  # Only compute if there are unassigned transcripts
                     # Apply score cut-off to unassigned transcripts
                     no_id_scores = subset_sparse_matrix(no_id_scores, no_id, no_id)
-                    no_id_scores.data[no_id_scores.data < score_cut] = 0  # Apply threshold
+                    no_id_scores.data[no_id_scores.data < score_cut] = (
+                        0  # Apply threshold
+                    )
                     no_id_scores.eliminate_zeros()  # Clean up zeros
 
                     # Find the non-zero entries in the no_id_scores to construct edge_index
                     non_zero_rows, non_zero_cols, _ = find(no_id_scores)
-                    unassigned_ids = transcript_id[no_id.get()]  # Unassigned transcript IDs
+                    unassigned_ids = transcript_id[
+                        no_id.get()
+                    ]  # Unassigned transcript IDs
 
                     # Construct edge index (source, target) based on non-zero connections in no_id_scores
                     source_nodes = unassigned_ids[non_zero_rows.get()]
@@ -398,7 +433,8 @@ def predict_batch(
 
                     # # Save edge_index using CuDF and Dask-CuDF for GPU acceleration
                     edge_index_ddf = delayed(dd.from_pandas)(
-                        pd.DataFrame({"source": source_nodes, "target": target_nodes}), npartitions=1
+                        pd.DataFrame({"source": source_nodes, "target": target_nodes}),
+                        npartitions=1,
                     )
                     # Use delayed for asynchronous disk writing of edge_index in Dask DataFrame
                     delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(
@@ -409,7 +445,9 @@ def predict_batch(
             assignments = {
                 "transcript_id": assignments["transcript_id"].astype("str"),
                 "score": assignments["score"].astype("float32"),
-                "segger_cell_id": assignments["segger_cell_id"].astype("str"),  # Ensure 'string' dtype
+                "segger_cell_id": assignments["segger_cell_id"].astype(
+                    "str"
+                ),  # Ensure 'string' dtype
                 "bound": assignments["bound"].astype("int8"),  # Ensure 'int64' dtype
             }
             # Step 4: Convert assignments to Dask-CuDF DataFrame for this batch
@@ -507,7 +545,8 @@ def segment(
 
     # Loop through the data loaders (train, val, and test)
     for loader_name, loader in zip(
-        ["Train", "Validation", "Test"], [train_dataloader, val_dataloader, test_dataloader]
+        ["Train", "Validation", "Test"],
+        [train_dataloader, val_dataloader, test_dataloader],
     ):
         # for loader_name, loader in zip(['Test'], [test_dataloader]):
         if verbose:
@@ -541,9 +580,9 @@ def segment(
 
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
 
-    seg_final_filtered = seg_final_dd.sort_values("score", ascending=False).drop_duplicates(
-        subset="transcript_id", keep="first"
-    )
+    seg_final_filtered = seg_final_dd.sort_values(
+        "score", ascending=False
+    ).drop_duplicates(subset="transcript_id", keep="first")
 
     if verbose:
         elapsed_time = time() - step_start_time
@@ -562,11 +601,15 @@ def segment(
         print(f"Merging segmentation results with transcripts...")
 
     # Outer merge to include all transcripts, even those without assigned cell ids
-    transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
+    transcripts_df_filtered = transcripts_df.merge(
+        seg_final_filtered, on="transcript_id", how="outer"
+    )
 
     if verbose:
         elapsed_time = time() - step_start_time
-        print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")
+        print(
+            f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds."
+        )
 
     if use_cc:
 
@@ -577,10 +620,14 @@ def segment(
         edge_index_dd = pd.read_parquet(edge_index_save_path)
 
         # Step 2: Get unique transcript_ids from edge_index_dd and their positional indices
-        transcript_ids_in_edges = pd.concat([edge_index_dd["source"], edge_index_dd["target"]]).unique()
+        transcript_ids_in_edges = pd.concat(
+            [edge_index_dd["source"], edge_index_dd["target"]]
+        ).unique()
 
         # Create a lookup table with unique indices
-        lookup_table = pd.Series(data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges).to_dict()
+        lookup_table = pd.Series(
+            data=range(len(transcript_ids_in_edges)), index=transcript_ids_in_edges
+        ).to_dict()
 
         # Map source and target to positional indices
         edge_index_dd["index_source"] = edge_index_dd["source"].map(lookup_table)
@@ -600,7 +647,9 @@ def segment(
         n, comps = cc(coo_cp_matrix, directed=True, connection="strong")
         if verbose:
             elapsed_time = time() - step_start_time
-            print(f"Computed connected components for unassigned transcripts in {elapsed_time:.2f} seconds.")
+            print(
+                f"Computed connected components for unassigned transcripts in {elapsed_time:.2f} seconds."
+            )
 
         step_start_time = time()
         if verbose:
@@ -609,7 +658,9 @@ def segment(
 
         def _get_id():
             """Generate a random Xenium-style ID."""
-            return "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
+            return (
+                "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
+            )
 
         new_ids = np.array([_get_id() for _ in range(n)])
         comp_labels = new_ids[comps]
@@ -617,13 +668,19 @@ def segment(
         # Step 5: Handle only unassigned transcripts in transcripts_df_filtered
         unassigned_mask = transcripts_df_filtered["segger_cell_id"].isna()
 
-        unassigned_transcripts_df = transcripts_df_filtered.loc[unassigned_mask, ["transcript_id"]]
+        unassigned_transcripts_df = transcripts_df_filtered.loc[
+            unassigned_mask, ["transcript_id"]
+        ]
 
         # Step 6: Map component labels only to unassigned transcript_ids
-        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(comp_labels)
+        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(
+            comp_labels
+        )
 
         # Step 7: Create a DataFrame with updated 'segger_cell_id' for unassigned transcripts
-        unassigned_transcripts_df = unassigned_transcripts_df.assign(segger_cell_id=new_segger_cell_ids)
+        unassigned_transcripts_df = unassigned_transcripts_df.assign(
+            segger_cell_id=new_segger_cell_ids
+        )
 
         # Step 8: Merge this DataFrame back into the original to update only the unassigned segger_cell_id
 
@@ -636,18 +693,22 @@ def segment(
         )
 
         # Step 9: Fill missing segger_cell_id values with the updated values from the merge
-        transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna(
-            transcripts_df_filtered["segger_cell_id_new"]
-        )
+        transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered[
+            "segger_cell_id"
+        ].fillna(transcripts_df_filtered["segger_cell_id_new"])
 
-        transcripts_df_filtered = transcripts_df_filtered.drop(columns=["segger_cell_id_new"])
+        transcripts_df_filtered = transcripts_df_filtered.drop(
+            columns=["segger_cell_id_new"]
+        )
 
         if verbose:
             elapsed_time = time() - step_start_time
             print(f"The rest computed in {elapsed_time:.2f} seconds.")
 
     # Step 5: Save the merged results based on options
-    transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered["segger_cell_id"].fillna("UNASSIGNED")
+    transcripts_df_filtered["segger_cell_id"] = transcripts_df_filtered[
+        "segger_cell_id"
+    ].fillna("UNASSIGNED")
     # transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)
 
     if save_transcripts:
@@ -673,7 +734,9 @@ def segment(
             step_start_time = time()
             print(f"Saving anndata object...")
         anndata_save_path = save_dir / "segger_adata.h5ad"
-        segger_adata = create_anndata(transcripts_df_filtered, **anndata_kwargs)  # Compute for AnnData
+        segger_adata = create_anndata(
+            transcripts_df_filtered, **anndata_kwargs
+        )  # Compute for AnnData
         segger_adata.write(anndata_save_path)
         if verbose:
             elapsed_time = time() - step_start_time

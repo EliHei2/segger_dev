@@ -60,7 +60,10 @@ def find_markers(
         valid_pos_indices = pos_indices[expr_frac >= (percentage / 100)]
         positive_markers = genes[valid_pos_indices]
         negative_markers = genes[neg_indices]
-        markers[cell_type] = {"positive": list(positive_markers), "negative": list(negative_markers)}
+        markers[cell_type] = {
+            "positive": list(positive_markers),
+            "negative": list(negative_markers),
+        }
     return markers
 
 
@@ -93,12 +96,22 @@ def find_mutually_exclusive_genes(
             gene_expr = adata[:, gene].X
             cell_type_mask = adata.obs[cell_type_column] == cell_type
             non_cell_type_mask = ~cell_type_mask
-            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (gene_expr[non_cell_type_mask] > 0).mean() < 0.05:
+            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (
+                gene_expr[non_cell_type_mask] > 0
+            ).mean() < 0.05:
                 exclusive_genes[cell_type].append(gene)
                 all_exclusive.append(gene)
-    unique_genes = list({gene for i in exclusive_genes.keys() for gene in exclusive_genes[i] if gene in all_exclusive})
+    unique_genes = list(
+        {
+            gene
+            for i in exclusive_genes.keys()
+            for gene in exclusive_genes[i]
+            if gene in all_exclusive
+        }
+    )
     filtered_exclusive_genes = {
-        i: [gene for gene in exclusive_genes[i] if gene in unique_genes] for i in exclusive_genes.keys()
+        i: [gene for gene in exclusive_genes[i] if gene in unique_genes]
+        for i in exclusive_genes.keys()
     }
     mutually_exclusive_gene_pairs = [
         (gene1, gene2)
@@ -109,7 +122,9 @@ def find_mutually_exclusive_genes(
     return mutually_exclusive_gene_pairs
 
 
-def compute_MECR(adata: ad.AnnData, gene_pairs: List[Tuple[str, str]]) -> Dict[Tuple[str, str], float]:
+def compute_MECR(
+    adata: ad.AnnData, gene_pairs: List[Tuple[str, str]]
+) -> Dict[Tuple[str, str], float]:
     """Compute the Mutually Exclusive Co-expression Rate (MECR) for each gene pair in an AnnData object.
 
     Args:
@@ -129,7 +144,9 @@ def compute_MECR(adata: ad.AnnData, gene_pairs: List[Tuple[str, str]]) -> Dict[T
         expr_gene2 = gene_expression[gene2] > 0
         both_expressed = (expr_gene1 & expr_gene2).mean()
         at_least_one_expressed = (expr_gene1 | expr_gene2).mean()
-        mecr = both_expressed / at_least_one_expressed if at_least_one_expressed > 0 else 0
+        mecr = (
+            both_expressed / at_least_one_expressed if at_least_one_expressed > 0 else 0
+        )
         mecr_dict[(gene1, gene2)] = mecr
     return mecr_dict
 
@@ -273,22 +290,38 @@ def calculate_contamination(
     if celltype_column not in adata.obs:
         raise ValueError("Column celltype_column must be present in adata.obs.")
     positive_markers = {ct: markers[ct]["positive"] for ct in markers}
-    adata.obsm["spatial"] = adata.obs[["cell_centroid_x", "cell_centroid_y"]].copy().to_numpy()
-    sq.gr.spatial_neighbors(adata, radius=radius, n_neighs=n_neighs, coord_type="generic")
+    adata.obsm["spatial"] = (
+        adata.obs[["cell_centroid_x", "cell_centroid_y"]].copy().to_numpy()
+    )
+    sq.gr.spatial_neighbors(
+        adata, radius=radius, n_neighs=n_neighs, coord_type="generic"
+    )
     neighbors = adata.obsp["spatial_connectivities"].tolil()
     raw_counts = adata[:, adata.var_names].layers["raw"].toarray()
     cell_types = adata.obs[celltype_column]
-    selected_cells = np.random.choice(adata.n_obs, size=min(num_cells, adata.n_obs), replace=False)
-    contamination = {ct: {ct2: 0 for ct2 in positive_markers.keys()} for ct in positive_markers.keys()}
-    negighborings = {ct: {ct2: 0 for ct2 in positive_markers.keys()} for ct in positive_markers.keys()}
+    selected_cells = np.random.choice(
+        adata.n_obs, size=min(num_cells, adata.n_obs), replace=False
+    )
+    contamination = {
+        ct: {ct2: 0 for ct2 in positive_markers.keys()}
+        for ct in positive_markers.keys()
+    }
+    negighborings = {
+        ct: {ct2: 0 for ct2 in positive_markers.keys()}
+        for ct in positive_markers.keys()
+    }
     for cell_idx in selected_cells:
         cell_type = cell_types[cell_idx]
         own_markers = set(positive_markers[cell_type])
         for marker in own_markers:
             if marker in adata.var_names:
-                total_counts_in_neighborhood = raw_counts[cell_idx, adata.var_names.get_loc(marker)]
+                total_counts_in_neighborhood = raw_counts[
+                    cell_idx, adata.var_names.get_loc(marker)
+                ]
                 for neighbor_idx in neighbors.rows[cell_idx]:
-                    total_counts_in_neighborhood += raw_counts[neighbor_idx, adata.var_names.get_loc(marker)]
+                    total_counts_in_neighborhood += raw_counts[
+                        neighbor_idx, adata.var_names.get_loc(marker)
+                    ]
                 for neighbor_idx in neighbors.rows[cell_idx]:
                     neighbor_type = cell_types[neighbor_idx]
                     if cell_type == neighbor_type:
@@ -297,10 +330,13 @@ def calculate_contamination(
                     contamination_markers = own_markers - neighbor_markers
                     for marker in contamination_markers:
                         if marker in adata.var_names:
-                            marker_counts_in_neighbor = raw_counts[neighbor_idx, adata.var_names.get_loc(marker)]
+                            marker_counts_in_neighbor = raw_counts[
+                                neighbor_idx, adata.var_names.get_loc(marker)
+                            ]
                             if total_counts_in_neighborhood > 0:
                                 contamination[cell_type][neighbor_type] += (
-                                    marker_counts_in_neighbor / total_counts_in_neighborhood
+                                    marker_counts_in_neighbor
+                                    / total_counts_in_neighborhood
                                 )
                                 negighborings[cell_type][neighbor_type] += 1
     contamination_df = pd.DataFrame(contamination).T
@@ -311,7 +347,9 @@ def calculate_contamination(
 
 
 def calculate_sensitivity(
-    adata: ad.AnnData, purified_markers: Dict[str, List[str]], max_cells_per_type: int = 1000
+    adata: ad.AnnData,
+    purified_markers: Dict[str, List[str]],
+    max_cells_per_type: int = 1000,
 ) -> Dict[str, List[float]]:
     """Calculate the sensitivity of the purified markers for each cell type.
 
@@ -332,10 +370,14 @@ def calculate_sensitivity(
         markers = markers["positive"]
         subset = adata[adata.obs["celltype_major"] == cell_type]
         if subset.n_obs > max_cells_per_type:
-            cell_indices = np.random.choice(subset.n_obs, max_cells_per_type, replace=False)
+            cell_indices = np.random.choice(
+                subset.n_obs, max_cells_per_type, replace=False
+            )
             subset = subset[cell_indices]
         for cell_counts in subset.X:
-            expressed_markers = np.asarray((cell_counts[subset.var_names.get_indexer(markers)] > 0).sum())
+            expressed_markers = np.asarray(
+                (cell_counts[subset.var_names.get_indexer(markers)] > 0).sum()
+            )
             sensitivity = expressed_markers / len(markers) if markers else 0
             sensitivity_results[cell_type].append(sensitivity)
     return sensitivity_results
@@ -406,7 +448,9 @@ def compute_neighborhood_metrics(
     # Randomly select a subset of cells
     subset_indices = np.random.choice(adata.n_obs, subset_size, replace=False)
     # Compute spatial neighbors for the entire dataset
-    sq.gr.spatial_neighbors(adata, radius=radius, coord_type="generic", n_neighs=n_neighs)
+    sq.gr.spatial_neighbors(
+        adata, radius=radius, coord_type="generic", n_neighs=n_neighs
+    )
     neighbors = adata.obsp["spatial_distances"].tolil().rows
     entropies = []
     num_neighbors = []
@@ -505,7 +549,13 @@ def compute_transcript_density(adata: ad.AnnData) -> None:
 
 
 def plot_metric_comparison(
-    ax: plt.Axes, data: pd.DataFrame, metric: str, label: str, method1: str, method2: str, output_path: Path
+    ax: plt.Axes,
+    data: pd.DataFrame,
+    metric: str,
+    label: str,
+    method1: str,
+    method2: str,
+    output_path: Path,
 ) -> None:
     """Plot a comparison of a specific metric between two methods and save the comparison data.
 
@@ -527,16 +577,28 @@ def plot_metric_comparison(
     """
     subset1 = data[data["method"] == method1]
     subset2 = data[data["method"] == method2]
-    merged_data = pd.merge(subset1, subset2, on="celltype_major", suffixes=(f"_{method1}", f"_{method2}"))
+    merged_data = pd.merge(
+        subset1, subset2, on="celltype_major", suffixes=(f"_{method1}", f"_{method2}")
+    )
 
     # Save the merged data used in the plot to CSV
-    merged_data.to_csv(output_path / f"metric_comparison_{metric}_{method1}_vs_{method2}.csv", index=False)
+    merged_data.to_csv(
+        output_path / f"metric_comparison_{metric}_{method1}_vs_{method2}.csv",
+        index=False,
+    )
 
     for cell_type in merged_data["celltype_major"].unique():
         cell_data = merged_data[merged_data["celltype_major"] == cell_type]
-        ax.scatter(cell_data[f"{metric}_{method1}"], cell_data[f"{metric}_{method2}"], label=cell_type)
+        ax.scatter(
+            cell_data[f"{metric}_{method1}"],
+            cell_data[f"{metric}_{method2}"],
+            label=cell_type,
+        )
 
-    max_value = max(merged_data[f"{metric}_{method1}"].max(), merged_data[f"{metric}_{method2}"].max())
+    max_value = max(
+        merged_data[f"{metric}_{method1}"].max(),
+        merged_data[f"{metric}_{method2}"].max(),
+    )
     ax.plot([0, max_value], [0, max_value], "k--", alpha=0.5)
     ax.set_xlabel(f"{label} ({method1})")
     ax.set_ylabel(f"{label} ({method2})")
@@ -565,7 +627,11 @@ def load_segmentations(segmentation_paths: Dict[str, Path]) -> Dict[str, sc.AnnD
     return segmentations_dict
 
 
-def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
+def plot_cell_counts(
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
+) -> None:
     """Plot the number of cells per segmentation method and save the cell count data as a CSV.
 
     Args:
@@ -583,13 +649,23 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
 
     # Generate the bar plot
     ax = df.plot(
-        kind="bar", stacked=False, color=[palette.get(key, "#333333") for key in df.index], figsize=(3, 6), width=0.9
+        kind="bar",
+        stacked=False,
+        color=[palette.get(key, "#333333") for key in df.index],
+        figsize=(3, 6),
+        width=0.9,
     )
 
     # Add a dashed line for the 10X baseline
     if "10X" in cell_counts:
         baseline_height = cell_counts["10X"]
-        ax.axhline(y=baseline_height, color="gray", linestyle="--", linewidth=1.5, label="10X Baseline")
+        ax.axhline(
+            y=baseline_height,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X Baseline",
+        )
 
     # Set plot titles and labels
     plt.title("Number of Cells per Segmentation Method")
@@ -603,7 +679,9 @@ def plot_cell_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
 
 
 def plot_percent_assigned(
-    segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot the percentage of assigned transcripts (normalized) for each segmentation method.
 
@@ -615,22 +693,31 @@ def plot_percent_assigned(
     total_counts_per_gene = pd.DataFrame()
 
     for method, adata in segmentations_dict.items():
-        gene_counts = adata.X.sum(axis=0).flatten()  # Sum across cells for each gene and flatten to 1D
+        gene_counts = adata.X.sum(
+            axis=0
+        ).flatten()  # Sum across cells for each gene and flatten to 1D
         gene_counts = pd.Series(gene_counts, index=adata.var_names, name=method)
         total_counts_per_gene = pd.concat([total_counts_per_gene, gene_counts], axis=1)
 
     # Normalize by the maximum count per gene across all segmentations
     max_counts_per_gene = total_counts_per_gene.max(axis=1)
-    percent_assigned_normalized = total_counts_per_gene.divide(max_counts_per_gene, axis=0) * 100
+    percent_assigned_normalized = (
+        total_counts_per_gene.divide(max_counts_per_gene, axis=0) * 100
+    )
 
     # Prepare the data for the violin plot
-    violin_data = pd.DataFrame({"Segmentation Method": [], "Percent Assigned (Normalized)": []})
+    violin_data = pd.DataFrame(
+        {"Segmentation Method": [], "Percent Assigned (Normalized)": []}
+    )
 
     # Add normalized percent_assigned data for each method
     for method in segmentations_dict.keys():
         method_data = percent_assigned_normalized[method].dropna()
         method_df = pd.DataFrame(
-            {"Segmentation Method": [method] * len(method_data), "Percent Assigned (Normalized)": method_data.values}
+            {
+                "Segmentation Method": [method] * len(method_data),
+                "Percent Assigned (Normalized)": method_data.values,
+            }
         )
         violin_data = pd.concat([violin_data, method_df], axis=0)
 
@@ -638,12 +725,23 @@ def plot_percent_assigned(
 
     # Plot the violin plots
     plt.figure(figsize=(12, 8))
-    ax = sns.violinplot(x="Segmentation Method", y="Percent Assigned (Normalized)", data=violin_data, palette=palette)
+    ax = sns.violinplot(
+        x="Segmentation Method",
+        y="Percent Assigned (Normalized)",
+        data=violin_data,
+        palette=palette,
+    )
 
     # Add a dashed line for the 10X baseline
     if "10X" in segmentations_dict:
         baseline_height = percent_assigned_normalized["10X"].mean()
-        ax.axhline(y=baseline_height, color="gray", linestyle="--", linewidth=1.5, label="10X Baseline")
+        ax.axhline(
+            y=baseline_height,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X Baseline",
+        )
 
     # Set plot titles and labels
     plt.title("")
@@ -652,11 +750,17 @@ def plot_percent_assigned(
     plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
 
     # Save the figure as a PDF
-    plt.savefig(output_path / "percent_assigned_normalized_violin_plot.pdf", bbox_inches="tight")
+    plt.savefig(
+        output_path / "percent_assigned_normalized_violin_plot.pdf", bbox_inches="tight"
+    )
     plt.show()
 
 
-def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
+def plot_gene_counts(
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
+) -> None:
     """Plot the normalized gene counts for each segmentation method.
 
     Args:
@@ -673,7 +777,9 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
 
     # Normalize by the maximum count per gene across all segmentations
     max_counts_per_gene = total_counts_per_gene.max(axis=1)
-    normalized_counts_per_gene = total_counts_per_gene.divide(max_counts_per_gene, axis=0)
+    normalized_counts_per_gene = total_counts_per_gene.divide(
+        max_counts_per_gene, axis=0
+    )
 
     # Prepare the data for the box plot
     boxplot_data = pd.DataFrame({"Segmentation Method": [], "Normalized Counts": []})
@@ -681,7 +787,10 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     for method in segmentations_dict.keys():
         method_counts = normalized_counts_per_gene[method]
         method_df = pd.DataFrame(
-            {"Segmentation Method": [method] * len(method_counts), "Normalized Counts": method_counts.values}
+            {
+                "Segmentation Method": [method] * len(method_counts),
+                "Normalized Counts": method_counts.values,
+            }
         )
         boxplot_data = pd.concat([boxplot_data, method_df], axis=0)
 
@@ -689,12 +798,24 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
 
     # Plot the box plots
     plt.figure(figsize=(3, 6))
-    ax = sns.boxplot(x="Segmentation Method", y="Normalized Counts", data=boxplot_data, palette=palette, width=0.9)
+    ax = sns.boxplot(
+        x="Segmentation Method",
+        y="Normalized Counts",
+        data=boxplot_data,
+        palette=palette,
+        width=0.9,
+    )
 
     # Add a dashed line for the 10X baseline
     if "10X" in normalized_counts_per_gene:
         baseline_height = normalized_counts_per_gene["10X"].mean()
-        plt.axhline(y=baseline_height, color="gray", linestyle="--", linewidth=1.5, label="10X Baseline")
+        plt.axhline(
+            y=baseline_height,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X Baseline",
+        )
 
     # Set plot titles and labels
     plt.title("")
@@ -703,11 +824,18 @@ def plot_gene_counts(segmentations_dict: Dict[str, sc.AnnData], output_path: Pat
     plt.xticks(rotation=0)
 
     # Save the figure as a PDF
-    plt.savefig(output_path / "gene_counts_normalized_boxplot_by_method.pdf", bbox_inches="tight")
+    plt.savefig(
+        output_path / "gene_counts_normalized_boxplot_by_method.pdf",
+        bbox_inches="tight",
+    )
     plt.show()
 
 
-def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
+def plot_counts_per_cell(
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
+) -> None:
     """Plot the counts per cell (log2) for each segmentation method.
 
     Args:
@@ -715,23 +843,41 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
     output_path (Path): Path to the directory where the plot will be saved.
     """
     # Prepare the data for the violin plot
-    violin_data = pd.DataFrame({"Segmentation Method": [], "Counts per Cell (log2)": []})
+    violin_data = pd.DataFrame(
+        {"Segmentation Method": [], "Counts per Cell (log2)": []}
+    )
     for method, adata in segmentations_dict.items():
         method_counts = adata.obs["transcripts"] + 1
         method_df = pd.DataFrame(
-            {"Segmentation Method": [method] * len(method_counts), "Counts per Cell (log2)": method_counts.values}
+            {
+                "Segmentation Method": [method] * len(method_counts),
+                "Counts per Cell (log2)": method_counts.values,
+            }
         )
         violin_data = pd.concat([violin_data, method_df], axis=0)
 
     violin_data.to_csv(output_path / "counts_per_cell_data.csv", index=True)
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x="Segmentation Method", y="Counts per Cell (log2)", data=violin_data, palette=palette)
+    ax = sns.violinplot(
+        x="Segmentation Method",
+        y="Counts per Cell (log2)",
+        data=violin_data,
+        palette=palette,
+    )
     ax.set(ylim=(5, 300))
     # Add a dashed line for the 10X-nucleus median
     if "10X-nucleus" in segmentations_dict:
-        median_10X_nucleus = np.median(segmentations_dict["10X-nucleus"].obs["transcripts"] + 1)
-        ax.axhline(y=median_10X_nucleus, color="gray", linestyle="--", linewidth=1.5, label="10X-nucleus Median")
+        median_10X_nucleus = np.median(
+            segmentations_dict["10X-nucleus"].obs["transcripts"] + 1
+        )
+        ax.axhline(
+            y=median_10X_nucleus,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X-nucleus Median",
+        )
     # Set plot titles and labels
     plt.title("")
     plt.xlabel("Segmentation Method")
@@ -742,7 +888,11 @@ def plot_counts_per_cell(segmentations_dict: Dict[str, sc.AnnData], output_path:
     plt.show()
 
 
-def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]) -> None:
+def plot_cell_area(
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
+) -> None:
     """Plot the cell area (log2) for each segmentation method.
 
     Args:
@@ -755,18 +905,31 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
         if "cell_area" in segmentations_dict[method].obs.columns:
             method_area = segmentations_dict[method].obs["cell_area"] + 1
             method_df = pd.DataFrame(
-                {"Segmentation Method": [method] * len(method_area), "Cell Area (log2)": method_area.values}
+                {
+                    "Segmentation Method": [method] * len(method_area),
+                    "Cell Area (log2)": method_area.values,
+                }
             )
             violin_data = pd.concat([violin_data, method_df], axis=0)
     violin_data.to_csv(output_path / "cell_area_log2_data.csv", index=True)
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x="Segmentation Method", y="Cell Area (log2)", data=violin_data, palette=palette)
+    ax = sns.violinplot(
+        x="Segmentation Method", y="Cell Area (log2)", data=violin_data, palette=palette
+    )
     ax.set(ylim=(5, 100))
     # Add a dashed line for the 10X-nucleus median
     if "10X-nucleus" in segmentations_dict:
-        median_10X_nucleus_area = np.median(segmentations_dict["10X-nucleus"].obs["cell_area"] + 1)
-        ax.axhline(y=median_10X_nucleus_area, color="gray", linestyle="--", linewidth=1.5, label="10X-nucleus Median")
+        median_10X_nucleus_area = np.median(
+            segmentations_dict["10X-nucleus"].obs["cell_area"] + 1
+        )
+        ax.axhline(
+            y=median_10X_nucleus_area,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X-nucleus Median",
+        )
     # Set plot titles and labels
     plt.title("")
     plt.xlabel("Segmentation Method")
@@ -778,7 +941,9 @@ def plot_cell_area(segmentations_dict: Dict[str, sc.AnnData], output_path: Path,
 
 
 def plot_transcript_density(
-    segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot the transcript density (log2) for each segmentation method.
 
@@ -787,11 +952,16 @@ def plot_transcript_density(
     output_path (Path): Path to the directory where the plot will be saved.
     """
     # Prepare the data for the violin plot
-    violin_data = pd.DataFrame({"Segmentation Method": [], "Transcript Density (log2)": []})
+    violin_data = pd.DataFrame(
+        {"Segmentation Method": [], "Transcript Density (log2)": []}
+    )
 
     for method in segmentations_dict.keys():
         if "cell_area" in segmentations_dict[method].obs.columns:
-            method_density = segmentations_dict[method].obs["transcripts"] / segmentations_dict[method].obs["cell_area"]
+            method_density = (
+                segmentations_dict[method].obs["transcripts"]
+                / segmentations_dict[method].obs["cell_area"]
+            )
             method_density_log2 = np.log2(method_density + 1)
             method_df = pd.DataFrame(
                 {
@@ -805,7 +975,12 @@ def plot_transcript_density(
 
     # Plot the violin plots
     plt.figure(figsize=(4, 6))
-    ax = sns.violinplot(x="Segmentation Method", y="Transcript Density (log2)", data=violin_data, palette=palette)
+    ax = sns.violinplot(
+        x="Segmentation Method",
+        y="Transcript Density (log2)",
+        data=violin_data,
+        palette=palette,
+    )
 
     # Add a dashed line for the 10X-nucleus median
     if "10X-nucleus" in segmentations_dict:
@@ -817,7 +992,11 @@ def plot_transcript_density(
             )
         )
         ax.axhline(
-            y=median_10X_nucleus_density_log2, color="gray", linestyle="--", linewidth=1.5, label="10X-nucleus Median"
+            y=median_10X_nucleus_density_log2,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label="10X-nucleus Median",
         )
 
     # Set plot titles and labels
@@ -827,12 +1006,16 @@ def plot_transcript_density(
     plt.xticks(rotation=0)
 
     # Save the figure as a PDF
-    plt.savefig(output_path / "transcript_density_log2_violin_plot.pdf", bbox_inches="tight")
+    plt.savefig(
+        output_path / "transcript_density_log2_violin_plot.pdf", bbox_inches="tight"
+    )
     plt.show()
 
 
 def plot_general_statistics_plots(
-    segmentations_dict: Dict[str, sc.AnnData], output_path: Path, palette: Dict[str, str]
+    segmentations_dict: Dict[str, sc.AnnData],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Create a summary plot with all the general statistics subplots.
 
@@ -865,7 +1048,9 @@ def plot_general_statistics_plots(
 
 
 def plot_mecr_results(
-    mecr_results: Dict[str, Dict[Tuple[str, str], float]], output_path: Path, palette: Dict[str, str]
+    mecr_results: Dict[str, Dict[Tuple[str, str], float]],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot the MECR (Mutually Exclusive Co-expression Rate) results for each segmentation method.
 
@@ -879,7 +1064,11 @@ def plot_mecr_results(
     for method, mecr_dict in mecr_results.items():
         for gene_pair, mecr_value in mecr_dict.items():
             plot_data.append(
-                {"Segmentation Method": method, "Gene Pair": f"{gene_pair[0]} - {gene_pair[1]}", "MECR": mecr_value}
+                {
+                    "Segmentation Method": method,
+                    "Gene Pair": f"{gene_pair[0]} - {gene_pair[1]}",
+                    "MECR": mecr_value,
+                }
             )
     df = pd.DataFrame(plot_data)
     df.to_csv(output_path / "mcer_box.csv", index=True)
@@ -895,7 +1084,9 @@ def plot_mecr_results(
 
 
 def plot_quantized_mecr_counts(
-    quantized_mecr_counts: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]
+    quantized_mecr_counts: Dict[str, pd.DataFrame],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot the quantized MECR values against transcript counts for each segmentation method, with point size proportional to the variance of MECR.
 
@@ -936,7 +1127,9 @@ def plot_quantized_mecr_counts(
 
 
 def plot_quantized_mecr_area(
-    quantized_mecr_area: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]
+    quantized_mecr_area: Dict[str, pd.DataFrame],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot the quantized MECR values against cell areas for each segmentation method, with point size proportional to the variance of MECR.
 
@@ -978,7 +1171,9 @@ def plot_quantized_mecr_area(
 
 
 def plot_contamination_results(
-    contamination_results: Dict[str, pd.DataFrame], output_path: Path, palette: Dict[str, str]
+    contamination_results: Dict[str, pd.DataFrame],
+    output_path: Path,
+    palette: Dict[str, str],
 ) -> None:
     """Plot contamination results for each segmentation method.
 
@@ -995,11 +1190,15 @@ def plot_contamination_results(
         plt.xlabel("Target Cell Type")
         plt.ylabel("Source Cell Type")
         plt.tight_layout()
-        plt.savefig(output_path / f"{method}_contamination_matrix.pdf", bbox_inches="tight")
+        plt.savefig(
+            output_path / f"{method}_contamination_matrix.pdf", bbox_inches="tight"
+        )
         plt.show()
 
 
-def plot_contamination_boxplots(boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
+def plot_contamination_boxplots(
+    boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]
+) -> None:
     """Plot boxplots for contamination values across different segmentation methods.
 
     Args:
@@ -1009,7 +1208,13 @@ def plot_contamination_boxplots(boxplot_data: pd.DataFrame, output_path: Path, p
     """
     boxplot_data.to_csv(output_path / "contamination_box_results.csv", index=True)
     plt.figure(figsize=(14, 8))
-    sns.boxplot(x="Source Cell Type", y="Contamination", hue="Segmentation Method", data=boxplot_data, palette=palette)
+    sns.boxplot(
+        x="Source Cell Type",
+        y="Contamination",
+        hue="Segmentation Method",
+        data=boxplot_data,
+        palette=palette,
+    )
     plt.title("Neighborhood Contamination")
     plt.xlabel("Source Cell Type")
     plt.ylabel("Contamination")
@@ -1045,14 +1250,20 @@ def plot_umaps_with_scores(
         sc.tl.umap(adata_copy, spread=5)
         sc.pl.umap(adata_copy, color="celltype_major", palette=palette, show=False)
         # Add clustering scores to the title
-        ch_score, sh_score = compute_clustering_scores(adata_copy, cell_type_column="celltype_major")
-        plt.title(f"{method} - UMAP\nCalinski-Harabasz: {ch_score:.2f}, Silhouette: {sh_score:.2f}")
+        ch_score, sh_score = compute_clustering_scores(
+            adata_copy, cell_type_column="celltype_major"
+        )
+        plt.title(
+            f"{method} - UMAP\nCalinski-Harabasz: {ch_score:.2f}, Silhouette: {sh_score:.2f}"
+        )
         # Save the figure
         plt.savefig(output_path / f"{method}_umap_with_scores.pdf", bbox_inches="tight")
         plt.show()
 
 
-def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]) -> None:
+def plot_entropy_boxplots(
+    entropy_boxplot_data: pd.DataFrame, output_path: Path, palette: Dict[str, str]
+) -> None:
     """Plot boxplots for neighborhood entropy across different segmentation methods by cell type.
 
     Args:
@@ -1062,7 +1273,11 @@ def plot_entropy_boxplots(entropy_boxplot_data: pd.DataFrame, output_path: Path,
     """
     plt.figure(figsize=(14, 8))
     sns.boxplot(
-        x="Cell Type", y="Neighborhood Entropy", hue="Segmentation Method", data=entropy_boxplot_data, palette=palette
+        x="Cell Type",
+        y="Neighborhood Entropy",
+        hue="Segmentation Method",
+        data=entropy_boxplot_data,
+        palette=palette,
     )
     plt.title("Neighborhood Entropy")
     plt.xlabel("Cell Type")
@@ -1086,7 +1301,11 @@ def plot_sensitivity_boxplots(
     sensitivity_boxplot_data.to_csv(output_path / "sensitivity_results.csv", index=True)
     plt.figure(figsize=(14, 8))
     sns.boxplot(
-        x="Cell Type", y="Sensitivity", hue="Segmentation Method", data=sensitivity_boxplot_data, palette=palette
+        x="Cell Type",
+        y="Sensitivity",
+        hue="Segmentation Method",
+        data=sensitivity_boxplot_data,
+        palette=palette,
     )
     plt.title("Sensitivity Score")
     plt.xlabel("Cell Type")

@@ -172,3 +172,8 @@ figure*
 dev*
 .DS_Store
 .idea/
+
+
+# Custom
+*_old*
+.dev

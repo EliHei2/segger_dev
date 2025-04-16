@@ -41,7 +41,9 @@ class TestParquetData(unittest.TestCase):
 
     def test_transcript_id_generation(self):
         """Test automatic generation of transcript IDs based on coordinates"""
-        sample = STSampleParquet(base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0)
+        sample = STSampleParquet(
+            base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0
+        )
 
         # Get the first tile's data
         tiles = sample._get_balanced_regions()
@@ -58,34 +60,48 @@ class TestParquetData(unittest.TestCase):
 
     def test_nuclear_overlap_computation(self):
         """Test computation of nuclear overlap when not pre-computed"""
-        sample = STSampleParquet(base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0)
+        sample = STSampleParquet(
+            base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0
+        )
 
         # Get the first tile's data
         tiles = sample._get_balanced_regions()
         xm = sample._get_in_memory_dataset(tiles[0])
 
         # Verify nuclear overlap computation
-        polygons = get_polygons_from_xy(xm.boundaries, "x_global_px", "y_global_px", "cell")
+        polygons = get_polygons_from_xy(
+            xm.boundaries, "x_global_px", "y_global_px", "cell"
+        )
 
-        computed_overlap = compute_nuclear_transcripts(polygons, xm.transcripts, "x_global_px", "y_global_px")
+        computed_overlap = compute_nuclear_transcripts(
+            polygons, xm.transcripts, "x_global_px", "y_global_px"
+        )
 
         # Verify that overlap computation is consistent
         self.assertEqual(len(computed_overlap), len(xm.transcripts))
         self.assertTrue(isinstance(computed_overlap, np.ndarray))
-        self.assertTrue(np.all(np.logical_or(computed_overlap == 0, computed_overlap == 1)))
+        self.assertTrue(
+            np.all(np.logical_or(computed_overlap == 0, computed_overlap == 1))
+        )
 
     def test_boundary_buffering(self):
         """Test boundary buffering functionality"""
-        sample = STSampleParquet(base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.2)
+        sample = STSampleParquet(
+            base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.2
+        )
 
         # Get the first tile's data
         tiles = sample._get_balanced_regions()
         xm = sample._get_in_memory_dataset(tiles[0])
 
         # Get original and buffered polygons
-        original_polygons = get_polygons_from_xy(xm.boundaries, "x_global_px", "y_global_px", "cell", buffer_ratio=1.0)
+        original_polygons = get_polygons_from_xy(
+            xm.boundaries, "x_global_px", "y_global_px", "cell", buffer_ratio=1.0
+        )
 
-        buffered_polygons = get_polygons_from_xy(xm.boundaries, "x_global_px", "y_global_px", "cell", buffer_ratio=1.2)
+        buffered_polygons = get_polygons_from_xy(
+            xm.boundaries, "x_global_px", "y_global_px", "cell", buffer_ratio=1.2
+        )
 
         # Verify that buffered polygons are larger
         self.assertTrue(np.all(buffered_polygons.area > original_polygons.area))
@@ -93,8 +109,12 @@ class TestParquetData(unittest.TestCase):
         # Verify buffer distance calculation
         areas = original_polygons.area
         expected_buffer_distances = np.sqrt(areas / np.pi) * 0.2
-        actual_buffer_distances = np.sqrt(buffered_polygons.area / np.pi) - np.sqrt(areas / np.pi)
-        np.testing.assert_allclose(actual_buffer_distances, expected_buffer_distances, rtol=0.1)
+        actual_buffer_distances = np.sqrt(buffered_polygons.area / np.pi) - np.sqrt(
+            areas / np.pi
+        )
+        np.testing.assert_allclose(
+            actual_buffer_distances, expected_buffer_distances, rtol=0.1
+        )
 
     def test_missing_qv_handling(self):
         """Test handling of missing quality value field"""
@@ -102,7 +122,9 @@ class TestParquetData(unittest.TestCase):
         transcripts_no_qv = self.transcripts_df.copy()
         transcripts_no_qv.to_parquet(self.test_dir / "transcripts_no_qv.parquet")
 
-        sample = STSampleParquet(base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0)
+        sample = STSampleParquet(
+            base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0
+        )
 
         # Verify that filtering works without QV field
         tiles = sample._get_balanced_regions()
@@ -113,7 +135,9 @@ class TestParquetData(unittest.TestCase):
 
     def test_save_debug(self):
         """Test debug save functionality"""
-        sample = STSampleParquet(base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0)
+        sample = STSampleParquet(
+            base_dir=self.test_dir, sample_type="cosmx", buffer_ratio=1.0
+        )
 
         # Create output directory
         output_dir = self.test_dir / "output"

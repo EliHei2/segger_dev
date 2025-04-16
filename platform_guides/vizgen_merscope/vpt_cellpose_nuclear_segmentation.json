@@ -1,0 +1,68 @@
+{
+  "experiment_properties": {
+    "all_z_indexes": [0, 1, 2, 3, 4, 5, 6],
+    "z_positions_um": [1.5, 3, 4.5, 6, 7.5, 9, 10.5]
+  },
+  "segmentation_tasks": [
+    {
+      "task_id": 0,
+      "segmentation_family": "Cellpose",
+      "entity_types_detected": ["nucleus"],
+      "z_layers": [1, 3, 5],
+      "segmentation_properties": {
+        "model": "nuclei",
+        "model_dimensions": "2D",
+        "custom_weights": null,
+        "version": "latest",
+        "use_gpu": true
+      },
+      "task_input_data": [
+        {
+          "image_channel": "DAPI",
+          "image_preprocessing": [
+            {
+              "name": "normalize",
+              "parameters": {
+                "type": "CLAHE",
+                "clip_limit": 0.01,
+                "filter_size": [100, 100]
+              }
+            }
+          ]
+        }
+      ],
+      "segmentation_parameters": {
+        "nuclear_channel": "DAPI",
+        "entity_fill_channel": null,
+        "diameter": 55,
+        "flow_threshold": 0.8,
+        "mask_threshold": -3,
+        "minimum_mask_size": 500,
+        "batch_size": 24
+      },
+      "polygon_parameters": {
+        "simplification_tol": 2,
+        "smoothing_radius": 10,
+        "minimum_final_area": 500
+      }
+    }
+  ],
+  "segmentation_task_fusion": {
+    "entity_fusion_strategy": "harmonize",
+    "fused_polygon_postprocessing_parameters": {
+      "min_distance_between_entities": 1,
+      "min_final_area": 500
+    }
+  },
+  "output_files": [
+    {
+      "entity_types_output": ["nucleus"],
+      "files": {
+        "run_on_tile_dir": "result_tiles",
+        "mosaic_geometry_file": "cellpose_nucleus_mosaic_space.parquet",
+        "micron_geometry_file": "cellpose_nucleus_micron_space.parquet",
+        "cell_metadata_file": "cellpose_nucleus_metadata.csv"
+      }
+    }
+  ]
+}

@@ -1,113 +1,46 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "segger"
 version = "0.1.0"
-description = "Fast and accurate cell segmentation for single-molecule spatial omics"
+description = "Fast and accurate cell segmentation of imaging-based spatial transcriptomics data"
 authors = [
     { name = "Elyas Heidari", email = "elyas.heidari@dkfz-heidelberg.de" },
     { name = "Andrew Moorman", email = "moormana@mskcc.org" },
     { name = "Daniel Unyi", email = "daniel.unyi.42@gmail.com" }
 ]
+keywords = ["segmentation", "deep learning", "pytorch", "geometric deep learning"]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.10"
-keywords = ["segmentation", "deep learning", "pytorch", "geometric deep learning"]
+requires-python = ">=3.11"
 
 dependencies = [
-    "torch>=2.0.0",  
-    "dask-cuda>=23.10.0",  
-    "distributed>=2023.10.0",  
-    "numpy>=1.21.0",
-    "pandas>=1.3.0",
-    "scipy>=1.7.0",
-    "matplotlib>=3.4.0",
-    "seaborn>=0.11.0",
-    "tqdm>=4.61.0",
-    "torchvision>=0.10.0",
-    "lightning>=1.9.0",
-    "torchmetrics>=0.5.0",
-    "zarr>=2.6.1,<3.0.0",
-    "anndata>=0.9.0,<0.11.0",
-    "scanpy>=1.9.3",
-    "squidpy==1.2.0",
-    "adjustText>=0.8",
-    "scikit-learn>=0.24.0",
-    "geopandas>=0.9.0",
-    "shapely>=1.7.0",
-    "path>=17.0.0",
-    "pyarrow>=16.1.0,<16.2.0",
-    "dask_geopandas>=0.4.0",
-    "torch-geometric>=2.3.0",
-    "pqdm>=0.2.0",
-    "rtree>=1.3.0",
+    "click>=8.1.8",
+    "geopandas>=1.0.1",
+    "numpy>=1.2.4,<2.0",
+    "pandas>=2.2.3",
+    "pyarrow>=19.0.1",
+    "scipy>=1.15.2",
+    "shapely>=2.0.7",
+    "torch-geometric>=2.6.1",
+    "scikit-learn>=1.6.1",
 ]
 
 [project.optional-dependencies]
-
-cuda11 = [
-    "cupy-cuda11x"
+dask = [
+    "dask>=2025.3.0",
+    "dask-geopandas>=0.4.3",
 ]
-
-cuda12 = [
-    "cupy-cuda12x"
-]
-
-multiprocessing = ["multiprocessing"]
-
 dev = [
-    "pytest",
-    "black",
-    "flake8",
-    "pre-commit",
-    "twine>=4.0.2"
+    "pytest>=8.3.5",
+    "jupyter>=1.1.1",
+    "pytest-dependency>=0.6.0",
+]
+validate = [
+    "anndata>=0.11.4",
+    "matplotlib>=3.10.1",
+    "scanpy>=1.10.4",
+    "seaborn>=0.13.2",
 ]
 
-docs = [
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocs-autorefs",
-    "mkdocstrings[python]",
-    "mkdocs-jupyter",
-    "termynal",
-    "ipykernel",
-    "ipython",
-]
-
-tests = [
-    "pytest",
-    "coverage"
-]
-
-[project.urls]
-bug_tracker = "https://github.com/EliHei2/segger_dev/issues"
-documentation = "https://EliHei2.github.io/segger_dev"
-source_code = "https://github.com/EliHei2/segger_dev"
-homepage = "https://EliHei2.github.io/segger_dev"
-repository = "https://github.com/EliHei2/segger_dev"
-
-[tool.setuptools]
-packages = ["segger"]
-package-dir = {"" = "src"}
-
-[tool.black]
-line-length = 120
-target-version = ['py39']
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-  )/
-)
-'''
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
