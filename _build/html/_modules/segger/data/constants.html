@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>segger.data.constants &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for segger.data.constants</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys">[docs]</a>
+<span class="k">class</span> <span class="nc">SpatialTranscriptomicsKeys</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unified keys for spatial transcriptomics data, supporting multiple platforms.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Files and directories</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.TRANSCRIPTS_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.TRANSCRIPTS_FILE">[docs]</a>
+    <span class="n">TRANSCRIPTS_FILE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.BOUNDARIES_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.BOUNDARIES_FILE">[docs]</a>
+    <span class="n">BOUNDARIES_FILE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.CELL_METADATA_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.CELL_METADATA_FILE">[docs]</a>
+    <span class="n">CELL_METADATA_FILE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+    
+    <span class="c1"># Cell identifiers</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.CELL_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.CELL_ID">[docs]</a>
+    <span class="n">CELL_ID</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.TRANSCRIPTS_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.TRANSCRIPTS_ID">[docs]</a>
+    <span class="n">TRANSCRIPTS_ID</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+    
+    <span class="c1"># Coordinates and locations</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.TRANSCRIPTS_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.TRANSCRIPTS_X">[docs]</a>
+    <span class="n">TRANSCRIPTS_X</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.TRANSCRIPTS_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.TRANSCRIPTS_Y">[docs]</a>
+    <span class="n">TRANSCRIPTS_Y</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.BOUNDARIES_VERTEX_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.BOUNDARIES_VERTEX_X">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_X</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.BOUNDARIES_VERTEX_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.BOUNDARIES_VERTEX_Y">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_Y</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.GLOBAL_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.GLOBAL_X">[docs]</a>
+    <span class="n">GLOBAL_X</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.GLOBAL_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.GLOBAL_Y">[docs]</a>
+    <span class="n">GLOBAL_Y</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+    
+    <span class="c1"># Metadata</span>
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.METADATA_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.METADATA_CELL_KEY">[docs]</a>
+    <span class="n">METADATA_CELL_KEY</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.COUNTS_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.COUNTS_CELL_KEY">[docs]</a>
+    <span class="n">COUNTS_CELL_KEY</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.CELL_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.CELL_X">[docs]</a>
+    <span class="n">CELL_X</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.CELL_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.CELL_Y">[docs]</a>
+    <span class="n">CELL_Y</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.FEATURE_NAME">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.FEATURE_NAME">[docs]</a>
+    <span class="n">FEATURE_NAME</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.QUALITY_VALUE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.QUALITY_VALUE">[docs]</a>
+    <span class="n">QUALITY_VALUE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SpatialTranscriptomicsKeys.OVERLAPS_BOUNDARY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.SpatialTranscriptomicsKeys.OVERLAPS_BOUNDARY">[docs]</a>
+    <span class="n">OVERLAPS_BOUNDARY</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="XeniumKeys">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys">[docs]</a>
+<span class="k">class</span> <span class="nc">XeniumKeys</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Keys for *10X Genomics Xenium* formatted dataset.&quot;&quot;&quot;</span>
+
+    <span class="c1"># File mappings</span>
+<div class="viewcode-block" id="XeniumKeys.TRANSCRIPTS_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.TRANSCRIPTS_FILE">[docs]</a>
+    <span class="n">TRANSCRIPTS_FILE</span> <span class="o">=</span> <span class="s2">&quot;transcripts.parquet&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.BOUNDARIES_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.BOUNDARIES_FILE">[docs]</a>
+    <span class="n">BOUNDARIES_FILE</span> <span class="o">=</span> <span class="s2">&quot;nucleus_boundaries.parquet&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.CELL_METADATA_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.CELL_METADATA_FILE">[docs]</a>
+    <span class="n">CELL_METADATA_FILE</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Xenium</span></div>
+
+
+    <span class="c1"># Cell identifiers</span>
+<div class="viewcode-block" id="XeniumKeys.CELL_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.CELL_ID">[docs]</a>
+    <span class="n">CELL_ID</span> <span class="o">=</span> <span class="s2">&quot;cell_id&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.TRANSCRIPTS_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.TRANSCRIPTS_ID">[docs]</a>
+    <span class="n">TRANSCRIPTS_ID</span> <span class="o">=</span> <span class="s2">&quot;transcript_id&quot;</span></div>
+
+
+    <span class="c1"># Coordinates and locations</span>
+<div class="viewcode-block" id="XeniumKeys.TRANSCRIPTS_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.TRANSCRIPTS_X">[docs]</a>
+    <span class="n">TRANSCRIPTS_X</span> <span class="o">=</span> <span class="s2">&quot;x_location&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.TRANSCRIPTS_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.TRANSCRIPTS_Y">[docs]</a>
+    <span class="n">TRANSCRIPTS_Y</span> <span class="o">=</span> <span class="s2">&quot;y_location&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.BOUNDARIES_VERTEX_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.BOUNDARIES_VERTEX_X">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_X</span> <span class="o">=</span> <span class="s2">&quot;vertex_x&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.BOUNDARIES_VERTEX_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.BOUNDARIES_VERTEX_Y">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_Y</span> <span class="o">=</span> <span class="s2">&quot;vertex_y&quot;</span></div>
+
+
+    <span class="c1"># Metadata</span>
+<div class="viewcode-block" id="XeniumKeys.FEATURE_NAME">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.FEATURE_NAME">[docs]</a>
+    <span class="n">FEATURE_NAME</span> <span class="o">=</span> <span class="s2">&quot;feature_name&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.QUALITY_VALUE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.QUALITY_VALUE">[docs]</a>
+    <span class="n">QUALITY_VALUE</span> <span class="o">=</span> <span class="s2">&quot;qv&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.OVERLAPS_BOUNDARY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.OVERLAPS_BOUNDARY">[docs]</a>
+    <span class="n">OVERLAPS_BOUNDARY</span> <span class="o">=</span> <span class="s2">&quot;overlaps_nucleus&quot;</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.METADATA_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.METADATA_CELL_KEY">[docs]</a>
+    <span class="n">METADATA_CELL_KEY</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Xenium</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.COUNTS_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.COUNTS_CELL_KEY">[docs]</a>
+    <span class="n">COUNTS_CELL_KEY</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Xenium</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.CELL_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.CELL_X">[docs]</a>
+    <span class="n">CELL_X</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Xenium</span></div>
+
+<div class="viewcode-block" id="XeniumKeys.CELL_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.XeniumKeys.CELL_Y">[docs]</a>
+    <span class="n">CELL_Y</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Xenium</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MerscopeKeys">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys">[docs]</a>
+<span class="k">class</span> <span class="nc">MerscopeKeys</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Keys for *MERSCOPE* data (Vizgen platform).&quot;&quot;&quot;</span>
+
+    <span class="c1"># File mappings</span>
+<div class="viewcode-block" id="MerscopeKeys.TRANSCRIPTS_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.TRANSCRIPTS_FILE">[docs]</a>
+    <span class="n">TRANSCRIPTS_FILE</span> <span class="o">=</span> <span class="s2">&quot;detected_transcripts.csv&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.BOUNDARIES_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.BOUNDARIES_FILE">[docs]</a>
+    <span class="n">BOUNDARIES_FILE</span> <span class="o">=</span> <span class="s2">&quot;cell_boundaries.parquet&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.CELL_METADATA_FILE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.CELL_METADATA_FILE">[docs]</a>
+    <span class="n">CELL_METADATA_FILE</span> <span class="o">=</span> <span class="s2">&quot;cell_metadata.csv&quot;</span></div>
+
+
+    <span class="c1"># Cell identifiers</span>
+<div class="viewcode-block" id="MerscopeKeys.CELL_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.CELL_ID">[docs]</a>
+    <span class="n">CELL_ID</span> <span class="o">=</span> <span class="s2">&quot;EntityID&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.TRANSCRIPTS_ID">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.TRANSCRIPTS_ID">[docs]</a>
+    <span class="n">TRANSCRIPTS_ID</span> <span class="o">=</span> <span class="s2">&quot;transcript_id&quot;</span></div>
+
+
+    <span class="c1"># Coordinates and locations</span>
+<div class="viewcode-block" id="MerscopeKeys.TRANSCRIPTS_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.TRANSCRIPTS_X">[docs]</a>
+    <span class="n">TRANSCRIPTS_X</span> <span class="o">=</span> <span class="s2">&quot;global_x&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.TRANSCRIPTS_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.TRANSCRIPTS_Y">[docs]</a>
+    <span class="n">TRANSCRIPTS_Y</span> <span class="o">=</span> <span class="s2">&quot;global_y&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.BOUNDARIES_VERTEX_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.BOUNDARIES_VERTEX_X">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_X</span> <span class="o">=</span> <span class="s2">&quot;center_x&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.BOUNDARIES_VERTEX_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.BOUNDARIES_VERTEX_Y">[docs]</a>
+    <span class="n">BOUNDARIES_VERTEX_Y</span> <span class="o">=</span> <span class="s2">&quot;center_y&quot;</span></div>
+
+
+    <span class="c1"># Metadata</span>
+<div class="viewcode-block" id="MerscopeKeys.FEATURE_NAME">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.FEATURE_NAME">[docs]</a>
+    <span class="n">FEATURE_NAME</span> <span class="o">=</span> <span class="s2">&quot;gene&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.QUALITY_VALUE">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.QUALITY_VALUE">[docs]</a>
+    <span class="n">QUALITY_VALUE</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Merscope</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.OVERLAPS_BOUNDARY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.OVERLAPS_BOUNDARY">[docs]</a>
+    <span class="n">OVERLAPS_BOUNDARY</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not applicable for Merscope</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.METADATA_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.METADATA_CELL_KEY">[docs]</a>
+    <span class="n">METADATA_CELL_KEY</span> <span class="o">=</span> <span class="s2">&quot;EntityID&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.COUNTS_CELL_KEY">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.COUNTS_CELL_KEY">[docs]</a>
+    <span class="n">COUNTS_CELL_KEY</span> <span class="o">=</span> <span class="s2">&quot;cell&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.CELL_X">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.CELL_X">[docs]</a>
+    <span class="n">CELL_X</span> <span class="o">=</span> <span class="s2">&quot;center_x&quot;</span></div>
+
+<div class="viewcode-block" id="MerscopeKeys.CELL_Y">
+<a class="viewcode-back" href="../../../api/segger/data/constants/index.html#segger.data.constants.MerscopeKeys.CELL_Y">[docs]</a>
+    <span class="n">CELL_Y</span> <span class="o">=</span> <span class="s2">&quot;center_y&quot;</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

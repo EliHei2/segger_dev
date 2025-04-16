@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>segger.training.train &#8212; Segger 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=a1637f0b"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=4ea706d9"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for segger.training.train</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">torchmetrics</span>
+<span class="kn">from</span> <span class="nn">torchmetrics</span> <span class="kn">import</span> <span class="n">F1Score</span>
+<span class="kn">import</span> <span class="nn">lightning</span> <span class="k">as</span> <span class="nn">L</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.loader</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.typing</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.nn</span> <span class="kn">import</span> <span class="n">to_hetero</span>
+<span class="kn">from</span> <span class="nn">torch_geometric.data</span> <span class="kn">import</span> <span class="n">HeteroData</span>
+<span class="kn">from</span> <span class="nn">segger.models.segger_model</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">segger.data.utils</span> <span class="kn">import</span> <span class="n">SpatialTranscriptomicsDataset</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">pytorch_lightning</span> <span class="kn">import</span> <span class="n">LightningModule</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+
+<div class="viewcode-block" id="LitSegger">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger">[docs]</a>
+<span class="k">class</span> <span class="nc">LitSegger</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    LitSegger is a PyTorch Lightning module for training and validating the Segger model.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Segger</span>
+<span class="sd">        The Segger model wrapped with PyTorch Geometric&#39;s to_hetero for heterogeneous graph support.</span>
+<span class="sd">    validation_step_outputs : list</span>
+<span class="sd">        A list to store outputs from the validation steps.</span>
+<span class="sd">    criterion : torch.nn.Module</span>
+<span class="sd">        The loss function used for training, specifically BCEWithLogitsLoss.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the LitSegger module with the given parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs : dict</span>
+<span class="sd">            Keyword arguments for initializing the module. Specific parameters</span>
+<span class="sd">            depend on whether the module is initialized with new parameters or components.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<div class="viewcode-block" id="LitSegger.new_args">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.new_args">[docs]</a>
+        <span class="n">new_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">from_new</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span></div>
+
+<div class="viewcode-block" id="LitSegger.cmp_args">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.cmp_args">[docs]</a>
+        <span class="n">cmp_args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">from_components</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span></div>
+
+
+        <span class="c1"># Initialize with new parameters (ensure num_tx_tokens is passed here)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">new_args</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_new</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Initialize with existing components</span>
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">cmp_args</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_components</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Handle invalid arguments</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Supplied kwargs do not match either constructor. Should be one of &#39;</span><span class="si">{</span><span class="n">new_args</span><span class="si">}</span><span class="s2">&#39; or &#39;</span><span class="si">{</span><span class="n">cmp_args</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="LitSegger.validation_step_outputs">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.validation_step_outputs">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validation_step_outputs</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="LitSegger.criterion">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.criterion">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.from_new">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.from_new">[docs]</a>
+    <span class="k">def</span> <span class="nf">from_new</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_tx_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">init_emb</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the LitSegger module with new parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_tx_tokens : int</span>
+<span class="sd">            Number of unique &#39;tx&#39; tokens for embedding (this must be passed here).</span>
+<span class="sd">        init_emb : int</span>
+<span class="sd">            Initial embedding size.</span>
+<span class="sd">        hidden_channels : int</span>
+<span class="sd">            Number of hidden channels.</span>
+<span class="sd">        out_channels : int</span>
+<span class="sd">            Number of output channels.</span>
+<span class="sd">        heads : int</span>
+<span class="sd">            Number of attention heads.</span>
+<span class="sd">        aggr : str</span>
+<span class="sd">            Aggregation method for heterogeneous graph conversion.</span>
+<span class="sd">        metadata : Union[Tuple, Metadata]</span>
+<span class="sd">            Metadata for heterogeneous graph structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create the Segger model (ensure num_tx_tokens is passed here)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Segger</span><span class="p">(</span>
+            <span class="n">num_tx_tokens</span><span class="o">=</span><span class="n">num_tx_tokens</span><span class="p">,</span>  <span class="c1"># This is required and must be passed here</span>
+            <span class="n">init_emb</span><span class="o">=</span><span class="n">init_emb</span><span class="p">,</span>
+            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="o">=</span><span class="n">out_channels</span><span class="p">,</span>
+            <span class="n">heads</span><span class="o">=</span><span class="n">heads</span>
+        <span class="p">)</span>
+        <span class="c1"># Convert model to handle heterogeneous graphs</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">to_hetero</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="c1"># Save hyperparameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.from_components">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.from_components">[docs]</a>
+    <span class="k">def</span> <span class="nf">from_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Segger</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the LitSegger module with existing Segger components.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : Segger</span>
+<span class="sd">            The Segger model to be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.forward">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">SpatialTranscriptomicsDataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for the batch of data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : SpatialTranscriptomicsDataset</span>
+<span class="sd">            The batch of data, including node features and edge indices.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The output of the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>  <span class="c1"># Example for bipartite graph</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.training_step">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.training_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines the training step.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : Any</span>
+<span class="sd">            The batch of data.</span>
+<span class="sd">        batch_idx : int</span>
+<span class="sd">            The index of the batch.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The loss value for the current training step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Forward pass to get the logits</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+
+        <span class="c1"># Get edge labels and logits</span>
+        <span class="n">edge_label_index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label_index</span>
+        <span class="n">out_values</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="n">edge_label_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_label_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">edge_label</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label</span>
+        
+        <span class="c1"># Compute binary cross-entropy loss with logits (no sigmoid here)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">out_values</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+        
+        <span class="c1"># Log the training loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;train_loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.validation_step">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.validation_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines the validation step.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : Any</span>
+<span class="sd">            The batch of data.</span>
+<span class="sd">        batch_idx : int</span>
+<span class="sd">            The index of the batch.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The loss value for the current validation step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Forward pass to get the logits</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">edge_index_dict</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+
+        <span class="c1"># Get edge labels and logits</span>
+        <span class="n">edge_label_index</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label_index</span>
+        <span class="n">out_values</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="n">edge_label_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_label_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">edge_label</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;tx&#39;</span><span class="p">,</span> <span class="s1">&#39;belongs&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">edge_label</span>
+        
+        <span class="c1"># Compute binary cross-entropy loss with logits (no sigmoid here)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">out_values</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+        
+        <span class="c1"># Apply sigmoid to logits for AUROC and F1 metrics</span>
+        <span class="n">out_values_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">out_values</span><span class="p">)</span>
+
+        <span class="c1"># Compute metrics</span>
+        <span class="n">auroc</span> <span class="o">=</span> <span class="n">torchmetrics</span><span class="o">.</span><span class="n">AUROC</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+        <span class="n">auroc_res</span> <span class="o">=</span> <span class="n">auroc</span><span class="p">(</span><span class="n">out_values_prob</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+        
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">F1Score</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">f1_res</span> <span class="o">=</span> <span class="n">f1</span><span class="p">(</span><span class="n">out_values_prob</span><span class="p">,</span> <span class="n">edge_label</span><span class="p">)</span>
+        
+        <span class="c1"># Log validation metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_auroc&quot;</span><span class="p">,</span> <span class="n">auroc_res</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;validation_f1&quot;</span><span class="p">,</span> <span class="n">f1_res</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch</span><span class="o">.</span><span class="n">num_graphs</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="LitSegger.configure_optimizers">
+<a class="viewcode-back" href="../../../api/training/train/index.html#segger.training.train.LitSegger.configure_optimizers">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configures the optimizer for training.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.optim.Optimizer</span>
+<span class="sd">            The optimizer for training.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">optimizer</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Segger</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

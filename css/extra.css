@@ -1,0 +1,22 @@
+.md-header-nav__title img {
+    max-height: 120px; /* Adjust this to your preferred height */
+    width: auto;
+}
+
+/* 
+.md-sidebar {
+    display: none;
+}
+
+.md-main {
+    margin-left: 0;
+}
+
+Show sidebar for API section */
+/* :root[data-md-path^="api/"] .md-sidebar {
+    display: block;
+}
+
+:root[data-md-path^="api/"] .md-main {
+    margin-left: 300px;  /* Adjust this value depending on your layout */
+/* } */ */
