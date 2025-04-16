@@ -13,13 +13,7 @@ import glob
 from pathlib import Path
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
-from segger.data.utils import (
-    get_edge_index,
-    format_time,
-    create_anndata,
-    coo_to_dense_adj,
-    filter_transcripts
-)
+from segger.data.utils import get_edge_index, format_time, create_anndata, coo_to_dense_adj, filter_transcripts
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.boundary import generate_boundaries
@@ -36,7 +30,7 @@ import dask
 from cupyx.scipy.sparse import coo_matrix
 from torch.utils.dlpack import to_dlpack, from_dlpack
 
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client, LocalCluster, Future
 import cupy as cp
 import numpy as np
 import pandas as pd
@@ -286,6 +280,7 @@ def get_similarity_scores(
 
 
 def predict_batch(
+    client: Client,
     lit_segger: torch.nn.Module,
     batch: Batch,
     score_cut: float,
@@ -295,12 +290,13 @@ def predict_batch(
     edge_index_save_path: Union[str, Path] = None,
     output_ddf_save_path: Union[str, Path] = None,
     gpu_id: int = 0,  # Added argument for GPU ID
-):
+) -> tuple[Future | None, Future | None]:
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
     Writes both the assignments and edge_index directly into Parquet files incrementally.
 
     Args:
+        client (Client): The client to connect to and submit computation to a dask cluster.
         lit_segger (torch.nn.Module): The lightning module wrapping the segmentation model.
         batch (Batch): A batch of transcript and cell data.
         score_cut (float): The threshold for assigning transcripts to cells based on similarity scores.
@@ -314,6 +310,8 @@ def predict_batch(
                                               are saved incrementally.
         gpu_id (int, optional): The GPU ID to use for the computations. Defaults to 0.
     """
+
+    delayed_write_edge_index_future, delayed_write_output_ddf_future = None, None
 
     def _get_id():
         """Generate a random Xenium-style ID."""
@@ -410,7 +408,7 @@ def predict_batch(
                     delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(
                         edge_index_save_path, append=True, ignore_divisions=True
                     )
-                    delayed_write_edge_index.persist()  # Schedule writing
+                    delayed_write_edge_index_future = client.persist(delayed_write_edge_index)  # Schedule writing
 
             assignments = {
                 "transcript_id": assignments["transcript_id"].astype("str"),
@@ -428,11 +426,13 @@ def predict_batch(
             delayed_write_output_ddf = delayed(batch_ddf.to_parquet)(
                 output_ddf_save_path, append=True, ignore_divisions=True
             )
-            delayed_write_output_ddf.persist()  # Schedule writing
+            delayed_write_output_ddf_future = client.persist(delayed_write_output_ddf)  # Schedule writing
 
             # Free memory after computation
             cp.get_default_memory_pool().free_all_blocks()  # Free CuPy memory
             torch.cuda.empty_cache()
+
+    return delayed_write_edge_index_future, delayed_write_output_ddf_future
 
 
 def segment(
@@ -482,6 +482,7 @@ def segment(
         None. Saves the result to disk in various formats and logs the parameter choices.
     """
 
+    client = Client()
     start_time = time()
 
     # Create a subdirectory with important parameter info (receptive field values)
@@ -511,6 +512,9 @@ def segment(
     val_dataloader = dm.val_dataloader()
     test_dataloader = dm.test_dataloader()
 
+    delayed_write_edge_index_futures = []
+    delayed_write_output_ddf_futures = []
+
     # Loop through the data loaders (train, val, and test)
     for loader_name, loader in zip(
         ["Train", "Validation", "Test"], [train_dataloader, val_dataloader, test_dataloader]
@@ -522,7 +526,8 @@ def segment(
         for batch in tqdm(loader, desc=f"Processing {loader_name} batches"):
             gpu_id = random.choice(gpu_ids)
             # Call predict_batch for each batch
-            predict_batch(
+            delayed_write_edge_index_future, delayed_write_output_ddf_future = predict_batch(
+                client,
                 model,
                 batch,
                 score_cut,
@@ -534,23 +539,30 @@ def segment(
                 gpu_id=gpu_id,
             )
 
+            if delayed_write_edge_index_future is not None:
+                delayed_write_edge_index_futures.append(delayed_write_edge_index_future)
+
+            if delayed_write_output_ddf_future is not None:
+                delayed_write_output_ddf_futures.append(delayed_write_output_ddf_future)
+
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Batch processing completed in {elapsed_time:.2f} seconds.")
 
+    client.gather(delayed_write_output_ddf_futures)
+    assert os.path.exists(output_ddf_save_path)
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
 
     step_start_time = time()
     if verbose:
         print(f"Applying max score selection logic...")
     output_ddf_save_path = save_dir / "transcripts_df.parquet"
-    
-    
+
     seg_final_dd = pd.read_parquet(output_ddf_save_path)
-    
-    seg_final_filtered = seg_final_dd.sort_values(
-        "score", ascending=False
-    ).drop_duplicates(subset="transcript_id", keep="first")
+
+    seg_final_filtered = seg_final_dd.sort_values("score", ascending=False).drop_duplicates(
+        subset="transcript_id", keep="first"
+    )
 
     if verbose:
         elapsed_time = time() - step_start_time
@@ -570,7 +582,7 @@ def segment(
 
     # Outer merge to include all transcripts, even those without assigned cell ids
     transcripts_df_filtered = transcripts_df.merge(seg_final_filtered, on="transcript_id", how="outer")
-    
+
     if verbose:
         elapsed_time = time() - step_start_time
         print(f"Merged segmentation results with transcripts in {elapsed_time:.2f} seconds.")
@@ -581,6 +593,8 @@ def segment(
         if verbose:
             print(f"Computing connected components for unassigned transcripts...")
         # Load edge indices from saved Parquet
+        client.gather(delayed_write_edge_index_futures)
+        assert os.path.exists(edge_index_save_path)
         edge_index_dd = pd.read_parquet(edge_index_save_path)
 
         # Step 2: Get unique transcript_ids from edge_index_dd and their positional indices
