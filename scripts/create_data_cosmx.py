@@ -39,7 +39,7 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path('data_raw/cosmx/human_pancreas/processed/')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_500')
+SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/cosmx_pancreas_50')
 # SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
 # CELLTYPE_COLUMN = 'annot_v1'
 

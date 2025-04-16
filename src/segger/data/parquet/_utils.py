@@ -469,25 +469,35 @@ def ensure_transcript_ids(
         Precision multiplier for coordinate values to handle floating point precision,
         default 1000
     """
-    # Read the parquet file
-    df = pd.read_parquet(parquet_path)
+    # First check metadata to see if column exists
+    metadata = pq.read_metadata(parquet_path)
+    schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
     
-    # Check if transcript_id column exists
-    if id_col not in df.columns:
+    # Only proceed if the column doesn't exist
+    if id_col not in schema_idx:
+        # Read the parquet file
+        df = pd.read_parquet(parquet_path)
+        
         # Add transcript IDs
         df = add_transcript_ids(df, x_col, y_col, id_col, precision)
         
-        # Read existing metadata to preserve it
-        metadata = pq.read_metadata(parquet_path)
+        # # Get the original schema
+        # original_schema = pq.read_schema(parquet_path)
         
-        # Create new schema that includes all columns
-        schema = pa.schema([
-            (col, pa.from_numpy_dtype(df[col].dtype)) 
-            for col in df.columns
-        ])
+        # # Create a new schema that includes the new column
+        # new_fields = []
+        # for field in original_schema:
+        #     new_fields.append(field)
         
-        # Create Arrow table with the new schema
-        table = pa.Table.from_pandas(df, schema=schema)
+        # # Add the new transcript_id field
+        # new_fields.append(pa.field(id_col, pa.int32()))
+        
+        # # Create the new schema
+        # new_schema = pa.schema(new_fields)
+        
+        # Convert DataFrame to Arrow table with the new schema
+        table = pa.Table.from_pandas(df)
+        # table = pa.Table.from_pandas(df, schema=new_schema)
         
         # Write back to parquet with proper metadata
         pq.write_table(
@@ -496,5 +506,5 @@ def ensure_transcript_ids(
             version='2.6',  # Use latest stable version
             write_statistics=True,  # Ensure statistics are written
             compression='snappy',  # Use snappy compression for better performance
-            metadata_collector=metadata.metadata  # Preserve existing metadata
+            # metadata_collector=metadata.metadata  # Preserve existing metadata
         )
