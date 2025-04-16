@@ -469,23 +469,23 @@ def ensure_transcript_ids(
     # First check metadata to see if column exists
     metadata = pq.read_metadata(parquet_path)
     schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
-    
+
     # Only proceed if the column doesn't exist
     if id_col not in schema_idx:
         # Read the parquet file
         df = pd.read_parquet(parquet_path)
-        
+
         # Add transcript IDs
         df = add_transcript_ids(df, x_col, y_col, id_col, precision)
-        
+
         # Convert DataFrame to Arrow table
         table = pa.Table.from_pandas(df)
-        
+
         # Write back to parquet
         pq.write_table(
             table,
             parquet_path,
             version="2.6",  # Use latest stable version
             write_statistics=True,  # Ensure statistics are written
-            compression='snappy'  # Use snappy compression for better performance
+            compression="snappy",  # Use snappy compression for better performance
         )
