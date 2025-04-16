@@ -9,6 +9,8 @@ import sys
 from types import SimpleNamespace
 from pathlib import Path
 import yaml
+import os
+import pyarrow as pa
 
 
 def get_xy_extents(
@@ -138,10 +140,10 @@ def get_polygons_from_xy(
     x: str,
     y: str,
     label: str,
+    buffer_ratio: float = 1.0,
 ) -> gpd.GeoSeries:
     """
-    Convert boundary coordinates from a cuDF DataFrame to a GeoSeries of
-    polygons.
+    Convert boundary coordinates from a DataFrame to a GeoSeries of polygons.
 
     Parameters
     ----------
@@ -154,7 +156,10 @@ def get_polygons_from_xy(
         The name of the column representing the y-coordinate.
     label : str
         The name of the column representing the cell or nucleus label.
-
+    buffer_ratio : float, optional
+        A ratio to expand or shrink the polygons. A value of 1.0 means no change,
+        greater than 1.0 expands the polygons, and less than 1.0 shrinks the polygons
+        (default is 1.0).
 
     Returns
     -------
@@ -176,7 +181,59 @@ def get_polygons_from_xy(
     )
     gs = gpd.GeoSeries(polygons, index=np.unique(ids))
 
+    if buffer_ratio != 1.0:
+        # Calculate buffer distance based on polygon area
+        areas = gs.area
+        # Use the square root of the area to get a linear distance
+        buffer_distances = np.sqrt(areas / np.pi) * (buffer_ratio - 1.0)
+        # Apply buffer to each polygon with its specific distance
+        gs = gpd.GeoSeries(
+            [geom.buffer(dist) if dist != 0 else geom for geom, dist in zip(gs, buffer_distances)], index=gs.index
+        )
+
     return gs
+
+
+def compute_nuclear_transcripts(
+    polygons: gpd.GeoSeries,
+    transcripts: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    nuclear_column: str = None,
+    nuclear_value: str = None,
+) -> pd.Series:
+    """
+    Computes which transcripts are nuclear based on their coordinates and the
+    nuclear polygons.
+
+    Parameters
+    ----------
+    polygons : gpd.GeoSeries
+        The nuclear polygons
+    transcripts : pd.DataFrame
+        The transcripts DataFrame
+    x_col : str
+        The x-coordinate column name
+    y_col : str
+        The y-coordinate column name
+    nuclear_column : str, optional
+        The column name that indicates if a transcript is nuclear
+    nuclear_value : str, optional
+        The value in nuclear_column that indicates a nuclear transcript
+
+    Returns
+    -------
+    pd.Series
+        A boolean series indicating which transcripts are nuclear
+    """
+    # If nuclear_column and nuclear_value are provided, use them
+    if nuclear_column is not None and nuclear_value is not None:
+        if nuclear_column in transcripts.columns:
+            return transcripts[nuclear_column].eq(nuclear_value)
+
+    # Otherwise compute based on coordinates
+    points = gpd.GeoSeries(gpd.points_from_xy(transcripts[x_col], transcripts[y_col]))
+    return points.apply(lambda p: any(p.within(poly) for poly in polygons))
 
 
 def filter_boundaries(
@@ -258,6 +315,7 @@ def filter_transcripts(
     transcripts_df: pd.DataFrame,
     label: Optional[str] = None,
     filter_substrings: Optional[List[str]] = None,
+    qv_column: Optional[str] = None,
     min_qv: Optional[float] = None,
 ) -> pd.DataFrame:
     """
@@ -271,6 +329,8 @@ def filter_transcripts(
         The label of transcript features.
     filter_substrings : Optional[str]
         The list of feature substrings to remove.
+    qv_column : Optional[str]
+        The name of the column representing the quality value.
     min_qv : Optional[float]
         The minimum quality value threshold for filtering transcripts.
 
@@ -282,8 +342,8 @@ def filter_transcripts(
     mask = pd.Series(True, index=transcripts_df.index)
     if filter_substrings is not None and label is not None:
         mask &= ~transcripts_df[label].str.startswith(tuple(filter_substrings))
-    if min_qv is not None:
-        mask &= transcripts_df["qv"].ge(min_qv)
+    if min_qv is not None and qv_column is not None:
+        mask &= transcripts_df[qv_column].ge(min_qv)
     return transcripts_df[mask]
 
 
@@ -335,3 +395,102 @@ def _dict_to_namespace(d):
         d = {k: _dict_to_namespace(v) for k, v in d.items()}
         return SimpleNamespace(**d)
     return d
+
+
+def add_transcript_ids(
+    transcripts_df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    id_col: str = "transcript_id",
+    precision: int = 1000,
+) -> pd.DataFrame:
+    """
+    Adds unique transcript IDs to a DataFrame based on x,y coordinates.
+
+    Parameters
+    ----------
+    transcripts_df : pd.DataFrame
+        DataFrame containing transcript data with x,y coordinates
+    x_col : str
+        Name of the x-coordinate column
+    y_col : str
+        Name of the y-coordinate column
+    id_col : str, optional
+        Name of the column to store the transcript IDs, default "transcript_id"
+    precision : int, optional
+        Precision multiplier for coordinate values to handle floating point precision,
+        default 1000
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with added transcript_id column
+    """
+    # Create coordinate strings with specified precision
+    x_coords = np.round(transcripts_df[x_col] * precision).astype(int).astype(str)
+    y_coords = np.round(transcripts_df[y_col] * precision).astype(int).astype(str)
+    coords_str = x_coords + "_" + y_coords
+
+    # Generate unique IDs using a deterministic hash function
+    def hash_coords(s):
+        # Use a fixed seed for reproducibility
+        seed = 1996
+        # Combine string with seed and take modulo to get an 8-digit integer
+        return abs(hash(s + str(seed))) % 100000000
+
+    tx_ids = np.array([hash_coords(s) for s in coords_str], dtype=np.int32)
+
+    # Add IDs to DataFrame
+    transcripts_df = transcripts_df.copy()
+    transcripts_df[id_col] = tx_ids
+
+    return transcripts_df
+
+
+def ensure_transcript_ids(
+    parquet_path: os.PathLike,
+    x_col: str,
+    y_col: str,
+    id_col: str = "transcript_id",
+    precision: int = 1000,
+) -> None:
+    """
+    Ensures that a parquet file has transcript IDs by adding them if missing.
+
+    Parameters
+    ----------
+    parquet_path : os.PathLike
+        Path to the parquet file
+    x_col : str
+        Name of the x-coordinate column
+    y_col : str
+        Name of the y-coordinate column
+    id_col : str, optional
+        Name of the column to store the transcript IDs, default "transcript_id"
+    precision : int, optional
+        Precision multiplier for coordinate values to handle floating point precision,
+        default 1000
+    """
+    # First check metadata to see if column exists
+    metadata = pq.read_metadata(parquet_path)
+    schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
+
+    # Only proceed if the column doesn't exist
+    if id_col not in schema_idx:
+        # Read the parquet file
+        df = pd.read_parquet(parquet_path)
+
+        # Add transcript IDs
+        df = add_transcript_ids(df, x_col, y_col, id_col, precision)
+
+        # Convert DataFrame to Arrow table
+        table = pa.Table.from_pandas(df)
+
+        # Write back to parquet
+        pq.write_table(
+            table,
+            parquet_path,
+            version="2.6",  # Use latest stable version
+            write_statistics=True,  # Ensure statistics are written
+            compression="snappy",  # Use snappy compression for better performance
+        )

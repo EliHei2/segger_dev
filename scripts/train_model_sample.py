@@ -24,7 +24,7 @@ models_dir = Path("./models/bc_rep1_emb_final_200")
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=1,
+    batch_size=2,
     num_workers=2,
 )
 

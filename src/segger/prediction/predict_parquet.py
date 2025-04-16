@@ -20,6 +20,7 @@ from segger.data.utils import (
     coo_to_dense_adj,
     filter_transcripts,
 )
+
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.boundary import generate_boundaries
@@ -582,6 +583,7 @@ def segment(
     seg_final_filtered = seg_final_dd.sort_values(
         "score", ascending=False
     ).drop_duplicates(subset="transcript_id", keep="first")
+
 
     if verbose:
         elapsed_time = time() - step_start_time

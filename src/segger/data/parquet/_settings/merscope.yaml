@@ -1,0 +1,42 @@
+transcripts:
+    filename: "transcripts.parquet"
+    x: "global_x"
+    y: "global_y"
+    z: "global_z"
+    id: "transcript_id"
+    label: "gene"
+    nuclear_column: "CellComp"
+    nuclear_value: "Nuclear"
+    filter_substrings:
+      - "NegPrb_"
+      - "SystemControl"
+      - "Negative"
+    xy:
+      - "global_x"
+      - "global_y"
+    xyz:
+      - "global_x"
+      - "global_y"
+      - "global_z"
+    columns:
+      - "global_x"
+      - "global_y"
+      - "global_z"
+      - "gene"
+      - "cell_id"
+      - "CellComp"
+      - "transcript_id"
+
+boundaries:
+  filename: "nucleus_boundaries.parquet"
+    x: "global_x"
+    y: "global_y"
+  id: "cell"
+  label: "cell"
+  xy:
+    - "x_global_px"
+    - "y_global_px"
+  columns:
+    - "x_global_px"
+    - "y_global_px"
+    - "cell"
