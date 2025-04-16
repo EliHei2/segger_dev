@@ -4,8 +4,10 @@ transcripts:
   y: "y_location"
   z: "z_location"
   id: "transcript_id"
-  label: "feature_name"
-  nuclear: "overlaps_nucleus"
+  label: "target"
+  nuclear_column: "overlaps_nucleus"
+  nuclear_value: 1
+  qv_column: "qv"
   filter_substrings:
     - "NegControlProbe_"
     - "antisense_"

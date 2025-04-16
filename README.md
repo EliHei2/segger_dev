@@ -9,7 +9,7 @@
 # How segger Works
 
 ![Segger Model](docs/images/Segger_model_08_2024.png)
-Some illustrations (cells and data) are borrowed from [Biorender](https://www.biorender.com/) and [BIDCell's paper](https://www.nature.com/articles/s41467-023-44560-w). 
+Some illustrations (cells and data) are borrowed from [Biorender](https://www.biorender.com/) and [BIDCell's paper](https://www.nature.com/articles/s41467-023-44560-w).
 
 ---
 
