@@ -481,30 +481,14 @@ def ensure_transcript_ids(
         # Add transcript IDs
         df = add_transcript_ids(df, x_col, y_col, id_col, precision)
         
-        # # Get the original schema
-        # original_schema = pq.read_schema(parquet_path)
-        
-        # # Create a new schema that includes the new column
-        # new_fields = []
-        # for field in original_schema:
-        #     new_fields.append(field)
-        
-        # # Add the new transcript_id field
-        # new_fields.append(pa.field(id_col, pa.int32()))
-        
-        # # Create the new schema
-        # new_schema = pa.schema(new_fields)
-        
-        # Convert DataFrame to Arrow table with the new schema
+        # Convert DataFrame to Arrow table
         table = pa.Table.from_pandas(df)
-        # table = pa.Table.from_pandas(df, schema=new_schema)
         
-        # Write back to parquet with proper metadata
+        # Write back to parquet
         pq.write_table(
             table,
             parquet_path,
             version='2.6',  # Use latest stable version
             write_statistics=True,  # Ensure statistics are written
-            compression='snappy',  # Use snappy compression for better performance
-            # metadata_collector=metadata.metadata  # Preserve existing metadata
+            compression='snappy'  # Use snappy compression for better performance
         )
