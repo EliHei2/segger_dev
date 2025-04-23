@@ -13,8 +13,9 @@ class LitSegger(LightningModule):
 
     def __init__(
         self,
-        model: Segger,
+        model: Segger = None,
         learning_rate: float = 1e-3,
+        **kwargs,
     ):
         """
         Initialize the Segger training module.
@@ -28,16 +29,24 @@ class LitSegger(LightningModule):
         """
         super().__init__()
         # Set model and store initialization parameters for reproducibility
-        self.model = model
+        if model:
+            self.model = model
+        else:
+            try:
+                self.model = Segger(**kwargs)
+            except TypeError as e:
+                msg = (
+                    "Could not instantiate `Segger` from checkpoint hparams. "
+                    "Check that all required arguments are present. "
+                    f"Original error: {e}"
+                )
+                raise Exception(msg) from e
         self.save_hyperparameters(self.model.hparams)
 
         # Other setup
         self.learning_rate = learning_rate
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.validation_step_outputs = []
-
-    def on_load_checkpoint(self, checkpoint):
-        return super().on_load_checkpoint(checkpoint)
 
     def forward(self, batch) -> torch.Tensor:
         """
