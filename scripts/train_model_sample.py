@@ -1,22 +1,26 @@
 from segger.data.io import XeniumSample
 from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
-from segger.prediction.predict import predict, load_model
+# from segger.prediction.predict import predict, load_model
+from segger.models.segger_model import Segger
+from segger.training.train import LitSegger
+from torch_geometric.nn import to_hetero
 from lightning.pytorch.loggers import CSVLogger
-from pytorch_lightning import Trainer
+from lightning import Trainer
 from pathlib import Path
 from lightning.pytorch.plugins.environments import LightningEnvironment
 from matplotlib import pyplot as plt
 import seaborn as sns
-
 # import pandas as pd
 from segger.data.utils import calculate_gene_celltype_abundance_embedding
-import scanpy as sc
+# import scanpy as sc
 import os
+from lightning import LightningModule
 
 
-segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/bc_rep1_emb_final_200")
-models_dir = Path("./models/bc_rep1_emb_final_200")
+
+segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/cosmx_pancreas")
+models_dir = Path("./models/cosmx_pancreas")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -35,29 +39,41 @@ dm.setup()
 
 # If you use custom gene embeddings, use the following two lines instead:
 is_token_based = False
-num_tx_tokens = (
-    dm.train[0].x_dict["tx"].shape[1]
-)  # Set the number of tokens to the number of genes
+# num_tx_tokens = (
+#     dm.train[0].x_dict["tx"].shape[1]
+# )  # Set the number of tokens to the number of genes
 
 
-num_bd_features = dm.train[0].x_dict["bd"].shape[1]
-
-# Initialize the Lightning model
-ls = LitSegger(
-    is_token_based=is_token_based,
-    num_node_features={"tx": num_tx_tokens, "bd": num_bd_features},
+model = Segger(
+    # is_token_based=is_token_based,
+    num_tx_tokens= 25000,
     init_emb=8,
     hidden_channels=64,
     out_channels=16,
     heads=4,
     num_mid_layers=3,
-    aggr="sum",
-    learning_rate=1e-3,
 )
+model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+
+batch = dm.train[0]
+model.forward(batch.x_dict, batch.edge_index_dict)
+# Wrap the model in LitSegger
+ls = LitSegger(model=model)
+
+# # Initialize the Lightning model
+# ls = LitSegger(
+#     # is_token_based=is_token_based,
+#     num_tx_tokens= 7000,
+#     init_emb=8,
+#     hidden_channels=64,
+#     out_channels=16,
+#     heads=4,
+#     num_mid_layers=3,
+# )
 
 # Initialize the Lightning trainer
 trainer = Trainer(
-    accelerator="cuda",
+    accelerator="cpu",
     strategy="auto",
     precision="16-mixed",
     devices=2,  # set higher number if more gpus are available
@@ -67,4 +83,4 @@ trainer = Trainer(
 )
 
 
-trainer.fit(model=ls, datamodule=dm)
+trainer.fit(ls , datamodule=dm)
