@@ -124,12 +124,22 @@ def read_parquet_region(
     ]
 
     columns = list({x, y} | set(extra_columns))
-
-    region = pd.read_parquet(
-        filepath,
-        filters=filters,
-        columns=columns,
-    )
+    # Check if 'Geometry', 'geometry', 'polygon', or 'Polygon' is in the columns
+    if any(col in columns for col in ['Geometry', 'geometry', 'polygon', 'Polygon']):
+        import geopandas as gpd
+        # If geometry columns are present, read with geopandas
+        region = gpd.read_parquet(
+            filepath,
+            filters=filters,
+            columns=columns,
+        )
+    else:
+        # Otherwise, read with pandas
+        region = pd.read_parquet(
+            filepath,
+            filters=filters,
+            columns=columns,
+        )
     return region
 
 
@@ -442,6 +452,7 @@ def add_transcript_ids(
     return transcripts_df
 
 
+
 def ensure_transcript_ids(
     parquet_path: os.PathLike,
     x_col: str,
@@ -450,42 +461,45 @@ def ensure_transcript_ids(
     precision: int = 1000,
 ) -> None:
     """
-    Ensures that a parquet file has transcript IDs by adding them if missing.
+    Ensure a Parquet file has a valid transcript ID column. If missing or non-integer,
+    generate transcript IDs based on coordinates.
 
     Parameters
     ----------
     parquet_path : os.PathLike
-        Path to the parquet file
+        Path to the Parquet file.
     x_col : str
-        Name of the x-coordinate column
+        Name of the x-coordinate column.
     y_col : str
-        Name of the y-coordinate column
+        Name of the y-coordinate column.
     id_col : str, optional
-        Name of the column to store the transcript IDs, default "transcript_id"
+        Name of the column to store transcript IDs. Default is "transcript_id".
     precision : int, optional
-        Precision multiplier for coordinate values to handle floating point precision,
-        default 1000
+        Precision multiplier for coordinate values to avoid float precision issues.
+        Default is 1000.
     """
-    # First check metadata to see if column exists
-    metadata = pq.read_metadata(parquet_path)
-    schema_idx = dict(map(reversed, enumerate(metadata.schema.names)))
-    
-    # Only proceed if the column doesn't exist
-    if id_col not in schema_idx:
-        # Read the parquet file
+    # Read metadata and schema
+    parquet_file = pq.ParquetFile(parquet_path)
+    schema = parquet_file.schema_arrow
+
+    # Check if ID column exists
+    if id_col not in schema.names:
+        needs_update = True
+    else:
+        # Check if the column is of integer type
+        id_field = schema.field(id_col)
+        needs_update = not pa.types.is_integer(id_field.type)
+
+    if needs_update:
         df = pd.read_parquet(parquet_path)
-        
-        # Add transcript IDs
-        df = add_transcript_ids(df, x_col, y_col, id_col, precision)
-        
-        # Convert DataFrame to Arrow table
+        df = add_transcript_ids(df, x_col, y_col, id_col=id_col, precision=precision)
+
+        # Write updated DataFrame back to Parquet
         table = pa.Table.from_pandas(df)
-        
-        # Write back to parquet
         pq.write_table(
             table,
             parquet_path,
-            version="2.6",  # Use latest stable version
-            write_statistics=True,  # Ensure statistics are written
-            compression='snappy'  # Use snappy compression for better performance
+            version="2.6",
+            write_statistics=True,
+            compression="snappy",
         )
