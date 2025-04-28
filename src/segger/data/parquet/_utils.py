@@ -176,7 +176,7 @@ def get_polygons_from_xy(
     # Convert to GeoSeries of polygons
     polygons = shapely.from_ragged_array(
         shapely.GeometryType.POLYGON,
-        coords=boundaries[[x, y]],
+        coords=boundaries[[x, y]].values.copy(order="C"),
         offsets=(geometry_offset, part_offset),
     )
     gs = gpd.GeoSeries(polygons, index=np.unique(ids))
