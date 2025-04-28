@@ -674,6 +674,7 @@ class STInMemoryDataset:
         transcripts[self.settings.transcripts.label] = transcripts[
             self.settings.transcripts.label
         ].apply(lambda x: x.decode("utf-8") if isinstance(x, bytes) else x)
+        qv_column = getattr(self.settings.transcripts, "qv_column", None)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,
