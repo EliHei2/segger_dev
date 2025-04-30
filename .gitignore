@@ -177,3 +177,6 @@ dev*
 # Custom
 *_old*
 .dev
+
+scripts/*
+.scripts/*

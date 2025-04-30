@@ -1,5 +1,3 @@
-from segger.data.io import XeniumSample
-from segger.training.train import LitSegger
 from segger.training.segger_data_module import SeggerDataModule
 # from segger.prediction.predict import predict, load_model
 from segger.models.segger_model import Segger
@@ -19,8 +17,8 @@ from lightning import LightningModule
 
 
 
-segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/cosmx_pancreas")
-models_dir = Path("./models/cosmx_pancreas")
+segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_full")
+models_dir = Path("./models/human_CRC")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -46,7 +44,7 @@ is_token_based = False
 
 model = Segger(
     # is_token_based=is_token_based,
-    num_tx_tokens= 25000,
+    num_tx_tokens= 850,
     init_emb=8,
     hidden_channels=64,
     out_channels=16,
@@ -73,14 +71,14 @@ ls = LitSegger(model=model)
 
 # Initialize the Lightning trainer
 trainer = Trainer(
-    accelerator="cpu",
+    accelerator="gpu",
     strategy="auto",
     precision="16-mixed",
-    devices=2,  # set higher number if more gpus are available
-    max_epochs=400,
+    devices=4,  # set higher number if more gpus are available
+    max_epochs=100,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )
 
 
-trainer.fit(ls , datamodule=dm)
+trainer.fit(ls, datamodule=dm)

@@ -39,13 +39,13 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path(
-    "/omics/odcf/analysis/OE0606_projects_temp/oncolgy_data_exchange/analysis_domenico/project_24/output-XETG00423__0053177__mng_04_TMA__20250306__170821"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC"
 )
-SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/MNG_0053177")
-SCRNASEQ_FILE = Path(
-    "/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad"
-)
-CELLTYPE_COLUMN = "annot_v1"
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_full")
+# SCRNASEQ_FILE = Path(
+#     "/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad"
+# )
+# CELLTYPE_COLUMN = "annot_v1"
 
 # Calculate gene-celltype embeddings from reference data
 # gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
@@ -94,10 +94,10 @@ sample.save(
     data_dir=SEGGER_DATA_DIR,
     k_bd=3,  # Number of boundary points to connect
     dist_bd=15,  # Maximum distance for boundary connections
-    k_tx=k_tx,  # Use calculated optimal transcript neighbors
-    dist_tx=dist_tx,  # Use calculated optimal search radius
-    tile_width=100,  # Tile size for processing
-    tile_height=100,
+    k_tx=5,  # Use calculated optimal transcript neighbors
+    dist_tx=5,  # Use calculated optimal search radius
+    tile_width=200,  # Tile size for processing
+    tile_height=200,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
     frac=1.0,  # Use all data
     val_prob=0.3,  # 30% validation set

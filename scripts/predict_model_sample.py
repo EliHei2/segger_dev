@@ -10,25 +10,33 @@ import pandas as pd
 from pathlib import Path
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ["CUPY_CACHE_DIR"] = "./.cupy"
 import cupy as cp
 from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-seg_tag = "bc_rep1_emb_final"
-model_version = 6
+seg_tag = "human_CRC"
+model_version = 0
 
-seg_tag = "bc_fast_data_emb_major"
-model_version = 1
+seg_tag = "human_CRC"
+model_version = 0
+
+
+
+XENIUM_DATA_DIR = Path(
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC"
+)
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_full")
 
 segger_data_dir = Path("data_tidy/pyg_datasets") / seg_tag
 models_dir = Path("./models") / seg_tag
 benchmarks_dir = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/human_CRC"
 )
 transcripts_file = (
-    "data_raw/xenium/Xenium_FFPE_Human_Breast_Cancer_Rep1/transcripts.parquet"
+   "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC/transcripts.parquet"
 )
 # Initialize the Lightning data module
 dm = SeggerDataModule(

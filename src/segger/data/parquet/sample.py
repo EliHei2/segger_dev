@@ -14,9 +14,11 @@ import logging
 from itertools import compress
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import RandomLinkSplit
+from pqdm.threads import pqdm
 import torch
 import random
 from segger.data.parquet.transcript_embedding import TranscriptEmbedding
+# import re
 
 
 # TODO: Add documentation for settings
@@ -203,7 +205,8 @@ class STSampleParquet:
                 missing_genes = list(set(names_str) - set(self._emb_genes))
                 logging.warning(f"Number of missing genes: {len(missing_genes)}")
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
-            pattern = "|".join(self.settings.transcripts.filter_substrings)
+            # pattern = "|".join(self.settings.transcripts.filter_substrings)
+            pattern = "|".join(f"^{s}" for s in self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
             filtered_names = pc.filter(names, mask).to_pylist()
             metadata["feature_names"] = [
@@ -674,6 +677,7 @@ class STInMemoryDataset:
         transcripts[self.settings.transcripts.label] = transcripts[
             self.settings.transcripts.label
         ].apply(lambda x: x.decode("utf-8") if isinstance(x, bytes) else x)
+        qv_column = getattr(self.settings.transcripts, "qv_column", None)
         transcripts = utils.filter_transcripts(
             transcripts,
             self.settings.transcripts.label,
