@@ -177,3 +177,4 @@ dev*
 # Custom
 *_old*
 .dev
+lightning_logs/
