@@ -170,16 +170,9 @@ class STSampleParquet:
             # Get filtered unique feature names
             table = pq.read_table(self._transcripts_filepath)
             names = pc.unique(table[self.settings.transcripts.label])
-            if self._emb_genes is not None:
-                # Filter substring is extended with the genes missing in the embedding
-                names_str = [x.decode("utf-8") if isinstance(x, bytes) else x for x in names.to_pylist()]
-                missing_genes = list(set(names_str) - set(self._emb_genes))
-                logging.warning(f"Number of missing genes: {len(missing_genes)}")
-                self.settings.transcripts.filter_substrings.extend(missing_genes)
+
             pattern = "|".join(self.settings.transcripts.filter_substrings)
             mask = pc.invert(pc.match_substring_regex(names, pattern))
-            filtered_names = pc.filter(names, mask).to_pylist()
-            metadata["feature_names"] = [x.decode("utf-8") if isinstance(x, bytes) else x for x in filtered_names]
             self._transcripts_metadata = metadata
         return self._transcripts_metadata
 

@@ -24,11 +24,11 @@ class TranscriptEmbedding(torch.nn.Module):
     ):
         # Classes is a 1D array
         if len(classes.shape) > 1:
-            msg = "'classes' should be a 1D array, got an array of shape " f"{classes.shape} instead."
+            msg = f"'classes' should be a 1D array, got an array of shape {classes.shape} instead."
             raise ValueError(msg)
         # Items appear exactly once
         if len(classes) != len(set(classes)):
-            msg = "All embedding classes must be unique. One or more items in " "'classes' appears twice."
+            msg = "All embedding classes must be unique. One or more items in 'classes' appears twice."
             raise ValueError(msg)
         # All classes have an entry in weights
         elif weights is not None:

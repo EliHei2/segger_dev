@@ -1,0 +1,24 @@
+create_dataset:
+  # Input filepaths
+  transcripts_parquet: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/ist_dataset/transcripts_geo.parquet'
+  boundaries_parquet: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/ist_dataset/nucleus_boundaries_geo.parquet'
+  # Input fields
+  transcripts_feature_name: 'feature_name'
+  transcripts_cell_id: 'nucleus_boundaries_id'
+  transcripts_x: 'x_location'
+  transcripts_y: 'y_location'
+  # Graph params
+  transcripts_k: 20
+  transcripts_dist: 5
+  boundaries_k: 3
+  boundaries_dist: 20
+  # Tiling params
+  max_cells_per_tile: 500
+  tile_margin: 10
+  negative_sampling_ratio: 5
+  fraction_train: 0.7
+  fraction_test: 0.2
+  fraction_val: 0.1
+  # Ouput options
+  save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/segger_dataset'
+  n_workers: 8

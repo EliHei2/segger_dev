@@ -22,13 +22,10 @@ dependencies = [
     "shapely>=2.0.7",
     "torch-geometric>=2.6.1",
     "scikit-learn>=1.6.1",
+    "pydantic>=2.11.4",
 ]
 
 [project.optional-dependencies]
-dask = [
-    "dask>=2025.3.0",
-    "dask-geopandas>=0.4.3",
-]
 dev = [
     "pytest>=8.3.5",
     "jupyter>=1.1.1",
@@ -39,6 +36,19 @@ validate = [
     "matplotlib>=3.10.1",
     "scanpy>=1.10.4",
     "seaborn>=0.13.2",
+]
+io = [
+    "tifffile>=2025.3.30",
+    "fastparquet>=2024.11.0",
+    "scikit-image>=0.25.2",
+    "opencv-python>=4.11.0.86",
+    "imagecodecs>=2025.3.30",
+    "anndata>=0.11.4",
+    "scanpy>=1.10.4",
+]
+experimental = [
+    "dask>=2025.3.0",
+    "dask-geopandas>=0.4.3",
 ]
 
 [build-system]

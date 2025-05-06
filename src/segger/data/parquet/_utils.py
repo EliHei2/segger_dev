@@ -11,7 +11,7 @@ from pathlib import Path
 import yaml
 
 
-def get_xy_extents(
+def get_xy_extents_parquet(
     filepath,
     x: str,
     y: str,
@@ -42,31 +42,13 @@ def get_xy_extents(
     x_min = sys.maxsize
     y_max = -1
     y_min = sys.maxsize
-    group = metadata.row_group(0)
-    try:
-        for i in range(metadata.num_row_groups):
-            # print('*1')
-            group = metadata.row_group(i)
-            x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
-            x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
-            y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
-            y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
-            bounds = shapely.box(x_min, y_min, x_max, y_max)
-    # If statistics are not available, compute them manually from the data
-    except:
-        import gc
-
-        print("metadata lacks the statistics of the tile's bounding box, computing might take longer!")
-        parquet_file = pd.read_parquet(filepath)
-        x_col = parquet_file.loc[:, x]
-        y_col = parquet_file.loc[:, y]
-        del parquet_file
-        gc.collect()
-        x_min = x_col.min()
-        y_min = y_col.min()
-        x_max = x_col.max()
-        y_max = y_col.max()
-    bounds = shapely.geometry.box(x_min, y_min, x_max, y_max)
+    for i in range(metadata.num_row_groups):
+        group = metadata.row_group(i)
+        x_min = min(x_min, group.column(schema_idx[x]).statistics.min)
+        x_max = max(x_max, group.column(schema_idx[x]).statistics.max)
+        y_min = min(y_min, group.column(schema_idx[y]).statistics.min)
+        y_max = max(y_max, group.column(schema_idx[y]).statistics.max)
+        bounds = shapely.box(x_min, y_min, x_max, y_max)
     return bounds
 
 

@@ -1,0 +1,19 @@
+create_dataset:
+  # Input filepaths
+  transcripts_parquet: null 
+  boundaries_parquet: null
+  # Input fields
+  transcripts_feature_name: null
+  # Graph params
+  transcripts_k: null  
+  transcripts_dist: null 
+  boundaries_k: null
+  boundaries_dist: null
+  # Tiling params
+  tile_size: null
+  negative_sampling_ratio: 5
+  fraction_train: 0.7
+  fraction_test: 0.2
+  fraction_val: 0.1
+  # Ouput filepaths
+  save_dir: null
