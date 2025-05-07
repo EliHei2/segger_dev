@@ -16,6 +16,7 @@ import glob
 from typing import Optional
 import re
 from scipy.spatial import KDTree
+from tqdm.auto import tqdm
 
 
 # CONFIG
@@ -276,6 +277,7 @@ def predict(
     score_cut: float,
     receptive_field: dict,
     use_cc: bool = False,
+    show_pbar: bool = False,
 ) -> pd.DataFrame:
     """
     Predict segmentation labels for multiple batches of transcript data.
@@ -308,15 +310,21 @@ def predict(
     # Combine assignments from training, test, and validation datasets
     predictions = []
     data_module.setup()
-    for data_loader in [
+    data_loaders = [
         data_module.train_dataloader(),
         data_module.test_dataloader(),
         data_module.val_dataloader(),
-    ]:
+    ]
+    if show_pbar:
+        n = sum((len(dl) for dl in data_loaders))
+        pbar = tqdm(total=n)
+    for data_loader in data_loaders:
         for batch in data_loader:
             batch_predictions = predict_batch(lit_segger, batch, score_cut, 
-                                        receptive_field, use_cc)
+                                              receptive_field, use_cc)
             predictions.append(batch_predictions)
+            if show_pbar: pbar.update(1)
+    if show_pbar: pbar.close()
     predictions = pd.concat(predictions)
     
     # Keep highest cell assignment to handle overlapping tx at tile edges

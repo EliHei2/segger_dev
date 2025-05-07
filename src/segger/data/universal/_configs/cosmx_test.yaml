@@ -13,8 +13,8 @@ create_dataset:
   boundaries_k: 3
   boundaries_dist: 20
   # Tiling params
-  max_cells_per_tile: 100
-  tile_margin: 20
+  max_cells_per_tile: 50
+  tile_margin: 75
   negative_sampling_ratio: 5
   fraction_train: 0.7
   fraction_test: 0.2

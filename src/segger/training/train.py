@@ -76,9 +76,15 @@ class LitSegger(LightningModule):
         output = torch.matmul(z['tx'], z['bd'].t())
 
         # Get edge labels and logits
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
-        out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
+        pos_index = batch['tx', 'belongs', 'bd'].edge_index
+        neg_index = batch['tx', 'belongs', 'bd'].neg_edge_index
+        pos_out_values = output[pos_index[0], pos_index[1]]
+        neg_out_values = output[neg_index[0], neg_index[1]]
+        out_values = torch.concat((pos_out_values, neg_out_values))
+        edge_label = torch.concat((
+            torch.ones_like(pos_out_values),
+            torch.zeros_like(neg_out_values)
+        ))
         
         # Compute binary cross-entropy loss with logits (no sigmoid here)
         loss = self.criterion(out_values, edge_label)
@@ -108,9 +114,15 @@ class LitSegger(LightningModule):
         output = torch.matmul(z['tx'], z['bd'].t())
 
         # Get edge labels and logits
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
-        out_values = output[edge_label_index[0], edge_label_index[1]]
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
+        pos_index = batch['tx', 'belongs', 'bd'].edge_index
+        neg_index = batch['tx', 'belongs', 'bd'].neg_edge_index
+        pos_out_values = output[pos_index[0], pos_index[1]]
+        neg_out_values = output[neg_index[0], neg_index[1]]
+        out_values = torch.concat((pos_out_values, neg_out_values))
+        edge_label = torch.concat((
+            torch.ones_like(pos_out_values),
+            torch.zeros_like(neg_out_values)
+        ))
         
         # Compute binary cross-entropy loss with logits (no sigmoid here)
         loss = self.criterion(out_values, edge_label)
