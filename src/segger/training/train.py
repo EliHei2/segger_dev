@@ -73,7 +73,7 @@ class LitSegger(LightningModule):
             The loss value for the current training step.
         """
         # Forward pass to get the logits
-        z = self.model(batch.x_dict, batch.edge_index_dict)
+        z, _ = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z["tx"], z["bd"].t())
 
         # Get edge labels and logits
@@ -105,7 +105,7 @@ class LitSegger(LightningModule):
             The loss value for the current validation step.
         """
         # Forward pass to get the logits
-        z = self.model(batch.x_dict, batch.edge_index_dict)
+        z, _ = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z["tx"], z["bd"].t())
 
         # Get edge labels and logits
