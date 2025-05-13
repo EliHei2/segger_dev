@@ -178,3 +178,5 @@ dev*
 *_old*
 .dev
 lightning_logs/
+*.pkl
+.cursor
