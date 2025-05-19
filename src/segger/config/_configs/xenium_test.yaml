@@ -15,10 +15,29 @@ create_dataset:
   # Tiling params
   max_cells_per_tile: 500
   tile_margin: 10
-  negative_sampling_ratio: 5
   fraction_train: 0.7
   fraction_test: 0.2
   fraction_val: 0.1
   # Ouput options
   save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/segger_dataset'
   n_workers: 8
+train_model:
+  # Input filepaths
+  #gene_embedding_csv: null
+  # Model params
+  in_channels: 16
+  hidden_channels: 32
+  out_channels: 32
+  n_mid_layers: 4
+  n_heads: 3
+  # Data loader params
+  n_workers: 8
+  batch_size: 2
+  #max_transcripts_k: null
+  max_transcripts_dist: null
+  negative_edge_sampling_ratio: 3
+  # Training params
+  learning_rate: 0.001
+  n_epochs: 50
+  # Output options
+  root_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/segger_models'

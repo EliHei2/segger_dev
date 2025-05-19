@@ -9,7 +9,7 @@ class Segger(torch.nn.Module):
     def __init__(
         self,
         num_tx_tokens: int,
-        init_emb: int = 16,
+        in_channels: int = 16,
         hidden_channels: int = 32,
         num_mid_layers: int = 3,
         out_channels: int = 32,
@@ -20,7 +20,7 @@ class Segger(torch.nn.Module):
 
         Args:
             num_tx_tokens (int)  : Number of unique 'tx' tokens for embedding.
-            init_emb (int)       : Initial embedding size for both 'tx' and boundary (non-token) nodes.
+            in_channels (int)       : Initial embedding size for both 'tx' and boundary (non-token) nodes.
             hidden_channels (int): Number of hidden channels.
             num_mid_layers (int) : Number of hidden layers (excluding first and last layers).
             out_channels (int)   : Number of output channels.
@@ -30,10 +30,10 @@ class Segger(torch.nn.Module):
         
 
         # Embedding for 'tx' (transcript) nodes
-        self.tx_embedding = Embedding(num_tx_tokens, init_emb)
+        self.tx_embedding = Embedding(num_tx_tokens, in_channels)
 
         # Linear layer for boundary (non-token) nodes
-        self.lin0 = Linear(-1, init_emb, bias=False)
+        self.lin0 = Linear(-1, in_channels, bias=False)
 
         # First GATv2Conv layer
         self.conv_first = GATv2Conv((-1, -1), hidden_channels, heads=heads, add_self_loops=False)

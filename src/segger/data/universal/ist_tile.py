@@ -8,7 +8,7 @@ import numpy as np
 import shapely
 import torch
 
-from .config import SeggerConfig
+from ...config import SeggerConfig
 from . import _utils as utils
 from ._enum import DIRNAMES
 

@@ -12,7 +12,7 @@ import yaml
 import os
 
 from ._enum import DIRNAMES, FEATURE_INDEX_FILE
-from .config import SeggerConfig
+from ...config import SeggerConfig
 from .ist_tile import ISTTile
 from . import _utils as utils
 from ._ndtree import NDTree
@@ -36,9 +36,7 @@ class ISTSample:
     def _preflight_checks(self):
         #TODO: Add documentation.
         # Placeholder - all input validation currently handled by Pydantic.
-        with open(self.config_path, 'r') as f:
-            config_dict = yaml.safe_load(f)
-        self.config = SeggerConfig(**config_dict)
+        self.config = SeggerConfig.from_yaml(self.config_path)
 
     def save(self):
         #TODO: Add documentation
