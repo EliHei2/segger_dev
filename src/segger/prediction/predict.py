@@ -7,8 +7,8 @@ import torch._dynamo
 from torch_geometric.data import Batch
 from scipy.sparse.csgraph import connected_components as cc
 from segger.models.segger_model import Segger
-from segger.training.train import LitSegger
-from segger.training.segger_data_module import SeggerDataModule
+from segger.training.lightning_model import LitSegger
+from segger.training.data_module import SeggerDataModule
 import random
 import string
 from pathlib import Path

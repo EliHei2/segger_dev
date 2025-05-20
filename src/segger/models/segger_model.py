@@ -140,22 +140,21 @@ class Segger(torch.nn.Module):
 
     def __init__(
         self,
-        num_tx_tokens: int,
-        in_channels: int = 16,
+        num_genes: int,
         in_channels: int = 16,
         hidden_channels: int = 32,
         out_channels: int = 32,
         num_mid_layers: int = 3,
         heads: int = 3,
-        embedding_weight: Tensor | None = None,
+        embedding_weights: Optional[Tensor] = None,
     ):
         """
         Initialize the Segger model.
 
         Parameters
         ----------
-        num_tx_tokens : int
-            Number of unique 'tx' tokens for embedding.
+        num_genes : int
+            Number of unique genes for embedding.
         in_channels : int, optional
             Initial embedding size for both 'tx' and boundary nodes.
             Default is 16.
@@ -168,9 +167,9 @@ class Segger(torch.nn.Module):
             Default is 3.
         heads : int, optional
             Number of attention heads. Default is 3.
-        embedding_weight : Tensor, optional
-            Pretrained embedding weights for 'tx' tokens. If None,
-            weights are initialized randomly. Default is None.
+        embedding_weights : Tensor, optional
+            Pretrained embedding weights for genes. If None, weights are 
+            initialized randomly. Default is None.
         """
         super().__init__()
         # Store hyperparameters for PyTorch Lightning
@@ -181,9 +180,9 @@ class Segger(torch.nn.Module):
         self.lin_first = ModuleDict(
             {
                 'tx': Embedding(
-                    num_tx_tokens,
+                    num_genes,
                     in_channels,
-                    _weight=embedding_weight,
+                    _weight=embedding_weights,
                 ),
                 'bd': Linear(-1, in_channels),
             }

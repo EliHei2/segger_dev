@@ -7,7 +7,7 @@ from pytorch_lightning import Trainer
 from torch_geometric.loader import DataLoader
 from segger.data.utils import SpatialTranscriptomicsDataset  # Updated dataset class
 from segger.models.segger_model import Segger
-from segger.training.train import LitSegger
+from segger.training.lightning_model import LitSegger
 from torch_geometric.nn import to_hetero
 import warnings
 

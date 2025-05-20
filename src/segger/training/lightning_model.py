@@ -1,9 +1,17 @@
-import torch
-from typing import Any
-from lightning import LightningModule
 from torchmetrics import F1Score, AUROC
-from segger.models.segger_model import *
+from lightning import LightningModule
+from typing import Any
+import pandas as pd
+import torch
+import os
 
+from ..data.universal._enum import FEATURE_INDEX_FILE
+from ..models.segger_model import *
+from ..config.config import (
+    _check_gene_embedding_indices,
+    _check_gene_embedding_weights,
+    SeggerConfig
+)
 
 class LitSegger(LightningModule):
     """
@@ -13,37 +21,31 @@ class LitSegger(LightningModule):
 
     def __init__(
         self,
-        model: Segger = None,
+        gene_embedding_indices: os.PathLike,
+        gene_embedding_weights: Optional[os.PathLike] = None,
+        in_channels: int = 16,
+        hidden_channels: int = 32,
+        out_channels: int = 32,
+        num_mid_layers: int = 3,
+        heads: int = 3,
         learning_rate: float = 1e-3,
-        **kwargs,
     ):
-        """
-        Initialize the Segger training module.
-
-        Parameters
-        ----------
-        model : Segger
-            The Segger model to be trained.
-        learning_rate : float, optional
-            Learning rate for the optimizer. Default is 1e-3.
-        """
+        #TODO: Add documentation
         super().__init__()
-        # Set model and store initialization parameters for reproducibility
-        if model:
-            self.model = model
-        else:
-            try:
-                self.model = Segger(**kwargs)
-            except TypeError as e:
-                msg = (
-                    "Could not instantiate `Segger` from checkpoint hparams. "
-                    "Check that all required arguments are present. "
-                    f"Original error: {e}"
-                )
-                raise Exception(msg) from e
-        self.save_hyperparameters(self.model.hparams)
-
-        # Other setup
+        self.save_hyperparameters()
+        num_genes, embedding_weights = LitSegger._get_gene_embedding(
+            gene_embedding_indices,
+            gene_embedding_weights,
+        )
+        self.model = Segger(
+            num_genes=num_genes,
+            in_channels=in_channels,
+            hidden_channels=hidden_channels,
+            out_channels=out_channels,
+            num_mid_layers=num_mid_layers,
+            heads=heads,
+            embedding_weights=embedding_weights,
+        )
         self.learning_rate = learning_rate
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.validation_step_outputs = []
@@ -82,7 +84,6 @@ class LitSegger(LightningModule):
         torch.Tensor
             Computed binary cross-entropy loss.
         """
-        '''
         # Forward pass to get the logits
         z = self.model(batch.x_dict, batch.edge_index_dict)
         output = torch.matmul(z['tx'], z['bd'].t())
@@ -99,23 +100,7 @@ class LitSegger(LightningModule):
         ))
         
         # Compute binary cross-entropy loss with logits (no sigmoid here)
-        loss = self.criterion(out_values, edge_label)
-        
-        # Log the training loss
-        self.log("training_loss", loss, prog_bar=True, batch_size=batch.num_graphs)
-        return loss
-        '''
-        # Get edge labels
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
-
-        # Forward pass to get the logits
-        z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = self.model.decode(z, edge_label_index)
-
-        # Compute binary cross-entropy loss with logits (sigmoid in function)
-        loss = self.criterion(output, edge_label)
-        return loss
+        return self.criterion(out_values, edge_label)
 
 
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -168,11 +153,18 @@ class LitSegger(LightningModule):
         loss = self.get_bce_loss(batch)
 
         # Apply sigmoid to logits for AUROC and F1 metrics
-        edge_label = batch['tx', 'belongs', 'bd'].edge_label
-        edge_label_index = batch['tx', 'belongs', 'bd'].edge_label_index
         z = self.model(batch.x_dict, batch.edge_index_dict)
-        output = self.model.decode(z, edge_label_index)
-        probs = torch.sigmoid(output)
+        output = torch.matmul(z['tx'], z['bd'].t())
+        pos_index = batch['tx', 'belongs', 'bd'].edge_index
+        neg_index = batch['tx', 'belongs', 'bd'].neg_edge_index
+        pos_out_values = output[pos_index[0], pos_index[1]]
+        neg_out_values = output[neg_index[0], neg_index[1]]
+        out_values = torch.concat((pos_out_values, neg_out_values))
+        edge_label = torch.concat((
+            torch.ones_like(pos_out_values),
+            torch.zeros_like(neg_out_values)
+        ))
+        probs = torch.sigmoid(out_values)
 
         # Compute metrics
         auroc = AUROC(task="binary").to(self.device)(probs, edge_label)
@@ -197,3 +189,63 @@ class LitSegger(LightningModule):
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
+    
+    @staticmethod
+    def _get_gene_embedding(
+        indices_path: os.PathLike,
+        weights_path: Optional[os.PathLike] = None,
+    ) -> Tuple[int, Optional[Tensor]]:
+        """
+        Loads gene embedding indices and weights.
+
+        Parameters
+        ----------
+        index_path : os.PathLike
+            Path to CSV file containing the ordered list of gene indices.
+        weight_path : os.PathLike, optional
+            Path to CSV file containing gene embedding weights, indexed by gene.
+
+        Returns
+        -------
+        int
+            Number of genes.
+        Tensor or None
+            Tensor of embedding weights if provided, else None.
+        """
+        _check_gene_embedding_indices(indices_path)
+        indices = pd.read_csv(indices_path)
+
+        if weights_path is not None:
+            _check_gene_embedding_weights(weights_path)
+            weights = pd.read_csv(weights_path, index_col=0)
+            reordered = weights.loc[indices.values.flatten()]
+            return indices.shape[0], torch.from_numpy(reordered.values)
+        else:
+            return indices.shape[0], None
+
+
+def model_from_config(config_path: os.PathLike) -> LitSegger:
+    """
+    Utility function to create a LitSegger model from a configuration file.
+
+    Parameters
+    ----------
+    config : SeggerConfig
+        A filepath to a YAML segger configuration.
+
+    Returns
+    -------
+    LitSegger
+        An instance of the LitSegger model.
+    """
+    config = SeggerConfig.from_yaml(config_path)
+    return LitSegger(
+        gene_embedding_indices=config.data.save_dir / FEATURE_INDEX_FILE,
+        gene_embedding_weights=config.train.gene_emb_path,
+        in_channels=config.train.in_channels,
+        hidden_channels=config.train.hidden_channels,
+        out_channels=config.train.out_channels,
+        num_mid_layers=config.train.n_mid_layers,
+        heads=config.train.n_heads,
+        learning_rate=config.train.learning_rate,
+    )

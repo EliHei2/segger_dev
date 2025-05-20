@@ -80,7 +80,10 @@ class ISTSample:
 
     def _save_feature_index(self):
         features = pd.Series(self.tx_encoder.classes_)
-        features.to_csv(self.config.data.save_dir / FEATURE_INDEX_FILE)
+        features.to_csv(
+            self.config.data.save_dir / FEATURE_INDEX_FILE, 
+            index=False,
+        )
 
     @cached_property   
     def tiles(self) -> List[ISTTile]:

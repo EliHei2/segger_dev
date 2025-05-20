@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Iterator
 from lightning import Trainer
 from torch_geometric.nn import to_hetero
-from segger.training.train import LitSegger
+from segger.training.lightning_model import LitSegger
 from segger.models.segger_model import Segger
 from lightning.pytorch.loggers import CSVLogger
 from segger.data.parquet.sample import STSampleParquet
 from segger.prediction.predict import load_model, predict
-from segger.training.segger_data_module import SeggerDataModule
+from segger.training.data_module import SeggerDataModule
 
 
 class Workspace:

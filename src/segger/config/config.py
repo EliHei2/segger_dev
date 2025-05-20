@@ -5,13 +5,14 @@ from pydantic import (
     BaseModel, Field, model_validator, field_validator, AfterValidator
 )
 from pandas.api.types import is_string_dtype, is_float_dtype
+from typing import List, Optional, Annotated
 from pyarrow import parquet as pq
-from typing import List, Optional
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import yaml
 import os
+
 
 def _check_extension(path: os.PathLike, allowed_exts: set[str]):
     """
@@ -32,6 +33,7 @@ def _check_extension(path: os.PathLike, allowed_exts: set[str]):
     if Path(path).suffix.lower() not in allowed_exts:
         msg = f"File must have one of the extensions: {allowed_exts}"
         raise ValueError(msg)
+
 
 def _check_field_names(path: Path, names: List[str]):
     """
@@ -56,6 +58,7 @@ def _check_field_names(path: Path, names: List[str]):
             f"Fields {', '.join(missing)} not in '{path.stem}.parquet' "
             f"columns: {schema.names}."
         )
+
 
 class DataConfig(BaseModel):
     """
@@ -84,11 +87,6 @@ class DataConfig(BaseModel):
     def validate_parquets(self):
         """
         Validate that parquet files have the expected extension and columns.
-
-        Raises
-        ------
-        ValueError
-            If files are not parquet or expected columns are missing.
         """
         tx_fields = [
             self.tx_feature_name,
@@ -107,12 +105,6 @@ class DataConfig(BaseModel):
         """
         Ensure the cell ID column in transcripts and the index in boundaries 
         have matching data types.
-
-        Raises
-        ------
-        ValueError
-            If the data types of the transcript cell ID column and the 
-            boundaries index column do not match.
         """
         tx_schema = pq.read_schema(self.tx_path)
         tx_id = tx_schema.field(self.tx_cell_id)
@@ -128,16 +120,10 @@ class DataConfig(BaseModel):
             )
         return self
 
-
     @model_validator(mode="after")
     def validate_splits(self):
         """
         Validate that train/test/val fractions sum to 1.0.
-
-        Raises
-        ------
-        ValueError
-            If the total of the fractions deviates from 1.0 beyond tolerance.
         """
         total = self.frac_train + self.frac_test + self.frac_val
         if not np.isclose(total, 1.0, atol=1e-5):
@@ -146,15 +132,57 @@ class DataConfig(BaseModel):
         return self
 
 
+def _check_gene_embedding_weights(val: Optional[Path] = None):
+    """
+    Validates the gene embedding file.
+    """
+    if val is None: return val
+
+    _check_extension(val, {'.csv'})
+    embedding = pd.read_csv(val, index_col=0)
+    if not is_string_dtype(embedding.index.dtype):
+        msg = "Gene embedding index must be string-type (gene identifiers)."
+        raise TypeError(msg)
+
+    bad_dtype = [not is_float_dtype(d) for d in embedding.dtypes]
+    if any(bad_dtype):
+        msg = f"Gene embedding contains {sum(bad_dtype)} non-float columns."
+        raise TypeError(msg)
+
+    if embedding.isna().any().any():
+        n_genes = embedding.isna().any(axis=1).sum()
+        msg = f"Gene embedding contains empty values for {n_genes} genes."
+        raise ValueError(msg)
+    return val
+
+
+def _check_gene_embedding_indices(val: Path):
+    """
+    Validates the gene indices file.
+    """
+
+    _check_extension(val, {'.csv'})
+    indices = pd.read_csv(val)
+    if not is_string_dtype(indices.dtypes[0]):
+        msg = "Gene index values must be string-type (gene identifiers)."
+        raise TypeError(msg)
+    if indices.shape[1] != 1:
+        n_cols = indices.shape[1]
+        msg = f"Gene index must have exactly 1 column, but got {n_cols}."
+        raise ValueError(msg)
+
+    return val
+
+
 class TrainConfig(BaseModel):
     """
     Configuration schema for model training.
     See "segger/config/_configs/template.yaml" for more detail.
     """
-    gene_emb_path: Optional[FilePath] = Field(
-        validation_alias="gene_embedding_csv",
-        default=None,
-    )
+    gene_emb_path: Annotated[
+        Optional[FilePath],
+        AfterValidator(_check_gene_embedding_weights)
+    ] = Field(validation_alias="gene_embedding_csv", default=None)
     in_channels: PositiveInt
     hidden_channels: PositiveInt
     out_channels: PositiveInt
@@ -171,48 +199,43 @@ class TrainConfig(BaseModel):
     n_epochs: PositiveInt
     root_dir: DirectoryPath
 
-    @field_validator('gene_emb_path', mode='after')
-    @classmethod
-    def validate_gene_embedding(cls, val: Path):
-        """
-        Validates the gene embedding file.
 
-        Raises
-        ------
-        TypeError
-            If the file extension is not '.csv', the index is not string-type,
-            or embedding columns contain non-float values.
-        ValueError
-            If any NaN values are found within the embedding data.
-        """
-        if val is None: return val
-
-        _check_extension(val, {'.csv'})
-        embedding = pd.read_csv(val, index_col=0)
-        if not is_string_dtype(embedding.index.dtype):
-            msg = "Gene embedding index must be string-type (gene identifiers)."
-            raise TypeError(msg)
-
-        bad_dtype = [not is_float_dtype(d) for d in embedding.dtypes]
-        if any(bad_dtype):
-            msg = f"Gene embedding contains {sum(bad_dtype)} non-float columns."
-            raise TypeError(msg)
-
-        if embedding.isna().any().any():
-            n_genes = embedding.isna().any(axis=1).sum()
-            msg = f"Gene embedding contains empty values for {n_genes} genes."
-            raise ValueError(msg)
-        return val
-
-    
 class SeggerConfig(BaseModel):
-    #TODO: Add documentation
+    """
+    Collection of configuration schemes for the complete segger workflow:
+    1. Dataset creation (data).
+    2. Model training (train).
+    3. Edge prediction (predict).
+    
+    Typically initialized from a YAML file.
+
+    Attributes
+    ----------
+    data : DataConfig
+        Configuration for dataset generation.
+    train : TrainConfig
+        Configuration for model training parameters.
+    """
+
     data: DataConfig = Field(validation_alias="create_dataset")
-    train: TrainConfig = Field(validation_alias="train_model")
+    train: TrainConfig
+    #predict: PredictConfig
 
     @classmethod
     def from_yaml(cls, config_path: os.PathLike):
-        #TODO: Add documentation
+        """
+        Load a SeggerConfig object from a YAML file.
+
+        Parameters
+        ----------
+        config_path : os.PathLike
+            Path to the YAML configuration file.
+
+        Returns
+        -------
+        SeggerConfig
+            Parsed configuration object with validated fields.
+        """
         with open(config_path, 'r') as f:
             config_dict = yaml.safe_load(f)
         return SeggerConfig(**config_dict)

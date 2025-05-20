@@ -1,4 +1,4 @@
-from segger.training.segger_data_module import SeggerDataModule
+from segger.training.data_module import SeggerDataModule
 from segger.prediction.predict_parquet import segment, load_model
 from pathlib import Path
 from matplotlib import pyplot as plt

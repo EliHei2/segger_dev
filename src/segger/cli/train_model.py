@@ -52,8 +52,8 @@ def train_model(args: Namespace):
     # Import packages
     logging.info("Importing packages...")
     import torch
-    from segger.training.train import LitSegger
-    from segger.training.segger_data_module import SeggerDataModule
+    from segger.training.lightning_model import LitSegger
+    from segger.training.data_module import SeggerDataModule
     from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
     from lightning import Trainer

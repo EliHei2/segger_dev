@@ -18,8 +18,8 @@ from segger.data.utils import (
     create_anndata,
     coo_to_dense_adj,
 )
-from segger.training.train import LitSegger
-from segger.training.segger_data_module import SeggerDataModule
+from segger.training.lightning_model import LitSegger
+from segger.training.data_module import SeggerDataModule
 from scipy.sparse.csgraph import connected_components as cc
 from typing import Union, Dict
 import dask.dataframe as dd
