@@ -31,7 +31,7 @@ class LitSegger(LightningModule):
         super().__init__()
         # Set model and store initialization parameters for reproducibility
         self.model = model
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['model'])
 
         # Other setup
         self.learning_rate = learning_rate
