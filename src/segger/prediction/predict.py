@@ -190,7 +190,7 @@ def predict_batch(
     batch: object,
     score_cut: float,
     receptive_field: dict,
-    use_cc: bool = True,
+    use_cc: bool = False,
 ) -> pd.DataFrame:
     """
     Predict cell assignments for a batch of transcript data using a segmentation model.
@@ -247,7 +247,7 @@ def predict_batch(
             belongs = scores.max(1)
             assignments['score'] = belongs.values.cpu()
             mask = assignments['score'] > score_cut
-            all_ids = np.concatenate(batch['bd'].id)[belongs.indices.cpu()]
+            all_ids = np.hstack(batch['bd'].id)[belongs.indices.cpu()]
             assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
             if use_cc:

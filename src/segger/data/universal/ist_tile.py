@@ -26,7 +26,7 @@ class ISTTile:
         self.extents = extents
         self.tx_encoder = encoder
 
-    def to_pyg(self, flush: bool = True):
+    def to_pyg(self, save: bool = True, flush: bool = True):
         #TODO: Add documentation
         pyg_data = HeteroData()
         # Transcript nodes
@@ -55,8 +55,12 @@ class ISTTile:
             'processed' /
             f'{self.uid}.pt'
         )
-        torch.save(pyg_data, filepath)
-        if flush: self.flush()
+        if flush:
+            self.flush()
+        if save:
+            torch.save(pyg_data, filepath)
+        else:
+            return pyg_data
 
     def flush(self):
         #TODO: Add documentation

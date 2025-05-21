@@ -60,7 +60,7 @@ class ISTSample:
                 tile_dir.mkdir(parents=True, exist_ok=True)
                 if os.listdir(tile_dir):
                     msg = f"Directory '{tile_dir}' must be empty."
-                    raise AssertionError(msg)
+                    raise FileExistsError(msg)
 
     def _save_parallel(self):
         #TODO: Add documentation

@@ -183,6 +183,10 @@ class TrainConfig(BaseModel):
         Optional[FilePath],
         AfterValidator(_check_gene_embedding_weights)
     ] = Field(validation_alias="gene_embedding_csv", default=None)
+    ckpt_path: Optional[FilePath] = Field(
+        validation_alias="checkpoint",
+        default=None
+    )
     in_channels: PositiveInt
     hidden_channels: PositiveInt
     out_channels: PositiveInt
@@ -195,6 +199,7 @@ class TrainConfig(BaseModel):
     neg_edge_ratio: PositiveInt = Field(
         validation_alias="negative_edge_sampling_ratio",
     )
+    seed: Optional[int] = Field(validation_alias="random_seed", default=None)
     learning_rate: PositiveFloat
     n_epochs: PositiveInt
     root_dir: DirectoryPath

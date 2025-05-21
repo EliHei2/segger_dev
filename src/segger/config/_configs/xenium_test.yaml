@@ -24,6 +24,7 @@ create_dataset:
 train:
   # Input filepaths
   gene_embedding_csv: null
+  checkpoint: null
   # Model params
   in_channels: 16
   hidden_channels: 32
@@ -32,12 +33,13 @@ train:
   n_heads: 3
   # Data loader params
   n_workers: 8
-  batch_size: 2
+  batch_size: 3
   max_transcripts_k: null
   max_transcripts_dist: null
   negative_edge_sampling_ratio: 3
+  random_seed: 42
   # Training params
   learning_rate: 0.001
-  n_epochs: 50
+  n_epochs: 25
   # Output options
-  root_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/test/segger_models'
+  root_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/test/segger_models_new'

@@ -1,6 +1,6 @@
+from typing import Any, Tuple, Optional
 from torchmetrics import F1Score, AUROC
 from lightning import LightningModule
-from typing import Any
 import pandas as pd
 import torch
 import os
@@ -222,30 +222,3 @@ class LitSegger(LightningModule):
             return indices.shape[0], torch.from_numpy(reordered.values)
         else:
             return indices.shape[0], None
-
-
-def model_from_config(config_path: os.PathLike) -> LitSegger:
-    """
-    Utility function to create a LitSegger model from a configuration file.
-
-    Parameters
-    ----------
-    config : SeggerConfig
-        A filepath to a YAML segger configuration.
-
-    Returns
-    -------
-    LitSegger
-        An instance of the LitSegger model.
-    """
-    config = SeggerConfig.from_yaml(config_path)
-    return LitSegger(
-        gene_embedding_indices=config.data.save_dir / FEATURE_INDEX_FILE,
-        gene_embedding_weights=config.train.gene_emb_path,
-        in_channels=config.train.in_channels,
-        hidden_channels=config.train.hidden_channels,
-        out_channels=config.train.out_channels,
-        num_mid_layers=config.train.n_mid_layers,
-        heads=config.train.n_heads,
-        learning_rate=config.train.learning_rate,
-    )
