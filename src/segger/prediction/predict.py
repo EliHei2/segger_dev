@@ -62,12 +62,12 @@ def load_model(checkpoint_path: str) -> LitSegger:
         raise FileExistsError(msg)
 
     # Load model
-    lit_segger = LitSegger.load_from_checkpoint(
+    model = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         #map_location=torch.device("cuda"),
     )
 
-    return lit_segger
+    return model
 
 
 def get_similarity_scores(
@@ -186,10 +186,11 @@ def coo_to_dense_adj(
 
 
 def predict_batch(
-    lit_segger: LitSegger,
+    model: LitSegger,
     batch: object,
-    score_cut: float,
-    receptive_field: dict,
+    min_score: float,
+    receptive_field_k: int,
+    receptive_field_dist: float,
     use_cc: bool = False,
 ) -> pd.DataFrame:
     """
@@ -197,14 +198,16 @@ def predict_batch(
 
     Parameters
     ----------
-    lit_segger : LitSegger
+    model : LitSegger
         The lightning module wrapping the segmentation model.
     batch : object
         A batch of transcript and cell data.
-    score_cut : float
+    min_score : float
         The threshold for assigning transcripts to cells based on similarity scores.
-    receptive_field : dict
-        Dictionary defining the receptive field for transcript-cell and transcript-transcript relations.
+    receptive_field_k : int
+        ...
+    receptive_field_dist: float
+        ...
     use_cc : bool, optional
         If True, perform connected components analysis for unassigned transcripts.
     knn_method : str, optional
@@ -232,21 +235,21 @@ def predict_batch(
             edge_index = get_edge_index(
                 batch['bd'].pos[:, :2].cpu(),
                 batch['tx'].pos[:, :2].cpu(),
-                k=receptive_field['k_bd'],
-                dist=receptive_field['dist_bd'],
+                k=receptive_field_k,
+                dist=receptive_field_dist,
             ).T
 
             # Step 2.2: Compute dense adjacency matrix
             batch['tx']['bd_field'] = coo_to_dense_adj(
                 edge_index,
                 num_nodes=batch['tx'].id.shape[0],
-                num_nbrs=receptive_field['k_bd'],
+                num_nbrs=receptive_field_k,
             )
-            scores = get_similarity_scores(lit_segger.model, batch, "tx", "bd")
+            scores = get_similarity_scores(model.model, batch, "tx", "bd")
             # 1. Get direct assignments from similarity matrix
             belongs = scores.max(1)
             assignments['score'] = belongs.values.cpu()
-            mask = assignments['score'] > score_cut
+            mask = assignments['score'] > min_score
             all_ids = np.hstack(batch['bd'].id)[belongs.indices.cpu()]
             assignments.loc[mask, 'segger_cell_id'] = all_ids[mask]
 
@@ -257,7 +260,7 @@ def predict_batch(
                     edge_index,
                     num_nodes=batch['tx'].id.shape[0],
                 )
-                scores = get_similarity_scores(lit_segger.model, batch, "tx", "tx")
+                scores = get_similarity_scores(model.model, batch, "tx", "tx")
                 scores = scores.fill_diagonal_(0)  # ignore self-similarity
 
                 # 2. Assign remainder using connected components
@@ -271,11 +274,12 @@ def predict_batch(
 
 
 def predict(
-    out_dir: os.PathLike,
-    lit_segger: LitSegger,
+    save_dir: os.PathLike,
+    model: LitSegger,
     data_module: SeggerDataModule,
-    score_cut: float,
-    receptive_field: dict,
+    min_score: float,
+    receptive_field_k: int,
+    receptive_field_dist: float,
     use_cc: bool = False,
     show_pbar: bool = False,
 ) -> pd.DataFrame:
@@ -286,11 +290,11 @@ def predict(
     ----------
     out_dir : os.PathLike
         Directory to save the segmentation output file.
-    lit_segger : LitSegger
+    model : LitSegger
         The Lightning module wrapping the segmentation model.
     data_module : SeggerDataModule
         The data module providing train/test/val data loaders.
-    score_cut : float
+    min_score : float
         Similarity score threshold for transcript-to-cell assignment.
     receptive_field : dict
         Specifies transcript-cell and transcript-transcript edge parameters.
@@ -302,9 +306,9 @@ def predict(
     pd.DataFrame
         DataFrame containing transcript IDs, scores, and cell assignments.
     """
-    out_dir = Path(out_dir)
-    if not out_dir.is_dir():
-        msg = f"Arg 'out_dir' must be an existing directory. Got: {out_dir}"
+    save_dir = Path(save_dir)
+    if not save_dir.is_dir():
+        msg = f"Arg 'save_dir' must be an existing directory. Got: {save_dir}"
         raise ValueError(msg)
 
     # Combine assignments from training, test, and validation datasets
@@ -320,8 +324,14 @@ def predict(
         pbar = tqdm(total=n)
     for data_loader in data_loaders:
         for batch in data_loader:
-            batch_predictions = predict_batch(lit_segger, batch, score_cut, 
-                                              receptive_field, use_cc)
+            batch_predictions = predict_batch(
+                model,
+                batch,
+                min_score, 
+                receptive_field_k,
+                receptive_field_dist,
+                use_cc,
+            )
             predictions.append(batch_predictions)
             if show_pbar: pbar.update(1)
     if show_pbar: pbar.close()
@@ -332,5 +342,5 @@ def predict(
     predictions = predictions.drop_duplicates('transcript_id', keep='last')
 
     # Write predictions to file
-    filepath = out_dir / 'segger_labeled_transcripts.parquet'
+    filepath = save_dir / 'segger_labeled_transcripts.parquet'
     predictions.to_parquet(filepath)

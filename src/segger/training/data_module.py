@@ -104,27 +104,27 @@ class SeggerDataModule(LightningDataModule):
         self,
         data_dir: os.PathLike,
         batch_size: int = 4,
-        num_workers: int = 1,
-        negative_sampling_ratio: float = 1.,
-        k_tx: Optional[int] = None,
-        dist_tx: Optional[float] = None,
+        n_workers: int = 1,
+        k_tx_max: Optional[int] = None,
+        dist_tx_max: Optional[float] = None,
+        negative_edge_sampling_ratio: float = 1.,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.data_dir = Path(data_dir)
         self.batch_size = batch_size
-        self.num_workers = num_workers
+        self.n_workers = n_workers
 
         # Add graph transforms
         self.transforms = []
 
-        if k_tx or dist_tx:
+        if k_tx_max or dist_tx_max:
             edge_type = 'tx', 'neighbors', 'tx'
-            tm = MaskEdgeIndex(edge_type, k_tx, dist_tx)
+            tm = MaskEdgeIndex(edge_type, k_tx_max, dist_tx_max)
             self.transforms.append(tm)
-        if negative_sampling_ratio > 0:
+        if negative_edge_sampling_ratio > 0:
             edge_type = 'tx', 'belongs', 'bd'
-            tm = NegativeSampling(edge_type, negative_sampling_ratio)
+            tm = NegativeSampling(edge_type, negative_edge_sampling_ratio)
             self.transforms.append(tm)
 
         self.transform = Compose(self.transforms)

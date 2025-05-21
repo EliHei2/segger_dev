@@ -26,24 +26,24 @@ class LitSegger(LightningModule):
         in_channels: int = 16,
         hidden_channels: int = 32,
         out_channels: int = 32,
-        num_mid_layers: int = 3,
-        heads: int = 3,
+        n_mid_layers: int = 3,
+        n_heads: int = 3,
         learning_rate: float = 1e-3,
     ):
         #TODO: Add documentation
         super().__init__()
         self.save_hyperparameters()
-        num_genes, embedding_weights = LitSegger._get_gene_embedding(
+        n_genes, embedding_weights = LitSegger._get_gene_embedding(
             gene_embedding_indices,
             gene_embedding_weights,
         )
         self.model = Segger(
-            num_genes=num_genes,
+            n_genes=n_genes,
             in_channels=in_channels,
             hidden_channels=hidden_channels,
             out_channels=out_channels,
-            num_mid_layers=num_mid_layers,
-            heads=heads,
+            n_mid_layers=n_mid_layers,
+            n_heads=n_heads,
             embedding_weights=embedding_weights,
         )
         self.learning_rate = learning_rate

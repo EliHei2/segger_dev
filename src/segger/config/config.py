@@ -65,6 +65,7 @@ class DataConfig(BaseModel):
     Configuration schema for dataset creation and validation.
     See "segger/config/_configs/template.yaml" for more detail.
     """
+    save_dir: DirectoryPath
     tx_path: FilePath = Field(validation_alias="transcripts_parquet")
     bd_path: FilePath = Field(validation_alias="boundaries_parquet")
     tx_feature_name: str = Field(validation_alias="transcripts_feature_name")
@@ -80,7 +81,6 @@ class DataConfig(BaseModel):
     frac_train: PositiveFloat = Field(validation_alias="fraction_train", lt=1)
     frac_test: PositiveFloat = Field(validation_alias="fraction_test", lt=1)
     frac_val: PositiveFloat = Field(validation_alias="fraction_val", lt=1)
-    save_dir: DirectoryPath
     n_workers: int = Field(ge=-1)
 
     @model_validator(mode="after")
@@ -179,30 +179,42 @@ class TrainConfig(BaseModel):
     Configuration schema for model training.
     See "segger/config/_configs/template.yaml" for more detail.
     """
-    gene_emb_path: Annotated[
-        Optional[FilePath],
-        AfterValidator(_check_gene_embedding_weights)
-    ] = Field(validation_alias="gene_embedding_csv", default=None)
-    ckpt_path: Optional[FilePath] = Field(
-        validation_alias="checkpoint",
-        default=None
-    )
+    save_dir: DirectoryPath
+    checkpoint_path: Optional[FilePath] = None
     in_channels: PositiveInt
     hidden_channels: PositiveInt
     out_channels: PositiveInt
     n_mid_layers: PositiveInt 
     n_heads: PositiveInt
-    n_workers: int = Field(ge=-1)
-    batch_size: PositiveInt
-    max_transcripts_k: Optional[int] = None
-    max_transcripts_dist: Optional[float] = None
-    neg_edge_ratio: PositiveInt = Field(
-        validation_alias="negative_edge_sampling_ratio",
-    )
-    seed: Optional[int] = Field(validation_alias="random_seed", default=None)
+    gene_embedding_weights: Annotated[
+        Optional[FilePath],
+        AfterValidator(_check_gene_embedding_weights)
+    ] = None
     learning_rate: PositiveFloat
+    batch_size: PositiveInt
+    n_workers: int = Field(ge=-1)
+    k_tx_max: Optional[int] = Field(
+        validation_alias="max_transcripts_k",
+        default=None
+    )
+    dist_tx_max: Optional[float] = Field(
+        validation_alias="max_transcripts_dist",
+        default=None
+    )
+    negative_edge_sampling_ratio: PositiveInt
     n_epochs: PositiveInt
-    root_dir: DirectoryPath
+    seed: Optional[int] = Field(validation_alias="random_seed", default=None)
+
+
+class PredictConfig(BaseModel):
+    """
+    Configuration schema for edge prediction.
+    See "segger/config/_configs/template.yaml" for more detail.
+    """
+    save_dir: DirectoryPath
+    receptive_field_k: PositiveInt
+    receptive_field_dist: PositiveFloat
+    min_score: float = Field(ge=0, le=1)
 
 
 class SeggerConfig(BaseModel):
@@ -220,11 +232,13 @@ class SeggerConfig(BaseModel):
         Configuration for dataset generation.
     train : TrainConfig
         Configuration for model training parameters.
+    predict : PredictConfig
+        Configuration for edge prediction.
     """
 
     data: DataConfig = Field(validation_alias="create_dataset")
     train: TrainConfig
-    #predict: PredictConfig
+    predict: PredictConfig
 
     @classmethod
     def from_yaml(cls, config_path: os.PathLike):

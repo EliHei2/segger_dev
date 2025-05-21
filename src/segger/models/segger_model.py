@@ -32,7 +32,7 @@ class SkipGAT(Module):
         self,
         in_channels: int,
         out_channels: int,
-        heads: int,
+        n_heads: int,
         add_self_loops_tx: bool = True,
     ) -> None:
         super().__init__()
@@ -43,13 +43,13 @@ class SkipGAT(Module):
                 ('tx', 'neighbors', 'tx'): GATv2Conv(
                     in_channels=in_channels,
                     out_channels=out_channels,
-                    heads=heads,
+                    heads=n_heads,
                     add_self_loops=add_self_loops_tx,
                 ),
                 ('tx', 'belongs', 'bd'): GATv2Conv(
                     in_channels=in_channels,
                     out_channels=out_channels,
-                    heads=heads,
+                    heads=n_heads,
                     add_self_loops=False,
                 ),
             },
@@ -140,11 +140,11 @@ class Segger(torch.nn.Module):
 
     def __init__(
         self,
-        num_genes: int,
+        n_genes: int,
         in_channels: int = 16,
         hidden_channels: int = 32,
         out_channels: int = 32,
-        num_mid_layers: int = 3,
+        n_mid_layers: int = 3,
         heads: int = 3,
         embedding_weights: Optional[Tensor] = None,
     ):
@@ -153,7 +153,7 @@ class Segger(torch.nn.Module):
 
         Parameters
         ----------
-        num_genes : int
+        n_genes : int
             Number of unique genes for embedding.
         in_channels : int, optional
             Initial embedding size for both 'tx' and boundary nodes.
@@ -162,7 +162,7 @@ class Segger(torch.nn.Module):
             Number of hidden channels. Default is 32.
         out_channels : int, optional
             Number of output channels. Default is 32.
-        num_mid_layers : int, optional
+        n_mid_layers : int, optional
             Number of hidden layers (excluding first and last layers).
             Default is 3.
         heads : int, optional
@@ -180,7 +180,7 @@ class Segger(torch.nn.Module):
         self.lin_first = ModuleDict(
             {
                 'tx': Embedding(
-                    num_genes,
+                    n_genes,
                     in_channels,
                     _weight=embedding_weights,
                 ),
@@ -193,7 +193,7 @@ class Segger(torch.nn.Module):
             SkipGAT((-1, -1), hidden_channels, heads)
         )
         # Middle convolutions: hidden x heads -> hidden x heads
-        for _ in range(num_mid_layers):
+        for _ in range(n_mid_layers):
             self.conv_layers.append(
                 SkipGAT((-1, -1), hidden_channels, heads)
             )

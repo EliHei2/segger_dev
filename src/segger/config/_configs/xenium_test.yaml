@@ -1,8 +1,8 @@
 create_dataset:
-  # Input filepaths
+  save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/pipeline/dataset'
+  # Inputs
   transcripts_parquet: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/ist_dataset/transcripts_geo.parquet'
   boundaries_parquet: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/ist_dataset/nucleus_boundaries_geo.parquet'
-  # Input fields
   transcripts_feature_name: 'feature_name'
   transcripts_cell_id: 'nucleus_boundaries_id'
   transcripts_x: 'x_location'
@@ -18,28 +18,34 @@ create_dataset:
   fraction_train: 0.7
   fraction_test: 0.2
   fraction_val: 0.1
-  # Ouput options
-  save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/test/segger_dataset'
   n_workers: 8
+
 train:
-  # Input filepaths
-  gene_embedding_csv: null
-  checkpoint: null
+  save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/pipeline/models'
   # Model params
+  checkpoint_path: null
   in_channels: 16
   hidden_channels: 32
   out_channels: 32
   n_mid_layers: 4
   n_heads: 3
-  # Data loader params
-  n_workers: 8
+  gene_embedding_weights: null
+  learning_rate: 0.001
+  # Data module params
   batch_size: 3
+  n_workers: 8
   max_transcripts_k: null
   max_transcripts_dist: null
   negative_edge_sampling_ratio: 3
-  random_seed: 42
   # Training params
-  learning_rate: 0.001
   n_epochs: 25
-  # Output options
-  root_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/test/segger_models_new'
+  seed: 42
+  
+
+predict:
+  save_dir: '/data1/peerd/moormana/GitHub/EliHei2/segger_dev/.dev/data/xenium_human_colon_healthy/pipeline/predictions'
+  # Prediction params
+  receptive_field_k: 3
+  receptive_field_dist: 50
+  min_score: 0
+  
