@@ -145,7 +145,7 @@ class Segger(torch.nn.Module):
         hidden_channels: int = 32,
         out_channels: int = 32,
         n_mid_layers: int = 3,
-        heads: int = 3,
+        n_heads: int = 3,
         embedding_weights: Optional[Tensor] = None,
     ):
         """
@@ -190,16 +190,16 @@ class Segger(torch.nn.Module):
         self.conv_layers = ModuleList()
         # First convolution: in -> hidden x heads
         self.conv_layers.append(
-            SkipGAT((-1, -1), hidden_channels, heads)
+            SkipGAT((-1, -1), hidden_channels, n_heads)
         )
         # Middle convolutions: hidden x heads -> hidden x heads
         for _ in range(n_mid_layers):
             self.conv_layers.append(
-                SkipGAT((-1, -1), hidden_channels, heads)
+                SkipGAT((-1, -1), hidden_channels, n_heads)
             )
         # Last convolution: hidden x heads -> out x heads
         self.conv_layers.append(
-            SkipGAT((-1, -1), out_channels, heads)
+            SkipGAT((-1, -1), out_channels, n_heads)
         )
         # Last layer: out x heads -> out
         self.lin_last = HeteroDictLinear(

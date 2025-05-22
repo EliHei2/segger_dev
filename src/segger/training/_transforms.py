@@ -82,8 +82,12 @@ class NegativeSampling(BaseTransform):
         self.sampling_ratio = sampling_ratio
 
     def forward(self, data):
-        # Construct negative index with mapped transcript indices
+        # Return early if no positive edges
         pos_idx = data[self.edge_type][self.pos_index]
+        if pos_idx.size(1) == 0:
+            data[self.edge_type][self.neg_index] = pos_idx.clone()
+            return data
+        # Construct negative index with mapped transcript indices
         val, key = torch.unique(pos_idx[0], return_inverse=True)
         pos_idx[0] = key
         neg_idx = negative_sampling(

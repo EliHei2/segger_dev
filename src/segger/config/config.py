@@ -1,8 +1,8 @@
 from pydantic.types import (
-    PositiveInt, PositiveFloat, FilePath, DirectoryPath, AnyType
+    PositiveInt, PositiveFloat, FilePath, DirectoryPath, AnyType, NewPath
 )
 from pydantic import (
-    BaseModel, Field, model_validator, field_validator, AfterValidator
+    BaseModel, Field, model_validator, AfterValidator, BeforeValidator
 )
 from pandas.api.types import is_string_dtype, is_float_dtype
 from typing import List, Optional, Annotated
@@ -10,6 +10,7 @@ from pyarrow import parquet as pq
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import json
 import yaml
 import os
 
@@ -60,12 +61,48 @@ def _check_field_names(path: Path, names: List[str]):
         )
 
 
+def _check_geometry(path: Path):
+    """
+    Validate that a Parquet file contains GeoParquet-compliant polygon geometry 
+    with required metadata.
+    """
+    schema = pq.read_schema(path)
+    if b'geo' not in schema.metadata:
+        raise ValueError(f"{path} is missing 'geo' metadata in schema.")
+
+    geo_schema = json.loads(schema.metadata[b'geo'])
+    geo_column = geo_schema['primary_column']
+    
+    if geo_schema['columns'][geo_column]['geometry_types'] != ['Polygon']:
+        raise ValueError(f"{path} must contain only 'Polygon' geometries.")
+
+    for field in ('bbox', 'covering'):
+        if field not in geo_schema['columns'][geo_column]:
+            raise ValueError(
+                f"{path} missing geometry bounding boxes. Please re-save with "
+                "'write_covering_bbox=True' for fast spatial queries."
+            )
+
+
+def _create_if_parent_exists(path: os.PathLike):
+    """
+    Create the given path if it doesn't exist, but only if its parent exists.
+    """
+    path = Path(path)
+    if not path.exists() and path.parent.exists():
+        path.mkdir(parents=False, exist_ok=True)
+    return path
+
+
 class DataConfig(BaseModel):
     """
     Configuration schema for dataset creation and validation.
     See "segger/config/_configs/template.yaml" for more detail.
     """
-    save_dir: DirectoryPath
+    save_dir: Annotated[
+        DirectoryPath,
+        BeforeValidator(_create_if_parent_exists),
+    ]
     tx_path: FilePath = Field(validation_alias="transcripts_parquet")
     bd_path: FilePath = Field(validation_alias="boundaries_parquet")
     tx_feature_name: str = Field(validation_alias="transcripts_feature_name")
@@ -76,8 +113,9 @@ class DataConfig(BaseModel):
     tx_dist: PositiveFloat = Field(validation_alias="transcripts_dist")
     bd_k: PositiveInt = Field(validation_alias="boundaries_k")
     bd_dist: PositiveFloat = Field(validation_alias="boundaries_dist")
-    max_cells_per_tile: PositiveInt
     tile_margin: PositiveFloat
+    max_cells_per_tile: Optional[PositiveInt] = None
+    max_transcripts_per_tile: Optional[PositiveInt] = None
     frac_train: PositiveFloat = Field(validation_alias="fraction_train", lt=1)
     frac_test: PositiveFloat = Field(validation_alias="fraction_test", lt=1)
     frac_val: PositiveFloat = Field(validation_alias="fraction_val", lt=1)
@@ -97,7 +135,7 @@ class DataConfig(BaseModel):
         _check_extension(self.tx_path, {".parquet"})
         _check_field_names(self.tx_path, tx_fields)
         _check_extension(self.bd_path, {".parquet"})
-        _check_field_names(self.bd_path, ["geometry"])
+        _check_geometry(self.bd_path)
         return self
     
     @model_validator(mode="after")
@@ -129,6 +167,21 @@ class DataConfig(BaseModel):
         if not np.isclose(total, 1.0, atol=1e-5):
             msg = f"Invalid data split: Total must equal 1.0, but got {total}."
             raise ValueError(msg)
+        return self
+    
+    @model_validator(mode="after")
+    def validate_tile_limits(self):
+        """
+        Ensure that exactly one of max_cells or max_transcripts_per_tile 
+        is specified.
+        """
+        use_cells = self.max_cells_per_tile is not None
+        use_transcripts = self.max_transcripts_per_tile is not None
+        if not use_cells ^ use_transcripts:
+            raise ValueError(
+                "Exactly one of 'max_cells_per_tile' or "
+                "'max_transcripts_per_tile' must be specified."
+            )
         return self
 
 
@@ -179,7 +232,10 @@ class TrainConfig(BaseModel):
     Configuration schema for model training.
     See "segger/config/_configs/template.yaml" for more detail.
     """
-    save_dir: DirectoryPath
+    save_dir: Annotated[
+        DirectoryPath,
+        BeforeValidator(_create_if_parent_exists),
+    ]
     checkpoint_path: Optional[FilePath] = None
     in_channels: PositiveInt
     hidden_channels: PositiveInt
@@ -211,7 +267,10 @@ class PredictConfig(BaseModel):
     Configuration schema for edge prediction.
     See "segger/config/_configs/template.yaml" for more detail.
     """
-    save_dir: DirectoryPath
+    save_dir: Annotated[
+        DirectoryPath,
+        BeforeValidator(_create_if_parent_exists),
+    ]
     receptive_field_k: PositiveInt
     receptive_field_dist: PositiveFloat
     min_score: float = Field(ge=0, le=1)

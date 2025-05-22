@@ -89,7 +89,7 @@ class SeggerDataModule(LightningDataModule):
         Root directory containing tile subfolders for each split.
     batch_size : int, default=4
         Number of samples per batch.
-    num_workers : int, default=1
+    n_workers : int, default=1
         Number of workers used for data loading.
     negative_sampling_ratio : float, default=1.0
         Ratio of negative edges to sample for supervision during training.
@@ -152,7 +152,7 @@ class SeggerDataModule(LightningDataModule):
         )
         self.loader_kwargs = dict(
             batch_size=self.batch_size,
-            num_workers=self.num_workers,
+            num_workers=self.n_workers,
             pin_memory=False,
         )
 
