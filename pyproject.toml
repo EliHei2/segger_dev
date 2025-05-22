@@ -24,7 +24,8 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "pyyaml>=6.0.2",
     "pqdm>=0.2.0",
-    "scanpy>=1.10.4"
+    "scanpy>=1.10.4",
+    "dask>=2025.3.0"
 ]
 
 [project.optional-dependencies]
