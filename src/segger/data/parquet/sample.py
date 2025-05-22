@@ -35,7 +35,7 @@ class STSampleParquet:
         self,
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
-        buffer_ratio: Optional[float] = 1.0,
+        scale_factor: Optional[float] = 1.0,
         sample_type: str = None,
         weights: pd.DataFrame = None,
     ):
@@ -52,8 +52,8 @@ class STSampleParquet:
             The sample type of the raw data, e.g., 'xenium' or 'merscope'.
         weights : Optional[pd.DataFrame], default None
             DataFrame containing weights for transcript embedding.
-        buffer_ratio : Optional[float], default None
-            The buffer ratio to be used for expanding the boundary extents
+        scale_factor : Optional[float], default None
+            The scale factor to be used for expanding the boundary extents
             during spatial queries. If not provided, the default from settings
             will be used.
 
@@ -71,15 +71,15 @@ class STSampleParquet:
         boundaries_fn = self.settings.boundaries.filename
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
-        self.settings.boundaries.buffer_ratio = 1
+        self.settings.boundaries.scale_factor = 1
         nuclear_column = getattr(self.settings.transcripts, "nuclear_column", None)
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
+        if nuclear_column is None or self.settings.boundaries.scale_factor != 1.0:
             print(
                 "Boundary-transcript overlap information has not been pre-computed. It will be calculated during tile generation."
             )
-        # Set buffer ratio if provided
-        if buffer_ratio != 1.0:
-            self.settings.boundaries.buffer_ratio = buffer_ratio
+        # Set scale factor if provided
+        if scale_factor != 1.0:
+            self.settings.boundaries.scale_factor = scale_factor
 
         # Ensure transcript IDs exist
         utils.ensure_transcript_ids(
@@ -1164,13 +1164,12 @@ class STTile:
         of the code.
         """
         # Get polygons from coordinates
-        polygons = utils.get_polygons_from_xy(
-            self.boundaries,
-            x=self.settings.boundaries.x,
-            y=self.settings.boundaries.y,
-            label=self.settings.boundaries.label,
-            buffer_ratio=self.settings.boundaries.buffer_ratio,
-        )
+        # Use getattr to check for the geometry column
+        geometry_column = getattr(self.settings.boundaries, 'geometry', None)
+        if geometry_column and geometry_column in self.boundaries.columns:
+            polygons = self.boundaries[geometry_column]
+        else:
+            polygons = self.boundaries['geometry']  # Assign None if the geometry column does not exist
         # Geometric properties of polygons
         props = self.get_polygon_props(polygons)
         props = torch.as_tensor(props.values).float()
@@ -1230,13 +1229,22 @@ class STTile:
         pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
 
         # Set up Boundary nodes
-        polygons = utils.get_polygons_from_xy(
-            self.boundaries,
-            self.settings.boundaries.x,
-            self.settings.boundaries.y,
-            self.settings.boundaries.label,
-            self.settings.boundaries.buffer_ratio,
-        )
+        # Check if boundaries have geometries
+        geometry_column = getattr(self.settings.boundaries, 'geometry', None)
+        if geometry_column and geometry_column in self.boundaries.columns:
+            polygons = gpd.GeoSeries(self.boundaries[geometry_column], index=self.boundaries.index)
+        else:
+            # Fallback: compute polygons
+            polygons = utils.get_polygons_from_xy(
+                self.boundaries,
+                x=self.settings.boundaries.x,
+                y=self.settings.boundaries.y,
+                label=self.settings.boundaries.label,
+                scale_factor=self.settings.boundaries.scale_factor,
+            )
+
+        # Ensure self.boundaries is a GeoDataFrame with correct geometry
+        self.boundaries = gpd.GeoDataFrame(self.boundaries.copy(), geometry=polygons)
         centroids = polygons.centroid.get_coordinates()
         pyg_data["bd"].id = polygons.index.to_numpy()
         pyg_data["bd"].pos = torch.tensor(centroids.values, dtype=torch.float32)
@@ -1273,7 +1281,7 @@ class STTile:
         nuclear_column = getattr(self.settings.transcripts, "nuclear_column", None)
         nuclear_value = getattr(self.settings.transcripts, "nuclear_value", None)
 
-        if nuclear_column is None or self.settings.boundaries.buffer_ratio != 1.0:
+        if nuclear_column is None or self.settings.boundaries.scale_factor != 1.0:
             is_nuclear = utils.compute_nuclear_transcripts(
                 polygons=polygons,
                 transcripts=self.transcripts,

@@ -1,6 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 import shapely
+from shapely.affinity import scale
 from pyarrow import parquet as pq
 import numpy as np
 import scipy as sp
@@ -127,11 +128,22 @@ def read_parquet_region(
 
     columns = list({x, y} | set(extra_columns))
 
-    region = pd.read_parquet(
-        filepath,
-        filters=filters,
-        columns=columns,
-    )
+    # Check if 'Geometry', 'geometry', 'polygon', or 'Polygon' is in the columns
+    if any(col in columns for col in ['Geometry', 'geometry', 'polygon', 'Polygon']):
+        import geopandas as gpd
+        # If geometry columns are present, read with geopandas
+        region = gpd.read_parquet(
+            filepath,
+            filters=filters,
+            columns=columns,
+        )
+    else:
+        # Otherwise, read with pandas
+        region = pd.read_parquet(
+            filepath,
+            filters=filters,
+            columns=columns,
+        )
     return region
 
 
@@ -140,7 +152,7 @@ def get_polygons_from_xy(
     x: str,
     y: str,
     label: str,
-    buffer_ratio: float = 1.0,
+    scale_factor: float = 1.0,
 ) -> gpd.GeoSeries:
     """
     Convert boundary coordinates from a DataFrame to a GeoSeries of polygons.
@@ -156,8 +168,8 @@ def get_polygons_from_xy(
         The name of the column representing the y-coordinate.
     label : str
         The name of the column representing the cell or nucleus label.
-    buffer_ratio : float, optional
-        A ratio to expand or shrink the polygons. A value of 1.0 means no change,
+    scale_factor : float, optional
+        A ratio to scale the polygons. A value of 1.0 means no change,
         greater than 1.0 expands the polygons, and less than 1.0 shrinks the polygons
         (default is 1.0).
 
@@ -181,19 +193,18 @@ def get_polygons_from_xy(
     )
     gs = gpd.GeoSeries(polygons, index=np.unique(ids))
 
-    if buffer_ratio != 1.0:
-        # Calculate buffer distance based on polygon area
-        areas = gs.area
-        # Use the square root of the area to get a linear distance
-        buffer_distances = np.sqrt(areas / np.pi) * (buffer_ratio - 1.0)
-        # Apply buffer to each polygon with its specific distance
+    # print(gs)
+
+    if scale_factor != 1.0:
+        # Scale polygons around their centroid
         gs = gpd.GeoSeries(
             [
-                geom.buffer(dist) if dist != 0 else geom
-                for geom, dist in zip(gs, buffer_distances)
+                scale(geom, xfact=scale_factor, yfact=scale_factor, origin='centroid')
+                for geom in gs
             ],
             index=gs.index,
         )
+        # print(gs)
 
     return gs
 
