@@ -22,6 +22,11 @@ dependencies = [
     "shapely>=2.0.7",
     "torch-geometric>=2.6.1",
     "scikit-learn>=1.6.1",
+    "pyyaml>=6.0.2",
+    "pqdm>=0.2.0",
+    "scanpy>=1.10.4",
+    "dask>=2025.3.0",
+    "rtree"
 ]
 
 [project.optional-dependencies]
