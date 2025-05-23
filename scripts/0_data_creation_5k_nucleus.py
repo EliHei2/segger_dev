@@ -64,7 +64,8 @@ sample = STSampleParquet(
     base_dir=XENIUM_DATA_DIR,
     n_workers=4,
     sample_type="xenium",
-    weights=gene_celltype_abundance_embedding
+    weights=gene_celltype_abundance_embedding,
+    scale_factor=.1
 )
 
 
