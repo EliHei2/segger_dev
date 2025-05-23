@@ -74,8 +74,8 @@ sample.save(
     dist_bd=10,  # Maximum distance for boundary connections
     k_tx=5,  # Use calculated optimal transcript neighbors
     dist_tx=5,  # Use calculated optimal search radius
-    tile_width=50,  # Tile size for processing
-    tile_height=50,
+    tile_size=10000,  # Tile size for processing
+    # tile_height=50,
     neg_sampling_ratio=10.,  # 5:1 negative:positive samples
     frac=1.0,  # Use all data
     val_prob=0.3,  # 30% validation set

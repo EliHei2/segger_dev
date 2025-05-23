@@ -62,7 +62,7 @@ ls = LitSegger(model=model)
 trainer = Trainer(
     accelerator="gpu",
     strategy="auto",
-    precision="16-mixed",
+    precision="32",
     devices=4,  # set higher number if more gpus are available
     max_epochs=150,
     default_root_dir=models_dir,
