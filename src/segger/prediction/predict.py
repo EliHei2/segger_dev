@@ -281,7 +281,7 @@ def predict(
     receptive_field_k: int,
     receptive_field_dist: float,
     use_cc: bool = False,
-    show_pbar: bool = False,
+    pbar: bool = False,
 ) -> pd.DataFrame:
     """
     Predict segmentation labels for multiple batches of transcript data.
@@ -319,9 +319,9 @@ def predict(
         data_module.test_dataloader(),
         data_module.val_dataloader(),
     ]
-    if show_pbar:
+    if pbar:
         n = sum((len(dl) for dl in data_loaders))
-        pbar = tqdm(total=n)
+        progress_bar = tqdm(total=n)
     for data_loader in data_loaders:
         for batch in data_loader:
             batch_predictions = predict_batch(
@@ -333,8 +333,8 @@ def predict(
                 use_cc,
             )
             predictions.append(batch_predictions)
-            if show_pbar: pbar.update(1)
-    if show_pbar: pbar.close()
+            if pbar: progress_bar.update(1)
+    if pbar: progress_bar.close()
     predictions = pd.concat(predictions)
     
     # Keep highest cell assignment to handle overlapping tx at tile edges

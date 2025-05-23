@@ -9,3 +9,8 @@ class Filter_Substrings(Enum):
         'DeprecatedCodeword_*',
         'UnassignedCodeword_*',
     ]
+    nanostring_cosmx = [
+        'Negative*',
+        'SystemControl*',
+        'NegPrb*',
+    ]

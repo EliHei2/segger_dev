@@ -4,11 +4,14 @@ from sklearn.preprocessing import LabelEncoder
 from functools import cached_property
 from dataclasses import dataclass
 from tqdm.notebook import tqdm
+from pathlib import Path
 import geopandas as gpd
 from typing import List
 import pandas as pd
 import logging
 import shapely
+import shutil
+import torch
 import yaml
 import os
 
@@ -43,30 +46,42 @@ class ISTSample:
 
     def __post_init__(self):
         #TODO: Add documentation
+        self.save_dir = Path(self.save_dir)
+        self.tx_path = Path(self.tx_path)
+        self.bd_path = Path(self.bd_path)
+        # Default data type to represent no. gene tokens
+        self._tx_dtype = torch.int16
+
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.Logger(f"ISTSample")
 
-    def save(self, pbar: bool = True):
+    def save(self, overwrite : bool = False, pbar: bool = True):
         #TODO: Add documentation
-        self._setup_data_directory()
+        self._setup_data_directory(overwrite=overwrite)
         if self.n_workers > 1:
             self._save_parallel(pbar=pbar)
         else:
             self._save_serial(pbar=pbar)
         self._save_feature_index()
 
-    def _setup_data_directory(self):
+    def _setup_data_directory(self, overwrite : bool):
         #TODO: Add documentations
         dirnames = [
             DIRNAMES.train.value,
             DIRNAMES.test.value,
             DIRNAMES.val.value,
         ]
+        if overwrite:
+            for path in os.scandir(self.save_dir):
+                if path.is_file():
+                    os.remove(path.path)
+                else:
+                    shutil.rmtree(path.path)
         for tile_type in dirnames:
             for stage in ["raw", "processed"]:
                 tile_dir = self.save_dir / tile_type / stage
                 tile_dir.mkdir(parents=True, exist_ok=True)
-                if os.listdir(tile_dir):
+                if not overwrite and os.listdir(tile_dir):
                     msg = f"Directory '{tile_dir}' must be empty."
                     raise FileExistsError(msg)
 
@@ -99,12 +114,20 @@ class ISTSample:
         if self.max_cells_per_tile:
             bd = gpd.read_parquet(self.bd_path)
             coords = bd.centroid.get_coordinates()
-            tree = NDTree(coords, self.max_cells_per_tile)
+            tree = NDTree(
+                coords,
+                max_size=self.max_cells_per_tile,
+                margin=0.,
+            )
             del bd, coords
         else:
             tx = pd.read_parquet(self.tx_path, columns=[self.tx_x, self.tx_y])
             coords = tx.values
-            tree = NDTree(coords, self.max_cells_per_tile)
+            tree = NDTree(
+                coords,
+                max_size=self.max_transcripts_per_tile,
+                margin=self.tile_margin,
+            )
             del tx, coords
         return [
             ISTTile(
@@ -148,4 +171,11 @@ class ISTSample:
         feature_name = self.tx_feature_name
         table = pq.read_table(self.tx_path, columns=[feature_name])
         classes = pc.unique(table[feature_name])
+        max_features = torch.iinfo(torch.int16).max
+        if len(classes) > max_features:
+            msg = (
+                f"Too many unique values in '{feature_name}': {len(classes)} "
+                f"found, but maximum allowed is {max_features}."
+            )
+            raise NotImplementedError(msg)
         return LabelEncoder().fit(classes)

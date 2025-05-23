@@ -10,6 +10,7 @@ from torch.nn import (
 from torch import Tensor
 from typing import Dict, Tuple, List, Union, Optional
 
+import torch.profiler
 
 class SkipGAT(Module):
     """
@@ -165,7 +166,7 @@ class Segger(torch.nn.Module):
         n_mid_layers : int, optional
             Number of hidden layers (excluding first and last layers).
             Default is 3.
-        heads : int, optional
+        n_heads : int, optional
             Number of attention heads. Default is 3.
         embedding_weights : Tensor, optional
             Pretrained embedding weights for genes. If None, weights are 
@@ -267,8 +268,8 @@ class Segger(torch.nn.Module):
         """
         z_tx = z["tx"][edge_index[0]]
         z_bd = z["bd"][edge_index[1]]
-
-        return (z_tx * z_bd).sum(dim=-1)
+        out = (z_tx * z_bd).sum(dim=-1)
+        return out
 
     def get_attention_weights(self, edge_type: Tuple[str]) -> Tensor:
         """

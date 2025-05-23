@@ -91,6 +91,7 @@ class LitSegger(LightningModule):
         # Get edge labels and logits
         pos_index = batch['tx', 'belongs', 'bd'].edge_index
         neg_index = batch['tx', 'belongs', 'bd'].neg_edge_index
+
         pos_out_values = output[pos_index[0], pos_index[1]]
         neg_out_values = output[neg_index[0], neg_index[1]]
         out_values = torch.concat((pos_out_values, neg_out_values))
@@ -150,7 +151,7 @@ class LitSegger(LightningModule):
             The loss value for the current validation step.
         """
         # Get loss
-        loss = self.get_bce_loss(batch)
+        # loss = self.get_bce_loss(batch)
 
         # Apply sigmoid to logits for AUROC and F1 metrics
         z = self.model(batch.x_dict, batch.edge_index_dict)
@@ -164,6 +165,7 @@ class LitSegger(LightningModule):
             torch.ones_like(pos_out_values),
             torch.zeros_like(neg_out_values)
         ))
+        loss = self.criterion(out_values, edge_label)
         probs = torch.sigmoid(out_values)
 
         # Compute metrics

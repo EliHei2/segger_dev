@@ -107,7 +107,7 @@ def get_kdtree_edge_index(
     # To sparse adjacency
     edge_index = np.argwhere(dist != np.inf).T
     edge_index[1] = idx[dist != np.inf]
-    edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
+    edge_index = torch.tensor(edge_index, dtype=torch.int64).contiguous()
 
     return edge_index
 

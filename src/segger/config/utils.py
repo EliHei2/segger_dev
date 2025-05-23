@@ -36,6 +36,7 @@ def ist_sample_from_config(config: SeggerConfig) -> ISTSample:
         bd_k=data.bd_k,
         bd_dist=data.bd_dist,
         max_cells_per_tile=data.max_cells_per_tile,
+        max_transcripts_per_tile=data.max_transcripts_per_tile,
         tile_margin=data.tile_margin,
         frac_train=data.frac_train,
         frac_test=data.frac_test,
@@ -118,7 +119,7 @@ def get_last_checkpoint(save_dir: Path) -> Path:
 def predict_from_config(
     config: SeggerConfig,
     use_cc: bool = False,
-    show_pbar: bool = True,
+    pbar: bool = True,
 ):
     """
     Load model and data module from checkpoint and config, then run prediction.
@@ -129,7 +130,7 @@ def predict_from_config(
         Full config containing model, data, and predict settings.
     use_cc : bool, default=False
         Use connected components to resolve unassigned transcripts.
-    show_pbar : bool, default=False
+    pbar : bool, default=False
         Show progress bar during prediction.
 
     Returns
@@ -149,5 +150,5 @@ def predict_from_config(
         receptive_field_k=config.predict.receptive_field_k,
         receptive_field_dist=config.predict.receptive_field_dist,
         use_cc=use_cc,
-        show_pbar=show_pbar,
+        pbar=pbar,
     )

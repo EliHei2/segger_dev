@@ -2,7 +2,6 @@ from sklearn.preprocessing import LabelEncoder
 from torch_geometric.data import HeteroData
 from functools import cached_property
 from dataclasses import dataclass
-from torch import LongTensor
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -48,7 +47,7 @@ class ISTTile:
         # Transcript nodes
         pyg_data['tx'].id = torch.tensor(
             self.tx.index.astype(int),
-            dtype=torch.long,
+            dtype=torch.int32,
         )
         pyg_data['tx'].pos = torch.tensor(
             self.tx[[self.tx_x, self.tx_y]].values,
@@ -137,7 +136,10 @@ class ISTTile:
     def tx_props(self):
         #TODO: Add documentation
         labels = self.tx[self.tx_feature_name]
-        return LongTensor(self.tx_encoder.transform(labels))
+        return torch.as_tensor(
+            self.tx_encoder.transform(labels),
+            dtype=torch.int32
+        )
     
     @cached_property
     def bd(self) -> gpd.GeoDataFrame:
@@ -151,7 +153,7 @@ class ISTTile:
     def bd_props(self):
         #TODO: Add documentation
         props = utils.get_polygon_props(self.bd)
-        return torch.as_tensor(props.values).float()
+        return torch.as_tensor(props.values, dtype=torch.float32)
     
     @cached_property
     def tx_neighbors_tx(self) -> torch.tensor:
@@ -172,7 +174,7 @@ class ISTTile:
         mask = ids.isin(ids_map)
         row_idx = np.where(mask)[0]
         col_idx = ids[mask].map(ids_map).to_numpy()
-        return torch.tensor(np.stack([row_idx, col_idx])).long()
+        return torch.tensor(np.stack([row_idx, col_idx]), dtype=torch.int64)
     
     @cached_property
     def dirname(self) -> str:
