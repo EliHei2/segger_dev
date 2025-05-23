@@ -39,49 +39,52 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
 )
-SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_full")
-# SCRNASEQ_FILE = Path(
-#     "/omics/groups/OE0606/internal/mimmo/Xenium/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad"
-# )
-# CELLTYPE_COLUMN = "annot_v1"
-
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_nuclei")
+SCRNASEQ_FILE = Path(
+    "data_tidy/Human_CRC/scRNAseq.h5ad"
+)
+CELLTYPE_COLUMN = "Level1"
+scrnaseq = sc.read(SCRNASEQ_FILE)
+sc.pp.subsample(scrnaseq, 0.1)
+scrnaseq.var_names_make_unique()
 # Calculate gene-celltype embeddings from reference data
-# gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-#     sc.read(SCRNASEQ_FILE),
-#     CELLTYPE_COLUMN
-# )
+gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
+    scrnaseq,
+    CELLTYPE_COLUMN
+)
 
 # Initialize spatial transcriptomics sample object
 sample = STSampleParquet(
     base_dir=XENIUM_DATA_DIR,
     n_workers=4,
     sample_type="xenium",
-    # weights=gene_celltype_abundance_embedding
+    # scale_factor=0.8,
+    weights=gene_celltype_abundance_embedding
 )
 
-# Load and filter data
-transcripts = pd.read_parquet(
-    XENIUM_DATA_DIR / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]]
-)
-boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
+# # Load and filter datas
+# transcripts = pd.read_parquet(
+#     XENIUM_DATA_DIR / "transcripts.parquet", filters=[[("overlaps_nucleus", "=", 1)]]
+# )
+# boundaries = pd.read_parquet(XENIUM_DATA_DIR / "nucleus_boundaries.parquet")
 
-# Calculate optimal neighborhood parameters
-transcript_counts = transcripts.groupby("cell_id").size()
-nucleus_polygons = get_polygons_from_xy(boundaries, "vertex_x", "vertex_y", "cell_id")
-transcript_densities = (
-    nucleus_polygons[transcript_counts.index].area / transcript_counts
-)
-nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
+# # Calculate optimal neighborhood parameters
+# transcript_counts = transcripts.groupby("cell_id").size()
+# nucleus_polygons = get_polygons_from_xy(boundaries, "vertex_x", "vertex_y", "cell_id")
+# transcript_densities = (
+#     nucleus_polygons[transcript_counts.index].area / transcript_counts
+# )
+# nucleus_diameter = nucleus_polygons.minimum_bounding_radius().median() * 2
 
-# Set neighborhood parameters
-dist_tx = nucleus_diameter / 4  # Search radius = 1/4 nucleus diameter
-k_tx = math.ceil(
-    np.quantile(dist_tx**2 * np.pi * transcript_densities, 0.9)
-)  # Sample size based on 90th percentile density
+# # Set neighborhood parameters
+# dist_tx = nucleus_diameter / 4  # Search radius = 1/4 nucleus diameter
+# k_tx = math.ceil(
+#     np.quantile(dist_tx**2 * np.pi * transcript_densities, 0.9)
+# )  # Sample size based on 90th percentile density
 
-print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
+# print(f"Calculated parameters: k_tx={k_tx}, dist_tx={dist_tx:.2f}")
 
 # Save processed dataset for SEGGER
 # Parameters:
@@ -96,8 +99,8 @@ sample.save(
     dist_bd=15,  # Maximum distance for boundary connections
     k_tx=5,  # Use calculated optimal transcript neighbors
     dist_tx=5,  # Use calculated optimal search radius
-    tile_width=200,  # Tile size for processing
-    tile_height=200,
+    tile_width=100,  # Tile size for processing
+    tile_height=100,
     neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
     frac=1.0,  # Use all data
     val_prob=0.3,  # 30% validation set

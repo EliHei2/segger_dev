@@ -135,14 +135,22 @@ class LitSegger(LightningModule):
 
         return loss
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
-        """
-        Configures the optimizer for training.
+    # def configure_optimizers(self) -> torch.optim.Optimizer:
+    #     """
+    #     Configures the optimizer for training.
 
-        Returns
-        -------
-        torch.optim.Optimizer
-            The optimizer for training.
-        """
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+    #     Returns
+    #     -------
+    #     torch.optim.Optimizer
+    #         The optimizer for training.
+    #     """
+    #     optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+    #     return optimizer
+
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4, weight_decay=1e-4)
         return optimizer
+
+    def on_before_optimizer_step(self, optimizer):
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)

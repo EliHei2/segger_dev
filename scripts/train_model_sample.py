@@ -17,8 +17,8 @@ from lightning import LightningModule
 
 
 
-segger_data_dir = segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_full")
-models_dir = Path("./models/human_CRC")
+segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_seg_cells")
+models_dir = Path("./models/human_CRC_seg_cells")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -37,14 +37,14 @@ dm.setup()
 
 # If you use custom gene embeddings, use the following two lines instead:
 is_token_based = False
-# num_tx_tokens = (
-#     dm.train[0].x_dict["tx"].shape[1]
-# )  # Set the number of tokens to the number of genes
+num_tx_tokens = (
+    dm.train[0].x_dict["tx"].shape[1]
+)  # Set the number of tokens to the number of genes
 
 
 model = Segger(
     # is_token_based=is_token_based,
-    num_tx_tokens= 850,
+    num_tx_tokens= num_tx_tokens,
     init_emb=8,
     hidden_channels=64,
     out_channels=16,
@@ -75,7 +75,7 @@ trainer = Trainer(
     strategy="auto",
     precision="16-mixed",
     devices=4,  # set higher number if more gpus are available
-    max_epochs=100,
+    max_epochs=150,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )

@@ -17,32 +17,29 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-seg_tag = "human_CRC"
-model_version = 0
 
-seg_tag = "human_CRC"
+seg_tag = "human_CRC_seg_cells"
 model_version = 0
 
 
 
 XENIUM_DATA_DIR = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
 )
-SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_full")
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_cells")
 
-segger_data_dir = Path("data_tidy/pyg_datasets") / seg_tag
 models_dir = Path("./models") / seg_tag
 benchmarks_dir = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/human_CRC"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/human_CRC_seg_cells"
 )
 transcripts_file = (
-   "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC/transcripts.parquet"
+   "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real/transcripts.parquet"
 )
 # Initialize the Lightning data module
 dm = SeggerDataModule(
-    data_dir=segger_data_dir,
+    data_dir=SEGGER_DATA_DIR,
     batch_size=1,
-    num_workers=0,
+    num_workers=1,
 )
 
 dm.setup()
@@ -52,7 +49,7 @@ dm.setup()
 model_path = models_dir / "lightning_logs" / f"version_{model_version}"
 model = load_model(model_path / "checkpoints")
 
-receptive_field = {"k_bd": 4, "dist_bd": 15, "k_tx": 5, "dist_tx": 3}
+receptive_field = {"k_bd": 4, "dist_bd": 10, "k_tx": 5, "dist_tx": 3}
 
 segment(
     model,
