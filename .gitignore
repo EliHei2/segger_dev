@@ -178,5 +178,7 @@ dev*
 *_old*
 .dev
 
-scripts/*
+# scripts/*
 .scripts/*
+
+models/*
