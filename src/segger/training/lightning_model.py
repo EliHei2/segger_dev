@@ -2,6 +2,7 @@ from typing import Any, Tuple, Optional
 from torchmetrics import F1Score, AUROC
 from lightning import LightningModule
 import pandas as pd
+import numpy as np
 import torch
 import os
 
@@ -221,6 +222,7 @@ class LitSegger(LightningModule):
             _check_gene_embedding_weights(weights_path)
             weights = pd.read_csv(weights_path, index_col=0)
             reordered = weights.loc[indices.values.flatten()]
-            return indices.shape[0], torch.from_numpy(reordered.values)
+            return (indices.shape[0],
+                    torch.from_numpy(reordered.values.astype(np.float32)))
         else:
             return indices.shape[0], None

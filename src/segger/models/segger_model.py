@@ -184,7 +184,8 @@ class Segger(torch.nn.Module):
                     n_genes,
                     in_channels,
                     _weight=embedding_weights,
-                ),
+                    _freeze=embedding_weights is not None,
+                ).requires_grad_(embedding_weights is None),
                 'bd': Linear(-1, in_channels),
             }
         )

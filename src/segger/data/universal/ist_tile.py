@@ -46,7 +46,7 @@ class ISTTile:
         
         # Transcript nodes
         pyg_data['tx'].id = torch.tensor(
-            self.tx.index.astype(int),
+            self.tx.index,
             dtype=torch.int32,
         )
         pyg_data['tx'].pos = torch.tensor(
@@ -86,7 +86,7 @@ class ISTTile:
             msg = 'Tile must contain transcripts, but found none.'
             raise ValueError(msg)
         # Tile contains cells
-        if self.tx.shape[0] == 0:
+        if self.bd.shape[0] == 0:
             msg = 'Tile must contain boundaries, but found none.'
             raise ValueError(msg)
 
