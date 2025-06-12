@@ -30,6 +30,12 @@ git clone https://github.com/EliHei2/segger_dev.git segger
 cd segger
 pip install -e .
 ```
+---
+# Running segger
+
+The `segger_dev/guides/` directory contains two notebooks to help run segger:
+1. The `platform_preparation_guide.ipynb` notebook contains steps for converting raw spatial transcriptomics data into a format compatible with ***segger***.
+2. The `run_guide.ipynb` notebook contains a minimal "pipeline" to run ***segger*** from a YAML configuration file.
 
 ---
 # Contributions
