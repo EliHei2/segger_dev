@@ -1,0 +1,50 @@
+create_dataset:
+  save_dir: '/path/to/write/segger/dataset'
+  # Inputs
+  transcripts_parquet: '/path/to/processed/transcripts.parquet'
+  boundaries_parquet: '/path/to/processed/nucleus_boundaries_geo.parquet'
+  transcripts_feature_name: 'gene'
+  transcripts_cell_id: 'nucleus_boundaries_id'
+  transcripts_x: 'global_x'
+  transcripts_y: 'global_y'
+  # Graph params
+  transcripts_k: 20
+  transcripts_dist: 5
+  boundaries_k: 3
+  boundaries_dist: 20
+  # Tiling params
+  max_cells_per_tile: null
+  max_transcripts_per_tile: 50000
+  tile_margin: 10
+  fraction_train: 0.7
+  fraction_test: 0.2
+  fraction_val: 0.1
+  n_workers: 8
+
+train:
+  save_dir: '/path/to/write/segger/models'
+  # Model params
+  checkpoint_path: null
+  in_channels: 16
+  hidden_channels: 32
+  out_channels: 64
+  n_mid_layers: 2
+  n_heads: 3
+  gene_embedding_weights: null
+  learning_rate: 0.001
+  # Data module params
+  batch_size: 3
+  n_workers: 8
+  max_transcripts_k: null
+  max_transcripts_dist: null
+  negative_edge_sampling_ratio: 5
+  # Training params
+  n_epochs: 40
+
+predict:
+  save_dir: '/path/to/write/segger/predictions'
+  # Prediction params
+  receptive_field_k: 3
+  receptive_field_dist: 50
+  min_score: 0
+  

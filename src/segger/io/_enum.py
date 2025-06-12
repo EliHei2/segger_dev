@@ -13,4 +13,5 @@ class Filter_Substrings(Enum):
         'Negative*',
         'SystemControl*',
         'NegPrb*',
+        'FalseCode*',
     ]

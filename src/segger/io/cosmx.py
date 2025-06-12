@@ -64,6 +64,10 @@ def get_cosmx_polygons(
     fov_info = pd.read_csv(fov_positions_path, index_col='FOV')
     _preflight_checks(cell_labels_dir, compartment_labels_dir, fov_info)
 
+    # Add 'Slide' column if doesn't exist
+    if 'Slide' not in fov_info:
+        fov_info['Slide'] = 1
+
     # Check compartment type
     if compartment == 'cell':
         valid_codes = [NUCLEUS_CODE, MEMBRANE_CODE, CYTOPLASMIC_CODE]
@@ -95,14 +99,20 @@ def get_cosmx_polygons(
         # FOV coords -> Global coords
         tx = row['X_mm'] * 1e3 / MPP
         ty = row['Y_mm'] * 1e3 / MPP
-        transform = AffineTransform(scale=[1, -1], translation=[tx, ty])
+        transform = AffineTransform(scale=[1, -1], translation=[-tx, -ty])
         fov_poly.geometry = shapely.transform(fov_poly.geometry, transform)
 
         prefix = f"c_{row['Slide']}_{fov}_"  # match CosMX ID structure
         fov_poly.index = prefix + fov_poly.index.astype(str)
         polygons.append(fov_poly)
-
-    return pd.concat(polygons)
+    
+    polygons = pd.concat(polygons)
+    tx = fov_info['X_mm'].max() * 1e3 / MPP
+    ty = fov_info['Y_mm'].max() * 1e3 / MPP
+    transform = AffineTransform(translation=[tx, ty])
+    polygons.geometry = shapely.transform(polygons.geometry, transform)
+    
+    return polygons #pd.concat(polygons)
 
 
 def _preflight_checks(
@@ -114,7 +124,7 @@ def _preflight_checks(
     Ensure input directories and FOV info file contain expected files and 
     columns.
     """
-    required_cols = {'Slide', 'X_mm', 'Y_mm'}
+    required_cols = {'X_mm', 'Y_mm'}
     missing_cols = required_cols - set(fov_info.columns)
     if missing_cols:
         raise ValueError(
