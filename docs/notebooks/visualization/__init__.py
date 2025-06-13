@@ -1,7 +1,6 @@
-from .transcript_visualization import (
+from .batch_visualization import (
     extract_attention_df,
-    visualize_attention_df,
-    visualize_attention_difference
+    visualize_attention_df
 )
 
 from .gene_visualization import (

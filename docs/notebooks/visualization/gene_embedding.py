@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 from scipy.sparse import lil_matrix
 import pandas as pd
 from pathlib import Path
-from .utils import create_figures_dir
+from .utils import create_figures_dir, hex_to_rgb
+import umap
+from sklearn.manifold import TSNE
+from typing import Tuple
+
 """
 This function performs dimension reduction on gene attention patterns using various methods.
 
@@ -80,7 +84,7 @@ def gene_embedding(attention_matrix, method='umap', visualization=True, random_s
     return coordinates
 
 def visualize_attention_embedding(attention_gene_matrix_dict, method='umap', layer_idx=0, head_idx=0, 
-                                top_k_genes=20, random_state=42):
+                                top_k_genes=20, gene_types_dict=None, gene_type_to_color=None, random_state=42):
     """
     Create an enhanced visualization of gene embeddings with attention patterns.
     
@@ -96,6 +100,10 @@ def visualize_attention_embedding(attention_gene_matrix_dict, method='umap', lay
         Index of the attention head to use
     top_k_genes : int
         Number of top genes to highlight in the plot
+    gene_types_dict : dict, optional
+        Dictionary mapping gene names to their types
+    gene_type_to_color : dict, optional
+        Dictionary mapping gene types to colors
     random_state : int
         Random seed for reproducibility
     """
@@ -116,19 +124,42 @@ def visualize_attention_embedding(attention_gene_matrix_dict, method='umap', lay
     # Create figures directory
     figures_dir = create_figures_dir()
     save_path = figures_dir / f'{method}_gene_embedding_layer_{layer_idx+1}_head_{head_idx+1}.png'
+    
     # Create visualization
     fig, ax = plt.subplots(figsize=(12, 10))
     
-    # Plot all genes
-    scatter = ax.scatter(coordinates[:, 0], coordinates[:, 1], 
-                        alpha=0.3, c=gene_importance, cmap='viridis')
+    if gene_types_dict is not None:
+        # Create color mapping for gene types
+        unique_types = sorted(set(gene_types_dict.values()))
+        if gene_type_to_color is not None:
+            # Convert hex colors to RGB tuples
+            type_to_color = {t: hex_to_rgb(gene_type_to_color.get(t, '#808080')) for t in unique_types}
+        else:
+            # Fallback to default color palette
+            colors = plt.cm.Set3(np.linspace(0, 1, len(unique_types)))
+            type_to_color = dict(zip(unique_types, colors))
+        
+        # Get gene types for all genes
+        idx_to_gene = {idx: gene for gene, idx in gene_types_dict.items()}
+        gene_types = [gene_types_dict.get(idx_to_gene[i], '') for i in range(len(gene_types_dict))]
+        
+        # Plot genes colored by type
+        for gene_type in unique_types:
+            type_mask = [t == gene_type for t in gene_types]
+            if np.any(type_mask):
+                ax.scatter(coordinates[type_mask, 0], coordinates[type_mask, 1],
+                          c=[type_to_color[gene_type]], alpha=0.3, label=gene_type)
+        
+        # Create legend for gene types
+        ax.legend(title='Gene Types', bbox_to_anchor=(1.05, 1), loc='upper left')
+    else:
+        # Plot all genes with importance-based coloring
+        scatter = ax.scatter(coordinates[:, 0], coordinates[:, 1], 
+                           alpha=0.3, c=gene_importance, cmap='viridis')
     
     # Highlight top genes
     ax.scatter(coordinates[top_genes_idx, 0], coordinates[top_genes_idx, 1],
               c='red', alpha=0.6, s=100, label=f'Top {top_k_genes} genes')
-    
-    # Add colorbar
-    plt.colorbar(scatter, label='Attention Weight Sum')
     
     # Customize plot
     ax.set_title(f'Gene Embedding using {method.upper()}\nLayer {layer_idx+1}, Head {head_idx+1}')
@@ -139,9 +170,10 @@ def visualize_attention_embedding(attention_gene_matrix_dict, method='umap', lay
     plt.savefig(save_path)
     plt.close()
     
-    return fig 
+    return fig
 
-def visualize_all_embeddings(attention_gene_matrix_dict, method='umap', top_k_genes=20, random_state=42):
+def visualize_all_embeddings(attention_gene_matrix_dict, gene_names, method='umap', top_k_genes=20, 
+                           gene_types_dict=None, gene_type_to_color=None, random_state=42):
     """
     Create a grid visualization of gene embeddings for all layers and heads.
     
@@ -149,24 +181,25 @@ def visualize_all_embeddings(attention_gene_matrix_dict, method='umap', top_k_ge
     -----------
     attention_gene_matrix_dict : dict
         Dictionary containing attention matrices
+    gene_names : list
+        List of gene names
     method : str
         Dimension reduction method to use
     top_k_genes : int
         Number of top genes to highlight in each plot
+    gene_types_dict : dict, optional
+        Dictionary mapping gene names to their types
+    gene_type_to_color : dict, optional
+        Dictionary mapping gene types to colors
     random_state : int
         Random seed for reproducibility
-        
-    Returns:
-    --------
-    matplotlib.figure.Figure
-        The figure containing all embedding plots
     """
     # Get dimensions
     n_layers = len(attention_gene_matrix_dict['adj_matrix'])
     n_heads = len(attention_gene_matrix_dict['adj_matrix'][0])
     
     # Create figures directory
-    figures_dir = create_figures_dir()
+    figures_dir = create_figures_dir(edge_type='tx-tx')
     save_path = figures_dir / f'all_{method}_gene_embeddings.png'
     
     # Create figure with subplots
@@ -193,9 +226,34 @@ def visualize_all_embeddings(attention_gene_matrix_dict, method='umap', top_k_ge
             # Get current subplot
             ax = axes[layer_idx * n_heads + head_idx]
             
-            # Plot all genes
-            scatter = ax.scatter(coordinates[:, 0], coordinates[:, 1], 
-                               alpha=0.3, c=gene_importance, cmap='viridis')
+            if gene_types_dict is not None:
+                # Create color mapping for gene types
+                unique_types = sorted(set(gene_types_dict.values()))
+                if gene_type_to_color is not None:
+                    # Convert hex colors to RGB tuples
+                    type_to_color = {t: hex_to_rgb(gene_type_to_color.get(t, '#808080')) for t in unique_types}
+                else:
+                    # Fallback to default color palette
+                    colors = plt.cm.Set3(np.linspace(0, 1, len(unique_types)))
+                    type_to_color = dict(zip(unique_types, colors))
+                
+                # Get gene types for all genes
+                gene_types = [gene_types_dict.get(gene, '') for gene in gene_names]
+                
+                # Plot genes colored by type
+                for gene_type in unique_types:
+                    type_mask = [t == gene_type for t in gene_types]
+                    if np.any(type_mask):
+                        ax.scatter(coordinates[type_mask, 0], coordinates[type_mask, 1],
+                                  c=[type_to_color[gene_type]], alpha=0.3, label=gene_type)
+                
+                # Add legend for gene types if it's the first subplot
+                if layer_idx == 0 and head_idx == 0:
+                    ax.legend(title='Gene Types', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+            else:
+                # Plot all genes with importance-based coloring
+                scatter = ax.scatter(coordinates[:, 0], coordinates[:, 1], 
+                                   alpha=0.3, c=gene_importance, cmap='viridis')
             
             # Highlight top genes
             ax.scatter(coordinates[top_genes_idx, 0], coordinates[top_genes_idx, 1],
@@ -207,8 +265,9 @@ def visualize_all_embeddings(attention_gene_matrix_dict, method='umap', top_k_ge
             ax.set_ylabel(f'{method.upper()} 2')
             ax.legend(fontsize='small')
     
-    # Add colorbar to the last subplot
-    plt.colorbar(scatter, ax=axes[-1], label='Attention Weight Sum')
+    # Add colorbar to the last subplot if not using gene types
+    if gene_types_dict is None:
+        plt.colorbar(scatter, ax=axes[-1], label='Attention Weight Sum')
     
     # Adjust layout
     plt.suptitle(f'Gene Embeddings using {method.upper()}\nAcross All Layers and Heads', y=1.02)
@@ -218,94 +277,76 @@ def visualize_all_embeddings(attention_gene_matrix_dict, method='umap', top_k_ge
     plt.savefig(save_path, bbox_inches='tight', dpi=300)
     plt.close()
     
-    return fig 
+    return fig
 
-def visualize_average_embedding(attention_gene_matrix_dict, gene_names, method='umap', random_state=42):
+def visualize_average_embedding(attention_gene_matrix_dict, gene_names, method='umap', 
+                              gene_types_dict=None, gene_type_to_color=None):
     """
-    Create a visualization of gene embeddings using the average attention map across all layers and heads.
+    Visualize the average embedding of genes across all layers and heads.
     
-    Parameters:
-    -----------
-    attention_gene_matrix_dict : dict
-        Dictionary containing attention matrices
-    gene_names : list or array-like
-        List of gene names corresponding to the attention matrix
-    method : str
-        Dimension reduction method to use (default: 'umap')
-    random_state : int
-        Random seed for reproducibility
+    Args:
+        attention_gene_matrix_dict (dict): Dictionary containing attention matrices
+        gene_names (list): List of gene names
+        method (str): Embedding method ('umap' or 'tsne')
+        gene_types_dict (dict): Dictionary mapping gene names to their types
+        gene_type_to_color (dict): Dictionary mapping gene types to colors
+    """
+    # Compute average attention matrix
+    avg_matrix = np.zeros((len(gene_names), len(gene_names)))
+    count = 0
+    
+    for layer_idx in range(len(attention_gene_matrix_dict["adj_matrix"])):
+        for head_idx in range(len(attention_gene_matrix_dict["adj_matrix"][0])):
+            matrix = attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx].toarray()
+            if matrix.shape == (len(gene_names), len(gene_names)):
+                avg_matrix += matrix
+                count += 1
+    
+    if count > 0:
+        avg_matrix /= count
+    
+    # Compute embedding
+    if method == 'umap':
+        reducer = umap.UMAP(n_components=2, random_state=42)
+    else:  # tsne
+        reducer = TSNE(n_components=2, random_state=42)
+    
+    coordinates = reducer.fit_transform(avg_matrix)
+    
+    # Create figure
+    plt.figure(figsize=(12, 8))
+    ax = plt.gca()
+    
+    if gene_types_dict is not None:
+        # Create color mapping for gene types
+        unique_types = sorted(set(gene_types_dict.values()))
+        if gene_type_to_color is not None:
+            # Convert hex colors to RGB tuples
+            type_to_color = {t: hex_to_rgb(gene_type_to_color.get(t, '#808080')) for t in unique_types}
+        else:
+            # Fallback to default color palette
+            colors = plt.cm.Set3(np.linspace(0, 1, len(unique_types)))
+            type_to_color = dict(zip(unique_types, colors))
         
-    Returns:
-    --------
-    matplotlib.figure.Figure
-        The figure containing the embedding plot with gene labels
-    """
-    # Get dimensions
-    n_layers = len(attention_gene_matrix_dict['adj_matrix'])
-    n_heads = len(attention_gene_matrix_dict['adj_matrix'][0])
+        # Get gene types for all genes
+        gene_types = [gene_types_dict.get(gene, '') for gene in gene_names]
+        
+        # Plot genes colored by type
+        for gene_type in unique_types:
+            type_mask = [t == gene_type for t in gene_types]
+            if np.any(type_mask):
+                ax.scatter(coordinates[type_mask, 0], coordinates[type_mask, 1],
+                           c=[type_to_color[gene_type]], alpha=0.3, label=gene_type)
+    else:
+        # Plot all genes in the same color if no gene types provided
+        ax.scatter(coordinates[:, 0], coordinates[:, 1], alpha=0.3)
     
-    # Initialize average attention matrix
-    avg_attention = np.zeros_like(attention_gene_matrix_dict['adj_matrix'][0][0].toarray())
-    
-    # Average attention matrices across all layers and heads
-    for layer_idx in range(n_layers):
-        for head_idx in range(n_heads):
-            attention_matrix = attention_gene_matrix_dict['adj_matrix'][layer_idx][head_idx]
-            if isinstance(attention_matrix, (lil_matrix)):
-                attention_matrix = attention_matrix.toarray()
-            avg_attention += attention_matrix
-    
-    avg_attention /= (n_layers * n_heads)
-    
-    # Perform dimension reduction
-    coordinates = gene_embedding(avg_attention, method=method, visualization=False, random_state=random_state)
-    
-    # Calculate gene importance (sum of attention weights)
-    gene_importance = np.array(avg_attention.sum(axis=1)).flatten()
-    
-    # Get indices of top and bottom 10 genes
-    top_10_idx = np.argsort(gene_importance)[-10:]
-    bottom_10_idx = np.argsort(gene_importance)[:10]
-    
-    # Create figures directory
-    figures_dir = create_figures_dir()
-    save_path = figures_dir / f'average_{method}_gene_embedding.png'
-    
-    # Create visualization
-    fig, ax = plt.subplots(figsize=(12, 10))
-    
-    # Plot all genes
-    scatter = ax.scatter(coordinates[:, 0], coordinates[:, 1], 
-                        alpha=0.3, c=gene_importance, cmap='viridis')
-    
-    # Highlight and label top 10 genes
-    ax.scatter(coordinates[top_10_idx, 0], coordinates[top_10_idx, 1],
-              c='red', alpha=0.6, s=100, label='Top 10 genes')
-    for idx in top_10_idx:
-        ax.annotate(gene_names[idx], 
-                   (coordinates[idx, 0], coordinates[idx, 1]),
-                   xytext=(5, 5), textcoords='offset points',
-                   fontsize=8, color='red')
-    
-    # Highlight and label bottom 10 genes
-    ax.scatter(coordinates[bottom_10_idx, 0], coordinates[bottom_10_idx, 1],
-              c='blue', alpha=0.6, s=100, label='Bottom 10 genes')
-    for idx in bottom_10_idx:
-        ax.annotate(gene_names[idx], 
-                   (coordinates[idx, 0], coordinates[idx, 1]),
-                   xytext=(5, 5), textcoords='offset points',
-                   fontsize=8, color='blue')
-    
-    # Add colorbar
-    plt.colorbar(scatter, label='Average Attention Weight Sum')
-    
-    # Customize plot
-    ax.set_title(f'Average Gene Embedding using {method.upper()}\nAcross All Layers and Heads')
-    ax.set_xlabel(f'{method.upper()} 1')
-    ax.set_ylabel(f'{method.upper()} 2')
-    ax.legend()
+    plt.title(f'Average Gene Embedding ({method.upper()})')
+    if gene_types_dict is not None:
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
     
-    return fig 
+    # Save figure
+    figures_dir = create_figures_dir('tx-tx')
+    plt.savefig(figures_dir / f'average_gene_embedding_{method}.png', dpi=300, bbox_inches='tight')
+    plt.close() 

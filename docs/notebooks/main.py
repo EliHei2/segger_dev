@@ -5,16 +5,24 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
-
 import torch
 import pandas as pd
 import pickle
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.predict import load_model
-from docs.notebooks.visualization.transcript_visualization import extract_attention_df, visualize_attention_difference
-from docs.notebooks.visualization.gene_visualization import summarize_attention_by_gene_df, compare_attention_patterns, visualize_all_attention_patterns, visualize_all_attention_patterns_with_metrics
-from docs.notebooks.visualization.gene_embedding import visualize_attention_embedding, visualize_all_embeddings, visualize_average_embedding
-from docs.notebooks.visualization.utils import safe_divide_sparse_numpy,get_top_genes_across_all_layers
+from docs.notebooks.visualization.utils import VisualizationConfig, ComparisonConfig
+from docs.notebooks.visualization.batch_visualization import extract_attention_df, visualize_attention_df
+from docs.notebooks.visualization.gene_visualization import (
+    visualize_all_attention_patterns, AttentionSummarizer
+)
+from docs.notebooks.visualization.gene_embedding import (
+    visualize_attention_embedding, visualize_all_embeddings, visualize_average_embedding
+)
+from docs.notebooks.visualization.utils import (
+    safe_divide_sparse_numpy, get_top_genes_by_attention,
+    VisualizationConfig, ComparisonConfig, AttentionMatrixProcessor
+)
+
 from scipy.sparse import lil_matrix
 import numpy as np
 
@@ -40,13 +48,34 @@ def main():
     )
     dm.setup()
 
-    # Get a sample batch
+    # Get classified genes (it contains the gene names and groups)
+    gene_types = pd.read_csv(Path('data_xenium') / 'gene_groups_ordered_color.csv')
+    gene_types_dict = dict(zip(gene_types['gene'], gene_types['group']))
+        
+    # Get cell types
+    cell_types = pd.read_csv(Path('data_xenium') / 'cell_groups.csv')
+    cell_types_dict = dict(zip(cell_types['cell_id'], cell_types['group']))
+    
+    # Get cell types order
+    cell_types_order = pd.read_csv(Path('data_xenium') / 'cell_types_order_color.csv')
+    cell_order = cell_types_order.sort_values('Order')['Cell Type'].tolist()
+    
+    # Create cell type to color mapping
+    cell_type_to_color = dict(zip(cell_types_order['Cell Type'], cell_types_order['Color']))
+    
+    # Create gene type to color mapping
+    gene_type_to_color = dict(zip(gene_types['group'], gene_types['Color']))
+    
+    cell_to_idx = {cell: idx for idx, cell in enumerate(cell_types['group'].unique())}
+    
+    # Get a sample batch ------------------------------------------------------------
     batch = dm.train[0].to(device)
     
     # Get gene names
     transcript_ids = batch['tx'].id.cpu().numpy()
     id_to_gene = dict(zip(transcripts['transcript_id'], transcripts['feature_name']))
-    gene_names_batch = [id_to_gene[id] for id in transcript_ids] # list of gene names for the batch one
+    gene_names_batch = [id_to_gene[id] for id in transcript_ids]
+    cell_ids_batch = batch['bd'].id
 
     # Run forward pass to get attention weights
     with torch.no_grad():
@@ -56,34 +85,18 @@ def main():
         _, attention_weights = hetero_model(x_dict, edge_index_dict)
 
     edge_type = "tx-tx"
-
+    
     # Extract attention weights
-    attention_df = extract_attention_df(attention_weights, gene_names_batch)
+    attention_df = extract_attention_df(attention_weights = attention_weights, gene_names = gene_names_batch, cell_ids = cell_ids_batch, cell_types_dict = cell_types_dict, edge_type = edge_type)
 
-    # Visualize transcript-level attention differences
-    print("Visualizing transcript-level attention differences...")
-    layer_indices = [1, 2]  # 1-indexed layers in the dataframe
-    head_indices = [1, 2]   # 1-indexed heads in the dataframe
+    # # Visualize transcript-level attention differences
+    # print("Visualizing transcript-level attention differences...")
+    # layer_indices = [0, 1, 2, 3, 4]  # 1-indexed layers in the dataframe
+    # head_indices = [0, 1, 2, 3]   # 1-indexed heads in the dataframe
     
-    # # Visualize differences between layers for each head
-    # visualize_attention_difference(
-    #     attention_df=attention_df,
-    #     edge_type=edge_type,
-    #     compare_type='layers',
-    #     layer_indices=layer_indices,
-    #     head_indices=head_indices,
-    #     gene_names=gene_names_batch
-    # )
-    
-    # # Visualize differences between heads for each layer
-    # visualize_attention_difference(
-    #     attention_df=attention_df,
-    #     edge_type=edge_type,
-    #     compare_type='heads',
-    #     layer_indices=layer_indices,
-    #     head_indices=head_indices,
-    #     gene_names=gene_names_batch
-    # )
+    # for layer_idx in layer_indices:
+    #     for head_idx in head_indices:
+    #         visualize_attention_df(attention_df, layer_idx, head_idx, edge_type, gene_types_dict=gene_types_dict, cell_types_dict=cell_types_dict)
 
     # Gene-level visualization
     print("Computing gene-level attention patterns...")
@@ -94,103 +107,136 @@ def main():
     layers = 5
     heads = 4
     
-    attention_gene_matrix_dict = {
-        "adj_matrix": [[lil_matrix((num_genes, num_genes), dtype=np.float32) for _ in range(heads)] for _ in range(layers)],
-        "count_matrix": [[lil_matrix((num_genes, num_genes), dtype=np.float32) for _ in range(heads)] for _ in range(layers)]
-    }
+    # Initialize attention matrix dictionary
+    if edge_type == 'tx-tx':
+        attention_gene_matrix_dict = {
+            "adj_matrix": [[lil_matrix((num_genes, num_genes), dtype=np.float32) for _ in range(heads)] for _ in range(layers)],
+            "count_matrix": [[lil_matrix((num_genes, num_genes), dtype=np.float32) for _ in range(heads)] for _ in range(layers)]
+        }
+    elif edge_type == 'tx-bd':
+        num_cells = len(cell_types['group'].unique())
+        print(f"Number of cells: {num_cells}")
+        attention_gene_matrix_dict = {
+            "adj_matrix": [[lil_matrix((num_genes, num_cells), dtype=np.float32) for _ in range(heads)] for _ in range(layers)],
+            "count_matrix": [[lil_matrix((num_genes, num_cells), dtype=np.float32) for _ in range(heads)] for _ in range(layers)]
+        }
+    else:
+        raise ValueError(f"Invalid edge type: {edge_type}")
+    
     results_dir = Path('results')
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    # # Process each batch
-    # for batch in dm.train[0:1]:
-    #     with torch.no_grad():
-    #         batch = batch.to(device)
-    #         x_dict = batch.x_dict
-    #         edge_index_dict = batch.edge_index_dict
-    #         _, attention_weights = hetero_model(x_dict, edge_index_dict)
-            
-    #         transcript_ids = batch['tx'].id.cpu().numpy()
-    #         gene_names = [id_to_gene[id] for id in transcript_ids]
-            
-    #         attention_df = extract_attention_df(attention_weights, gene_names)
-            
-    #         for layer_idx in range(layers):
-    #             for head_idx in range(heads):
-    #                 adj_matrix, count_matrix = summarize_attention_by_gene_df(
-    #                     attention_df, 
-    #                     layer_idx=layer_idx, 
-    #                     head_idx=head_idx, 
-    #                     edge_type='tx-tx', 
-    #                     gene_to_idx=gene_to_idx, 
-    #                     visualize=False
-    #                 )
-    #                 attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx] += adj_matrix
-    #                 attention_gene_matrix_dict["count_matrix"][layer_idx][head_idx] += count_matrix
+    # Process each batch ------------------------------------------------------------
+    # If not file exists, process the batches and save the results
+    if not (results_dir / f'attention_gene_matrix_dict_{edge_type}.pkl').exists():
+        # Initialize attention summarizer
+        attention_summarizer = AttentionSummarizer(
+            edge_type=edge_type,
+            gene_to_idx=gene_to_idx,
+            cell_to_idx=cell_to_idx
+        )
 
-    # # Compute average attention weights
-    # for layer_idx in range(layers):
-    #     for head_idx in range(heads):
-    #         attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx] = safe_divide_sparse_numpy(
-    #             attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx],
-    #             attention_gene_matrix_dict["count_matrix"][layer_idx][head_idx]
-    #         )
+        # Process each batch
+        for batch_idx, batch in enumerate(dm.train):
+            with torch.no_grad():
+                print(f"Processing batch {batch_idx} of {len(dm.train)}")
+                batch = batch.to(device)
+                x_dict = batch.x_dict
+                edge_index_dict = batch.edge_index_dict
+                _, attention_weights = hetero_model(x_dict, edge_index_dict)
+                
+                transcript_ids = batch['tx'].id.cpu().numpy()
+                id_to_gene = dict(zip(transcripts['transcript_id'], transcripts['feature_name']))
+                gene_names_batch = [id_to_gene[id] for id in transcript_ids]
+                
+                cell_ids_batch = batch['bd'].id
+                
+                attention_df = extract_attention_df(attention_weights = attention_weights, gene_names = gene_names_batch, cell_ids = cell_ids_batch, cell_types_dict = cell_types_dict, edge_type = edge_type)
+                
+                for layer_idx in range(layers):
+                    for head_idx in range(heads):
+                        adj_matrix, count_matrix = attention_summarizer.summarize_attention_by_gene_df(
+                            attention_df, 
+                            layer_idx=layer_idx, 
+                            head_idx=head_idx
+                        )
+                        attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx] += adj_matrix
+                        attention_gene_matrix_dict["count_matrix"][layer_idx][head_idx] += count_matrix
 
-    # # Save results
-    # with open(results_dir / 'attention_gene_matrix_dict.pkl', 'wb') as f:
-    #     pickle.dump(attention_gene_matrix_dict, f)
-        
-    # Load results
-    with open(results_dir / 'attention_gene_matrix_dict969.pkl', 'rb') as f:
-        attention_gene_matrix_dict = pickle.load(f)
+        # Compute average attention weights
+        for layer_idx in range(layers):
+            for head_idx in range(heads):
+                attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx] = safe_divide_sparse_numpy(
+                    attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx],
+                    attention_gene_matrix_dict["count_matrix"][layer_idx][head_idx]
+                )
+
+        # Save results
+        with open(results_dir / f'attention_gene_matrix_dict_{edge_type}.pkl', 'wb') as f:
+            pickle.dump(attention_gene_matrix_dict, f)
+    else:
+        print(f"Loading results from {results_dir / f'attention_gene_matrix_dict_{edge_type}.pkl'}")
+        # Load results
+        with open(results_dir / f'attention_gene_matrix_dict_{edge_type}.pkl', 'rb') as f:
+            attention_gene_matrix_dict = pickle.load(f)
     
-    # # Generate comparison plots
-    # compare_attention_patterns(
-    #     attention_gene_matrix_dict,
-    #     comparison_type='layers',
-    #     edge_type=edge_type,
-    #     top_k=15,
-    #     gene_to_idx=gene_to_idx
-    # )
+    # # Load top genes names and indices
+    # top_k = 20 # max: 50
+    # with open(Path('intermediate_data') / f'top_genes_k50.pkl', 'rb') as f:
+    #     top_genes, top_indices = pickle.load(f)
     
-    # compare_attention_patterns(
-    #     attention_gene_matrix_dict,
-    #     comparison_type='heads',
-    #     edge_type=edge_type,
-    #     top_k=15,
-    #     gene_to_idx=gene_to_idx
-    # )
+    # top_genes = top_genes[::-1][:top_k]
+    # top_indices = top_indices[::-1][:top_k]
     
-    # # Visualize all attention patterns in a grid
-    # visualize_all_attention_patterns(
-    #     attention_gene_matrix_dict,
-    #     edge_type=edge_type,
-    #     gene_to_idx=gene_to_idx
-    # )
+    # select the genes in the gene_types_dict
+    selected_genes = gene_types_dict.keys()
+    selected_indices = [gene_to_idx[gene] for gene in selected_genes]
     
-    # # Visualize attention patterns with metrics
-    # visualize_all_attention_patterns_with_metrics(
-    #     attention_gene_matrix_dict,
-    #     edge_type=edge_type,
-    #     gene_to_idx=gene_to_idx
-    # )
-        
-    # Visualize attention embeddings and patterns
-    print("Visualizing attention embeddings and patterns...")
-    
-    # # Visualize all embeddings in a grid
-    # visualize_all_embeddings(
-    #     attention_gene_matrix_dict,
-    #     method='umap',
-    #     top_k_genes=20
-    # )
-    
-    # Visualize average embedding
-    visualize_average_embedding(
-        attention_gene_matrix_dict,
-        gene_names=gene_names,
-        method='umap'
+    # Create visualization configuration
+    viz_config = VisualizationConfig(
+        edge_type=edge_type,
+        gene_types_dict=gene_types_dict,
+        cell_to_idx=cell_to_idx,
+        cell_order=cell_order,
+        cell_type_to_color=cell_type_to_color,
+        gene_type_to_color=gene_type_to_color
     )
     
+    # Visualize all attention patterns
+    print("Visualizing attention patterns...")
+    visualize_all_attention_patterns(
+        attention_gene_matrix_dict,
+        selected_gene_names=selected_genes,
+        selected_gene_indices=selected_indices,
+        config=viz_config
+    )
+    
+    # Visualize attention embeddings and patterns
+    if edge_type == 'tx-tx':
+        print("Visualizing attention embeddings and patterns...")
+        
+        # add negative control genes to the gene_types_dict
+        negative_control_genes = ['NegControlProbe_00034', 'NegControlProbe_00004', 'NegControlCodeword_0526', 'NegControlCodeword_0517', 'NegControlProbe_00035', 'NegControlCodeword_0514', 'NegControlCodeword_0506', 'NegControlCodeword_0534', 'NegControlProbe_00041', 'NegControlCodeword_0513', 'NegControlCodeword_0531', 'NegControlCodeword_0522', 'NegControlCodeword_0523', 'NegControlProbe_00022', 'NegControlProbe_00031', 'NegControlCodeword_0530', 'NegControlCodeword_0508', 'NegControlCodeword_0511', 'NegControlCodeword_0510', 'NegControlProbe_00024', 'NegControlProbe_00039', 'NegControlProbe_00002', 'NegControlCodeword_0528', 'NegControlCodeword_0540', 'NegControlCodeword_0503', 'NegControlCodeword_0536', 'NegControlCodeword_0539', 'NegControlProbe_00013', 'NegControlCodeword_0520', 'NegControlCodeword_0524', 'NegControlCodeword_0533', 'NegControlProbe_00042', 'BLANK_0069', 'NegControlProbe_00025', 'NegControlProbe_00017', 'NegControlCodeword_0502', 'NegControlProbe_00003', 'NegControlCodeword_0515', 'NegControlCodeword_0537', 'NegControlProbe_00012', 'NegControlProbe_00016', 'NegControlCodeword_0521', 'NegControlCodeword_0507', 'NegControlCodeword_0529', 'NegControlProbe_00033', 'NegControlCodeword_0505', 'NegControlCodeword_0519', 'NegControlCodeword_0509', 'NegControlCodeword_0500', 'NegControlCodeword_0538', 'NegControlProbe_00014', 'NegControlCodeword_0516', 'NegControlCodeword_0535', 'NegControlCodeword_0527', 'NegControlCodeword_0504', 'NegControlCodeword_0525', 'NegControlCodeword_0512', 'BLANK_0037', 'NegControlCodeword_0518', 'NegControlCodeword_0532', 'NegControlProbe_00019', 'BLANK_0006', 'NegControlCodeword_0501']
+        
+        gene_types_dict.update(dict(zip(negative_control_genes, ['negative_control'] * len(negative_control_genes))))
+        
+        # visualize the all attention patterns
+        visualize_all_embeddings(
+            attention_gene_matrix_dict,
+            gene_names=gene_names,
+            method='umap',
+            gene_types_dict=gene_types_dict,
+            gene_type_to_color=gene_type_to_color
+        )
+        
+        # Visualize average embedding
+        visualize_average_embedding(
+            attention_gene_matrix_dict,
+            gene_names=gene_names,
+            method='umap',
+            gene_types_dict=gene_types_dict,
+            gene_type_to_color=gene_type_to_color
+        )
 
 if __name__ == '__main__':
     main() 

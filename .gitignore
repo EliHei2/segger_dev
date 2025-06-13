@@ -180,3 +180,6 @@ dev*
 lightning_logs/
 *.pkl
 .cursor
+
+# intermediate data
+intermediate_data/

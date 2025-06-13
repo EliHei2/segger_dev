@@ -2,10 +2,10 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import pickle
 from typing import Dict, List, Tuple
 import streamlit as st
-from utils import load_attention_data, get_top_genes_across_all_layers
+from utils import load_attention_data, get_top_genes_by_attention
+from attention_data_processing import save_intermediate_data, load_intermediate_data
 
 def create_interactive_attention_plot(
     attention_gene_matrix_dict: Dict,
@@ -13,6 +13,9 @@ def create_interactive_attention_plot(
     head_idx: int | str,
     top_genes: List[str],
     top_indices: np.ndarray,
+    layer_avg_matrices: np.ndarray,
+    head_avg_matrices: np.ndarray,
+    average_attention_matrix: np.ndarray,
     top_k: int = 20,
     threshold: float = 0.0
 ) -> go.Figure:
@@ -24,25 +27,19 @@ def create_interactive_attention_plot(
         head_idx: Index of the attention head to visualize or 'average' for average across heads
         top_genes: List of top gene names
         top_indices: Indices of top genes
+        layer_avg_matrices: Pre-computed layer-wise average attention matrices
+        head_avg_matrices: Pre-computed head-wise average attention matrices
+        average_attention_matrix: Pre-computed overall average attention matrix
         top_k: Number of top genes to show
         threshold: Minimum attention weight threshold (0-1) for showing edges
     """
-    n_layers = len(attention_gene_matrix_dict["adj_matrix"])
-    n_heads = len(attention_gene_matrix_dict["adj_matrix"][0])
-    
-    # Calculate average attention matrix if needed
-    if layer_idx == 'average' or head_idx == 'average':
-        avg_matrix = np.zeros((len(top_indices), len(top_indices)))
-        count = 0
-        
-        for l in range(n_layers):
-            for h in range(n_heads):
-                if (layer_idx == 'average' or l == layer_idx) and (head_idx == 'average' or h == head_idx):
-                    attention_matrix = attention_gene_matrix_dict["adj_matrix"][l][h]
-                    avg_matrix += attention_matrix[top_indices][:, top_indices].toarray()
-                    count += 1
-        
-        top_matrix = avg_matrix / count
+    # Get the appropriate attention matrix based on layer and head selection
+    if layer_idx == 'average' and head_idx == 'average':
+        top_matrix = average_attention_matrix[top_indices][:, top_indices]
+    elif layer_idx == 'average':
+        top_matrix = head_avg_matrices[head_idx][top_indices][:, top_indices]
+    elif head_idx == 'average':
+        top_matrix = layer_avg_matrices[layer_idx][top_indices][:, top_indices]
     else:
         # Get attention matrix for specified layer and head
         attention_matrix = attention_gene_matrix_dict["adj_matrix"][layer_idx][head_idx]
@@ -146,16 +143,31 @@ def create_interactive_attention_plot(
 def main():
     st.title("Interactive Gene Attention Visualization")
     
-    # Load data
-    attention_gene_matrix_dict = load_attention_data()
+    # Create intermediate data directory
+    intermediate_dir = Path('intermediate_data')
+    
+    # Check if intermediate data exists
+    if not intermediate_dir.exists() or not list(intermediate_dir.glob('*.pkl')):
+        st.info("First time loading: Computing and saving intermediate data...")
+        # Load data
+        attention_gene_matrix_dict = load_attention_data()
+        
+        # Load gene names
+        transcripts = pd.read_parquet(Path('data_xenium') / 'transcripts.parquet')
+        gene_names = transcripts['feature_name'].unique().tolist()
+        
+        # Save intermediate data
+        save_intermediate_data(attention_gene_matrix_dict, gene_names, intermediate_dir)
+        st.success("Intermediate data saved successfully!")
+
+    # Load intermediate data
+    attention_gene_matrix_dict, gene_names, average_attention_matrix, layer_avg_matrices, head_avg_matrices, top_genes_dict = load_intermediate_data(intermediate_dir)
+    
+    # print(top_genes_dict) # for debugging; also print out the top_k genes and names
     
     # Get dimensions
     n_layers = len(attention_gene_matrix_dict["adj_matrix"])
     n_heads = len(attention_gene_matrix_dict["adj_matrix"][0])
-    
-    # Load gene names
-    transcripts = pd.read_parquet(Path('data_xenium') / 'transcripts.parquet')
-    gene_names = transcripts['feature_name'].unique().tolist()
     
     # Create sidebar controls
     st.sidebar.header("Visualization Parameters")
@@ -175,12 +187,12 @@ def main():
         help="Only show attention weights above this threshold"
     )
     
-    # Calculate top genes once
-    top_genes, top_indices = get_top_genes_across_all_layers(
-        attention_gene_matrix_dict,
-        gene_names,
-        top_k
-    )
+    # Get pre-computed top genes
+    top_genes, top_indices = top_genes_dict[50]
+    
+    # reverse the order of the top genes and indices and then take the top k genes
+    top_genes = top_genes[::-1][:top_k]
+    top_indices = top_indices[::-1][:top_k]
     
     # Create layer selection with average option
     layer_options = ['average'] + list(range(n_layers))
@@ -205,6 +217,9 @@ def main():
         head_idx,
         top_genes,
         top_indices,
+        layer_avg_matrices,
+        head_avg_matrices,
+        average_attention_matrix,
         top_k,
         threshold
     )
