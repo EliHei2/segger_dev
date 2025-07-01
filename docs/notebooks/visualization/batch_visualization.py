@@ -39,6 +39,7 @@ def extract_attention_df(attention_weights, gene_names=None, cell_ids=None, cell
                     if edge_type == 'tx-tx':
                         entry['target_gene'] = gene_names[dst]
                     else:
+                        entry['target_cell_id'] = cell_ids[dst]
                         entry['target_cell'] = cell_types_dict[cell_ids[dst]]
                 
                 data.append(entry)
@@ -59,7 +60,7 @@ def visualize_attention_df(attention_df, layer_idx, head_idx, edge_type, gene_ty
         - 'target': Target node index
         - 'attention_weight': Attention weight
         - 'source_gene': Source gene name (if gene_names provided)
-        - 'target_gene'/'target_cell': Target gene/cell type (if gene_names provided)
+        - 'target_gene'/'target_cell_id': Target gene/cell ID (if gene_names provided)
     layer_idx : int
         Layer index (1-indexed)
     head_idx : int
@@ -94,7 +95,7 @@ def visualize_attention_df(attention_df, layer_idx, head_idx, edge_type, gene_ty
             filtered_df = filtered_df[filtered_df[target_col].isin(gene_types_dict.keys())]
     else:  # tx-bd
         source_col = "source_gene"
-        target_col = "target_cell"
+        target_col = "target_cell_id"  # Use cell ID instead of cell type
         if cell_types_dict is not None:
             filtered_df = filtered_df[filtered_df[source_col].isin(gene_types_dict.keys())]
     
@@ -169,7 +170,8 @@ def visualize_attention_df(attention_df, layer_idx, head_idx, edge_type, gene_ty
         if edge_type == 'tx-tx':
             target_types = source_types
         else:
-            target_types = [cell_types_dict.get(cell, '') for cell in sorted_targets]
+            # For tx-bd, get cell types from cell IDs for visualization
+            target_types = [cell_types_dict.get(cell, '') for cell in sorted_targets] if cell_types_dict else [''] * len(sorted_targets)
         
         # Color the y-axis labels (source genes)
         y_labels = ax.get_yticklabels()
@@ -197,7 +199,7 @@ def visualize_attention_df(attention_df, layer_idx, head_idx, edge_type, gene_ty
         ax.set_xlabel('Target Gene')
         ax.set_ylabel('Source Gene')
     else:
-        ax.set_xlabel('Target Cell')
+        ax.set_xlabel('Target Cell ID')
         ax.set_ylabel('Source Gene')
     
     plt.suptitle(title)
@@ -249,7 +251,7 @@ def visualize_mean_attention_df(attention_df, layer_idx=None, head_idx=None, edg
             filtered_df = filtered_df[filtered_df[target_col].isin(gene_types_dict.keys())]
     else:  # tx-bd
         source_col = "source_gene"
-        target_col = "target_cell"
+        target_col = "target_cell_id"  # Use cell ID instead of cell type
         if cell_types_dict is not None:
             filtered_df = filtered_df[filtered_df[source_col].isin(gene_types_dict.keys())]
     
@@ -329,7 +331,8 @@ def visualize_mean_attention_df(attention_df, layer_idx=None, head_idx=None, edg
         if edge_type == 'tx-tx':
             target_types = source_types
         else:
-            target_types = [cell_types_dict.get(cell, '') for cell in sorted_targets]
+            # For tx-bd, get cell types from cell IDs for visualization
+            target_types = [cell_types_dict.get(cell, '') for cell in sorted_targets] if cell_types_dict else [''] * len(sorted_targets)
         
         # Color the y-axis labels (source genes)
         y_labels = ax.get_yticklabels()
@@ -357,7 +360,7 @@ def visualize_mean_attention_df(attention_df, layer_idx=None, head_idx=None, edg
         ax.set_xlabel('Target Gene')
         ax.set_ylabel('Source Gene')
     else:
-        ax.set_xlabel('Target Cell')
+        ax.set_xlabel('Target Cell ID')
         ax.set_ylabel('Source Gene')
     
     plt.suptitle(title)

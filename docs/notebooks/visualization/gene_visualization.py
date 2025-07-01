@@ -21,7 +21,7 @@ Parameters:
         - 'layer': Layer index (1-indexed)
         - 'head': Head index (1-indexed)
         - 'source_gene': Source gene name
-        - 'target_gene'/'target_cell': Target gene name/cell type
+        - 'target_gene'/'target_cell_id': Target gene name/cell ID
         - 'attention_weight': Attention weight
     layer_idx : int
         Layer index (1-indexed)
@@ -80,7 +80,7 @@ def summarize_attention_by_gene_df(attention_df, layer_idx, head_idx, edge_type,
             - 'layer': Layer index (1-indexed)
             - 'head': Head index (1-indexed)
             - 'source_gene': Source gene name
-            - 'target_gene'/'target_cell': Target gene name/cell type
+            - 'target_gene'/'target_cell_id': Target gene name/cell ID
             - 'attention_weight': Attention weight
         layer_idx : int
             Layer index (1-indexed)
@@ -91,7 +91,7 @@ def summarize_attention_by_gene_df(attention_df, layer_idx, head_idx, edge_type,
         gene_to_idx : dict
             Dictionary mapping gene names to their indices
         cell_to_idx : dict
-            Dictionary mapping cell types to their indices
+            Dictionary mapping cell IDs to their indices
         visualize : bool
             Whether to create and save a visualization plot
             
@@ -118,7 +118,7 @@ def summarize_attention_by_gene_df(attention_df, layer_idx, head_idx, edge_type,
         if edge_type == 'tx-tx':
             dst_idx = gene_to_idx[row['target_gene']]
         elif edge_type == 'tx-bd':
-            dst_idx = cell_to_idx[row['target_cell']]
+            dst_idx = cell_to_idx[row['target_cell_id']]
         adj_matrix[src_idx, dst_idx] += row['attention_weight']
         count_matrix[src_idx, dst_idx] += 1
     
@@ -126,260 +126,6 @@ def summarize_attention_by_gene_df(attention_df, layer_idx, head_idx, edge_type,
     count_matrix = count_matrix.tolil()
     
     return adj_matrix, count_matrix
-
-@dataclass
-class ComparisonConfig:
-    """Configuration for attention pattern comparison."""
-    comparison_type: str = 'layers'  # 'layers' or 'heads'
-    layer_indices: Optional[List[int]] = None
-    head_indices: Optional[List[int]] = None
-    edge_type: str = 'tx-tx'
-    selected_gene_names: Optional[List[str]] = None
-    selected_gene_indices: Optional[List[int]] = None
-    gene_to_idx: Optional[Dict[str, int]] = None
-    cell_to_idx: Optional[Dict[str, int]] = None
-    gene_types_dict: Optional[Dict[str, str]] = None
-    figures_dir: Optional[Path] = None
-
-class AttentionPatternComparer:
-    """Handles comparison of attention patterns across layers or heads."""
-    
-    def __init__(self, config: ComparisonConfig):
-        self.config = config
-        self.processor = AttentionMatrixProcessor()
-        self.gene_visualizer = GeneTypeVisualizer()
-        self.figures_dir = config.figures_dir or create_figures_dir()
-    
-    def compare_patterns(self, attention_gene_matrix_dict: Dict):
-        """Compare attention patterns based on configuration."""
-        if self.config.comparison_type == 'layers':
-            self._compare_layers(attention_gene_matrix_dict)
-        elif self.config.comparison_type == 'heads':
-            self._compare_heads(attention_gene_matrix_dict)
-        else:
-            raise ValueError(f"Invalid comparison type: {self.config.comparison_type}")
-    
-    def _compare_layers(self, attention_gene_matrix_dict: Dict):
-        """Compare attention patterns across layers."""
-        for head_idx in self._get_head_indices(attention_gene_matrix_dict):
-            matrices = self._get_layer_matrices(attention_gene_matrix_dict, head_idx)
-            
-            # Create visualizations
-            self._create_heatmap_comparison(matrices, head_idx, 'layer')
-            self._create_difference_matrices(matrices, head_idx, 'layer')
-            self._create_metrics_visualization(matrices, head_idx, 'layer')
-            self._create_jaccard_similarity(matrices, head_idx, 'layer')
-    
-    def _compare_heads(self, attention_gene_matrix_dict: Dict):
-        """Compare attention patterns across heads."""
-        for layer_idx in self._get_layer_indices(attention_gene_matrix_dict):
-            matrices = self._get_head_matrices(attention_gene_matrix_dict, layer_idx)
-            
-            # Create visualizations
-            self._create_heatmap_comparison(matrices, layer_idx, 'head')
-            self._create_difference_matrices(matrices, layer_idx, 'head')
-            self._create_metrics_visualization(matrices, layer_idx, 'head')
-            self._create_jaccard_similarity(matrices, layer_idx, 'head')
-    
-    def _get_layer_indices(self, attention_gene_matrix_dict: Dict) -> List[int]:
-        """Get layer indices to compare."""
-        if self.config.layer_indices is not None:
-            return self.config.layer_indices
-        return list(range(len(attention_gene_matrix_dict['adj_matrix'])))
-    
-    def _get_head_indices(self, attention_gene_matrix_dict: Dict) -> List[int]:
-        """Get head indices to compare."""
-        if self.config.head_indices is not None:
-            return self.config.head_indices
-        return list(range(len(attention_gene_matrix_dict['adj_matrix'][0])))
-    
-    def _get_layer_matrices(self, attention_gene_matrix_dict: Dict, head_idx: int) -> List[np.ndarray]:
-        """Get matrices for each layer at a given head."""
-        return [attention_gene_matrix_dict['adj_matrix'][layer_idx][head_idx].toarray() 
-                for layer_idx in self._get_layer_indices(attention_gene_matrix_dict)]
-    
-    def _get_head_matrices(self, attention_gene_matrix_dict: Dict, layer_idx: int) -> List[np.ndarray]:
-        """Get matrices for each head at a given layer."""
-        return [attention_gene_matrix_dict['adj_matrix'][layer_idx][head_idx].toarray() 
-                for head_idx in self._get_head_indices(attention_gene_matrix_dict)]
-    
-    def _create_heatmap_comparison(self, matrices: List[np.ndarray], idx: int, comp_type: str):
-        """Create heatmap comparison visualization."""
-        fig, axes = plt.subplots(1, len(matrices), figsize=(6*len(matrices), 5))
-        if len(matrices) == 1:
-            axes = [axes]
-        
-        for i, matrix in enumerate(matrices):
-            im = sns.heatmap(matrix, cmap='viridis', ax=axes[i], cbar=(i == len(matrices)-1))
-            axes[i].set_title(f'{comp_type.capitalize()} {idx+1}, {comp_type} {i+1}')
-            
-            if self.config.gene_types_dict:
-                self._add_gene_type_coloring(axes[i], matrix.shape[0])
-            
-            self._set_axis_labels(axes[i])
-        
-        plt.tight_layout()
-        plt.savefig(self.figures_dir / 'dataset_visualization' / 
-                   f'{comp_type}_comparison_{idx+1}_{self.config.edge_type}.png')
-        plt.close()
-    
-    def _create_difference_matrices(self, matrices: List[np.ndarray], idx: int, comp_type: str):
-        """Create difference matrices visualization."""
-        for mode in ['subsequent', 'first']:
-            diff_matrices = self.processor.compute_difference_matrices(matrices, mode=mode)
-            
-            if self.config.edge_type == 'tx-tx':
-                self._plot_tx_tx_differences(diff_matrices, idx, comp_type, mode)
-            else:
-                self._plot_tx_bd_differences(diff_matrices, idx, comp_type, mode)
-    
-    def _create_metrics_visualization(self, matrices: List[np.ndarray], idx: int, comp_type: str):
-        """Create metrics visualization."""
-        metrics = [self.processor.compute_attention_metrics(matrix) for matrix in matrices]
-        metrics_df = pd.DataFrame(metrics, 
-                                index=[f'{comp_type.capitalize()} {i+1}' for i in range(len(matrices))])
-        
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        axes = axes.flatten()
-        
-        for i, (metric_name, data) in enumerate(metrics_df.items()):
-            data.plot(ax=axes[i], marker='o')
-            axes[i].set_title(metric_name.capitalize())
-            axes[i].set_xlabel(comp_type.capitalize())
-            axes[i].set_ylabel(metric_name.capitalize())
-        
-        plt.suptitle(f'Attention Metrics Across {comp_type.capitalize()}s\n{comp_type.capitalize()} {idx+1}')
-        plt.tight_layout()
-        plt.savefig(self.figures_dir / 'dataset_visualization' / 
-                   f'{comp_type}_metrics_{idx+1}_{self.config.edge_type}.png')
-        plt.close()
-    
-    def _create_jaccard_similarity(self, matrices: List[np.ndarray], idx: int, comp_type: str):
-        """Create Jaccard similarity visualization."""
-        similarity = self.processor.compute_jaccard_similarity(matrices)
-        
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(similarity, annot=True, cmap='viridis',
-                   xticklabels=[f'{comp_type.capitalize()} {i+1}' for i in range(len(matrices))],
-                   yticklabels=[f'{comp_type.capitalize()} {i+1}' for i in range(len(matrices))])
-        plt.title(f'Jaccard Similarity Between {comp_type.capitalize()}s ({comp_type.capitalize()} {idx+1})')
-        plt.tight_layout()
-        plt.savefig(self.figures_dir / 'dataset_visualization' / 
-                   f'{comp_type}_jaccard_{idx+1}_{self.config.edge_type}.png')
-        plt.close()
-    
-    def _add_gene_type_coloring(self, ax, n_genes: int):
-        """Add gene type coloring to axis labels."""
-        if not self.config.gene_types_dict:
-            return
-            
-        type_to_color = self.gene_visualizer.create_gene_type_colors(self.config.gene_types_dict)
-        gene_types = [self.config.gene_types_dict.get(f'Gene {i}', '') for i in range(n_genes)]
-        
-        y_labels = ax.get_yticklabels()
-        for label, gene_type in zip(y_labels, gene_types):
-            color = type_to_color.get(gene_type, (0.5, 0.5, 0.5))
-            highlight_color = (*color[:3], 0.3)
-            label.set_bbox(dict(facecolor=highlight_color, edgecolor='none', alpha=0.3))
-        
-        self.gene_visualizer.add_gene_type_legend(ax, type_to_color)
-    
-    def _set_axis_labels(self, ax):
-        """Set axis labels based on edge type."""
-        if self.config.edge_type == 'tx-tx':
-            ax.set_xlabel('Target Gene')
-            ax.set_ylabel('Source Gene')
-        else:
-            ax.set_xlabel('Target Cell')
-            ax.set_ylabel('Source Gene')
-    
-    def _plot_tx_tx_differences(self, diff_matrices: List[np.ndarray], idx: int, 
-                               comp_type: str, mode: str):
-        """Plot differences for transcript-to-transcript attention."""
-        for i, diff_matrix in enumerate(diff_matrices):
-            plt.figure(figsize=(10, 8))
-            ax = sns.heatmap(diff_matrix, cmap='RdBu_r', center=0)
-            
-            if self.config.gene_types_dict:
-                self._add_gene_type_coloring(ax, diff_matrix.shape[0])
-            
-            plt.title(f'{comp_type.capitalize()} Difference {idx+1} - {mode.capitalize()} {self.config.edge_type}')
-            self._set_axis_labels(ax)
-            plt.tight_layout()
-            plt.savefig(self.figures_dir / 'dataset_visualization' / 
-                       f'{comp_type}_diff_{idx+1}_{mode}_{self.config.edge_type}_{i}.png')
-            plt.close()
-    
-    def _plot_tx_bd_differences(self, diff_matrices: List[np.ndarray], idx: int, 
-                               comp_type: str, mode: str):
-        """Plot differences for transcript-to-binding attention."""
-        if not self.config.cell_to_idx:
-            raise ValueError("cell_to_idx must be provided for tx-bd edge type")
-            
-        for i, diff_matrix in enumerate(diff_matrices):
-            plt.figure(figsize=(10, 8))
-            ax = sns.heatmap(diff_matrix, cmap='RdBu_r', center=0,
-                           xticklabels=[f'Cell {i}' for i in range(diff_matrix.shape[1])])
-            
-            if self.config.gene_types_dict:
-                self._add_gene_type_coloring(ax, diff_matrix.shape[0])
-            
-            plt.title(f'{comp_type.capitalize()} Difference {idx+1} - {mode.capitalize()} {self.config.edge_type}')
-            self._set_axis_labels(ax)
-            plt.tight_layout()
-            plt.savefig(self.figures_dir / 'dataset_visualization' / 
-                       f'{comp_type}_diff_{idx+1}_{mode}_{self.config.edge_type}_{i}.png')
-            plt.close()
-
-def compare_attention_patterns(attention_gene_matrix_dict: Dict, config: ComparisonConfig):
-    """
-    Create comparison plots between different attention layers or heads.
-    
-    Parameters:
-    -----------
-    attention_gene_matrix_dict : Dict
-        Dictionary containing adjacency matrices for each layer and head
-    config : ComparisonConfig
-        Configuration for the comparison
-    """
-    comparer = AttentionPatternComparer(config)
-    comparer.compare_patterns(attention_gene_matrix_dict)
-
-def compute_attention_metrics(matrix, threshold=1e-5):
-    """Compute various metrics for an attention matrix.
-    
-    Args:
-        matrix: numpy array of attention weights
-        threshold: threshold for sparsity calculation
-        
-    Returns:
-        dict containing mean, std, sparsity, and entropy
-    """
-    metrics = {
-        'mean': np.mean(matrix),
-        'std': np.std(matrix),
-        'sparsity': np.mean(np.abs(matrix) < threshold),
-        'entropy': entropy(matrix.flatten() + 1e-10)  # Add small constant to avoid log(0)
-    }
-    return metrics
-
-def compute_difference_matrices(matrices, mode='subsequent'):
-    """Compute difference matrices between attention matrices.
-    
-    Args:
-        matrices: list of attention matrices
-        mode: 'subsequent' for differences between consecutive matrices,
-              'first' for differences from the first matrix
-    
-    Returns:
-        list of difference matrices
-    """
-    if mode == 'subsequent':
-        return [matrices[i+1] - matrices[i] for i in range(len(matrices)-1)]
-    elif mode == 'first':
-        return [matrices[i] - matrices[0] for i in range(1, len(matrices))]
-    else:
-        raise ValueError("Mode must be 'subsequent' or 'first'")
 
 def compute_jaccard_similarity(matrices, threshold=1e-5):
     """Compute Jaccard similarity between attention matrices.
@@ -526,9 +272,9 @@ def plot_attention_matrix_with_gene_order(matrix, gene_names, gene_indices, orde
         # Select only the chosen genes
         selected_matrix = matrix[np.ix_(gene_indices, range(len(cell_to_idx)))]
         
-        # Create DataFrame with ordered genes
-        df = pd.DataFrame(selected_matrix, index=gene_names, 
-                         columns=cell_to_idx.keys())
+        # Create DataFrame with ordered genes and cell IDs
+        cell_ids = list(cell_to_idx.keys())
+        df = pd.DataFrame(selected_matrix, index=gene_names, columns=cell_ids)
         
         # Reorder the DataFrame according to the predefined order
         df = df.reindex(index=ordered_gene_names)
@@ -559,8 +305,8 @@ def plot_attention_matrix_with_gene_order(matrix, gene_names, gene_indices, orde
             ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.15, 1))
         
         plt.title(title)
-        # plt.xlabel('Target Cell')
-        # plt.ylabel('Source Gene')
+        plt.xlabel('Target Cell ID')
+        plt.ylabel('Source Gene')
         plt.tight_layout()
     
     # Save the plot
@@ -839,8 +585,9 @@ class AttentionVisualizer:
                     df = pd.DataFrame(adj_matrix, index=selected_gene_names, columns=selected_gene_names)
                 else:  # tx-bd
                     adj_matrix = adj_matrix[np.ix_(selected_gene_indices, range(len(self.config.cell_to_idx)))]
-                    df = pd.DataFrame(adj_matrix, index=selected_gene_names, 
-                                    columns=self.config.cell_to_idx.keys())
+                    # Use cell IDs as column names
+                    cell_ids = list(self.config.cell_to_idx.keys())
+                    df = pd.DataFrame(adj_matrix, index=selected_gene_names, columns=cell_ids)
                 
                     # Reorder columns based on cell_order if provided
                     if cell_order is not None:
@@ -915,7 +662,9 @@ class AttentionVisualizer:
         if not self.config.cell_to_idx:
             raise ValueError("cell_to_idx must be provided for tx-bd edge type")
         
-        df = pd.DataFrame(matrix, index=gene_names, columns=self.config.cell_to_idx.keys())
+        # Use cell IDs as column names instead of cell types
+        cell_ids = list(self.config.cell_to_idx.keys())
+        df = pd.DataFrame(matrix, index=gene_names, columns=cell_ids)
         df = df.reindex(index=ordered_gene_names)
         
         # Reorder columns based on cell_order if provided
@@ -932,7 +681,7 @@ class AttentionVisualizer:
             self.gene_type_visualizer.add_gene_type_legend(ax, self.type_to_color)
         
         plt.title(title)
-        plt.xlabel('Target Cell')
+        plt.xlabel('Target Cell ID')
         plt.ylabel('Source Gene')
         plt.tight_layout()
         self._save_plot(figures_dir, title)
@@ -1076,7 +825,7 @@ class AttentionSummarizer:
             if self.edge_type == 'tx-tx':
                 dst_idx = self.gene_to_idx[row['target_gene']]
             else:  # tx-bd
-                dst_idx = self.cell_to_idx[row['target_cell']]
+                dst_idx = self.cell_to_idx[row['target_cell_id']]
             adj_matrix[src_idx, dst_idx] += row['attention_weight']
             count_matrix[src_idx, dst_idx] += 1
         

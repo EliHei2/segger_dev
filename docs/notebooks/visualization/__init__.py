@@ -4,8 +4,7 @@ from .batch_visualization import (
 )
 
 from .gene_visualization import (
-    summarize_attention_by_gene_df,
-    compare_attention_patterns
+    summarize_attention_by_gene_df
 )
 
 from .gene_embedding import (

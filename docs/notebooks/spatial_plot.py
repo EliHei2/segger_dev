@@ -8,7 +8,7 @@ sys.path.append(str(project_root))
 import pandas as pd
 from pathlib import Path
 import numpy as np
-from docs.notebooks.visualization.spatial_visualization import visualize_tile_with_attention_interactive
+from docs.notebooks.visualization.spatial_visualization import visualize_tile_with_attention
 from docs.notebooks.visualization.batch_visualization import extract_attention_df
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.predict import load_model
@@ -20,6 +20,7 @@ import pickle
 def process_attention_weights(attention_df: pd.DataFrame, batch: HeteroData) -> Dict[str, torch.Tensor]:
     """
     Process attention weights DataFrame to create a dictionary of edge indices and attention weights.
+    Sums attention weights across all layers and heads.
     
     Parameters
     ----------
@@ -47,8 +48,13 @@ def process_attention_weights(attention_df: pd.DataFrame, batch: HeteroData) -> 
         else:  # tx-bd
             edge_index = batch[("tx", "belongs", "bd")].edge_index.cpu().numpy()
         
-        # Create a mapping from (source, target) to attention weight
-        weight_map = dict(zip(zip(edge_df['source'], edge_df['target']), edge_df['attention_weight']))
+        # Create a mapping from (source, target) to sum of attention weights across all layers and heads
+        weight_map = {}
+        for _, row in edge_df.iterrows():
+            key = (row['source'], row['target'])
+            if key not in weight_map:
+                weight_map[key] = 0.0
+            weight_map[key] += row['attention_weight']
         
         # Create attention weights array matching edge_index shape
         attn_weights = np.zeros(edge_index.shape[1])
@@ -68,6 +74,9 @@ def main():
     transcripts = pd.read_parquet(Path('data_xenium') / 'transcripts.parquet')
     # Get id of transcripts to gene names
     idx_to_gene = dict(zip(transcripts['transcript_id'], transcripts['feature_name']))
+    
+    # get the gene names
+    gene_names = transcripts['feature_name'].unique()
 
     # Get cell types
     cell_types = pd.read_csv(Path('data_xenium') / 'cell_groups.csv')
@@ -146,28 +155,42 @@ def main():
         # get the cell id of the batch
         cell_id = batch['bd'].id
         idx_to_cell = {i: cell_id[i] for i in range(len(cell_id))}
-    
-    # # filter out transcripts with gene_name in gene_restriction
-    # top_k = 50 # max: 50
-    # with open(Path('intermediate_data') / f'top_genes_k50.pkl', 'rb') as f:
-    #     top_genes, _ = pickle.load(f)
-    
-    # top_genes_restricted = top_genes[::-1][:top_k]
-    # print(f"Top {top_k} genes: {top_genes_restricted}")
 
-    visualize_tile_with_attention_interactive(
+    x_range = [4310, 4330] # from 4280 to 4440
+    y_range = [610, 630] # from 600 to 730
+    attention_threshold = 0 
+    edge_types = ["tx-tx"]
+    
+    # add negative control genes to the gene_types_dict
+    negative_control_genes = ['NegControlProbe_00034', 'NegControlProbe_00004', 'NegControlCodeword_0526', 'NegControlCodeword_0517', 'NegControlProbe_00035', 'NegControlCodeword_0514', 'NegControlCodeword_0506', 'NegControlCodeword_0534', 'NegControlProbe_00041', 'NegControlCodeword_0513', 'NegControlCodeword_0531', 'NegControlCodeword_0522', 'NegControlCodeword_0523', 'NegControlProbe_00022', 'NegControlProbe_00031', 'NegControlCodeword_0530', 'NegControlCodeword_0508', 'NegControlCodeword_0511', 'NegControlCodeword_0510', 'NegControlProbe_00024', 'NegControlProbe_00039', 'NegControlProbe_00002', 'NegControlCodeword_0528', 'NegControlCodeword_0540', 'NegControlCodeword_0503', 'NegControlCodeword_0536', 'NegControlCodeword_0539', 'NegControlProbe_00013', 'NegControlCodeword_0520', 'NegControlCodeword_0524', 'NegControlCodeword_0533', 'NegControlProbe_00042', 'BLANK_0069', 'NegControlProbe_00025', 'NegControlProbe_00017', 'NegControlCodeword_0502', 'NegControlProbe_00003', 'NegControlCodeword_0515', 'NegControlCodeword_0537', 'NegControlProbe_00012', 'NegControlProbe_00016', 'NegControlCodeword_0521', 'NegControlCodeword_0507', 'NegControlCodeword_0529', 'NegControlProbe_00033', 'NegControlCodeword_0505', 'NegControlCodeword_0519', 'NegControlCodeword_0509', 'NegControlCodeword_0500', 'NegControlCodeword_0538', 'NegControlProbe_00014', 'NegControlCodeword_0516', 'NegControlCodeword_0535', 'NegControlCodeword_0527', 'NegControlCodeword_0504', 'NegControlCodeword_0525', 'NegControlCodeword_0512', 'BLANK_0037', 'NegControlCodeword_0518', 'NegControlCodeword_0532', 'NegControlProbe_00019', 'BLANK_0006', 'NegControlCodeword_0501']
+    
+    gene_types_dict.update(dict(zip(negative_control_genes, ['negative_control'] * len(negative_control_genes))))
+    
+    # other genes
+    other_genes = [gene for gene in gene_names if gene not in gene_types_dict.keys()]
+    gene_types_dict.update(dict(zip(other_genes, ['other'] * len(other_genes))))
+    
+    nucleus_boundaries = True
+    cell_boundaries = False
+    
+    save_path = Path('figures') / 'cell' / f'cell_transcript_x_{x_range[0]}_{x_range[1]}_y_{y_range[0]}_{y_range[1]}_t_{attention_threshold}_{edge_types}_cb_{cell_boundaries}_nb_{nucleus_boundaries}.png'
+    
+    visualize_tile_with_attention(
         batch=batch,
-        downsampling=0.3,
+        range_x=x_range,
+        range_y=y_range,
+        edge_types=edge_types,
         attention_weights=processed_attention,
+        attention_threshold=attention_threshold,
         idx_to_gene=idx_to_gene,
         idx_to_cell=idx_to_cell,
         gene_types_dict=gene_types_dict,
         cell_types_dict=cell_types_dict,
         cell_type_to_color=cell_type_to_color,
         gene_type_to_color=gene_type_to_color,
-        boundaries_file=Path('data_xenium') / 'cell_boundaries.parquet',
-        nucleus_file=Path('data_xenium') / 'nucleus_boundaries.parquet',
-        save_path=Path('figures') / 'cell' / 'cell_transcript_batch0.html'
+        cell_boundaries=cell_boundaries,
+        nucleus_boundaries=nucleus_boundaries,
+        save_path=save_path
     )
     
 if __name__ == "__main__":

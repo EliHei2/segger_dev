@@ -14,6 +14,7 @@ def visualize_tile_with_attention(
     range_x: Tuple[int, int],
     range_y: Tuple[int, int],
     attention_weights: Optional[Dict[str, torch.Tensor]] = None,
+    attention_threshold: float = 0.0,
     edge_types: List[str] = ["tx-bd", "tx-tx"],
     save_path: Optional[str] = None,
     idx_to_cell: Optional[Dict[int, str]] = None,
@@ -22,8 +23,8 @@ def visualize_tile_with_attention(
     cell_types_dict: Optional[Dict[str, str]] = None,
     cell_type_to_color: Optional[Dict[str, str]] = None,
     gene_type_to_color: Optional[Dict[str, str]] = None,
-    boundaries_file: Optional[str] = None,
-    nucleus_file: Optional[str] = None,
+    cell_boundaries: bool = False,
+    nucleus_boundaries: bool = False,
     figsize: Tuple[int, int] = (15, 10),
     alpha: float = 0.6,
     transcript_size: int = 20,
@@ -44,6 +45,8 @@ def visualize_tile_with_attention(
         Range of y coordinates to visualize
     attention_weights : Optional[Dict[str, torch.Tensor]]
         Dictionary containing attention weights for different edge types
+    attention_threshold : float
+        Minimum attention weight threshold for displaying edges
     edge_types : List[str]
         List of edge types to visualize (default: ["tx-bd", "tx-tx"])
     save_path : Optional[str]
@@ -60,9 +63,9 @@ def visualize_tile_with_attention(
         Dictionary mapping cell types to colors. If provided, will color cells by type
     gene_type_to_color : Optional[Dict[str, str]]
         Dictionary mapping gene types to colors. If provided, will color genes by type
-    boundaries_file : Optional[str]
+    cell_boundaries : Optional[str]
         Path to the cell boundaries parquet file. If provided, will plot actual cell boundaries
-    nucleus_file : Optional[str]
+    nucleus_boundaries : Optional[str]
         Path to the nuclei parquet file. If provided, will plot the nuclei on the plot
     figsize : Tuple[int, int]
         Figure size in inches (width, height)
@@ -118,9 +121,10 @@ def visualize_tile_with_attention(
     mask = (tx_pos[:, 0] >= range_x[0]) & (tx_pos[:, 0] <= range_x[1]) & \
            (tx_pos[:, 1] >= range_y[0]) & (tx_pos[:, 1] <= range_y[1])
     
-    # filter out transcripts with gene_name in gene_restriction
-    gene_restriction = [gene for gene in gene_types_dict.keys()]
-    mask = mask & np.isin(gene_names, gene_restriction)
+    if gene_types_dict is not None:
+        # filter out transcripts with gene_name in gene_restriction
+        gene_restriction = [gene for gene in gene_types_dict.keys()]
+        mask = mask & np.isin(gene_names, gene_restriction)
     
     # Get available transcripts within range
     tx_indices = np.where(mask)[0]
@@ -134,9 +138,9 @@ def visualize_tile_with_attention(
     bd_pos_filtered = bd_pos[bd_mask]
     cell_ids_filtered = cell_ids[bd_mask]
     
-    # Plot the nuclei
-    if nucleus_file is not None:
-        nucleus = pd.read_parquet(nucleus_file)
+    # Plot the nuclei if nucleus_boundaries is True
+    if nucleus_boundaries:
+        nucleus = pd.read_parquet(Path('data_xenium') / 'nucleus_boundaries.parquet')
         
         # filter out nucleus with cell_id in cell_ids_filtered
         nucleus_filtered = nucleus[nucleus['cell_id'].isin(cell_ids_filtered)]
@@ -173,9 +177,9 @@ def visualize_tile_with_attention(
             alpha=0.8
         )
     
-    # Plot cell boundaries if boundaries file is provided
-    if boundaries_file is not None:
-        df = pd.read_parquet(boundaries_file)
+    # Plot cell boundaries if cell_boundaries is True
+    if cell_boundaries:
+        df = pd.read_parquet(Path('data_xenium') / 'cell_boundaries.parquet')
         
         # Filter boundaries with the cell ids filtered
         df = df[df['cell_id'].isin(cell_ids_filtered)]
@@ -239,6 +243,11 @@ def visualize_tile_with_attention(
                     # Get attention weights for filtered edges
                     attn_weights = attention_weights[edge_type].cpu().numpy()[mask]
                     
+                    # Apply attention threshold
+                    threshold_mask = attn_weights >= attention_threshold
+                    edge_index = edge_index[:, threshold_mask]
+                    attn_weights = attn_weights[threshold_mask]
+                
                 else:  # edge_type == "tx-bd"
                     edge_index = batch[("tx", "belongs", "bd")].edge_index.cpu().numpy()
                     
@@ -248,6 +257,11 @@ def visualize_tile_with_attention(
                     
                     # Get attention weights for filtered edges
                     attn_weights = attention_weights[edge_type].cpu().numpy()[mask]
+                    
+                    # Apply attention threshold
+                    threshold_mask = attn_weights >= attention_threshold
+                    edge_index = edge_index[:, threshold_mask]
+                    attn_weights = attn_weights[threshold_mask]
                 
                 # Normalize attention weights for line width
                 if len(attn_weights) > 0:  # Only normalize if we have edges
