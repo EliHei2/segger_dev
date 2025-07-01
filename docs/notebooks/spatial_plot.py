@@ -157,6 +157,7 @@ def main():
 
     visualize_tile_with_attention_interactive(
         batch=batch,
+        downsampling=0.3,
         attention_weights=processed_attention,
         idx_to_gene=idx_to_gene,
         idx_to_cell=idx_to_cell,
@@ -165,7 +166,8 @@ def main():
         cell_type_to_color=cell_type_to_color,
         gene_type_to_color=gene_type_to_color,
         boundaries_file=Path('data_xenium') / 'cell_boundaries.parquet',
-        nucleus_file=Path('data_xenium') / 'nucleus_boundaries.parquet'
+        nucleus_file=Path('data_xenium') / 'nucleus_boundaries.parquet',
+        save_path=Path('figures') / 'cell' / 'cell_transcript_batch0.html'
     )
     
 if __name__ == "__main__":
