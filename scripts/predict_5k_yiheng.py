@@ -18,28 +18,30 @@ import dask.dataframe as dd
 
 
 
-seg_tag = "human_CRC_seg_nuclei"
-model_version = 0
+seg_tag = "output-XETG00078__0041722__Region_1__20241203__142052"
+model_version = 4
+models_dir = Path("./models/MNG_5k_sampled/") / seg_tag
 
 
+seg = "output-XETG00078__0041719__Region_2__20241203__142052"
 
 XENIUM_DATA_DIR = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
-)
-SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_nuclei")
+    "/omics/odcf/analysis/OE0606_projects_temp/xenium_projects/20241209_Xenium5k_CNSL_BrM/20241209_Xenium5k_CNSL_BrM"
+) / seg
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/MNG_5k_sampled") / seg
 
-models_dir = Path("./models") / seg_tag
+
 benchmarks_dir = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/human_CRC_seg_nuclei"
-)
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks"
+) / seg
 transcripts_file = (
-   "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real/transcripts.parquet"
+   XENIUM_DATA_DIR / "transcripts.parquet"
 )
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=SEGGER_DATA_DIR,
-    batch_size=1,
-    num_workers=1,
+    batch_size=2,
+    num_workers=2,
 )
 
 dm.setup()
@@ -49,18 +51,18 @@ dm.setup()
 model_path = models_dir / "lightning_logs" / f"version_{model_version}"
 model = load_model(model_path / "checkpoints")
 
-receptive_field = {"k_bd": 4, "dist_bd": 10, "k_tx": 5, "dist_tx": 3}
+receptive_field = {"k_bd": 4, "dist_bd": 7.5, "k_tx": 5, "dist_tx": 3}
 
 segment(
     model,
     dm,
     save_dir=benchmarks_dir,
-    seg_tag=seg_tag,
+    seg_tag=seg,
     transcript_file=transcripts_file,
     # file_format='anndata',
     receptive_field=receptive_field,
     min_transcripts=5,
-    score_cut=0.4,
+    score_cut=0.75,
     # max_transcripts=1500,
     cell_id_col="segger_cell_id",
     use_cc=False,

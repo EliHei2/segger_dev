@@ -8,6 +8,217 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
+from segger.prediction.boundary import generate_boundary
+from shapely import Polygon
+import zarr
+
+
+
+def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_value: int = 16) -> np.ndarray:
+    """Standardize list of polygon vertices to a fixed shape.
+
+    Args:
+        polygon_vertices (List[List[Tuple[float, float]]]): List of polygon coordinate lists.
+        max_value (int): Max number of coordinates per polygon.
+
+    Returns:
+        np.ndarray: Padded or truncated list of polygon vertices.
+    """
+    flattened = []
+    for vertices in polygon_vertices:
+        if isinstance(vertices, np.ndarray):
+        # Handle numpy array case
+            if len(vertices) >= max_value:
+                return vertices[:max_value]
+            padding = np.zeros((max_value - len(vertices), vertices.shape[1]))
+            return np.concatenate([vertices, padding])
+        if len(vertices) > max_value:
+            flattened.append(vertices[:max_value])
+        else:
+            flattened.append(vertices + [(0.0, 0.0)] * (max_value - len(vertices)))
+    return np.array(flattened, dtype=np.float32)
+
+
+def seg2explorer(
+    seg_df: pd.DataFrame,
+    source_path: str,
+    output_dir: str,
+    cells_filename: str = "seg_cells",
+    analysis_filename: str = "seg_analysis",
+    xenium_filename: str = "seg_experiment.xenium",
+    analysis_df: Optional[pd.DataFrame] = None,
+    draw: bool = False,
+    cell_id_columns: str = "seg_cell_id",
+    area_low: float = 10,
+    area_high: float = 100,
+) -> None:
+    """Convert segmentation results into a Xenium Explorer-compatible Zarr dataset.
+
+    Args:
+        seg_df (pd.DataFrame): Segmented transcript dataframe.
+        source_path (str): Path to the original Zarr store.
+        output_dir (str): Output directory to save new Zarr and Xenium files.
+        cells_filename (str): Filename prefix for cell Zarr file.
+        analysis_filename (str): Filename prefix for cell group Zarr file.
+        xenium_filename (str): Output experiment filename for Xenium.
+        analysis_df (Optional[pd.DataFrame]): Optional dataframe with cluster annotations.
+        draw (bool): Whether to draw polygons (not used currently).
+        cell_id_columns (str): Column containing cell IDs.
+        area_low (float): Minimum area threshold to include cells.
+        area_high (float): Maximum area threshold to include cells.
+    """
+    source_path = Path(source_path)
+    storage = Path(output_dir)
+
+    cell_id2old_id: Dict[int, Any] = {}
+    cell_id: List[int] = []
+    cell_summary: List[Dict[str, Any]] = []
+    polygon_num_vertices: List[List[int]] = [[], []]
+    polygon_vertices: List[List[Any]] = [[], []]
+    seg_mask_value: List[int] = []
+
+    grouped_by = seg_df.groupby(cell_id_columns)
+
+    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(
+        enumerate(grouped_by), total=len(grouped_by)
+    ):
+        if len(seg_cell) < 5:
+            continue
+
+        cell_convex_hull = generate_boundary(seg_cell)
+        if cell_convex_hull is None or not isinstance(cell_convex_hull, Polygon):
+            continue
+
+        if not (area_low <= cell_convex_hull.area <= area_high):
+            continue
+
+        uint_cell_id = cell_incremental_id + 1
+        cell_id2old_id[uint_cell_id] = seg_cell_id
+
+        seg_nucleous = seg_cell[seg_cell["overlaps_nucleus"] == 1]
+        nucleus_convex_hull = None
+        # if len(seg_nucleous) >= 3:
+        #     try:
+        #         nucleus_convex_hull = ConvexHull(seg_nucleous[["x_location", "y_location"]])
+        #     except Exception:
+        #         pass
+
+        cell_id.append(uint_cell_id)
+        cell_summary.append(
+            {
+                "cell_centroid_x": seg_cell["x_location"].mean(),
+                "cell_centroid_y": seg_cell["y_location"].mean(),
+                "cell_area": cell_convex_hull.area,
+                "nucleus_centroid_x": seg_cell["x_location"].mean(),
+                "nucleus_centroid_y": seg_cell["y_location"].mean(),
+                "nucleus_area": cell_convex_hull.area,
+                "z_level": (seg_cell.z_location.mean() // 3).round(0) * 3,
+            }
+        )
+        polygon_num_vertices[0].append(len(cell_convex_hull.exterior.coords))
+        # polygon_num_vertices[1].append(
+        #     len(nucleus_convex_hull.vertices) if nucleus_convex_hull else 0
+        # )
+        polygon_vertices[0].append(list(cell_convex_hull.exterior.coords))
+        # polygon_vertices[1].append(
+        #     seg_nucleous[["x_location", "y_location"]].values[
+        #         nucleus_convex_hull.vertices
+        #     ]
+        #     if nucleus_convex_hull else np.array([[], []]).T
+        # )
+        seg_mask_value.append(uint_cell_id)
+
+    print(polygon_vertices[0][0])
+
+    cell_polygon_vertices = get_flatten_version(polygon_vertices[0], max_value=21)
+    # nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=21)
+
+    print(cell_polygon_vertices)
+    print(cell_polygon_vertices.shape)
+    # print(nucl_polygon_vertices)
+    # print(nucl_polygon_vertices.shape)
+    cells = {
+        "cell_id": np.array(
+            [np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32
+        ).T,
+        "cell_summary": pd.DataFrame(cell_summary).values.astype(np.float64),
+        "polygon_num_vertices": np.array(
+            [
+                # [min(x + 1, x + 1) for x in polygon_num_vertices[1]],
+                [min(x + 1, x + 1) for x in polygon_num_vertices[0]],
+            ],
+            dtype=np.int32,
+        ),
+        "polygon_vertices": np.array(
+            [cell_polygon_vertices], dtype=np.float32
+        ),
+        "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
+    }
+
+    print(cells)
+
+    existing_store = zarr.open(source_path / "cells.zarr.zip", mode="r")
+    new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
+    new_store["cell_id"] = cells["cell_id"]
+    new_store["polygon_num_vertices"] = cells["polygon_num_vertices"]
+    new_store["polygon_vertices"] = cells["polygon_vertices"]
+    new_store["seg_mask_value"] = cells["seg_mask_value"]
+    new_store.attrs.update(existing_store.attrs)
+    new_store.attrs["number_cells"] = len(cells["cell_id"])
+    new_store.store.close()
+
+    if analysis_df is None:
+        analysis_df = pd.DataFrame(
+            [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+        )
+        analysis_df["default"] = "seg"
+
+    zarr_df = pd.DataFrame(
+        [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
+    )
+    clustering_df = pd.merge(zarr_df, analysis_df, how="left", on=cell_id_columns)
+    clusters_names = [col for col in analysis_df.columns if col != cell_id_columns]
+
+    clusters_dict = {
+        cluster: {
+            label: idx + 1
+            for idx, label in enumerate(
+                sorted(np.unique(clustering_df[cluster].dropna()))
+            )
+        }
+        for cluster in clusters_names
+    }
+
+    new_zarr = zarr.open(storage / f"{analysis_filename}.zarr.zip", mode="w")
+    new_zarr.create_group("/cell_groups")
+    for i, cluster in enumerate(clusters_names):
+        new_zarr["cell_groups"].create_group(str(i))
+        group_values = [clusters_dict[cluster].get(x, 0) for x in clustering_df[cluster]]
+        indices, indptr = get_indices_indptr(np.array(group_values))
+        new_zarr["cell_groups"][str(i)]["indices"] = indices
+        new_zarr["cell_groups"][str(i)]["indptr"] = indptr
+
+    new_zarr["cell_groups"].attrs.update(
+        {
+            "major_version": 1,
+            "minor_version": 0,
+            "number_groupings": len(clusters_names),
+            "grouping_names": clusters_names,
+            "group_names": [
+                sorted(clusters_dict[cluster], key=clusters_dict[cluster].get)
+                for cluster in clusters_names
+            ],
+        }
+    )
+    new_zarr.store.close()
+
+    generate_experiment_file(
+        template_path=source_path / "experiment.xenium",
+        output_path=storage / xenium_filename,
+        cells_name=cells_filename,
+        analysis_name=analysis_filename,
+    )
+
 
 
 def str_to_uint32(cell_id_str: str) -> Tuple[int, int]:
@@ -219,220 +430,6 @@ def get_median_expression_table(adata, column: str = "leiden") -> pd.DataFrame:
     return cluster_expression_df.T.style.background_gradient(cmap="Greens")
 
 
-def seg2explorer(
-    seg_df: pd.DataFrame,
-    source_path: str,
-    output_dir: str,
-    cells_filename: str = "seg_cells",
-    analysis_filename: str = "seg_analysis",
-    xenium_filename: str = "seg_experiment.xenium",
-    analysis_df: Optional[pd.DataFrame] = None,
-    draw: bool = False,
-    cell_id_columns: str = "seg_cell_id",
-    area_low: float = 10,
-    area_high: float = 100,
-) -> None:
-    """Convert seg output to a format compatible with Xenium explorer.
-
-    Args:
-        seg_df (pd.DataFrame): The seg DataFrame.
-        source_path (str): The source path.
-        output_dir (str): The output directory.
-        cells_filename (str): The filename for cells.
-        analysis_filename (str): The filename for analysis.
-        xenium_filename (str): The filename for Xenium.
-        analysis_df (Optional[pd.DataFrame]): The analysis DataFrame.
-        draw (bool): Whether to draw the plots.
-        cell_id_columns (str): The cell ID columns.
-        area_low (float): The lower area threshold.
-        area_high (float): The upper area threshold.
-    """
-    import zarr
-    import json
-
-    source_path = Path(source_path)
-    storage = Path(output_dir)
-
-    cell_id2old_id = {}
-    cell_id = []
-    cell_summary = []
-    polygon_num_vertices = [[], []]
-    polygon_vertices = [[], []]
-    seg_mask_value = []
-    tma_id = []
-
-    grouped_by = seg_df.groupby(cell_id_columns)
-    for cell_incremental_id, (seg_cell_id, seg_cell) in tqdm(
-        enumerate(grouped_by), total=len(grouped_by)
-    ):
-        if len(seg_cell) < 5:
-            continue
-
-        cell_convex_hull = ConvexHull(seg_cell[["x_location", "y_location"]])
-        if cell_convex_hull.area > area_high:
-            continue
-        if cell_convex_hull.area < area_low:
-            continue
-
-        uint_cell_id = cell_incremental_id + 1
-        cell_id2old_id[uint_cell_id] = seg_cell_id
-
-        seg_nucleous = seg_cell[seg_cell["overlaps_nucleus"] == 1]
-        if len(seg_nucleous) >= 3:
-            nucleus_convex_hull = ConvexHull(seg_nucleous[["x_location", "y_location"]])
-
-        cell_id.append(uint_cell_id)
-        cell_summary.append(
-            {
-                "cell_centroid_x": seg_cell["x_location"].mean(),
-                "cell_centroid_y": seg_cell["y_location"].mean(),
-                "cell_area": cell_convex_hull.area,
-                "nucleus_centroid_x": seg_cell["x_location"].mean(),
-                "nucleus_centroid_y": seg_cell["y_location"].mean(),
-                "nucleus_area": cell_convex_hull.area,
-                "z_level": (seg_cell.z_location.mean() // 3).round(0) * 3,
-            }
-        )
-
-        polygon_num_vertices[0].append(len(cell_convex_hull.vertices))
-        polygon_num_vertices[1].append(
-            len(nucleus_convex_hull.vertices) if len(seg_nucleous) >= 3 else 0
-        )
-        polygon_vertices[0].append(
-            seg_cell[["x_location", "y_location"]].values[cell_convex_hull.vertices]
-        )
-        polygon_vertices[1].append(
-            seg_nucleous[["x_location", "y_location"]].values[
-                nucleus_convex_hull.vertices
-            ]
-            if len(seg_nucleous) >= 3
-            else np.array([[], []]).T
-        )
-        seg_mask_value.append(cell_incremental_id + 1)
-
-    cell_polygon_vertices = get_flatten_version(polygon_vertices[0], max_value=21)
-    nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=21)
-
-    cells = {
-        "cell_id": np.array(
-            [np.array(cell_id), np.ones(len(cell_id))], dtype=np.uint32
-        ).T,
-        "cell_summary": pd.DataFrame(cell_summary).values.astype(np.float64),
-        "polygon_num_vertices": np.array(
-            [
-                [min(x + 1, x + 1) for x in polygon_num_vertices[1]],
-                [min(x + 1, x + 1) for x in polygon_num_vertices[0]],
-            ],
-            dtype=np.int32,
-        ),
-        "polygon_vertices": np.array(
-            [nucl_polygon_vertices, cell_polygon_vertices]
-        ).astype(np.float32),
-        "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
-    }
-
-    existing_store = zarr.open(source_path / "cells.zarr.zip", mode="r")
-    new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
-
-    new_store["cell_id"] = cells["cell_id"]
-    new_store["polygon_num_vertices"] = cells["polygon_num_vertices"]
-    new_store["polygon_vertices"] = cells["polygon_vertices"]
-    new_store["seg_mask_value"] = cells["seg_mask_value"]
-
-    new_store.attrs.update(existing_store.attrs)
-    new_store.attrs["number_cells"] = len(cells["cell_id"])
-    new_store.store.close()
-
-    if analysis_df is None:
-        analysis_df = pd.DataFrame(
-            [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
-        )
-        analysis_df["default"] = "seg"
-
-    zarr_df = pd.DataFrame(
-        [cell_id2old_id[i] for i in cell_id], columns=[cell_id_columns]
-    )
-    clustering_df = pd.merge(zarr_df, analysis_df, how="left", on=cell_id_columns)
-
-    clusters_names = [i for i in analysis_df.columns if i != cell_id_columns]
-    clusters_dict = {
-        cluster: {
-            j: i
-            for i, j in zip(
-                range(1, len(sorted(np.unique(clustering_df[cluster].dropna()))) + 1),
-                sorted(np.unique(clustering_df[cluster].dropna())),
-            )
-        }
-        for cluster in clusters_names
-    }
-
-    new_zarr = zarr.open(storage / (analysis_filename + ".zarr.zip"), mode="w")
-    new_zarr.create_group("/cell_groups")
-
-    clusters = [
-        [clusters_dict[cluster].get(x, 0) for x in list(clustering_df[cluster])]
-        for cluster in clusters_names
-    ]
-
-    for i in range(len(clusters)):
-        new_zarr["cell_groups"].create_group(i)
-        indices, indptr = get_indices_indptr(np.array(clusters[i]))
-        new_zarr["cell_groups"][i].create_dataset("indices", data=indices)
-        new_zarr["cell_groups"][i].create_dataset("indptr", data=indptr)
-
-    new_zarr["cell_groups"].attrs.update(
-        {
-            "major_version": 1,
-            "minor_version": 0,
-            "number_groupings": len(clusters_names),
-            "grouping_names": clusters_names,
-            "group_names": [
-                [
-                    x[0]
-                    for x in sorted(clusters_dict[cluster].items(), key=lambda x: x[1])
-                ]
-                for cluster in clusters_names
-            ],
-        }
-    )
-
-    new_zarr.store.close()
-    generate_experiment_file(
-        template_path=source_path / "experiment.xenium",
-        output_path=storage / xenium_filename,
-        cells_name=cells_filename,
-        analysis_name=analysis_filename,
-    )
-
-
-def get_flatten_version(polygons: List[np.ndarray], max_value: int = 21) -> np.ndarray:
-    """Get the flattened version of polygon vertices.
-
-    Args:
-        polygons (List[np.ndarray]): List of polygon vertices.
-        max_value (int): The maximum number of vertices to keep.
-
-    Returns:
-        np.ndarray: The flattened array of polygon vertices.
-    """
-    n = max_value + 1
-    result = np.zeros((len(polygons), n * 2))
-    for i, polygon in tqdm(enumerate(polygons), total=len(polygons)):
-        num_points = len(polygon)
-        if num_points == 0:
-            result[i] = np.zeros(n * 2)
-            continue
-        elif num_points < max_value:
-            repeated_points = np.tile(polygon[0], (n - num_points, 1))
-            padded_polygon = np.concatenate((polygon, repeated_points), axis=0)
-        else:
-            padded_polygon = np.zeros((n, 2))
-            padded_polygon[: min(num_points, n)] = polygon[: min(num_points, n)]
-            padded_polygon[-1] = polygon[0]
-        result[i] = padded_polygon.flatten()
-    return result
-
-
 def generate_experiment_file(
     template_path: str,
     output_path: str,
@@ -452,8 +449,8 @@ def generate_experiment_file(
     with open(template_path) as f:
         experiment = json.load(f)
 
-    experiment["images"].pop("morphology_filepath")
-    experiment["images"].pop("morphology_focus_filepath")
+    # experiment["images"].pop("morphology_filepath")
+    # experiment["images"].pop("morphology_focus_filepath")
 
     experiment["xenium_explorer_files"][
         "cells_zarr_filepath"

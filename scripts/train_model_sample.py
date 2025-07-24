@@ -17,8 +17,8 @@ from lightning import LightningModule
 
 
 
-segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_seg_cells")
-models_dir = Path("./models/human_CRC_seg_cells")
+segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_seg_exmax_weights")
+models_dir = Path("./models/human_CRC_seg_exmax_weights")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -35,28 +35,28 @@ dm.setup()
 # is_token_based = True
 # num_tx_tokens = 500
 
-# If you use custom gene embeddings, use the following two lines instead:
-is_token_based = False
-num_tx_tokens = (
-    dm.train[0].x_dict["tx"].shape[1]
-)  # Set the number of tokens to the number of genes
+# # If you use custom gene embeddings, use the following two lines instead:
+# is_token_based = False
+# num_tx_tokens = (
+#     dm.train[0].x_dict["tx"].shape[1]
+# )  # Set the number of tokens to the number of genes
 
 
 model = Segger(
     # is_token_based=is_token_based,
-    num_tx_tokens= num_tx_tokens,
+    num_tx_tokens= 500,
     init_emb=8,
     hidden_channels=64,
     out_channels=16,
     heads=4,
-    num_mid_layers=3,
+    num_mid_layers=2,
 )
 model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
 
 batch = dm.train[0]
 model.forward(batch.x_dict, batch.edge_index_dict)
 # Wrap the model in LitSegger
-ls = LitSegger(model=model)
+ls = LitSegger(model=model, align_loss=True, align_lambda=1)
 
 # # Initialize the Lightning model
 # ls = LitSegger(
@@ -73,9 +73,9 @@ ls = LitSegger(model=model)
 trainer = Trainer(
     accelerator="gpu",
     strategy="auto",
-    precision="16-mixed",
-    devices=4,  # set higher number if more gpus are available
-    max_epochs=150,
+    precision="32",
+    devices=1,  # set higher number if more gpus are available
+    max_epochs=500,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )

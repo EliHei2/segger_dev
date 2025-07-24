@@ -366,6 +366,8 @@ class STSampleParquet:
         dist_bd: float = 15.0,
         k_tx: int = 3,
         dist_tx: float = 5.0,
+        k_tx_ex: int = 100,
+        dist_tx_ex: float = 20,
         tile_size: Optional[int] = None,
         tile_width: Optional[float] = None,
         tile_height: Optional[float] = None,
@@ -373,6 +375,7 @@ class STSampleParquet:
         frac: float = 1.0,
         val_prob: float = 0.1,
         test_prob: float = 0.2,
+        mutually_exclusive_genes: Optional[List] = None,
     ):
         """
         Saves the tiles of the sample as PyTorch geometric datasets. See
@@ -455,7 +458,10 @@ class STSampleParquet:
                     dist_bd=dist_bd,
                     k_tx=k_tx,
                     dist_tx=dist_tx,
+                    k_tx_ex=k_tx_ex,
+                    dist_tx_ex=dist_tx_ex,
                     neg_sampling_ratio=neg_sampling_ratio,
+                    mutually_exclusive_genes = mutually_exclusive_genes
                 )
                 if pyg_data is not None:
                     if pyg_data["tx", "belongs", "bd"].edge_index.numel() == 0:
@@ -1179,15 +1185,18 @@ class STTile:
     def to_pyg_dataset(
         self,
         # train: bool,
-        neg_sampling_ratio: float = 5,
+        neg_sampling_ratio: float = 10,
         k_bd: int = 3,
         dist_bd: float = 15,
         k_tx: int = 3,
         dist_tx: float = 5,
+        k_tx_ex: int = 100,
+        dist_tx_ex: float = 20,
         area: bool = True,
         convexity: bool = True,
         elongation: bool = True,
         circularity: bool = True,
+        mutually_exclusive_genes: Optional[List] = None,
     ) -> HeteroData:
         """
         Converts the sample data to a PyG HeteroData object.
@@ -1214,6 +1223,8 @@ class STTile:
         )
         pyg_data["tx"].x = self.get_transcript_props()
 
+
+
         # Set up Transcript-Transcript neighbor edges
         nbrs_edge_idx = self.get_kdtree_edge_index(
             self.transcripts[self.settings.transcripts.xyz],
@@ -1227,6 +1238,27 @@ class STTile:
             return None
 
         pyg_data["tx", "neighbors", "tx"].edge_index = nbrs_edge_idx
+
+
+        if mutually_exclusive_genes is not None:
+            nbrs_edge_idx = self.get_kdtree_edge_index(
+                self.transcripts[self.settings.transcripts.xyz],
+                self.transcripts[self.settings.transcripts.xyz],
+                k=k_tx_ex,
+                max_distance=dist_tx_ex,
+            )
+            gene_ids = self.transcripts[self.settings.transcripts.label].tolist()
+            src_gene = [gene_ids[idx] for idx in nbrs_edge_idx[0].tolist()]
+            dst_gene = [gene_ids[idx] for idx in nbrs_edge_idx[1].tolist()]
+
+            mask = [
+                tuple(sorted((a, b))) in mutually_exclusive_genes
+                    for a, b in zip(src_gene, dst_gene)
+                ]
+            mask = torch.tensor(mask)
+
+            pyg_data["tx", "excludes", "tx"].edge_index = nbrs_edge_idx[:, mask]
+
 
         # Set up Boundary nodes
         # Check if boundaries have geometries
@@ -1305,23 +1337,38 @@ class STTile:
             return pyg_data
 
         # If there are tx-bd edges, add negative edges for training
-        transform = RandomLinkSplit(
-            num_val=0,
-            num_test=0,
-            is_undirected=True,
-            edge_types=[edge_type],
-            neg_sampling_ratio=neg_sampling_ratio,
-        )
-        pyg_data, _, _ = transform(pyg_data)
+        pos_edges = blng_edge_idx  # shape (2, num_pos)
+        num_pos = pos_edges.shape[1]
 
-        # Refilter negative edges to include only transcripts in the
-        # original positive edges (still need a memory-efficient solution)
-        edges = pyg_data[edge_type]
-        mask = edges.edge_label_index[0].unsqueeze(1) == edges.edge_index[0].unsqueeze(
-            0
-        )
+        # Negative edges (tx-neighbors-bd) - EXCLUDE positives
+        neg_candidates = nbrs_edge_idx  # shape (2, num_candidates)
+
+        # --- Fast Negative Filtering (PyTorch-only) ---
+        # Reshape edges for broadcasting: (2, num_pos) vs (2, num_candidates, 1)
+        pos_expanded = pos_edges.unsqueeze(2)  # shape (2, num_pos, 1)
+        neg_expanded = neg_candidates.unsqueeze(1)  # shape (2, 1, num_candidates)
+
+        # Compare all edges in one go (broadcasting)
+        matches = (pos_expanded == neg_expanded).all(dim=0)  # shape (num_pos, num_candidates)
+        is_negative = ~matches.any(dim=0)  # shape (num_candidates,)
+
+        # Filter negatives
+        neg_edges = neg_candidates[:, is_negative]  # shape (2, num_filtered_neg)
+        num_neg = neg_edges.shape[1]
+
+        # --- Combine and label ---
+        edge_label_index = torch.cat([neg_edges, pos_edges], dim=1)
+        edge_label = torch.cat([
+            torch.zeros(num_neg, dtype=torch.float),
+            torch.ones(num_pos, dtype=torch.float)
+        ])
+
+        mask = edge_label_index[0].unsqueeze(1) == blng_edge_idx[0].unsqueeze(0)
         mask = torch.nonzero(torch.any(mask, 1)).squeeze()
-        edges.edge_label_index = edges.edge_label_index[:, mask]
-        edges.edge_label = edges.edge_label[mask]
+        edge_label_index = edge_label_index[:, mask]
+        edge_label = edge_label[mask]
+
+        pyg_data[edge_type].edge_label_index = edge_label_index
+        pyg_data[edge_type].edge_label = edge_label
 
         return pyg_data

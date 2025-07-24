@@ -49,8 +49,8 @@ scrnaseq = sc.read(SCRNASEQ_FILE)
 
 
 # subsample the scRNAseq if needed
-# sc.pp.subsample(scrnaseq, 0.1)
-# scrnaseq.var_names_make_unique()
+sc.pp.subsample(scrnaseq, 0.1)
+scrnaseq.var_names_make_unique()
 
 
 # Calculate gene-celltype embeddings from reference data

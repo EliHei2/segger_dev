@@ -17,8 +17,8 @@ from lightning import LightningModule
 
 
 
-segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_seg_cells")
-models_dir = Path("./models/human_CRC_seg_cells")
+segger_data_dir = Path("data_tidy/pyg_datasets/MNG_5k_sampled/output-XETG00078__0041719__Region_2__20241203__142052/")
+models_dir = Path("./models/MNG_5k_sampled/output-XETG00078__0041719__Region_2__20241203__142052/")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -26,8 +26,8 @@ models_dir = Path("./models/human_CRC_seg_cells")
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=2,
-    num_workers=2,
+    batch_size=3,
+    num_workers=3,
 )
 
 dm.setup()
@@ -43,6 +43,7 @@ num_tx_tokens = (
 
 
 model = Segger(
+    # is_token_based=is_token_based,s
     num_tx_tokens= num_tx_tokens,
     init_emb=8,
     hidden_channels=32,
@@ -64,7 +65,7 @@ trainer = Trainer(
     strategy="auto",
     precision="32",
     devices=4,  # set higher number if more gpus are available
-    max_epochs=150,
+    max_epochs=250,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )

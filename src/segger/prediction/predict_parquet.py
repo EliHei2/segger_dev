@@ -583,7 +583,7 @@ def segment(
         elapsed_time = time() - step_start_time
         print(f"Batch processing completed in {elapsed_time:.2f} seconds.")
 
-    seg_final_dd = pd.read_parquet(output_ddf_save_path)
+    # seg_final_dd = pd.read_parquet(output_ddf_save_path)
 
     step_start_time = time()
     if verbose:

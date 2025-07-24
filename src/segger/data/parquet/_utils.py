@@ -5,13 +5,16 @@ from shapely.affinity import scale
 from pyarrow import parquet as pq
 import numpy as np
 import scipy as sp
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple
 import sys
 from types import SimpleNamespace
 from pathlib import Path
 import yaml
 import os
 import pyarrow as pa
+import scanpy as sc
+import anndata as ad
+from itertools import combinations
 
 
 def get_xy_extents(
@@ -509,3 +512,134 @@ def ensure_transcript_ids(
             write_statistics=True,  # Ensure statistics are written
             compression="snappy",  # Use snappy compression for better performance
         )
+
+
+
+def find_markers(
+    adata: ad.AnnData,
+    cell_type_column: str,
+    pos_percentile: float = 5,
+    neg_percentile: float = 10,
+    percentage: float = 50,
+) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Identify positive and negative marker genes for each cell type in an AnnData object.
+    
+    Positive markers are top-ranked genes that are expressed in at least
+    `percentage` percent of cells in the given cell type.
+    
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data object containing gene expression data and cell type annotations.
+    cell_type_column : str
+        Name of the column in `adata.obs` specifying cell type identity for each cell.
+    pos_percentile : float, optional (default: 5)
+        Percentile threshold for selecting top highly expressed genes as positive markers.
+    neg_percentile : float, optional (default: 10)
+        Percentile threshold for selecting lowest expressed genes as negative markers.
+    percentage : float, optional (default: 50)
+        Minimum percent of cells (0-100) in a cell type expressing a gene for it to be a marker.
+    
+    Returns
+    -------
+    markers : dict
+        Dictionary mapping cell type names to:
+            {
+                'positive': [list of positive marker gene names],
+                'negative': [list of negative marker gene names]
+            }
+    """
+    markers = {}
+    sc.tl.rank_genes_groups(adata, groupby=cell_type_column)
+    genes = np.array(adata.var_names)
+    n_genes = adata.shape[1]
+
+    # Work with a dense matrix for expression fraction calculation
+    # (convert sparse to dense if needed)
+    if not isinstance(adata.X, np.ndarray):
+        expr_matrix = adata.X.toarray()
+    else:
+        expr_matrix = adata.X
+
+    for cell_type in adata.obs[cell_type_column].unique():
+        mask = (adata.obs[cell_type_column] == cell_type).values
+        gene_names = np.array(adata.uns['rank_genes_groups']['names'][cell_type])
+        
+        n_pos = max(1, int(n_genes * pos_percentile // 100))
+        n_neg = max(1, int(n_genes * neg_percentile // 100))
+        
+        # Calculate percent of cells in this cell type expressing each gene
+        expr_frac = (expr_matrix[mask] > 0).mean(axis=0) * 100  # as percent
+        
+        # Filter positive markers by expression fraction
+        pos_indices = []
+        for idx in range(n_pos):
+            gene = gene_names[idx]
+            gene_idx = np.where(genes == gene)[0][0]
+            if expr_frac[gene_idx] >= percentage:
+                pos_indices.append(idx)
+        positive_markers = list(gene_names[pos_indices])
+        
+        # Negative markers are the lowest-ranked
+        negative_markers = list(gene_names[-n_neg:])
+
+        markers[cell_type] = {
+            "positive": positive_markers,
+            "negative": negative_markers
+        }
+    return markers
+
+def find_mutually_exclusive_genes(
+    adata: ad.AnnData, markers: Dict[str, Dict[str, List[str]]], cell_type_column: str
+) -> List[Tuple[str, str]]:
+    """Identify mutually exclusive genes based on expression criteria.
+
+    Args:
+    - adata: AnnData
+        Annotated data object containing gene expression data.
+    - markers: dict
+        Dictionary where keys are cell types and values are dictionaries containing:
+            'positive': list of top x% highly expressed genes
+            'negative': list of top x% lowly expressed genes.
+    - cell_type_column: str
+        Column name in `adata.obs` that specifies cell types.
+
+    Returns:
+    - exclusive_pairs: list
+        List of mutually exclusive gene pairs.
+    """
+    exclusive_genes = {}
+    all_exclusive = []
+    gene_expression = adata.to_df()
+    for cell_type, marker_sets in markers.items():
+        positive_markers = marker_sets["positive"]
+        exclusive_genes[cell_type] = []
+        for gene in positive_markers:
+            gene_expr = adata[:, gene].X
+            cell_type_mask = adata.obs[cell_type_column] == cell_type
+            non_cell_type_mask = ~cell_type_mask
+            if (gene_expr[cell_type_mask] > 0).mean() > 0.2 and (
+                gene_expr[non_cell_type_mask] > 0
+            ).mean() < 0.05:
+                exclusive_genes[cell_type].append(gene)
+                all_exclusive.append(gene)
+    unique_genes = list(
+        {
+            gene
+            for i in exclusive_genes.keys()
+            for gene in exclusive_genes[i]
+            if gene in all_exclusive
+        }
+    )
+    filtered_exclusive_genes = {
+        i: [gene for gene in exclusive_genes[i] if gene in unique_genes]
+        for i in exclusive_genes.keys()
+    }
+    mutually_exclusive_gene_pairs = [
+        tuple(sorted((gene1, gene2)))
+        for key1, key2 in combinations(filtered_exclusive_genes.keys(), 2)
+        for gene1 in filtered_exclusive_genes[key1]
+        for gene2 in filtered_exclusive_genes[key2]
+    ]
+    return set(mutually_exclusive_gene_pairs)
