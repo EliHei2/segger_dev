@@ -183,3 +183,5 @@ lightning_logs/
 
 # intermediate data
 intermediate_data/
+
+.DS_Store

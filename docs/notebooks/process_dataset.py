@@ -10,12 +10,12 @@ import pandas as pd
 import pickle
 from segger.training.segger_data_module import SeggerDataModule
 from segger.prediction.predict import load_model
-from docs.notebooks.visualization.utils import VisualizationConfig
-from docs.notebooks.visualization.batch_visualization import extract_attention_df, visualize_attention_df
-from docs.notebooks.visualization.gene_visualization import (
+from visualization.utils import VisualizationConfig
+from visualization.batch_visualization import extract_attention_df, visualize_attention_df
+from visualization.gene_visualization import (
     visualize_all_attention_patterns, AttentionSummarizer
 )
-from docs.notebooks.visualization.utils import (
+from visualization.utils import (
     safe_divide_sparse_numpy, get_top_genes_by_attention,
     VisualizationConfig, AttentionMatrixProcessor
 )
@@ -194,15 +194,6 @@ def main():
         cell_order=selected_cell_ids.tolist(),  # Use selected cell IDs
         cell_type_to_color=cell_type_to_color,
         gene_type_to_color=gene_type_to_color
-    )
-    
-    # Visualize all attention patterns
-    print("Visualizing attention patterns...")
-    visualize_all_attention_patterns(
-        attention_gene_matrix_dict,
-        selected_gene_names=selected_genes,
-        selected_gene_indices=selected_indices,
-        config=viz_config
     )
     
     # Print summary statistics

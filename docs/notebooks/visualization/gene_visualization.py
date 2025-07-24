@@ -127,30 +127,6 @@ def summarize_attention_by_gene_df(attention_df, layer_idx, head_idx, edge_type,
     
     return adj_matrix, count_matrix
 
-def compute_jaccard_similarity(matrices, threshold=1e-5):
-    """Compute Jaccard similarity between attention matrices.
-    
-    Args:
-        matrices: list of attention matrices
-        threshold: threshold for binarizing attention weights
-        
-    Returns:
-        similarity matrix of shape (n_matrices, n_matrices)
-    """
-    n = len(matrices)
-    similarity = np.zeros((n, n))
-    
-    for i in range(n):
-        for j in range(n):
-            # Binarize matrices
-            m1 = (np.abs(matrices[i]) > threshold).astype(int)
-            m2 = (np.abs(matrices[j]) > threshold).astype(int)
-            
-            # Compute Jaccard similarity
-            similarity[i, j] = jaccard_score(m1.flatten(), m2.flatten())
-    
-    return similarity
-
 def compute_layer_average_attention(attention_gene_matrix_dict, layer_idx):
     """Compute average attention weights across all heads for a given layer."""
     n_heads = len(attention_gene_matrix_dict['adj_matrix'][layer_idx])

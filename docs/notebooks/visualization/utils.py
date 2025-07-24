@@ -65,9 +65,12 @@ def downsample_matrix(matrix, target_size):
     
     return block_reduce(matrix, block_size=(factor, factor), func=np.mean)
 
-def create_figures_dir(edge_type: str) -> Path:
+def create_figures_dir(edge_type: str, path_suffix: str = '') -> Path:
     """Create figures directory if it doesn't exist."""
-    figures_dir = Path('figures') / edge_type
+    if path_suffix:
+        figures_dir = Path('figures') / edge_type / path_suffix
+    else:
+        figures_dir = Path('figures') / edge_type
     figures_dir.mkdir(parents=True, exist_ok=True)
     (figures_dir / 'dataset_visualization').mkdir(exist_ok=True)
     return figures_dir
