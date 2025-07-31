@@ -341,11 +341,18 @@ def generate_boundaries(df, x="x_location", y="y_location", cell_id="segger_cell
 def generate_boundary(t, x="x_location", y="y_location"):
     if len(t) < 3:
         return None
-    bi = BoundaryIdentification(t[[x, y]].values)
-    bi.calculate_part_1(plot=False)
-    bi.calculate_part_2(plot=False)
-    geom = bi.find_cycles()
 
+    try:
+        bi = BoundaryIdentification(t[[x, y]].values)
+        bi.calculate_part_1(plot=False)
+        bi.calculate_part_2(plot=False)
+        geom = bi.find_cycles()
+    except Exception as e:
+        print(f"Failed to generate a boundary for the set of points of size len(t)={len(t)}")
+        print("Warning:")
+        print(e)
+        print("Skipping this set")
+        return None
     return geom
 
 
