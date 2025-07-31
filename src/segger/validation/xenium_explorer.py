@@ -5,6 +5,7 @@ import gzip
 import pandas as pd
 import numpy as np
 from scipy.spatial import ConvexHull
+from shapely.geometry import MultiPolygon, Polygon
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
