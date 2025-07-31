@@ -24,6 +24,10 @@ def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_v
         np.ndarray: Padded or truncated list of polygon vertices.
     """
     flattened = []
+    
+    if isinstance(vertices, np.ndarray):
+        vertices = vertices.tolist()
+        
     for vertices in polygon_vertices:
         if len(vertices) > max_value:
             flattened.append(vertices[:max_value])
