@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
 from segger.prediction.boundary import generate_boundary
-
+from zarr.storage import ZipStore
+import zarr
 
 
 def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_value: int = 21) -> np.ndarray:
@@ -146,7 +147,8 @@ def seg2explorer(
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
 
-    existing_store = zarr.open(source_path / "cells.zarr.zip", mode="r")
+    source_zarr_store = ZipStore(source_path / "cells.zarr.zip", mode="r") # added this line
+    existing_store = zarr.open(source_zarr_store, mode="r")
     new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
     new_store["cell_id"] = cells["cell_id"]
     new_store["polygon_num_vertices"] = cells["polygon_num_vertices"]
