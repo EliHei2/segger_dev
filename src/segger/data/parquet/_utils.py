@@ -357,7 +357,7 @@ def filter_transcripts(
     mask = pd.Series(True, index=transcripts_df.index)
     if filter_substrings is not None and label is not None:
         mask &= ~transcripts_df[label].str.startswith(tuple(filter_substrings))
-    if min_qv is not None and qv_column is not None:
+    if min_qv is not None and qv_column is not None and qv_column in transcripts_df.columns:
         mask &= transcripts_df[qv_column].ge(min_qv)
     return transcripts_df[mask]
 
