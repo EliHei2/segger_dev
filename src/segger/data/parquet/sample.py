@@ -36,6 +36,7 @@ class STSampleParquet:
         base_dir: os.PathLike,
         n_workers: Optional[int] = 1,
         scale_factor: Optional[float] = 1.0,
+        min_qv: Optional[float] = 0,
         sample_type: str = None,
         weights: pd.DataFrame = None,
     ):
@@ -56,6 +57,7 @@ class STSampleParquet:
             The scale factor to be used for expanding the boundary extents
             during spatial queries. If not provided, the default from settings
             will be used.
+        min_qv : Optional[float], default 0
 
         Raises
         ------
@@ -71,6 +73,7 @@ class STSampleParquet:
         boundaries_fn = self.settings.boundaries.filename
         self._boundaries_filepath = self._base_dir / boundaries_fn
         self.n_workers = n_workers
+        self.min_qv = min_qv
         self.settings.boundaries.scale_factor = 1
         nuclear_column = getattr(self.settings.transcripts, "nuclear_column", None)
         if nuclear_column is None or self.settings.boundaries.scale_factor != 1.0:
@@ -641,7 +644,7 @@ class STInMemoryDataset:
         self.settings = self.sample.settings
 
         # Load data from parquet files
-        self._load_transcripts(self.sample._transcripts_filepath)
+        self._load_transcripts(self.sample._transcripts_filepath, self.sample.min_qv)
         self._load_boundaries(self.sample._boundaries_filepath)
 
         # Pre-load KDTrees
@@ -649,7 +652,7 @@ class STInMemoryDataset:
             self.transcripts[self.settings.transcripts.xy], leafsize=100
         )
 
-    def _load_transcripts(self, path: os.PathLike, min_qv: float = 30.0):
+    def _load_transcripts(self, path: os.PathLike, min_qv: float = 0.0):
         """
         Loads and filters the transcripts dataframe for the dataset.
 
@@ -657,7 +660,7 @@ class STInMemoryDataset:
         ----------
         path : os.PathLike
             The file path to the transcripts parquet file.
-        min_qv : float, optional, default 30.0
+        min_qv : float, optional, default 0.0
             The minimum quality value (QV) for filtering transcripts.
 
         Raises
