@@ -484,6 +484,8 @@ class STSampleParquet:
         dist_bd: float = 15.0,
         k_tx: int = 3,
         dist_tx: float = 5.0,
+        k_tx_ex: int = 100,
+        dist_tx_ex: float = 20,
         tile_width: Optional[float] = None,
         tile_height: Optional[float] = None,
         neg_sampling_ratio: float = 5.0,
@@ -552,6 +554,8 @@ class STSampleParquet:
                     dist_bd=dist_bd,
                     k_tx=k_tx,
                     dist_tx=dist_tx,
+                    k_tx_ex=k_tx_ex,
+                    dist_tx_ex=dist_tx_ex,
                     neg_sampling_ratio=neg_sampling_ratio,
                 )
 
@@ -1181,6 +1185,9 @@ class STTile:
         props = torch.as_tensor(props.values).float()
 
         return props
+    
+    def canonical_edges(edge_index):
+        return torch.sort(edge_index, dim=0)[0]
 
     def to_pyg_dataset(
         self,
@@ -1241,23 +1248,46 @@ class STTile:
 
 
         if mutually_exclusive_genes is not None:
-            nbrs_edge_idx = self.get_kdtree_edge_index(
+            # Get potential repulsive edges (k-nearest neighbors within distance)
+            # --- Step 1: Get repulsive edges (mutually exclusive genes) ---
+            repels_edge_idx = self.get_kdtree_edge_index(
                 self.transcripts[self.settings.transcripts.xyz],
                 self.transcripts[self.settings.transcripts.xyz],
                 k=k_tx_ex,
                 max_distance=dist_tx_ex,
             )
             gene_ids = self.transcripts[self.settings.transcripts.label].tolist()
-            src_gene = [gene_ids[idx] for idx in nbrs_edge_idx[0].tolist()]
-            dst_gene = [gene_ids[idx] for idx in nbrs_edge_idx[1].tolist()]
-
+            
+            # Filter repels_edge_idx to only keep mutually exclusive gene pairs
+            src_genes = [gene_ids[i] for i in repels_edge_idx[0].tolist()]
+            dst_genes = [gene_ids[i] for i in repels_edge_idx[1].tolist()]
             mask = [
-                tuple(sorted((a, b))) in mutually_exclusive_genes
-                    for a, b in zip(src_gene, dst_gene)
-                ]
-            mask = torch.tensor(mask)
-
-            pyg_data["tx", "excludes", "tx"].edge_index = nbrs_edge_idx[:, mask]
+                tuple(sorted((a, b))) in mutually_exclusive_genes if a != b else False
+                for a, b in zip(src_genes, dst_genes)
+            ]
+            repels_edge_idx = repels_edge_idx[:, torch.tensor(mask)]
+            
+            # --- Step 2: Get attractive edges (same gene, at least one node in repels) ---
+            # Nodes involved in repels (for filtering nbrs_edge_idx)
+            repels_nodes = torch.cat([repels_edge_idx[0], repels_edge_idx[1]]).unique()
+            
+            # Filter nbrs_edge_idx: keep edges where (1) same gene AND (2) at least one node in repels
+            attractive_mask = torch.zeros(nbrs_edge_idx.shape[1], dtype=torch.bool)
+            for i, (src, dst) in enumerate(nbrs_edge_idx.t().tolist()):
+                if (src != dst) and (gene_ids[src] == gene_ids[dst]) and (src in repels_nodes or dst in repels_nodes):
+                    attractive_mask[i] = True
+            attractive_edge_idx = nbrs_edge_idx[:, attractive_mask]
+            
+            # --- Step 3: Combine repels (label=0) and attractive (label=1) edges ---
+            edge_label_index = torch.cat([repels_edge_idx, attractive_edge_idx], dim=1)
+            edge_label = torch.cat([
+                torch.zeros(repels_edge_idx.shape[1], dtype=torch.long),  # 0 for repels
+                torch.ones(attractive_edge_idx.shape[1], dtype=torch.long)  # 1 for attracts
+            ])
+            
+            # --- Step 4: Store in PyG data object ---
+            pyg_data["tx", "attracts", "tx"].edge_label_index = edge_label_index
+            pyg_data["tx", "attracts", "tx"].edge_label = edge_label
 
 
         # Set up Boundary nodes
@@ -1336,39 +1366,24 @@ class STTile:
         if blng_edge_idx.numel() == 0:
             return pyg_data
 
-        # If there are tx-bd edges, add negative edges for training
-        pos_edges = blng_edge_idx  # shape (2, num_pos)
-        num_pos = pos_edges.shape[1]
+                # If there are tx-bd edges, add negative edges for training
+        transform = RandomLinkSplit(
+            num_val=0,
+            num_test=0,
+            is_undirected=True,
+            edge_types=[edge_type],
+            neg_sampling_ratio=neg_sampling_ratio,
+        )
+        pyg_data, _, _ = transform(pyg_data)
 
-        # Negative edges (tx-neighbors-bd) - EXCLUDE positives
-        neg_candidates = nbrs_edge_idx  # shape (2, num_candidates)
-
-        # --- Fast Negative Filtering (PyTorch-only) ---
-        # Reshape edges for broadcasting: (2, num_pos) vs (2, num_candidates, 1)
-        pos_expanded = pos_edges.unsqueeze(2)  # shape (2, num_pos, 1)
-        neg_expanded = neg_candidates.unsqueeze(1)  # shape (2, 1, num_candidates)
-
-        # Compare all edges in one go (broadcasting)
-        matches = (pos_expanded == neg_expanded).all(dim=0)  # shape (num_pos, num_candidates)
-        is_negative = ~matches.any(dim=0)  # shape (num_candidates,)
-
-        # Filter negatives
-        neg_edges = neg_candidates[:, is_negative]  # shape (2, num_filtered_neg)
-        num_neg = neg_edges.shape[1]
-
-        # --- Combine and label ---
-        edge_label_index = torch.cat([neg_edges, pos_edges], dim=1)
-        edge_label = torch.cat([
-            torch.zeros(num_neg, dtype=torch.float),
-            torch.ones(num_pos, dtype=torch.float)
-        ])
-
-        mask = edge_label_index[0].unsqueeze(1) == blng_edge_idx[0].unsqueeze(0)
+        # Refilter negative edges to include only transcripts in the
+        # original positive edges (still need a memory-efficient solution)
+        edges = pyg_data[edge_type]
+        mask = edges.edge_label_index[0].unsqueeze(1) == edges.edge_index[0].unsqueeze(
+            0
+        )
         mask = torch.nonzero(torch.any(mask, 1)).squeeze()
-        edge_label_index = edge_label_index[:, mask]
-        edge_label = edge_label[mask]
-
-        pyg_data[edge_type].edge_label_index = edge_label_index
-        pyg_data[edge_type].edge_label = edge_label
+        edges.edge_label_index = edges.edge_label_index[:, mask]
+        edges.edge_label = edges.edge_label[mask]
 
         return pyg_data

@@ -5,7 +5,7 @@ from shapely.affinity import scale
 from pyarrow import parquet as pq
 import numpy as np
 import scipy as sp
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Set, Sequence
 import sys
 from types import SimpleNamespace
 from pathlib import Path
@@ -639,7 +639,165 @@ def find_mutually_exclusive_genes(
     mutually_exclusive_gene_pairs = [
         tuple(sorted((gene1, gene2)))
         for key1, key2 in combinations(filtered_exclusive_genes.keys(), 2)
+        if key1 != key2
         for gene1 in filtered_exclusive_genes[key1]
         for gene2 in filtered_exclusive_genes[key2]
     ]
     return set(mutually_exclusive_gene_pairs)
+
+
+
+# def find_mutually_exclusive_genes(
+#     adata: ad.AnnData, threshold: float = 0.0001
+# ) -> List[Tuple[str, str]]:
+#     """Identify pairs of genes with coexpression below a specified threshold.
+
+#     Args:
+#     - adata: AnnData
+#         Annotated data object containing gene expression data.
+#     - threshold: float
+#         Coexpression threshold below which gene pairs are considered.
+
+#     Returns:
+#     - low_coexpression_pairs: list
+#         List of gene pairs with low coexpression.
+#     """
+#     gene_expression = adata.to_df()
+#     genes = gene_expression.columns
+#     low_coexpression_pairs = []
+
+#     for gene1, gene2 in combinations(genes, 2):
+#         expr1 = gene_expression[gene1] > 0
+#         expr2 = gene_expression[gene2] > 0
+#         coexpression = (expr1 * expr2).mean()
+
+#         if coexpression < threshold * (expr1.mean() + expr2.mean()):
+#             low_coexpression_pairs.append(tuple(sorted((gene1, gene2))))
+
+#     return set(low_coexpression_pairs)
+
+
+
+# def find_mutually_exclusive_genes(
+#     adata: ad.AnnData,
+#     *,
+#     threshold: float = 1e-4,
+#     expr_cutoff: float = 0.0,
+#     block_size: int = 2048,
+# ) -> Set[Tuple[str, str]]:
+#     """
+#     Identify gene pairs (i, j) with coexpression below a specified threshold:
+#         mean( expr_i & expr_j )  <  threshold * ( mean(expr_i) + mean(expr_j) )
+#     computed via matrix operations on (cells x genes) data.
+
+#     Parameters
+#     ----------
+#     adata : AnnData
+#         Cells x Genes matrix (adata.X or adata.layers[layer]).
+#     threshold : float, default 1e-4
+#         Coexpression threshold weight for RHS.
+#     layer : str or None, default None
+#         Use adata.layers[layer] if provided; otherwise adata.X.
+#     genes : sequence of str or None
+#         Optional subset/order of genes to evaluate.
+#     expr_cutoff : float, default 0.0
+#         A cell expresses a gene if value > expr_cutoff.
+#     block_size : int, default 2048
+#         Number of genes per block for the blockwise sparse multiplication
+#         to control memory (recommended: 1k–10k depending on RAM).
+
+#     Returns
+#     -------
+#     low_coexp_pairs : set of (gene_i, gene_j)
+#         Gene name pairs with i < j (lexicographic order preserved by indices).
+#     """
+#     # Select matrix and (optionally) subset genes
+#     layer = None
+#     genes = None 
+#     X = adata.layers[layer] if layer is not None else adata.X
+#     if genes is not None:
+#         adata = adata[:, list(genes)]
+#         X = adata.layers[layer] if layer is not None else adata.X
+
+#     var_names = adata.var_names
+#     n_cells, n_genes = adata.n_obs, adata.n_vars
+
+#     # Binarize to a boolean CSR: expressed if > expr_cutoff
+#     if sp.issparse(X):
+#         Xb = X.tocsr().astype(np.float32)
+#         Xb.data = (Xb.data > expr_cutoff).astype(np.uint8)
+#         Xb.eliminate_zeros()
+#     else:
+#         Xb = sp.csr_matrix((X > expr_cutoff).astype(np.uint8))
+
+#     # Per-gene expression fraction p(gene) = mean over cells
+#     colsum = np.asarray(Xb.sum(axis=0)).ravel().astype(np.int64)  # counts of expressing cells
+#     p = colsum / float(n_cells)  # shape (G,)
+
+#     # We'll scan genes in blocks: for each block B, compute (Xb.T_B @ Xb) -> (B x G) intersection counts
+#     result_pairs: Set[Tuple[str, str]] = set()
+#     tN = threshold * n_cells  # scale to compare counts on LHS
+
+#     for start in range(0, n_genes, block_size):
+#         stop = min(start + block_size, n_genes)
+#         # (cells x B)
+#         Xb_block = Xb[:, start:stop]  # CSR
+#         # Intersection counts for the block against all genes: (B x G)
+#         inter_BG = (Xb_block.T @ Xb).tocoo()
+
+#         # Build RHS for the whole block as a dense (B x G) using outer sums p_block[:,None] + p[None,:]
+#         p_block = p[start:stop]  # (B,)
+#         rhs_BG = tN * (p_block[:, None] + p[None, :])  # dense small block
+
+#         # We need to test ALL pairs i in block, j in [0..G), not just where inter_BG has nonzeros.
+#         # Strategy:
+#         #   1) Start by assuming inter_ij = 0 for all pairs in the block (since absent in sparse).
+#         #      For those, condition is: 0 < rhs_BG[i,j]  -> typically true unless rhs==0.
+#         #   2) Then overwrite where we DO have nonzero intersections with the actual counts and re-test.
+#         #
+#         # Step 1: zero-intersection candidates (exclude diagonal and ensure i<j)
+#         # We'll create a mask and then remove positions that are actually nonzero via a scatter step.
+
+#         # Mask all positions initially; we'll clear diagonal and lower-triangle later
+#         zero_mask = np.ones((stop - start, n_genes), dtype=bool)
+
+#         # Clear the places where intersection is nonzero (we'll handle them separately)
+#         zero_mask[inter_BG.row, inter_BG.col] = False
+
+#         # Condition for zero-intersection pairs
+#         # NOTE: We only add pairs where rhs > 0 (else the inequality cannot hold).
+#         cand_mask = zero_mask & (rhs_BG > 0)
+
+#         # Enforce i < j (global indices)
+#         # Convert to global indices and filter upper triangle
+#         if np.any(cand_mask):
+#             rows, cols = np.where(cand_mask)
+#             gi = rows + start
+#             gj = cols
+#             keep = gi < gj
+#             gi, gj = gi[keep], gj[keep]
+#             # Add pairs
+#             for ii, jj in zip(gi, gj):
+#                 result_pairs.add((var_names[ii], var_names[jj]))
+
+#         # Step 2: handle nonzero intersections from inter_BG
+#         if inter_BG.nnz:
+#             gi = inter_BG.row + start
+#             gj = np.asarray(inter_BG.col)
+#             # Enforce i < j and exclude diagonal
+#             keep = gi < gj
+#             gi, gj = gi[keep], gj[keep]
+#             inter_vals = inter_BG.data[keep].astype(np.float64)
+
+#             # Compare: inter_ij  <  tN * (p_i + p_j)
+#             rhs_vals = tN * (p[gi] + p[gj])
+#             mask = inter_vals < rhs_vals
+
+#             for ii, jj, ok in zip(gi, gj, mask):
+#                 if ok:
+#                     result_pairs.add((var_names[ii], var_names[jj]))
+
+#         # help GC
+#         del Xb_block, inter_BG, rhs_BG, zero_mask, cand_mask
+
+#     return result_pairs

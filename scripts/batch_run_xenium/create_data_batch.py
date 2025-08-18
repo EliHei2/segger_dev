@@ -9,6 +9,7 @@ import argparse
 import os
 from pqdm.processes import pqdm
 from tqdm import tqdm
+from segger.data.parquet._utils import find_markers, find_mutually_exclusive_genes
 
 def main():
     # Set up argument parser
@@ -20,7 +21,7 @@ def main():
     parser.add_argument('--celltype_column', type=str, default="Annotation_merged", help='Column name for cell types in scRNA-seq data')
     parser.add_argument('--n_workers', type=int, default=4, help='Number of workers for processing')
     parser.add_argument('--k_tx', type=int, default=5, help='Number of neighbors for transcript graph')
-    parser.add_argument('--dist_tx', type=float, default=5.0, help='Distance threshold for transcript graph')
+    parser.add_argument('--dist_tx', type=float, default=20.0, help='Distance threshold for transcript graph')
     parser.add_argument('--subsample_frac', type=float, default=0.1, help='Subsampling fraction for scRNA-seq data')
     
     args = parser.parse_args()
@@ -51,14 +52,24 @@ def main():
             # scale_factor=0.5 # this is to shrink the initial seg. masks (used for seg. kit)
         )
         
+        genes = list(set(scrnaseq.var_names) & set(sample.transcripts_metadata['feature_names']))
+        markers = find_markers(scrnaseq[:,genes], cell_type_column=args.celltype_column, pos_percentile=90, neg_percentile=20, percentage=20)
+        # Find mutually exclusive genes based on scRNAseq data
+        exclusive_gene_pairs = find_mutually_exclusive_genes(
+            adata=scrnaseq,
+            markers=markers,
+            cell_type_column=args.celltype_column
+        )
+
         sample.save(
             data_dir=segger_data_dir,
             k_bd=3,
             dist_bd=15,
             k_tx=args.k_tx,
             dist_tx=args.dist_tx,
-            tile_width=150,
-            tile_height=150,
+            k_tx_ex=20,
+            dist_tx_ex=20,
+            tile_size=10_000,  # Tile size for processing
             neg_sampling_ratio=5.0,
             frac=1.0,
             val_prob=0.3,

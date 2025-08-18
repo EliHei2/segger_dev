@@ -42,13 +42,13 @@ Usage:
 
 
 XENIUM_DATA_DIR = Path(
-    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/breast_cancer/Xenium_FFPE_Human_Breast_Cancer_Rep1/outs"
 )
-SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_exmax_weights")
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/xe_bc_rep1_loss_emb2")
 SCRNASEQ_FILE = Path(
-    "data_tidy/Human_CRC/scRNAseq.h5ad"
+    "/omics/groups/OE0606/internal/tangy/tasks/schier/data/atals_filtered.h5ad"
 )
-CELLTYPE_COLUMN = "Level1"
+CELLTYPE_COLUMN = "celltype_minor"
 scrnaseq = sc.read(SCRNASEQ_FILE)
 sc.pp.subsample(scrnaseq, 0.25)
 scrnaseq.var_names_make_unique()
@@ -62,7 +62,7 @@ gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
 
 
 
-# markers = find_markers(scrnaseq, cell_type_column="Level1", pos_percentile=20, neg_percentile=20, percentage=50)
+# markers = find_markers(scrnaseq, cell_type_column="celltype_minor", pos_percentile=20, neg_percentile=20, percentage=50)
 
 
     
@@ -70,7 +70,7 @@ gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
 # Initialize spatial transcriptomics sample object
 sample = STSampleParquet(
     base_dir=XENIUM_DATA_DIR,
-    n_workers=8,
+    n_workers=10,
     sample_type="xenium",
     # scale_factor=0.8,
     weights=gene_celltype_abundance_embedding
@@ -80,10 +80,12 @@ sample = STSampleParquet(
 
 
 genes = list(set(scrnaseq.var_names) & set(sample.transcripts_metadata['feature_names']))
-markers = find_markers(scrnaseq[:,genes], cell_type_column="Level1", pos_percentile=90, neg_percentile=20, percentage=20)
+markers = find_markers(scrnaseq[:,genes], cell_type_column="celltype_minor", pos_percentile=90, neg_percentile=20, percentage=20)
 # Find mutually exclusive genes based on scRNAseq data
 exclusive_gene_pairs = find_mutually_exclusive_genes(
-    adata=scrnaseq, markers=markers, cell_type_column="Level1"
+    adata=scrnaseq,
+    markers=markers,
+    cell_type_column="celltype_minor"
 )
 
 
@@ -91,15 +93,17 @@ sample.save(
     data_dir=SEGGER_DATA_DIR,
     k_bd=3,  # Number of boundary points to connect
     dist_bd=15,  # Maximum distance for boundary connections
-    k_tx=10,  # Use calculated optimal transcript neighbors
+    k_tx=20,  # Use calculated optimal transcript neighbors
     dist_tx=5,  # Use calculated optimal search radius
-    tile_size=20_000,  # Tile size for processing
+    k_tx_ex=20,  # Use calculated optimal transcript neighbors
+    dist_tx_ex=20,  # Use calculated optimal search radius
+    tile_size=10_000,  # Tile size for processing
     # tile_height=100,
-    # neg_sampling_ratio=5.0,  # 5:1 negative:positive samples
+    neg_sampling_ratio=10.0,  # 5:1 negative:positive samples
     frac=1.0,  # Use all data
     val_prob=0.3,  # 30% validation set
     test_prob=0,  # No test set
-    k_tx_ex=100,  # Use calculated optimal transcript neighbors
-    dist_tx_ex=20,  # Use calculated optimal search radius
+    # k_tx_ex=100,  # Use calculated optimal transcript neighbors
+    # dist_tx_ex=20,  # Use calculated optimal search radius
     mutually_exclusive_genes=exclusive_gene_pairs
 )

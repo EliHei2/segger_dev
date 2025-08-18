@@ -17,8 +17,10 @@ from lightning import LightningModule
 
 
 
-segger_data_dir = Path("data_tidy/pyg_datasets/human_CRC_seg_exmax_weights")
-models_dir = Path("./models/human_CRC_seg_exmax_weights")
+
+
+segger_data_dir = Path("data_tidy/pyg_datasets/xe_bc_rep1_loss_emb2")
+models_dir = Path("./models/xe_bc_rep1_loss_emb2")
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -26,7 +28,7 @@ models_dir = Path("./models/human_CRC_seg_exmax_weights")
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=segger_data_dir,
-    batch_size=2,
+    batch_size=1,
     num_workers=2,
 )
 
@@ -36,27 +38,29 @@ dm.setup()
 # num_tx_tokens = 500
 
 # # If you use custom gene embeddings, use the following two lines instead:
-# is_token_based = False
-# num_tx_tokens = (
-#     dm.train[0].x_dict["tx"].shape[1]
-# )  # Set the number of tokens to the number of genes
+is_token_based = False
+num_tx_tokens = (
+    dm.train[0].x_dict["tx"].shape[1]
+)  # Set the number of tokens to the number of genes
 
 
 model = Segger(
-    # is_token_based=is_token_based,
-    num_tx_tokens= 500,
-    init_emb=8,
+    num_tx_tokens=num_tx_tokens,
+    # num_tx_tokens= 600,
+    init_emb=16,
     hidden_channels=64,
     out_channels=16,
     heads=4,
-    num_mid_layers=2,
+    num_mid_layers=3,
 )
-model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="mean")
 
 batch = dm.train[0]
 model.forward(batch.x_dict, batch.edge_index_dict)
 # Wrap the model in LitSegger
-ls = LitSegger(model=model, align_loss=True, align_lambda=1)
+ls = LitSegger(model=model, align_loss=True, align_lambda=.5, cycle_length=10000)
+
+
 
 # # Initialize the Lightning model
 # ls = LitSegger(

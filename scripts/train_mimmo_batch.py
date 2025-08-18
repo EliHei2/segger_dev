@@ -49,7 +49,7 @@ model = Segger(
     hidden_channels=32,
     out_channels=16,
     heads=4,
-    num_mid_layers=3,
+    num_mid_layers=0,
 )
 model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
 

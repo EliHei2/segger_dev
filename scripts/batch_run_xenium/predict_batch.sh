@@ -8,7 +8,7 @@ OUTPUT_DIR=${4:-"logs"}
 MODELS_ROOT=${5:-"./models/project24_MNG_pqdm"}
 BENCHMARKS_ROOT=${6:-"data_tidy/benchmarks/project24_MNG_final"}
 TRANSCRIPTS_ROOT=${7:-"/omics/odcf/analysis/OE0606_projects/oncolgy_data_exchange/domenico_temp/xenium/xenium_output_files"}
-GPU_MEM=${8:-"32.0G"}
+GPU_MEM=${8:-"39G"}
 SYSTEM_MEM=${9:-"200GB"}
 FORCE=${10:-false}
 
@@ -30,9 +30,10 @@ for SAMPLE in "${ALL_SAMPLES[@]}"; do
     # Define output file path
     H5AD_FILE1="${BENCHMARKS_ROOT}/${SAMPLE}/${SAMPLE}_0.75_False_4_7.5_5_3_20250709/segger_adata.h5ad"
     H5AD_FILE2="${BENCHMARKS_ROOT}/${SAMPLE}/${SAMPLE}_0.75_False_4_7.5_5_3_20250714/segger_adata.h5ad"
+    H5AD_FILE3="${BENCHMARKS_ROOT}/${SAMPLE}/${SAMPLE}_0.75_False_4_7.5_5_3_20250728/segger_adata.h5ad"
 
     # Check if processing should be skipped
-    if [[ -f "$H5AD_FILE1" || -f "$H5AD_FILE2" ]] && [ "$FORCE" != "true" ]; then
+    if [[ -f "$H5AD_FILE1" || -f "$H5AD_FILE2" || -f "$H5AD_FILE3" ]] && [ "$FORCE" != "true" ]; then
         echo "segger_adata.h5ad exists for $SAMPLE, skipping..."
         ((skipped++))
         continue
@@ -48,6 +49,7 @@ for SAMPLE in "${ALL_SAMPLES[@]}"; do
     bsub -o ${OUTPUT_DIR}/segmentation_${SAMPLE}.log \
          -e ${OUTPUT_DIR}/segmentation_${SAMPLE}.err \
          -gpu "num=1:j_exclusive=yes:gmem=${GPU_MEM}" \
+         -m gpu-a100-40gb \
          -R "rusage[mem=${SYSTEM_MEM}]" \
          -q gpu-debian \
          python ../segger_dev/scripts/batch_run_xenium/predict_batch.py \

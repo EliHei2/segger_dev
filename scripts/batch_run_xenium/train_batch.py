@@ -28,27 +28,30 @@ num_tx_tokens = dm.train[0].x_dict["tx"].shape[1]
 
 model = Segger(
     num_tx_tokens=num_tx_tokens,
-    init_emb=8,
-    hidden_channels=32,
+    init_emb=16,
+    hidden_channels=64,
     out_channels=16,
     heads=4,
     num_mid_layers=3,
 )
-model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="mean")
 
 batch = dm.train[0]
 model.forward(batch.x_dict, batch.edge_index_dict)
+# Wrap the model in LitSegger
+ls = LitSegger(model=model, align_loss=False)
 
-ls = LitSegger(model=model)
 
+# Initialize the Lightning trainer
 trainer = Trainer(
     accelerator="gpu",
     strategy="auto",
-    precision="16-mixed", # for 5k change to "32"
-    devices=4,
-    max_epochs=200, # check models/project_tag/sample/lightning_logs/metrics.csv to check the performance on the last epoch
+    precision="32",
+    devices=1,  # set higher number if more gpus are available
+    max_epochs=500,
     default_root_dir=models_dir,
     logger=CSVLogger(models_dir),
 )
+
 
 trainer.fit(ls, datamodule=dm)

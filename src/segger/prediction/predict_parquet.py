@@ -181,6 +181,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
     # Load model from checkpoint
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
+        strict=False
     )
 
     return lit_segger

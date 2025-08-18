@@ -5,6 +5,7 @@ from typing import Any
 from torchmetrics import F1Score
 from lightning import LightningModule
 from segger.models.segger_model import *
+import torch.nn.functional as F
 
 class LitSegger(LightningModule):
     """
@@ -17,7 +18,8 @@ class LitSegger(LightningModule):
         model: Segger,
         learning_rate: float = 1e-3,
         align_loss: bool = False,
-        align_lambda: float = 0
+        align_lambda: float = 0,
+        cycle_length: int = 1000,    # Steps per cycle (e.g., 1000 steps)
     ):
         """
         Initialize the Segger training module.
@@ -39,7 +41,16 @@ class LitSegger(LightningModule):
         self.align_loss = align_loss
         self.align_lambda = align_lambda
         self.criterion = torch.nn.BCEWithLogitsLoss()
+        self.criterion_align = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(6.0))
+        self.cycle_length = cycle_length
         self.validation_step_outputs = []
+
+
+    def get_cosine_weight(self, step: int) -> float:
+        """Compute cyclic weight for align_loss using cosine scheduling."""
+        # Cosine varies between 0 and align_lambda
+        weight = (1 + torch.cos(torch.tensor(2 * torch.pi * step / self.cycle_length))) / 2
+        return weight
 
 
     def forward(self, batch) -> torch.Tensor:
@@ -85,14 +96,24 @@ class LitSegger(LightningModule):
         loss = self.criterion(out_values, edge_label)
         # Log the training loss
         self.log("train_loss", loss, prog_bar=True, batch_size=batch.num_graphs)
-        if self.align_loss:
-                if self.align_loss:
-                    edge_index = batch["tx", "excludes", "tx"].edge_index
-                    out_values = (z["tx"][edge_index[0]] * z["tx"][edge_index[1]]).sum(-1)
-                    targets = torch.zeros_like(out_values) 
-                    align_loss = self.criterion(out_values, targets)
-                    self.log("align_loss", align_loss, prog_bar=True, batch_size=batch.num_graphs)
-                    loss = loss + align_loss * self.align_lambda
+        if self.align_loss:   
+            edge_index = batch["tx", "attracts", "tx"].edge_label_index
+            edge_label = batch["tx", "attracts", "tx"].edge_label.float()
+            pos_weight = (edge_label == 0).sum() / (edge_label == 1).sum()
+            self.log("pos_weight", pos_weight, prog_bar=True, batch_size=batch.num_graphs)
+            z_tx = z["tx"]
+            out_values = (z_tx[edge_index[0]] * z_tx[edge_index[1]]).sum(-1)
+            align_loss = self.criterion_align(out_values, edge_label)
+            self.log("align_max", torch.max(out_values), prog_bar=True, batch_size=batch.num_graphs)
+            self.log("align_min", torch.min(out_values), prog_bar=True, batch_size=batch.num_graphs)
+            self.log("align_loss", align_loss, prog_bar=True, batch_size=batch.num_graphs)
+            current_step = self.global_step
+            align_weight = self.get_cosine_weight(current_step)
+            # self.log("align_weight", align_weight, prog_bar=True, batch_size=batch.num_graphs)
+            loss =  self.align_lambda * align_loss + (1-self.align_lambda) * loss
+            # loss = self.align_lambda * align_loss +  loss
+            # loss = align_loss
+            #TOOD: cosine scheduling -- add self-loops
         return loss
 
     def validation_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
