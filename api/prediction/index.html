@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3cba04c6.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -62,7 +62,7 @@
     
       <link rel="stylesheet" href="../../termynal.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -111,7 +111,7 @@
     </a>
     <label class="md-header__button md-icon" for="__drawer">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -139,7 +139,7 @@
     <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
       </label>
     
   
@@ -149,7 +149,7 @@
     <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
       </label>
     
   
@@ -157,32 +157,30 @@
       
     
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
-      
-      
-        <label class="md-header__button md-icon" for="__search">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        </label>
-        <div class="md-search" data-md-component="search" role="dialog">
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
         
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
       
@@ -201,14 +199,13 @@
     </div>
   </div>
 </div>
-      
     
     
       <div class="md-header__source">
         <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -255,7 +252,7 @@
       <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -275,10 +272,8 @@
       <a href="../.." class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Home
-    
   </span>
   
 
@@ -293,7 +288,6 @@
   
   
   
-    
     
     
     
@@ -313,10 +307,8 @@
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     Getting Started
-    
   </span>
   
 
@@ -340,10 +332,8 @@
       <a href="../../user_guide/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Overview
-    
   </span>
   
 
@@ -363,10 +353,8 @@
       <a href="../../installation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Installation
-    
   </span>
   
 
@@ -386,10 +374,8 @@
       <a href="../../user_guide/data_creation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Dataset Creation
-    
   </span>
   
 
@@ -409,10 +395,8 @@
       <a href="../../user_guide/training/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Training
-    
   </span>
   
 
@@ -432,10 +416,8 @@
       <a href="../../user_guide/validation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Validation
-    
   </span>
   
 
@@ -461,7 +443,6 @@
     
     
     
-    
       
         
         
@@ -478,10 +459,8 @@
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     Tutorials
-    
   </span>
   
 
@@ -505,10 +484,8 @@
       <a href="../../notebooks/segger_tutorial/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Introduction to Segger
-    
   </span>
   
 
@@ -535,10 +512,8 @@
       <a href="../../cli/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     CLI
-    
   </span>
   
 
@@ -555,7 +530,6 @@
   
   
   
-    
     
     
     
@@ -575,10 +549,8 @@
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     API Reference
-    
   </span>
   
 
@@ -598,14 +570,49 @@
   
   
   
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            Data
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../data/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    Data
-    
+    Overview
   </span>
   
 
@@ -622,13 +629,124 @@
   
   
     <li class="md-nav__item">
+      <a href="../data/sample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sample
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/pyg_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyG Dataset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/transcript_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transcript Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/ndtree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    NDTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../models/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Models
-    
   </span>
   
 
@@ -648,10 +766,8 @@
       <a href="../training/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Training
-    
   </span>
   
 
@@ -680,10 +796,8 @@
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
   
-  
   <span class="md-ellipsis">
     Prediction
-    
   </span>
   
 
@@ -693,10 +807,8 @@
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
-  
   <span class="md-ellipsis">
     Prediction
-    
   </span>
   
 
@@ -726,57 +838,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#segger.prediction.load_model" class="md-nav__link">
-    <span class="md-ellipsis">
-      load_model
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="load_model">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#segger.prediction.load_model--parameters" class="md-nav__link">
-    <span class="md-ellipsis">
-      Parameters
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#segger.prediction.load_model--returns" class="md-nav__link">
-    <span class="md-ellipsis">
-      Returns
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#segger.prediction.load_model--raises" class="md-nav__link">
-    <span class="md-ellipsis">
-      Raises
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#segger.prediction.segment" class="md-nav__link">
-    <span class="md-ellipsis">
-      segment
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -796,10 +857,8 @@
       <a href="../validation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Validation
-    
   </span>
   
 
@@ -830,7 +889,6 @@
                 
                   
 
-
   
   
 
@@ -847,15 +905,6 @@
 <a id="segger.prediction"></a>
     <div class="doc doc-contents first">
 
-        <p>Prediction module for Segger.</p>
-<p>Contains prediction scripts and utilities for the Segger model.</p>
-
-
-
-
-
-
-
 
 
   <div class="doc doc-children">
@@ -867,1001 +916,6 @@
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="segger.prediction.load_model" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">load_model</span>
-
-
-<a href="#segger.prediction.load_model" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_model</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Load a LitSegger model from a checkpoint.</p>
-<h5 id="segger.prediction.load_model--parameters">Parameters<a class="headerlink" href="#segger.prediction.load_model--parameters" title="Permanent link">&para;</a></h5>
-<p>checkpoint_path : str
-    Specific checkpoint file to load, or directory where the model checkpoints are stored.
-    If directory, the latest checkpoint is loaded.</p>
-<h5 id="segger.prediction.load_model--returns">Returns<a class="headerlink" href="#segger.prediction.load_model--returns" title="Permanent link">&para;</a></h5>
-<p>LitSegger
-    The loaded LitSegger model.</p>
-<h5 id="segger.prediction.load_model--raises">Raises<a class="headerlink" href="#segger.prediction.load_model--raises" title="Permanent link">&para;</a></h5>
-<p>FileNotFoundError
-    If the specified checkpoint file does not exist.</p>
-
-
-            <details class="quote">
-              <summary>Source code in <code>src/segger/prediction/predict_parquet.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LitSegger</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Load a LitSegger model from a checkpoint.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    checkpoint_path : str</span>
-<span class="sd">        Specific checkpoint file to load, or directory where the model checkpoints are stored.</span>
-<span class="sd">        If directory, the latest checkpoint is loaded.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    LitSegger</span>
-<span class="sd">        The loaded LitSegger model.</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    FileNotFoundError</span>
-<span class="sd">        If the specified checkpoint file does not exist.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
-    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;No checkpoint found at </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">. Please make sure you&#39;ve provided the correct path.&quot;</span>
-
-    <span class="c1"># Get last checkpoint if directory is provided</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
-        <span class="n">checkpoints</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">checkpoint_path</span> <span class="o">/</span> <span class="s2">&quot;*.ckpt&quot;</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">checkpoints</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-        <span class="c1"># Sort checkpoints by epoch and step</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">sort_order</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
-            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;.*epoch=(\d+)-step=(\d+).ckpt&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
-            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-
-        <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">checkpoints</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">elif</span> <span class="ow">not</span> <span class="n">checkpoint_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-    <span class="c1"># Load model from checkpoint</span>
-    <span class="n">lit_segger</span> <span class="o">=</span> <span class="n">LitSegger</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
-        <span class="n">checkpoint_path</span><span class="o">=</span><span class="n">checkpoint_path</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">lit_segger</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="segger.prediction.segment" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">segment</span>
-
-
-<a href="#segger.prediction.segment" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">segment</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dm</span><span class="p">,</span> <span class="n">save_dir</span><span class="p">,</span> <span class="n">seg_tag</span><span class="p">,</span> <span class="n">transcript_file</span><span class="p">,</span> <span class="n">score_cut</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">use_cc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">save_transcripts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_anndata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_cell_masks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">receptive_field</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;k_bd&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;dist_bd&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;k_tx&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;dist_tx&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="n">knn_method</span><span class="o">=</span><span class="s1">&#39;cuda&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">gpu_ids</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">anndata_kwargs</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Perform segmentation using the model, save transcripts, AnnData, and cell masks as needed,
-and log the parameters used during segmentation.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>model</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="LitSegger (segger.training.train.LitSegger)" href="../training/#segger.training.LitSegger">LitSegger</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The trained segmentation model.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>dm</code>
-            </td>
-            <td>
-                  <code><span title="segger.training.segger_data_module.SeggerDataModule">SeggerDataModule</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The SeggerDataModule instance for data loading.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>save_dir</code>
-            </td>
-            <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Directory to save the final segmentation results.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>seg_tag</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tag to include in the saved filename.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>transcript_file</code>
-            </td>
-            <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="pathlib.Path">Path</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Path to the transcripts Parquet file.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>score_cut</code>
-            </td>
-            <td>
-                  <code><span title="float">float</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The threshold for assigning transcripts to cells based on
-                         similarity scores. Defaults to 0.5.</p>
-              </div>
-            </td>
-            <td>
-                  <code>0.5</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>use_cc</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, perform connected components analysis for unassigned
-                     transcripts. Defaults to True.</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>save_transcripts</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Whether to save the transcripts as Parquet. Defaults to True.</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>save_anndata</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Whether to save the results in AnnData format. Defaults to True.</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>save_cell_masks</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Save cell masks as Dask Geopandas Parquet. Defaults to False.</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>receptive_field</code>
-            </td>
-            <td>
-                  <code><span title="dict">dict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Defines the receptive field for transcript-cell and
-                              transcript-transcript relations. Defaults to
-                              {'k_bd': 4, 'dist_bd': 10, 'k_tx': 5, 'dist_tx': 3}.</p>
-              </div>
-            </td>
-            <td>
-                  <code>{&#39;k_bd&#39;: 4, &#39;dist_bd&#39;: 10, &#39;k_tx&#39;: 5, &#39;dist_tx&#39;: 3}</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>knn_method</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The method to use for nearest neighbors ('cuda' or 'kd_tree').
-                        Defaults to 'cuda'.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;cuda&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>verbose</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Whether to print verbose status updates. Defaults to False.</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>**anndata_kwargs</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Additional keyword arguments passed to the <code>create_anndata</code> function.</p>
-              </div>
-            </td>
-            <td>
-                  <code>{}</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>None</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>None. Saves the result to disk in various formats and logs the parameter choices.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="quote">
-              <summary>Source code in <code>src/segger/prediction/predict_parquet.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span>
-<span class="normal">449</span>
-<span class="normal">450</span>
-<span class="normal">451</span>
-<span class="normal">452</span>
-<span class="normal">453</span>
-<span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span>
-<span class="normal">457</span>
-<span class="normal">458</span>
-<span class="normal">459</span>
-<span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
-<span class="normal">487</span>
-<span class="normal">488</span>
-<span class="normal">489</span>
-<span class="normal">490</span>
-<span class="normal">491</span>
-<span class="normal">492</span>
-<span class="normal">493</span>
-<span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
-<span class="normal">500</span>
-<span class="normal">501</span>
-<span class="normal">502</span>
-<span class="normal">503</span>
-<span class="normal">504</span>
-<span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
-<span class="normal">509</span>
-<span class="normal">510</span>
-<span class="normal">511</span>
-<span class="normal">512</span>
-<span class="normal">513</span>
-<span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span>
-<span class="normal">519</span>
-<span class="normal">520</span>
-<span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
-<span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span>
-<span class="normal">537</span>
-<span class="normal">538</span>
-<span class="normal">539</span>
-<span class="normal">540</span>
-<span class="normal">541</span>
-<span class="normal">542</span>
-<span class="normal">543</span>
-<span class="normal">544</span>
-<span class="normal">545</span>
-<span class="normal">546</span>
-<span class="normal">547</span>
-<span class="normal">548</span>
-<span class="normal">549</span>
-<span class="normal">550</span>
-<span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
-<span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
-<span class="normal">569</span>
-<span class="normal">570</span>
-<span class="normal">571</span>
-<span class="normal">572</span>
-<span class="normal">573</span>
-<span class="normal">574</span>
-<span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span>
-<span class="normal">593</span>
-<span class="normal">594</span>
-<span class="normal">595</span>
-<span class="normal">596</span>
-<span class="normal">597</span>
-<span class="normal">598</span>
-<span class="normal">599</span>
-<span class="normal">600</span>
-<span class="normal">601</span>
-<span class="normal">602</span>
-<span class="normal">603</span>
-<span class="normal">604</span>
-<span class="normal">605</span>
-<span class="normal">606</span>
-<span class="normal">607</span>
-<span class="normal">608</span>
-<span class="normal">609</span>
-<span class="normal">610</span>
-<span class="normal">611</span>
-<span class="normal">612</span>
-<span class="normal">613</span>
-<span class="normal">614</span>
-<span class="normal">615</span>
-<span class="normal">616</span>
-<span class="normal">617</span>
-<span class="normal">618</span>
-<span class="normal">619</span>
-<span class="normal">620</span>
-<span class="normal">621</span>
-<span class="normal">622</span>
-<span class="normal">623</span>
-<span class="normal">624</span>
-<span class="normal">625</span>
-<span class="normal">626</span>
-<span class="normal">627</span>
-<span class="normal">628</span>
-<span class="normal">629</span>
-<span class="normal">630</span>
-<span class="normal">631</span>
-<span class="normal">632</span>
-<span class="normal">633</span>
-<span class="normal">634</span>
-<span class="normal">635</span>
-<span class="normal">636</span>
-<span class="normal">637</span>
-<span class="normal">638</span>
-<span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span>
-<span class="normal">642</span>
-<span class="normal">643</span>
-<span class="normal">644</span>
-<span class="normal">645</span>
-<span class="normal">646</span>
-<span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span>
-<span class="normal">651</span>
-<span class="normal">652</span>
-<span class="normal">653</span>
-<span class="normal">654</span>
-<span class="normal">655</span>
-<span class="normal">656</span>
-<span class="normal">657</span>
-<span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span>
-<span class="normal">662</span>
-<span class="normal">663</span>
-<span class="normal">664</span>
-<span class="normal">665</span>
-<span class="normal">666</span>
-<span class="normal">667</span>
-<span class="normal">668</span>
-<span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
-<span class="normal">689</span>
-<span class="normal">690</span>
-<span class="normal">691</span>
-<span class="normal">692</span>
-<span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
-<span class="normal">711</span>
-<span class="normal">712</span>
-<span class="normal">713</span>
-<span class="normal">714</span>
-<span class="normal">715</span>
-<span class="normal">716</span>
-<span class="normal">717</span>
-<span class="normal">718</span>
-<span class="normal">719</span>
-<span class="normal">720</span>
-<span class="normal">721</span>
-<span class="normal">722</span>
-<span class="normal">723</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">segment</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">LitSegger</span><span class="p">,</span>
-    <span class="n">dm</span><span class="p">:</span> <span class="n">SeggerDataModule</span><span class="p">,</span>
-    <span class="n">save_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">seg_tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">transcript_file</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">score_cut</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="n">use_cc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">file_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-    <span class="n">save_transcripts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">save_anndata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">save_cell_masks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># Placeholder for future implementation</span>
-    <span class="n">receptive_field</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;k_bd&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;dist_bd&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;k_tx&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;dist_tx&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
-    <span class="n">knn_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">gpu_ids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">anndata_kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Perform segmentation using the model, save transcripts, AnnData, and cell masks as needed,</span>
-<span class="sd">    and log the parameters used during segmentation.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        model (LitSegger): The trained segmentation model.</span>
-<span class="sd">        dm (SeggerDataModule): The SeggerDataModule instance for data loading.</span>
-<span class="sd">        save_dir (Union[str, Path]): Directory to save the final segmentation results.</span>
-<span class="sd">        seg_tag (str): Tag to include in the saved filename.</span>
-<span class="sd">        transcript_file (Union[str, Path]): Path to the transcripts Parquet file.</span>
-<span class="sd">        score_cut (float, optional): The threshold for assigning transcripts to cells based on</span>
-<span class="sd">                                     similarity scores. Defaults to 0.5.</span>
-<span class="sd">        use_cc (bool, optional): If True, perform connected components analysis for unassigned</span>
-<span class="sd">                                 transcripts. Defaults to True.</span>
-<span class="sd">        save_transcripts (bool, optional): Whether to save the transcripts as Parquet. Defaults to True.</span>
-<span class="sd">        save_anndata (bool, optional): Whether to save the results in AnnData format. Defaults to True.</span>
-<span class="sd">        save_cell_masks (bool, optional): Save cell masks as Dask Geopandas Parquet. Defaults to False.</span>
-<span class="sd">        receptive_field (dict, optional): Defines the receptive field for transcript-cell and</span>
-<span class="sd">                                          transcript-transcript relations. Defaults to</span>
-<span class="sd">                                          {&#39;k_bd&#39;: 4, &#39;dist_bd&#39;: 10, &#39;k_tx&#39;: 5, &#39;dist_tx&#39;: 3}.</span>
-<span class="sd">        knn_method (str, optional): The method to use for nearest neighbors (&#39;cuda&#39; or &#39;kd_tree&#39;).</span>
-<span class="sd">                                    Defaults to &#39;cuda&#39;.</span>
-<span class="sd">        verbose (bool, optional): Whether to print verbose status updates. Defaults to False.</span>
-<span class="sd">        **anndata_kwargs: Additional keyword arguments passed to the `create_anndata` function.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        None. Saves the result to disk in various formats and logs the parameter choices.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-
-    <span class="c1"># Create a subdirectory with important parameter info (receptive field values)</span>
-    <span class="n">sub_dir_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seg_tag</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">score_cut</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">use_cc</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">receptive_field</span><span class="p">[</span><span class="s1">&#39;k_bd&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">receptive_field</span><span class="p">[</span><span class="s1">&#39;dist_bd&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">receptive_field</span><span class="p">[</span><span class="s1">&#39;k_tx&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">receptive_field</span><span class="p">[</span><span class="s1">&#39;dist_tx&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">save_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">sub_dir_name</span>
-    <span class="n">save_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="c1"># Paths for saving the output_ddf and edge_index Parquet files</span>
-    <span class="n">output_ddf_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;transcripts_df.parquet&quot;</span>
-    <span class="n">edge_index_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;edge_index.parquet&quot;</span>
-
-    <span class="k">if</span> <span class="n">output_ddf_save_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing existing file: </span><span class="si">{</span><span class="n">output_ddf_save_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">output_ddf_save_path</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">use_cc</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">edge_index_save_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing existing file: </span><span class="si">{</span><span class="n">edge_index_save_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">edge_index_save_path</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting segmentation for </span><span class="si">{</span><span class="n">seg_tag</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Step 1: Load the data loaders from the SeggerDataModule</span>
-    <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-    <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()</span>
-    <span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">()</span>
-    <span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">()</span>
-
-    <span class="c1"># Loop through the data loaders (train, val, and test)</span>
-    <span class="k">for</span> <span class="n">loader_name</span><span class="p">,</span> <span class="n">loader</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="s2">&quot;Validation&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">],</span> <span class="p">[</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">val_dataloader</span><span class="p">,</span> <span class="n">test_dataloader</span><span class="p">]</span>
-    <span class="p">):</span>
-        <span class="c1"># for loader_name, loader in zip([&#39;Test&#39;], [test_dataloader]):</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">loader_name</span><span class="si">}</span><span class="s2"> data...&quot;</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">loader_name</span><span class="si">}</span><span class="s2"> batches&quot;</span><span class="p">):</span>
-            <span class="n">gpu_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">gpu_ids</span><span class="p">)</span>
-            <span class="c1"># Call predict_batch for each batch</span>
-            <span class="n">predict_batch</span><span class="p">(</span>
-                <span class="n">model</span><span class="p">,</span>
-                <span class="n">batch</span><span class="p">,</span>
-                <span class="n">score_cut</span><span class="p">,</span>
-                <span class="n">receptive_field</span><span class="p">,</span>
-                <span class="n">use_cc</span><span class="o">=</span><span class="n">use_cc</span><span class="p">,</span>
-                <span class="n">knn_method</span><span class="o">=</span><span class="n">knn_method</span><span class="p">,</span>
-                <span class="n">edge_index_save_path</span><span class="o">=</span><span class="n">edge_index_save_path</span><span class="p">,</span>
-                <span class="n">output_ddf_save_path</span><span class="o">=</span><span class="n">output_ddf_save_path</span><span class="p">,</span>
-                <span class="n">gpu_id</span><span class="o">=</span><span class="n">gpu_id</span><span class="p">,</span>
-            <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Batch processing completed in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="n">seg_final_dd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_ddf_save_path</span><span class="p">)</span>
-
-    <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applying max score selection logic...&quot;</span><span class="p">)</span>
-    <span class="n">output_ddf_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;transcripts_df.parquet&quot;</span>
-
-    <span class="n">seg_final_dd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_ddf_save_path</span><span class="p">)</span>
-
-    <span class="n">seg_final_filtered</span> <span class="o">=</span> <span class="n">seg_final_dd</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
-        <span class="n">subset</span><span class="o">=</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
-    <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max score selection completed in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Step 3: Load the transcripts DataFrame and merge results</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading transcripts from </span><span class="si">{</span><span class="n">transcript_file</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-
-    <span class="n">transcripts_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">transcript_file</span><span class="p">)</span>
-    <span class="n">transcripts_df</span><span class="p">[</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="p">[</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-
-    <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Merging segmentation results with transcripts...&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Outer merge to include all transcripts, even those without assigned cell ids</span>
-    <span class="n">transcripts_df_filtered</span> <span class="o">=</span> <span class="n">transcripts_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">seg_final_filtered</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Merged segmentation results with transcripts in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">use_cc</span><span class="p">:</span>
-
-        <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing connected components for unassigned transcripts...&quot;</span><span class="p">)</span>
-        <span class="c1"># Load edge indices from saved Parquet</span>
-        <span class="n">edge_index_dd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">edge_index_save_path</span><span class="p">)</span>
-
-        <span class="c1"># Step 2: Get unique transcript_ids from edge_index_dd and their positional indices</span>
-        <span class="n">transcript_ids_in_edges</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">],</span> <span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]])</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
-
-        <span class="c1"># Create a lookup table with unique indices</span>
-        <span class="n">lookup_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">transcript_ids_in_edges</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">transcript_ids_in_edges</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-
-        <span class="c1"># Map source and target to positional indices</span>
-        <span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;index_source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">lookup_table</span><span class="p">)</span>
-        <span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;index_target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">lookup_table</span><span class="p">)</span>
-        <span class="c1"># Step 3: Compute connected components for transcripts involved in edges</span>
-        <span class="n">source_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;index_source&quot;</span><span class="p">])</span>
-        <span class="n">target_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">edge_index_dd</span><span class="p">[</span><span class="s2">&quot;index_target&quot;</span><span class="p">])</span>
-        <span class="n">data_cp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source_indices</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="c1"># Create the sparse COO matrix</span>
-        <span class="n">coo_cp_matrix</span> <span class="o">=</span> <span class="n">scipy_coo_matrix</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">data_cp</span><span class="p">,</span> <span class="p">(</span><span class="n">source_indices</span><span class="p">,</span> <span class="n">target_indices</span><span class="p">)),</span>
-            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">transcript_ids_in_edges</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">transcript_ids_in_edges</span><span class="p">)),</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Use CuPy&#39;s connected components algorithm to compute components</span>
-        <span class="n">n</span><span class="p">,</span> <span class="n">comps</span> <span class="o">=</span> <span class="n">cc</span><span class="p">(</span><span class="n">coo_cp_matrix</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="s2">&quot;strong&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computed connected components for unassigned transcripts in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-        <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The rest...&quot;</span><span class="p">)</span>
-        <span class="c1"># # Step 4: Map back the component labels to the original transcript_ids</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_get_id</span><span class="p">():</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate a random Xenium-style ID.&quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;abcdefghijklmnopqrstuvwxyz&quot;</span><span class="p">),</span> <span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;-nx&quot;</span>
-
-        <span class="n">new_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_get_id</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
-        <span class="n">comp_labels</span> <span class="o">=</span> <span class="n">new_ids</span><span class="p">[</span><span class="n">comps</span><span class="p">]</span>
-        <span class="n">comp_labels</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">comp_labels</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">transcript_ids_in_edges</span><span class="p">)</span>
-        <span class="c1"># Step 5: Handle only unassigned transcripts in transcripts_df_filtered</span>
-        <span class="n">unassigned_mask</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
-
-        <span class="n">unassigned_transcripts_df</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">unassigned_mask</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">]]</span>
-
-        <span class="c1"># Step 6: Map component labels only to unassigned transcript_ids</span>
-        <span class="n">new_segger_cell_ids</span> <span class="o">=</span> <span class="n">unassigned_transcripts_df</span><span class="p">[</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">comp_labels</span><span class="p">)</span>
-
-        <span class="c1"># Step 7: Create a DataFrame with updated &#39;segger_cell_id&#39; for unassigned transcripts</span>
-        <span class="n">unassigned_transcripts_df</span> <span class="o">=</span> <span class="n">unassigned_transcripts_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">segger_cell_id</span><span class="o">=</span><span class="n">new_segger_cell_ids</span><span class="p">)</span>
-
-        <span class="c1"># Step 8: Merge this DataFrame back into the original to update only the unassigned segger_cell_id</span>
-
-        <span class="c1"># Merging the updates back to the original DataFrame</span>
-        <span class="n">transcripts_df_filtered</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-            <span class="n">unassigned_transcripts_df</span><span class="p">[[</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">,</span> <span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]],</span>
-            <span class="n">on</span><span class="o">=</span><span class="s2">&quot;transcript_id&quot;</span><span class="p">,</span>
-            <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>  <span class="c1"># Perform a left join to only update the unassigned rows</span>
-            <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;_new&quot;</span><span class="p">),</span>  <span class="c1"># Suffix for new column to avoid overwriting</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Step 9: Fill missing segger_cell_id values with the updated values from the merge</span>
-        <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span>
-            <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id_new&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="n">transcripts_df_filtered</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;segger_cell_id_new&quot;</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The rest computed in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Step 5: Save the merged results based on options</span>
-    <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transcripts_df_filtered</span><span class="p">[</span><span class="s2">&quot;segger_cell_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">&quot;UNASSIGNED&quot;</span><span class="p">)</span>
-    <span class="c1"># transcripts_df_filtered = filter_transcripts(transcripts_df_filtered, qv=qv)</span>
-
-    <span class="k">if</span> <span class="n">save_transcripts</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving transcripts.parquet...&quot;</span><span class="p">)</span>
-        <span class="n">transcripts_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;segger_transcripts.parquet&quot;</span>
-        <span class="c1"># transcripts_df_filtered = transcripts_df_filtered.repartition(npartitions=100)</span>
-        <span class="n">transcripts_df_filtered</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span>
-            <span class="n">transcripts_save_path</span><span class="p">,</span>
-            <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;pyarrow&quot;</span><span class="p">,</span>  <span class="c1"># PyArrow is faster and recommended</span>
-            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;snappy&quot;</span><span class="p">,</span>  <span class="c1"># Use snappy compression for speed</span>
-            <span class="c1"># write_index=False,  # Skip writing index if not needed</span>
-            <span class="c1"># append=False,  # Set to True if you&#39;re appending to an existing Parquet file</span>
-            <span class="c1"># overwrite=True,</span>
-        <span class="p">)</span>  <span class="c1"># Dask handles Parquet well</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved trasncripts.parquet in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">save_anndata</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving anndata object...&quot;</span><span class="p">)</span>
-        <span class="n">anndata_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;segger_adata.h5ad&quot;</span>
-        <span class="n">segger_adata</span> <span class="o">=</span> <span class="n">create_anndata</span><span class="p">(</span><span class="n">transcripts_df_filtered</span><span class="p">,</span> <span class="o">**</span><span class="n">anndata_kwargs</span><span class="p">)</span>  <span class="c1"># Compute for AnnData</span>
-        <span class="n">segger_adata</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">anndata_save_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved anndata object in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">save_cell_masks</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">step_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing and saving cell masks anndata object...&quot;</span><span class="p">)</span>
-        <span class="c1"># Placeholder for future cell masks implementation as Dask Geopandas Parquet</span>
-        <span class="n">boundaries_gdf</span> <span class="o">=</span> <span class="n">generate_boundaries</span><span class="p">(</span><span class="n">transcripts_df_filtered</span><span class="p">)</span>
-        <span class="n">cell_masks_save_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;segger_cell_boundaries.parquet&quot;</span>
-
-        <span class="n">boundaries_gdf</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">cell_masks_save_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved cell masks in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">step_start_time</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Results saved in </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds at </span><span class="si">{</span><span class="n">save_dir</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Step 6: Save segmentation parameters as a JSON log</span>
-    <span class="n">log_data</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;seg_tag&quot;</span><span class="p">:</span> <span class="n">seg_tag</span><span class="p">,</span>
-        <span class="s2">&quot;score_cut&quot;</span><span class="p">:</span> <span class="n">score_cut</span><span class="p">,</span>
-        <span class="s2">&quot;use_cc&quot;</span><span class="p">:</span> <span class="n">use_cc</span><span class="p">,</span>
-        <span class="s2">&quot;receptive_field&quot;</span><span class="p">:</span> <span class="n">receptive_field</span><span class="p">,</span>
-        <span class="s2">&quot;knn_method&quot;</span><span class="p">:</span> <span class="n">knn_method</span><span class="p">,</span>
-        <span class="s2">&quot;save_transcripts&quot;</span><span class="p">:</span> <span class="n">save_transcripts</span><span class="p">,</span>
-        <span class="s2">&quot;save_anndata&quot;</span><span class="p">:</span> <span class="n">save_anndata</span><span class="p">,</span>
-        <span class="s2">&quot;save_cell_masks&quot;</span><span class="p">:</span> <span class="n">save_cell_masks</span><span class="p">,</span>
-        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
-    <span class="p">}</span>
-
-    <span class="n">log_path</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">/</span> <span class="s2">&quot;segmentation_log.json&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">log_data</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-
-    <span class="c1"># Step 7: Garbage collection and memory cleanup</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
-    <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
-
-    <span class="c1"># Total time taken for the segmentation process</span>
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total segmentation process completed in </span><span class="si">{</span><span class="n">total_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
 
 
 
@@ -1887,7 +941,7 @@ and log the parameters used during segmentation.</p>
             </div>
           
           
-  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
 
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
@@ -1918,12 +972,10 @@ and log the parameters used during segmentation.</p>
     </div>
     
     
-    
-      
-      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../assets/javascripts/bundle.af256bd8.min.js"></script>
       
         <script src="../../javascripts/config.js"></script>
       

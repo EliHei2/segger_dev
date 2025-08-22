@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3cba04c6.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -58,7 +58,7 @@
     
       <link rel="stylesheet" href="../../termynal.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -102,7 +102,7 @@
     </a>
     <label class="md-header__button md-icon" for="__drawer">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -130,7 +130,7 @@
     <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
       </label>
     
   
@@ -140,7 +140,7 @@
     <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
       </label>
     
   
@@ -148,32 +148,30 @@
       
     
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
-      
-      
-        <label class="md-header__button md-icon" for="__search">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        </label>
-        <div class="md-search" data-md-component="search" role="dialog">
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
         
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
       
@@ -192,14 +190,13 @@
     </div>
   </div>
 </div>
-      
     
     
       <div class="md-header__source">
         <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -246,7 +243,7 @@
       <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -266,10 +263,8 @@
       <a href="../.." class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Home
-    
   </span>
   
 
@@ -284,7 +279,6 @@
   
   
   
-    
     
     
     
@@ -304,10 +298,8 @@
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     Getting Started
-    
   </span>
   
 
@@ -331,10 +323,8 @@
       <a href="../../user_guide/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Overview
-    
   </span>
   
 
@@ -354,10 +344,8 @@
       <a href="../../installation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Installation
-    
   </span>
   
 
@@ -377,10 +365,8 @@
       <a href="../../user_guide/data_creation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Dataset Creation
-    
   </span>
   
 
@@ -400,10 +386,8 @@
       <a href="../../user_guide/training/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Training
-    
   </span>
   
 
@@ -423,10 +407,8 @@
       <a href="../../user_guide/validation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Validation
-    
   </span>
   
 
@@ -452,7 +434,6 @@
     
     
     
-    
       
         
         
@@ -469,10 +450,8 @@
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     Tutorials
-    
   </span>
   
 
@@ -496,10 +475,8 @@
       <a href="../segger_tutorial/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Introduction to Segger
-    
   </span>
   
 
@@ -526,10 +503,8 @@
       <a href="../../cli/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     CLI
-    
   </span>
   
 
@@ -544,7 +519,6 @@
   
   
   
-    
     
     
     
@@ -564,10 +538,8 @@
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
     API Reference
-    
   </span>
   
 
@@ -587,14 +559,49 @@
   
   
   
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            Data
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../api/data/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    Data
-    
+    Overview
   </span>
   
 
@@ -611,13 +618,124 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/data/sample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sample
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/pyg_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyG Dataset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/transcript_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transcript Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/ndtree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    NDTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/models/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Models
-    
   </span>
   
 
@@ -637,10 +755,8 @@
       <a href="../../api/training/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Training
-    
   </span>
   
 
@@ -660,10 +776,8 @@
       <a href="../../api/prediction/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Prediction
-    
   </span>
   
 
@@ -683,10 +797,8 @@
       <a href="../../api/validation/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
     Validation
-    
   </span>
   
 
@@ -716,7 +828,6 @@
               <article class="md-content__inner md-typeset">
                 
                   
-
 
   
   
@@ -942,7 +1053,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .jupyter-wrapper{--jp-shadow-base-lightness: 0;--jp-shadow-umbra-color: rgba( var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), .2 );--jp-shadow-penumbra-color: rgba( var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), .14 );--jp-shadow-ambient-color: rgba( var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), var(--jp-shadow-base-lightness), .12 );--jp-elevation-z0: none;--jp-elevation-z1: 0px 2px 1px -1px var(--jp-shadow-umbra-color), 0px 1px 1px 0px var(--jp-shadow-penumbra-color), 0px 1px 3px 0px var(--jp-shadow-ambient-color);--jp-elevation-z2: 0px 3px 1px -2px var(--jp-shadow-umbra-color), 0px 2px 2px 0px var(--jp-shadow-penumbra-color), 0px 1px 5px 0px var(--jp-shadow-ambient-color);--jp-elevation-z4: 0px 2px 4px -1px var(--jp-shadow-umbra-color), 0px 4px 5px 0px var(--jp-shadow-penumbra-color), 0px 1px 10px 0px var(--jp-shadow-ambient-color);--jp-elevation-z6: 0px 3px 5px -1px var(--jp-shadow-umbra-color), 0px 6px 10px 0px var(--jp-shadow-penumbra-color), 0px 1px 18px 0px var(--jp-shadow-ambient-color);--jp-elevation-z8: 0px 5px 5px -3px var(--jp-shadow-umbra-color), 0px 8px 10px 1px var(--jp-shadow-penumbra-color), 0px 3px 14px 2px var(--jp-shadow-ambient-color);--jp-elevation-z12: 0px 7px 8px -4px var(--jp-shadow-umbra-color), 0px 12px 17px 2px var(--jp-shadow-penumbra-color), 0px 5px 22px 4px var(--jp-shadow-ambient-color);--jp-elevation-z16: 0px 8px 10px -5px var(--jp-shadow-umbra-color), 0px 16px 24px 2px var(--jp-shadow-penumbra-color), 0px 6px 30px 5px var(--jp-shadow-ambient-color);--jp-elevation-z20: 0px 10px 13px -6px var(--jp-shadow-umbra-color), 0px 20px 31px 3px var(--jp-shadow-penumbra-color), 0px 8px 38px 7px var(--jp-shadow-ambient-color);--jp-elevation-z24: 0px 11px 15px -7px var(--jp-shadow-umbra-color), 0px 24px 38px 3px var(--jp-shadow-penumbra-color), 0px 9px 46px 8px var(--jp-shadow-ambient-color);--jp-border-width: 1px;--jp-border-color0: var(--md-grey-400);--jp-border-color1: var(--md-grey-400);--jp-border-color2: var(--md-grey-300);--jp-border-color3: var(--md-grey-200);--jp-inverse-border-color: var(--md-grey-600);--jp-border-radius: 2px;--jp-ui-font-scale-factor: 1.2;--jp-ui-font-size0: .83333em;--jp-ui-font-size1: 13px;--jp-ui-font-size2: 1.2em;--jp-ui-font-size3: 1.44em;--jp-ui-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";--jp-ui-font-color0: rgba(0, 0, 0, 1);--jp-ui-font-color1: rgba(0, 0, 0, .87);--jp-ui-font-color2: rgba(0, 0, 0, .54);--jp-ui-font-color3: rgba(0, 0, 0, .38);--jp-ui-inverse-font-color0: rgba(255, 255, 255, 1);--jp-ui-inverse-font-color1: rgba(255, 255, 255, 1);--jp-ui-inverse-font-color2: rgba(255, 255, 255, .7);--jp-ui-inverse-font-color3: rgba(255, 255, 255, .5);--jp-content-line-height: 1.6;--jp-content-font-scale-factor: 1.2;--jp-content-font-size0: .83333em;--jp-content-font-size1: 14px;--jp-content-font-size2: 1.2em;--jp-content-font-size3: 1.44em;--jp-content-font-size4: 1.728em;--jp-content-font-size5: 2.0736em;--jp-content-presentation-font-size1: 17px;--jp-content-heading-line-height: 1;--jp-content-heading-margin-top: 1.2em;--jp-content-heading-margin-bottom: .8em;--jp-content-heading-font-weight: 500;--jp-content-font-color0: rgba(0, 0, 0, 1);--jp-content-font-color1: rgba(0, 0, 0, .87);--jp-content-font-color2: rgba(0, 0, 0, .54);--jp-content-font-color3: rgba(0, 0, 0, .38);--jp-content-link-color: var(--md-blue-700);--jp-content-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";--jp-code-font-size: 13px;--jp-code-line-height: 1.3077;--jp-code-padding: 5px;--jp-code-font-family-default: Menlo, Consolas, "DejaVu Sans Mono", monospace;--jp-code-font-family: var(--jp-code-font-family-default);--jp-code-presentation-font-size: 16px;--jp-code-cursor-width0: 1.4px;--jp-code-cursor-width1: 2px;--jp-code-cursor-width2: 4px;--jp-layout-color0: white;--jp-layout-color1: white;--jp-layout-color2: var(--md-grey-200);--jp-layout-color3: var(--md-grey-400);--jp-layout-color4: var(--md-grey-600);--jp-inverse-layout-color0: #111111;--jp-inverse-layout-color1: var(--md-grey-900);--jp-inverse-layout-color2: var(--md-grey-800);--jp-inverse-layout-color3: var(--md-grey-700);--jp-inverse-layout-color4: var(--md-grey-600);--jp-brand-color0: var(--md-blue-900);--jp-brand-color1: var(--md-blue-700);--jp-brand-color2: var(--md-blue-300);--jp-brand-color3: var(--md-blue-100);--jp-brand-color4: var(--md-blue-50);--jp-accent-color0: var(--md-green-900);--jp-accent-color1: var(--md-green-700);--jp-accent-color2: var(--md-green-300);--jp-accent-color3: var(--md-green-100);--jp-warn-color0: var(--md-orange-900);--jp-warn-color1: var(--md-orange-700);--jp-warn-color2: var(--md-orange-300);--jp-warn-color3: var(--md-orange-100);--jp-error-color0: var(--md-red-900);--jp-error-color1: var(--md-red-700);--jp-error-color2: var(--md-red-300);--jp-error-color3: var(--md-red-100);--jp-success-color0: var(--md-green-900);--jp-success-color1: var(--md-green-700);--jp-success-color2: var(--md-green-300);--jp-success-color3: var(--md-green-100);--jp-info-color0: var(--md-cyan-900);--jp-info-color1: var(--md-cyan-700);--jp-info-color2: var(--md-cyan-300);--jp-info-color3: var(--md-cyan-100);--jp-cell-padding: 5px;--jp-cell-collapser-width: 8px;--jp-cell-collapser-min-height: 20px;--jp-cell-collapser-not-active-hover-opacity: .6;--jp-cell-editor-background: var(--md-grey-100);--jp-cell-editor-border-color: var(--md-grey-300);--jp-cell-editor-box-shadow: inset 0 0 2px var(--md-blue-300);--jp-cell-editor-active-background: var(--jp-layout-color0);--jp-cell-editor-active-border-color: var(--jp-brand-color1);--jp-cell-prompt-width: 64px;--jp-cell-prompt-font-family: var(--jp-code-font-family-default);--jp-cell-prompt-letter-spacing: 0px;--jp-cell-prompt-opacity: 1;--jp-cell-prompt-not-active-opacity: .5;--jp-cell-prompt-not-active-font-color: var(--md-grey-700);--jp-cell-inprompt-font-color: #307fc1;--jp-cell-outprompt-font-color: #bf5b3d;--jp-notebook-padding: 10px;--jp-notebook-select-background: var(--jp-layout-color1);--jp-notebook-multiselected-color: var(--md-blue-50);--jp-notebook-scroll-padding: calc( 100% - var(--jp-code-font-size) * var(--jp-code-line-height) - var(--jp-code-padding) - var(--jp-cell-padding) - 1px );--jp-rendermime-error-background: #fdd;--jp-rendermime-table-row-background: var(--md-grey-100);--jp-rendermime-table-row-hover-background: var(--md-light-blue-50);--jp-dialog-background: rgba(0, 0, 0, .25);--jp-console-padding: 10px;--jp-toolbar-border-color: var(--jp-border-color1);--jp-toolbar-micro-height: 8px;--jp-toolbar-background: var(--jp-layout-color1);--jp-toolbar-box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, .24);--jp-toolbar-header-margin: 4px 4px 0px 4px;--jp-toolbar-active-background: var(--md-grey-300);--jp-statusbar-height: 24px;--jp-input-box-shadow: inset 0 0 2px var(--md-blue-300);--jp-input-active-background: var(--jp-layout-color1);--jp-input-hover-background: var(--jp-layout-color1);--jp-input-background: var(--md-grey-100);--jp-input-border-color: var(--jp-inverse-border-color);--jp-input-active-border-color: var(--jp-brand-color1);--jp-input-active-box-shadow-color: rgba(19, 124, 189, .3);--jp-editor-selected-background: #d9d9d9;--jp-editor-selected-focused-background: #d7d4f0;--jp-editor-cursor-color: var(--jp-ui-font-color0);--jp-mirror-editor-keyword-color: #008000;--jp-mirror-editor-atom-color: #88f;--jp-mirror-editor-number-color: #080;--jp-mirror-editor-def-color: #00f;--jp-mirror-editor-variable-color: var(--md-grey-900);--jp-mirror-editor-variable-2-color: #05a;--jp-mirror-editor-variable-3-color: #085;--jp-mirror-editor-punctuation-color: #05a;--jp-mirror-editor-property-color: #05a;--jp-mirror-editor-operator-color: #aa22ff;--jp-mirror-editor-comment-color: #408080;--jp-mirror-editor-string-color: #ba2121;--jp-mirror-editor-string-2-color: #708;--jp-mirror-editor-meta-color: #aa22ff;--jp-mirror-editor-qualifier-color: #555;--jp-mirror-editor-builtin-color: #008000;--jp-mirror-editor-bracket-color: #997;--jp-mirror-editor-tag-color: #170;--jp-mirror-editor-attribute-color: #00c;--jp-mirror-editor-header-color: blue;--jp-mirror-editor-quote-color: #090;--jp-mirror-editor-link-color: #00c;--jp-mirror-editor-error-color: #f00;--jp-mirror-editor-hr-color: #999;--jp-collaborator-color1: #ffad8e;--jp-collaborator-color2: #dac83d;--jp-collaborator-color3: #72dd76;--jp-collaborator-color4: #00e4d0;--jp-collaborator-color5: #45d4ff;--jp-collaborator-color6: #e2b1ff;--jp-collaborator-color7: #ff9de6;--jp-vega-background: white;--jp-sidebar-min-width: 250px;--jp-search-toggle-off-opacity: .5;--jp-search-toggle-hover-opacity: .8;--jp-search-toggle-on-opacity: 1;--jp-search-selected-match-background-color: rgb(245, 200, 0);--jp-search-selected-match-color: black;--jp-search-unselected-match-background-color: var( --jp-inverse-layout-color0 );--jp-search-unselected-match-color: var(--jp-ui-inverse-font-color0);--jp-icon-contrast-color0: var(--md-purple-600);--jp-icon-contrast-color1: var(--md-green-600);--jp-icon-contrast-color2: var(--md-pink-600);--jp-icon-contrast-color3: var(--md-blue-600);--jp-jupyter-icon-color: #f37626;--jp-notebook-icon-color: #f37626;--jp-json-icon-color: var(--md-orange-700);--jp-console-icon-background-color: var(--md-blue-700);--jp-console-icon-color: white;--jp-terminal-icon-background-color: var(--md-grey-800);--jp-terminal-icon-color: var(--md-grey-200);--jp-text-editor-icon-color: var(--md-grey-700);--jp-inspector-icon-color: var(--md-grey-700);--jp-switch-color: var(--md-grey-400);--jp-switch-true-position-color: var(--md-orange-900)}
 </style>
 <!-- Load mathjax -->
-<script src=""> </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"> </script>
 <!-- MathJax configuration -->
 <script type="text/x-mathjax-config">
     init_mathjax = function() {
@@ -962,7 +1073,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                     processEnvironments: true
                 },
                 displayAlign: 'center',
-                messageStyle: 'none',
                 CommonHTML: {
                     linebreaks: {
                     automatic: true
@@ -1161,7 +1271,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <!-- End of mermaid configuration --><div class="jupyter-wrapper">
 <div class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=07d503ed">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=e715b3ae">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1179,14 +1289,14 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">segger.validation.utils</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">segger.validation.utils</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1">import pandas as pd
 import seaborn as sns
@@ -1202,7 +1312,7 @@ from segger.validation.utils import *</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=65b68882">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=9826e391">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1221,13 +1331,17 @@ from segger.validation.utils import *</div>
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Define paths and output directories</span>
-<span class="n">benchmarks_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc"</span><span class="p">)</span>
+<span class="n">benchmarks_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+    <span class="s2">"/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc"</span>
+<span class="p">)</span>
 <span class="n">output_path</span> <span class="o">=</span> <span class="n">benchmarks_path</span> <span class="o">/</span> <span class="s2">"results+"</span>
 <span class="n">figures_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">"figures"</span>
 <span class="n">figures_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure the figures directory exists</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-2"># Define paths and output directories
-benchmarks_path = Path("/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc")
+benchmarks_path = Path(
+    "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/xe_rep1_bc"
+)
 output_path = benchmarks_path / "results+"
 figures_path = output_path / "figures"
 figures_path.mkdir(parents=True, exist_ok=True)  # Ensure the figures directory exists</div>
@@ -1237,7 +1351,7 @@ figures_path.mkdir(parents=True, exist_ok=True)  # Ensure the figures directory 
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=8dadbd3c">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=00c59c6f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1288,7 +1402,7 @@ method_colors = {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=df809ccf">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=e7f8f45b">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1337,7 +1451,7 @@ major_colors = {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=6d256c72">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=ea51f415">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1378,7 +1492,7 @@ segmentation_paths = {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=e66a8927">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5e8f9eaa">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1398,12 +1512,16 @@ segmentation_paths = {
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load the segmentations and the scRNAseq data</span>
 <span class="n">segmentations_dict</span> <span class="o">=</span> <span class="n">load_segmentations</span><span class="p">(</span><span class="n">segmentation_paths</span><span class="p">)</span>
-<span class="n">segmentations_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">method_colors</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="p">}</span>
+<span class="n">segmentations_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">k</span><span class="p">:</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">method_colors</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">segmentations_dict</span>
+<span class="p">}</span>
 <span class="n">scRNAseq_adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">benchmarks_path</span> <span class="o">/</span> <span class="s2">"scRNAseq.h5ad"</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-6"># Load the segmentations and the scRNAseq data
 segmentations_dict = load_segmentations(segmentation_paths)
-segmentations_dict = {k: segmentations_dict[k] for k in method_colors.keys() if k in segmentations_dict}
+segmentations_dict = {
+    k: segmentations_dict[k] for k in method_colors.keys() if k in segmentations_dict
+}
 scRNAseq_adata = sc.read(benchmarks_path / "scRNAseq.h5ad")</div>
 </div>
 </div>
@@ -1411,7 +1529,7 @@ scRNAseq_adata = sc.read(benchmarks_path / "scRNAseq.h5ad")</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=72c29d2a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=dc55a433">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1423,7 +1541,7 @@ plot_general_statistics_plots(segmentations_dict, figures_path, method_colors)</
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=7c368b21">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=893a3f0d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1452,7 +1570,7 @@ plot_cell_area(segmentations_dict, figures_path, palette=method_colors)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=4a56494f">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a678d5bf">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1471,17 +1589,27 @@ plot_cell_area(segmentations_dict, figures_path, palette=method_colors)</div>
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Find markers for scRNAseq data</span>
-<span class="n">markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span><span class="n">scRNAseq_adata</span><span class="p">,</span> <span class="n">cell_type_column</span><span class="o">=</span><span class="s2">"celltype_major"</span><span class="p">,</span> <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">neg_percentile</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span>
+    <span class="n">scRNAseq_adata</span><span class="p">,</span>
+    <span class="n">cell_type_column</span><span class="o">=</span><span class="s2">"celltype_major"</span><span class="p">,</span>
+    <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">neg_percentile</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-8"># Find markers for scRNAseq data
-markers = find_markers(scRNAseq_adata, cell_type_column="celltype_major", pos_percentile=30, neg_percentile=5)</div>
+markers = find_markers(
+    scRNAseq_adata,
+    cell_type_column="celltype_major",
+    pos_percentile=30,
+    neg_percentile=5,
+)</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b65ee64b">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=86733007">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1499,7 +1627,7 @@ segmentations_dict[method].write(segmentation_paths[method])</p>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=7a32a302">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=b1e51282">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1519,7 +1647,9 @@ segmentations_dict[method].write(segmentation_paths[method])</p>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">_settings</span><span class="o">.</span><span class="n">ScanpyConfig</span><span class="o">.</span><span class="n">figdir</span> <span class="o">=</span> <span class="n">figures_path</span>
 <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_embedding"</span><span class="p">]</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">"spatial"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_embedding"</span><span class="p">]</span><span class="o">.</span><span class="n">obs</span><span class="p">[[</span><span class="s2">"cell_centroid_x"</span><span class="p">,</span> <span class="s2">"cell_centroid_y"</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_embedding"</span><span class="p">]</span>
+    <span class="o">.</span><span class="n">obs</span><span class="p">[[</span><span class="s2">"cell_centroid_x"</span><span class="p">,</span> <span class="s2">"cell_centroid_y"</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">values</span>
 <span class="p">)</span>
 <span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">spatial</span><span class="p">(</span>
     <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_embedding"</span><span class="p">],</span>
@@ -1531,7 +1661,9 @@ segmentations_dict[method].write(segmentation_paths[method])</p>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-9">sc._settings.ScanpyConfig.figdir = figures_path
 segmentations_dict["segger_embedding"].obsm["spatial"] = (
-    segmentations_dict["segger_embedding"].obs[["cell_centroid_x", "cell_centroid_y"]].values
+    segmentations_dict["segger_embedding"]
+    .obs[["cell_centroid_x", "cell_centroid_y"]]
+    .values
 )
 sc.pl.spatial(
     segmentations_dict["segger_embedding"],
@@ -1546,7 +1678,7 @@ sc.pl.spatial(
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=03a320f0">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=192232f1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1579,7 +1711,7 @@ exclusive_gene_pairs = find_mutually_exclusive_genes(
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5588ce25">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=6fe51c1d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1600,19 +1732,23 @@ exclusive_gene_pairs = find_mutually_exclusive_genes(
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Compute MECR for each segmentation method</span>
 <span class="n">mecr_results</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-    <span class="n">mecr_results</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_MECR</span><span class="p">(</span><span class="n">segmentations_dict</span><span class="p">[</span><span class="n">method</span><span class="p">],</span> <span class="n">exclusive_gene_pairs</span><span class="p">)</span>
+    <span class="n">mecr_results</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_MECR</span><span class="p">(</span>
+        <span class="n">segmentations_dict</span><span class="p">[</span><span class="n">method</span><span class="p">],</span> <span class="n">exclusive_gene_pairs</span>
+    <span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-11"># Compute MECR for each segmentation method
 mecr_results = {}
 for method in segmentations_dict.keys():
-    mecr_results[method] = compute_MECR(segmentations_dict[method], exclusive_gene_pairs)</div>
+    mecr_results[method] = compute_MECR(
+        segmentations_dict[method], exclusive_gene_pairs
+    )</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=33a4b0f5">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=6c087c2e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1643,7 +1779,7 @@ quantized_mecr_counts = {}</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=51b67f22">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=7e99e95c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1684,7 +1820,7 @@ quantized_mecr_counts = {}</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=998ec127">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=73820049">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1704,20 +1840,28 @@ quantized_mecr_counts = {}</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Plot MECR results</span>
 <span class="n">plot_mecr_results</span><span class="p">(</span><span class="n">mecr_results</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span><span class="p">)</span>
-<span class="n">plot_quantized_mecr_area</span><span class="p">(</span><span class="n">quantized_mecr_area</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span><span class="p">)</span>
-<span class="n">plot_quantized_mecr_counts</span><span class="p">(</span><span class="n">quantized_mecr_counts</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span><span class="p">)</span>
+<span class="n">plot_quantized_mecr_area</span><span class="p">(</span>
+    <span class="n">quantized_mecr_area</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span>
+<span class="p">)</span>
+<span class="n">plot_quantized_mecr_counts</span><span class="p">(</span>
+    <span class="n">quantized_mecr_counts</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span>
+<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-14"># Plot MECR results
 plot_mecr_results(mecr_results, output_path=figures_path, palette=method_colors)
-plot_quantized_mecr_area(quantized_mecr_area, output_path=figures_path, palette=method_colors)
-plot_quantized_mecr_counts(quantized_mecr_counts, output_path=figures_path, palette=method_colors)</div>
+plot_quantized_mecr_area(
+    quantized_mecr_area, output_path=figures_path, palette=method_colors
+)
+plot_quantized_mecr_counts(
+    quantized_mecr_counts, output_path=figures_path, palette=method_colors
+)</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=dc274762">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a1226f6d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1737,12 +1881,16 @@ plot_quantized_mecr_counts(quantized_mecr_counts, output_path=figures_path, pale
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Filter segmentation methods for contamination analysis</span>
 <span class="n">new_segmentations_dict</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"segger"</span><span class="p">,</span> <span class="s2">"Baysor"</span><span class="p">,</span> <span class="s2">"10X"</span><span class="p">,</span> <span class="s2">"10X-nucleus"</span><span class="p">,</span> <span class="s2">"BIDCell"</span><span class="p">]</span>
+    <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"segger"</span><span class="p">,</span> <span class="s2">"Baysor"</span><span class="p">,</span> <span class="s2">"10X"</span><span class="p">,</span> <span class="s2">"10X-nucleus"</span><span class="p">,</span> <span class="s2">"BIDCell"</span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-15"># Filter segmentation methods for contamination analysis
 new_segmentations_dict = {
-    k: v for k, v in segmentations_dict.items() if k in ["segger", "Baysor", "10X", "10X-nucleus", "BIDCell"]
+    k: v
+    for k, v in segmentations_dict.items()
+    if k in ["segger", "Baysor", "10X", "10X-nucleus", "BIDCell"]
 }</div>
 </div>
 </div>
@@ -1750,7 +1898,7 @@ new_segmentations_dict = {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=8fb5764a">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=3247e4f1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1771,7 +1919,10 @@ new_segmentations_dict = {
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Compute contamination results</span>
 <span class="n">contamination_results</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">adata</span> <span class="ow">in</span> <span class="n">new_segmentations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="k">if</span> <span class="s2">"cell_centroid_x"</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="s2">"cell_centroid_y"</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="s2">"cell_centroid_x"</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span>
+        <span class="ow">and</span> <span class="s2">"cell_centroid_y"</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span>
+    <span class="p">):</span>
         <span class="n">contamination_results</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">calculate_contamination</span><span class="p">(</span>
             <span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span>
             <span class="n">markers</span><span class="o">=</span><span class="n">markers</span><span class="p">,</span>  <span class="c1"># Assuming you have a dictionary of markers for cell types</span>
@@ -1784,7 +1935,10 @@ new_segmentations_dict = {
 <div class="clipboard-copy-txt" id="cell-16"># Compute contamination results
 contamination_results = {}
 for method, adata in new_segmentations_dict.items():
-    if "cell_centroid_x" in adata.obs.columns and "cell_centroid_y" in adata.obs.columns:
+    if (
+        "cell_centroid_x" in adata.obs.columns
+        and "cell_centroid_y" in adata.obs.columns
+    ):
         contamination_results[method] = calculate_contamination(
             adata=adata,
             markers=markers,  # Assuming you have a dictionary of markers for cell types
@@ -1799,7 +1953,7 @@ for method, adata in new_segmentations_dict.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=06a0e5a9">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=e78e423e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1821,7 +1975,9 @@ for method, adata in new_segmentations_dict.items():
 <span class="n">boxplot_data</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">contamination_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="n">melted_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span>
-        <span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Source Cell Type"</span><span class="p">],</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"Target Cell Type"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"Contamination"</span>
+        <span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Source Cell Type"</span><span class="p">],</span>
+        <span class="n">var_name</span><span class="o">=</span><span class="s2">"Target Cell Type"</span><span class="p">,</span>
+        <span class="n">value_name</span><span class="o">=</span><span class="s2">"Contamination"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">melted_df</span><span class="p">[</span><span class="s2">"Segmentation Method"</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span>
     <span class="n">boxplot_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">melted_df</span><span class="p">)</span>
@@ -1830,7 +1986,9 @@ for method, adata in new_segmentations_dict.items():
 boxplot_data = []
 for method, df in contamination_results.items():
     melted_df = df.reset_index().melt(
-        id_vars=["Source Cell Type"], var_name="Target Cell Type", value_name="Contamination"
+        id_vars=["Source Cell Type"],
+        var_name="Target Cell Type",
+        value_name="Contamination",
     )
     melted_df["Segmentation Method"] = method
     boxplot_data.append(melted_df)</div>
@@ -1840,7 +1998,7 @@ for method, df in contamination_results.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=25dc8b8e">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=0dba1ed0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1869,7 +2027,7 @@ boxplot_data = pd.concat(boxplot_data)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=8e92e21d">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=f80d4293">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1888,19 +2046,27 @@ boxplot_data = pd.concat(boxplot_data)</div>
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Plot contamination results</span>
-<span class="n">plot_contamination_results</span><span class="p">(</span><span class="n">contamination_results</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span><span class="p">)</span>
-<span class="n">plot_contamination_boxplots</span><span class="p">(</span><span class="n">boxplot_data</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span><span class="p">)</span>
+<span class="n">plot_contamination_results</span><span class="p">(</span>
+    <span class="n">contamination_results</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span>
+<span class="p">)</span>
+<span class="n">plot_contamination_boxplots</span><span class="p">(</span>
+    <span class="n">boxplot_data</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">method_colors</span>
+<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-19"># Plot contamination results
-plot_contamination_results(contamination_results, output_path=figures_path, palette=method_colors)
-plot_contamination_boxplots(boxplot_data, output_path=figures_path, palette=method_colors)</div>
+plot_contamination_results(
+    contamination_results, output_path=figures_path, palette=method_colors
+)
+plot_contamination_boxplots(
+    boxplot_data, output_path=figures_path, palette=method_colors
+)</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=54d283e8">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=c684c048">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1919,19 +2085,27 @@ plot_contamination_boxplots(boxplot_data, output_path=figures_path, palette=meth
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Separate Segger into nucleus-positive and nucleus-negative cells</span>
-<span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_n1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">][</span><span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">]</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">has_nucleus</span><span class="p">]</span>
-<span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_n0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">][</span><span class="o">~</span><span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">]</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">has_nucleus</span><span class="p">]</span>
+<span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_n1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">][</span>
+    <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">]</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">has_nucleus</span>
+<span class="p">]</span>
+<span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger_n0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">][</span>
+    <span class="o">~</span><span class="n">segmentations_dict</span><span class="p">[</span><span class="s2">"segger"</span><span class="p">]</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">has_nucleus</span>
+<span class="p">]</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-20"># Separate Segger into nucleus-positive and nucleus-negative cells
-segmentations_dict["segger_n1"] = segmentations_dict["segger"][segmentations_dict["segger"].obs.has_nucleus]
-segmentations_dict["segger_n0"] = segmentations_dict["segger"][~segmentations_dict["segger"].obs.has_nucleus]</div>
+segmentations_dict["segger_n1"] = segmentations_dict["segger"][
+    segmentations_dict["segger"].obs.has_nucleus
+]
+segmentations_dict["segger_n0"] = segmentations_dict["segger"][
+    ~segmentations_dict["segger"].obs.has_nucleus
+]</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5151f9c7">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=f9ab20ae">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1952,13 +2126,17 @@ segmentations_dict["segger_n0"] = segmentations_dict["segger"][~segmentations_di
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Compute clustering scores for all segmentation methods</span>
 <span class="n">clustering_scores</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">adata</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">ch_score</span><span class="p">,</span> <span class="n">sh_score</span> <span class="o">=</span> <span class="n">compute_clustering_scores</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">cell_type_column</span><span class="o">=</span><span class="s2">"celltype_major"</span><span class="p">)</span>
+    <span class="n">ch_score</span><span class="p">,</span> <span class="n">sh_score</span> <span class="o">=</span> <span class="n">compute_clustering_scores</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span> <span class="n">cell_type_column</span><span class="o">=</span><span class="s2">"celltype_major"</span>
+    <span class="p">)</span>
     <span class="n">clustering_scores</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ch_score</span><span class="p">,</span> <span class="n">sh_score</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-21"># Compute clustering scores for all segmentation methods
 clustering_scores = {}
 for method, adata in segmentations_dict.items():
-    ch_score, sh_score = compute_clustering_scores(adata, cell_type_column="celltype_major")
+    ch_score, sh_score = compute_clustering_scores(
+        adata, cell_type_column="celltype_major"
+    )
     clustering_scores[method] = (ch_score, sh_score)</div>
 </div>
 </div>
@@ -1966,7 +2144,7 @@ for method, adata in segmentations_dict.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=1951cd17">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a821876d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -1985,17 +2163,21 @@ for method, adata in segmentations_dict.items():
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Plot UMAPs with clustering scores in the title</span>
-<span class="n">plot_umaps_with_scores</span><span class="p">(</span><span class="n">segmentations_dict</span><span class="p">,</span> <span class="n">clustering_scores</span><span class="p">,</span> <span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">major_colors</span><span class="p">)</span>
+<span class="n">plot_umaps_with_scores</span><span class="p">(</span>
+    <span class="n">segmentations_dict</span><span class="p">,</span> <span class="n">clustering_scores</span><span class="p">,</span> <span class="n">figures_path</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">major_colors</span>
+<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-22"># Plot UMAPs with clustering scores in the title
-plot_umaps_with_scores(segmentations_dict, clustering_scores, figures_path, palette=major_colors)</div>
+plot_umaps_with_scores(
+    segmentations_dict, clustering_scores, figures_path, palette=major_colors
+)</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cadd2593">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=c16c5f54">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2028,7 +2210,7 @@ for method, adata in segmentations_dict.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=18257a00">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=59094d22">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2081,7 +2263,7 @@ for method, adata in segmentations_dict.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5e44eefc">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=dba49bf1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2110,7 +2292,7 @@ entropy_boxplot_data = pd.concat(entropy_boxplot_data)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=862e678c">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a4362f14">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2139,7 +2321,7 @@ plot_entropy_boxplots(entropy_boxplot_data, figures_path, palette=method_colors)
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=7211ac4e">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=c20bdc72">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2158,17 +2340,21 @@ plot_entropy_boxplots(entropy_boxplot_data, figures_path, palette=method_colors)
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Find markers for sensitivity calculation</span>
-<span class="n">purified_markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span><span class="n">scRNAseq_adata</span><span class="p">,</span> <span class="s2">"celltype_major"</span><span class="p">,</span> <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">percentage</span><span class="o">=</span><span class="mi">75</span><span class="p">)</span>
+<span class="n">purified_markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span>
+    <span class="n">scRNAseq_adata</span><span class="p">,</span> <span class="s2">"celltype_major"</span><span class="p">,</span> <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">percentage</span><span class="o">=</span><span class="mi">75</span>
+<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-27"># Find markers for sensitivity calculation
-purified_markers = find_markers(scRNAseq_adata, "celltype_major", pos_percentile=20, percentage=75)</div>
+purified_markers = find_markers(
+    scRNAseq_adata, "celltype_major", pos_percentile=20, percentage=75
+)</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=28681769">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=e38d4ec3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2189,13 +2375,17 @@ purified_markers = find_markers(scRNAseq_adata, "celltype_major", pos_percentile
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Calculate sensitivity for each segmentation method</span>
 <span class="n">sensitivity_results_per_method</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">adata</span> <span class="ow">in</span> <span class="n">segmentations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">sensitivity_results</span> <span class="o">=</span> <span class="n">calculate_sensitivity</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">purified_markers</span><span class="p">,</span> <span class="n">max_cells_per_type</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+    <span class="n">sensitivity_results</span> <span class="o">=</span> <span class="n">calculate_sensitivity</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span> <span class="n">purified_markers</span><span class="p">,</span> <span class="n">max_cells_per_type</span><span class="o">=</span><span class="mi">2000</span>
+    <span class="p">)</span>
     <span class="n">sensitivity_results_per_method</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensitivity_results</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-28"># Calculate sensitivity for each segmentation method
 sensitivity_results_per_method = {}
 for method, adata in segmentations_dict.items():
-    sensitivity_results = calculate_sensitivity(adata, purified_markers, max_cells_per_type=2000)
+    sensitivity_results = calculate_sensitivity(
+        adata, purified_markers, max_cells_per_type=2000
+    )
     sensitivity_results_per_method[method] = sensitivity_results</div>
 </div>
 </div>
@@ -2203,7 +2393,7 @@ for method, adata in segmentations_dict.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a4c43bd3">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=beddf6a3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2225,14 +2415,26 @@ for method, adata in segmentations_dict.items():
 <span class="n">sensitivity_boxplot_data</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">sensitivity_results</span> <span class="ow">in</span> <span class="n">sensitivity_results_per_method</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">cell_type</span><span class="p">,</span> <span class="n">sensitivities</span> <span class="ow">in</span> <span class="n">sensitivity_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">method_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"Cell Type"</span><span class="p">:</span> <span class="n">cell_type</span><span class="p">,</span> <span class="s2">"Sensitivity"</span><span class="p">:</span> <span class="n">sensitivities</span><span class="p">,</span> <span class="s2">"Segmentation Method"</span><span class="p">:</span> <span class="n">method</span><span class="p">})</span>
+        <span class="n">method_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"Cell Type"</span><span class="p">:</span> <span class="n">cell_type</span><span class="p">,</span>
+                <span class="s2">"Sensitivity"</span><span class="p">:</span> <span class="n">sensitivities</span><span class="p">,</span>
+                <span class="s2">"Segmentation Method"</span><span class="p">:</span> <span class="n">method</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
         <span class="n">sensitivity_boxplot_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">method_df</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-29"># Prepare data for sensitivity boxplots
 sensitivity_boxplot_data = []
 for method, sensitivity_results in sensitivity_results_per_method.items():
     for cell_type, sensitivities in sensitivity_results.items():
-        method_df = pd.DataFrame({"Cell Type": cell_type, "Sensitivity": sensitivities, "Segmentation Method": method})
+        method_df = pd.DataFrame(
+            {
+                "Cell Type": cell_type,
+                "Sensitivity": sensitivities,
+                "Segmentation Method": method,
+            }
+        )
         sensitivity_boxplot_data.append(method_df)</div>
 </div>
 </div>
@@ -2240,7 +2442,7 @@ for method, sensitivity_results in sensitivity_results_per_method.items():
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=f24204c4">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=78c66df6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2269,7 +2471,7 @@ sensitivity_boxplot_data = pd.concat(sensitivity_boxplot_data)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=09f11a17">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=08913e1a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -2318,7 +2520,7 @@ plot_sensitivity_boxplots(sensitivity_boxplot_data, figures_path, palette=method
             </div>
           
           
-  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
 
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
@@ -2349,12 +2551,10 @@ plot_sensitivity_boxplots(sensitivity_boxplot_data, figures_path, palette=method
     </div>
     
     
-    
-      
-      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../assets/javascripts/bundle.af256bd8.min.js"></script>
       
         <script src="../../javascripts/config.js"></script>
       
