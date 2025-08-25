@@ -8,7 +8,7 @@ The `sample` module is the core of the Segger data processing framework, providi
       show_root_heading: true
       show_root_toc_entry: true
       show_submodules: true
-      merge_init_into_class: false
+      merge_init_into_class: True
       members: true                 
       heading_level: 2           
       show_root_full_path: false

@@ -842,18 +842,17 @@
 <p>This page provides a comprehensive reference to all the classes, functions, and modules in the <code>segger.data</code> package.</p>
 <h2 id="module-overview">Module Overview<a class="headerlink" href="#module-overview" title="Permanent link">&para;</a></h2>
 <p>The <code>segger.data</code> package is organized into several key modules, each serving a specific purpose in the spatial transcriptomics data processing pipeline.</p>
-<h2 id="core-modules">Core Modules<a class="headerlink" href="#core-modules" title="Permanent link">&para;</a></h2>
 <h3 id="sample-module"><a href="../sample/">Sample Module</a><a class="headerlink" href="#sample-module" title="Permanent link">&para;</a></h3>
 <p>The main data processing module containing the core classes for handling spatial transcriptomics data.</p>
-<p><strong>Key Classes:</strong>
-- <code>STSampleParquet</code>: Main orchestrator for data loading and processing
-- <code>STInMemoryDataset</code>: In-memory dataset with spatial indexing
-- <code>STTile</code>: Individual spatial tile processing</p>
 <p><strong>Main Functions:</strong>
 - Data loading and validation
 - Spatial tiling and partitioning
 - Graph construction and feature engineering
 - Parallel processing coordination</p>
+<p><strong>Key Classes:</strong>
+- <code>STSampleParquet</code>: Main orchestrator for data loading and processing
+- <code>STInMemoryDataset</code>: In-memory dataset with spatial indexing
+- <code>STTile</code>: Individual spatial tile processing</p>
 <h3 id="utils-module"><a href="../_utils/">Utils Module</a><a class="headerlink" href="#utils-module" title="Permanent link">&para;</a></h3>
 <p>Core utility functions for data processing, filtering, and analysis.</p>
 <p><strong>Key Functions:</strong>
@@ -865,31 +864,16 @@
 - <code>find_markers()</code>: Identify marker genes for cell types</p>
 <h3 id="pyg-dataset-module"><a href="../pyg_dataset/">PyG Dataset Module</a><a class="headerlink" href="#pyg-dataset-module" title="Permanent link">&para;</a></h3>
 <p>PyTorch Geometric dataset integration for machine learning workflows.</p>
+<ul>
+<li>Automatic tile discovery and loading</li>
+<li>PyTorch Lightning integration</li>
+<li>Built-in data validation</li>
+<li>Efficient memory management</li>
+</ul>
 <p><strong>Key Classes:</strong>
 - <code>STPyGDataset</code>: PyTorch Geometric dataset wrapper</p>
-<p><strong>Features:</strong>
-- Automatic tile discovery and loading
-- PyTorch Lightning integration
-- Built-in data validation
-- Efficient memory management</p>
 <h3 id="transcript-embedding-module"><a href="../transcript_embedding/">Transcript Embedding Module</a><a class="headerlink" href="#transcript-embedding-module" title="Permanent link">&para;</a></h3>
 <p>Utilities for encoding transcript features into numerical representations.</p>
-<p><strong>Key Classes:</strong>
-- <code>TranscriptEmbedding</code>: Transcript feature encoding and embedding</p>
-<p><strong>Features:</strong>
-- Index-based and weighted embeddings
-- PyTorch module integration
-- Input validation and error handling
-- Support for custom embedding strategies</p>
-<h3 id="experimental-module"><a href="experimental.md">Experimental Module</a><a class="headerlink" href="#experimental-module" title="Permanent link">&para;</a></h3>
-<p>Experimental features and multi-backend support.</p>
-<p><strong>Key Classes:</strong>
-- <code>BackendHandler</code>: Multi-backend DataFrame support</p>
-<p><strong>Supported Backends:</strong>
-- pandas: Standard data processing
-- dask: Parallel processing
-- cudf: GPU acceleration
-- dask_cudf: Distributed GPU processing</p>
 <h3 id="ndtree-module"><a href="../ndtree/">NDTree Module</a><a class="headerlink" href="#ndtree-module" title="Permanent link">&para;</a></h3>
 <p>Spatial partitioning and load balancing utilities.</p>
 <p><strong>Key Classes:</strong>
@@ -907,7 +891,7 @@
 - Xenium
 - Merscope
 - CosMx
-- Xenium v2</p>
+- Xenium v2 (segmentation kit)</p>
 <p><strong>Configuration Options:</strong>
 - Column mappings
 - Quality thresholds
@@ -933,135 +917,13 @@ STPyGDataset (ML Integration)
 BackendHandler (Experimental)
 └── Multi-backend Support
 </code></pre></div>
-<h2 id="common-usage-patterns">Common Usage Patterns<a class="headerlink" href="#common-usage-patterns" title="Permanent link">&para;</a></h2>
-<h3 id="1-basic-data-processing">1. Basic Data Processing<a class="headerlink" href="#1-basic-data-processing" title="Permanent link">&para;</a></h3>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
 
 <span class="c1"># Load and process data</span>
 <span class="n">sample</span> <span class="o">=</span> <span class="n">STSampleParquet</span><span class="p">(</span><span class="n">base_dir</span><span class="o">=</span><span class="s2">&quot;path/to/data&quot;</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="s2">&quot;./processed&quot;</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="2-custom-processing">2. Custom Processing<a class="headerlink" href="#2-custom-processing" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STInMemoryDataset</span><span class="p">,</span> <span class="n">STTile</span>
-
-<span class="c1"># Process specific regions</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">STInMemoryDataset</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">,</span> <span class="n">extents</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
-<span class="n">tiles</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">_tile</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-
-<span class="c1"># Process individual tiles</span>
-<span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
-    <span class="n">pyg_data</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">to_pyg_dataset</span><span class="p">()</span>
-    <span class="c1"># Continue processing...</span>
-</code></pre></div>
-<h3 id="3-machine-learning-integration">3. Machine Learning Integration<a class="headerlink" href="#3-machine-learning-integration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data.pyg_dataset</span> <span class="kn">import</span> <span class="n">STPyGDataset</span>
-
-<span class="c1"># Load processed data</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">STPyGDataset</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s2">&quot;./processed_data&quot;</span><span class="p">)</span>
-
-<span class="c1"># Use in training</span>
-<span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
-    <span class="c1"># Train your model...</span>
-</code></pre></div>
-<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
-<h3 id="memory-management">Memory Management<a class="headerlink" href="#memory-management" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Lazy Loading</strong>: Data loaded only when needed</li>
-<li><strong>Spatial Filtering</strong>: Only relevant data in memory</li>
-<li><strong>Intelligent Caching</strong>: Frequently accessed data cached</li>
-<li><strong>Parallel Processing</strong>: Multiple workers process different regions</li>
-</ul>
-<h3 id="optimization-strategies">Optimization Strategies<a class="headerlink" href="#optimization-strategies" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Tile Size Selection</strong>: Balance memory usage and processing efficiency</li>
-<li><strong>Worker Configuration</strong>: Match worker count to available resources</li>
-<li><strong>Spatial Indexing</strong>: KDTree-based fast spatial queries</li>
-<li><strong>Quality Filtering</strong>: Early filtering to reduce processing overhead</li>
-</ul>
-<h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
-<p>The package includes comprehensive error handling:</p>
-<ul>
-<li><strong>File Validation</strong>: Checks for valid data files and formats</li>
-<li><strong>Data Quality</strong>: Validates transcript and boundary data</li>
-<li><strong>Memory Management</strong>: Handles out-of-memory situations gracefully</li>
-<li><strong>Worker Coordination</strong>: Manages worker failures and recovery</li>
-</ul>
-<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<h3 id="data-organization">Data Organization<a class="headerlink" href="#data-organization" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Use consistent directory structures</li>
-<li>Include metadata in file names</li>
-<li>Validate data quality before processing</li>
-<li>Monitor memory usage during processing</li>
-</ul>
-<h3 id="performance-tuning">Performance Tuning<a class="headerlink" href="#performance-tuning" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Choose appropriate tile sizes for your hardware</li>
-<li>Balance worker count with available resources</li>
-<li>Use debug mode for initial setup and troubleshooting</li>
-<li>Monitor processing times and adjust parameters</li>
-</ul>
-<h3 id="quality-control">Quality Control<a class="headerlink" href="#quality-control" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Set appropriate quality thresholds</li>
-<li>Filter unwanted genes early in the pipeline</li>
-<li>Validate spatial relationships</li>
-<li>Check output data consistency</li>
-</ul>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
-<ol>
-<li><strong>Memory Errors</strong>: Reduce tile size or number of workers</li>
-<li><strong>Slow Processing</strong>: Check spatial indexing and parallelization</li>
-<li><strong>Data Quality Issues</strong>: Verify input data format and quality metrics</li>
-<li><strong>Worker Failures</strong>: Check worker configuration and resource availability</li>
-</ol>
-<h3 id="debug-tips">Debug Tips<a class="headerlink" href="#debug-tips" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Use <code>save_debug()</code> for detailed processing information</li>
-<li>Monitor memory usage during processing</li>
-<li>Check tile generation parameters</li>
-<li>Validate spatial relationships in output data</li>
-</ul>
-<h2 id="future-developments">Future Developments<a class="headerlink" href="#future-developments" title="Permanent link">&para;</a></h2>
-<p>Planned improvements include:</p>
-<ul>
-<li><strong>Additional Platforms</strong>: Support for more spatial transcriptomics technologies</li>
-<li><strong>Enhanced Tiling</strong>: More sophisticated spatial partitioning strategies</li>
-<li><strong>Real-time Processing</strong>: Streaming data processing capabilities</li>
-<li><strong>Cloud Integration</strong>: Support for cloud-based data processing</li>
-<li><strong>Advanced Features</strong>: More sophisticated feature engineering and graph construction</li>
-</ul>
-<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
-<p>Contributions are welcome! Areas for improvement include:</p>
-<ul>
-<li><strong>New Data Formats</strong>: Support for additional spatial transcriptomics platforms</li>
-<li><strong>Performance Optimization</strong>: Better algorithms and data structures</li>
-<li><strong>Documentation</strong>: Examples, tutorials, and best practices</li>
-<li><strong>Testing</strong>: Comprehensive test coverage and validation</li>
-</ul>
-<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
-<h3 id="core-dependencies">Core Dependencies<a class="headerlink" href="#core-dependencies" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>pandas</strong>: Data manipulation and analysis</li>
-<li><strong>geopandas</strong>: Spatial data handling</li>
-<li><strong>shapely</strong>: Geometric operations</li>
-<li><strong>pyarrow</strong>: Parquet file handling</li>
-<li><strong>scipy</strong>: Spatial data structures</li>
-</ul>
-<h3 id="ml-dependencies">ML Dependencies<a class="headerlink" href="#ml-dependencies" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>torch</strong>: PyTorch integration</li>
-<li><strong>torch_geometric</strong>: Graph neural network support</li>
-<li><strong>pytorch_lightning</strong>: Training framework integration</li>
-</ul>
-<h3 id="optional-dependencies">Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>dask</strong>: Parallel processing support</li>
-<li><strong>cudf</strong>: GPU acceleration</li>
-<li><strong>scanpy</strong>: Single-cell analysis</li>
-<li><strong>anndata</strong>: Annotated data structures</li>
-</ul>
 
 
 

@@ -1,268 +1,284 @@
 # Data Preparation for `segger`
 
-The `segger` package provides a comprehensive data preparation module for cell segmentation and subsequent graph-based deep learning tasks by leveraging scalable and efficient processing tools. 
+The `segger` package provides a streamlined, settings-driven pipeline to transform raw spatial transcriptomics outputs (e.g., Xenium, Merscope) into graph tiles ready for model training and evaluation.
 
 
 !!! note
-    Currently, `segger` supports **Xenium** and **Merscope** datasets. 
+    Currently, `segger` supports **Xenium** and **Merscope** datasets via technology-specific settings.
 
 
 ## Steps
 
-The data preparation module offers the following key functionalities:
+The data preparation pipeline includes:
 
-
-1. **Lazy Loading of Large Datasets**: Utilizes **Dask** to handle large-scale transcriptomics and boundary datasets efficiently, avoiding memory bottlenecks.
-2. **Initial Filtering**: Filters transcripts based on quality metrics and dataset-specific criteria to ensure data integrity and relevance.
-3. **Tiling**: Divides datasets into spatial tiles, essential for localized graph-based models and parallel processing.
-4. **Graph Construction**: Converts spatial data into graph formats using **PyTorch Geometric (PyG)**, enabling the application of graph neural networks (GNNs).
-5. **Boundary Processing**: Handles polygons, performs spatial geometrical calculations, and checks transcript overlaps with boundaries.
+1. **Settings-driven I/O**: Uses a `sample_type` (e.g., `xenium`, `merscope`) to resolve input file names and column mappings.
+2. **Lazy Loading + Filtering**: Efficiently reads Parquet in spatial regions and filters transcripts/boundaries.
+3. **Tiling**: Partitions the whole slide into spatial tiles (fixed size or balanced by transcript count).
+4. **Graph Construction**: Builds PyTorch Geometric `HeteroData` with typed nodes/edges and labels for link prediction.
+5. **Splitting**: Writes tiles into `train`, `val`, and `test` subsets.
 
 
 !!! note "Key Technologies"
-      - **Dask**: Facilitates parallel and lazy data processing, enabling scalable handling of large datasets.
-      - **PyTorch Geometric (PyG)**: Enables the construction of graph-based data representations suitable for GNNs.
-      - **Shapely & Geopandas**: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.
-      - **Dask-Geopandas**: Extends Geopandas for parallel processing of geospatial data, enhancing scalability.
+      - **PyTorch Geometric (PyG)**: Heterogeneous graphs for GNNs.
+      - **Shapely & GeoPandas**: Geometry operations (polygons, centroids, areas).
+      - **PyArrow Parquet**: Efficient I/O with schema-aware reads.
+
 
 ## Core Components
 
-### 1. `SpatialTranscriptomicsSample` (Abstract Base Class)
+### 1. `STSampleParquet`
 
-This abstract class defines the foundational structure for managing spatial transcriptomics datasets. It provides essential methods for:
+Settings-based entry point for preparing a sample into graph tiles.
 
-- **Loading Data**: Scalable loading of transcript and boundary data using Dask.
-- **Filtering Transcripts**: Applying quality-based or dataset-specific filtering criteria.
-- **Spatial Relationships**: Computing overlaps and spatial relationships between transcripts and boundaries.
-- **Tiling**: Dividing datasets into smaller spatial tiles for localized processing.
-- **Graph Preparation**: Converting data tiles into `PyTorch Geometric` graph structures.
+- **Constructor**: resolves input file paths and metadata using `sample_type` settings (e.g., file names, column names, quality fields). Ensures transcript IDs exist.
+- **Embeddings**: optionally accepts a `weights` DataFrame (index: gene names; columns: embedding dims) to encode transcript features.
+- **Saving**: orchestrates region partitioning, tiling, PyG graph construction, negative sampling, and dataset splitting.
 
-#### Key Methods:
+#### Key Params
+- `base_dir`: folder with required Parquet files (transcripts and boundaries).
+- `sample_type`: one of `xenium`, `merscope` (determines settings such as file names, columns, nuclear flags, scale factors).
+- `weights`: optional `pd.DataFrame` of gene embeddings used by `TranscriptEmbedding`.
+- `scale_factor`: optional override for boundary scaling used during spatial queries.
 
-- **`load_transcripts()`**: Loads transcriptomic data from Parquet files, applies quality filtering, and incorporates additional gene embeddings.
-- **`load_boundaries()`**: Loads boundary data (e.g., cell or nucleus boundaries) from Parquet files.
-- **`get_tile_data()`**: Retrieves transcriptomic and boundary data within specified spatial bounds.
-- **`generate_and_scale_polygons()`**: Creates and scales polygon representations of boundaries for spatial computations.
-- **`compute_transcript_overlap_with_boundaries()`**: Determines the association of transcripts with boundary polygons.
-- **`build_pyg_data_from_tile()`**: Converts tile-specific data into `HeteroData` objects suitable for PyG models.
 
-### 2. `XeniumSample` and `MerscopeSample` (Child Classes)
+### 2. `STInMemoryDataset`
 
-These classes inherit from `SpatialTranscriptomicsSample` and implement dataset-specific processing logic:
+Internal helper that loads filtered transcripts/boundaries for a region, pre-builds a KDTree, and generates tile bounds (fixed-size or balanced by count).
 
-- **`XeniumSample`**: Tailored for **Xenium** datasets, it includes specific filtering rules to exclude unwanted transcripts based on naming patterns (e.g., `NegControlProbe_`, `BLANK_`).
-- **`MerscopeSample`**: Designed for **Merscope** datasets, allowing for custom filtering and processing logic as needed.
+
+### 3. `STTile`
+
+Per-tile builder that assembles a `HeteroData` graph:
+- Nodes: `tx` (transcripts) with `pos`, `x` (features); `bd` (boundaries) with `pos`, `x` (polygon properties).
+- Edges:
+  - `('tx','neighbors','tx')`: transcript proximity (KDTree-based; `k_tx`, `dist_tx`).
+  - `('tx','neighbors','bd')`: transcript-to-boundary proximity for receptive field construction.
+  - `('tx','belongs','bd')`: positive labels from nuclear overlap or provided assignment; negative sampling performed from receptive-field candidates.
+
 
 ## Workflow
 
-The dataset creation and processing workflow involves several key steps, each ensuring that the spatial transcriptomics data is appropriately prepared for downstream machine learning tasks.
+### Step 1: Initialize sample from settings
 
-### Step 1: Data Loading and Filtering
+- Provide `base_dir` containing technology outputs.
+- Pick `sample_type` to resolve filenames/columns.
+- Optionally provide `weights` for transcript embeddings.
 
-- **Transcriptomic Data**: Loaded lazily using Dask to handle large datasets efficiently. Custom filtering rules specific to the dataset (Xenium or Merscope) are applied to ensure data quality.
-- **Boundary Data**: Loaded similarly using Dask, representing spatial structures such as cell or nucleus boundaries.
+### Step 2: Region partitioning and tiling
 
-### Step 2: Tiling
+- If multiple workers are set, extents are split into balanced regions (ND-tree over boundaries).
+- Tiles are created either by fixed width/height or by a target `tile_size` (balanced by transcript count).
 
-- **Spatial Segmentation**: The dataset is divided into smaller, manageable tiles of size $x_{\text{size}} \times y_{\text{size}}$, defined by their top-left corner coordinates $(x_i, y_j)$.
-  
-$$
-n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
-$$
-  
-  Where:
-  - $x_{\text{min}}, y_{\text{min}}$: Minimum spatial coordinates.
-  - $x_{\text{max}}, y_{\text{max}}$: Maximum spatial coordinates.
-  - $d_x, d_y$: Step sizes along the $x$- and $y$-axes, respectively.
+### Step 3: Graph construction per tile
 
-- **Transcript and Boundary Inclusion**: For each tile, transcripts and boundaries within the spatial bounds (with optional margins) are included:
-  
-$$ 
-x_i - \text{margin}_x \leq x_t < x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t < y_j + y_{\text{size}} + \text{margin}_y 
-$$
-  
-  Where:
-  - $x_t, y_t$: Transcript coordinates.
-  - $\text{margin}_x, \text{margin}_y$: Optional margins to include contextual data.
+- Build `HeteroData` with transcript (`tx`) and boundary (`bd`) nodes.
+- Add proximity edges and `belongs` labels (positives + sampled negatives).
 
-### Step 3: Graph Construction
+### Step 4: Splitting and saving
 
-For each tile, a graph $G$ is constructed with:
+- Tiles are written to `<data_dir>/{train_tiles,val_tiles,test_tiles}/processed/*.pt` according to `val_prob`/`test_prob`.
 
-- **Nodes ($V$)**:
-  - **Transcripts**: Represented by their spatial coordinates $(x_t, y_t)$ and feature vectors $\mathbf{f}_t$.
-  - **Boundaries**: Represented by centroid coordinates $(x_b, y_b)$ and associated properties (e.g., area).
 
-- **Edges ($E$)**:
-  - Created based on spatial proximity using methods like KD-Tree or FAISS.
-  - Defined by a distance threshold $d$ and the number of nearest neighbors $k$:
-    
-$$ 
-E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) < d, \, v_i \in V, \, v_j \in V \}
-$$
+## Output
 
-### Step 4: Label Computation 
+- A directory structure with train/val/test tiles in PyG `HeteroData` format ready for the Segger model and `STPyGDataset`.
 
-If enabled, edges can be labeled based on relationships, such as whether a transcript belongs to a boundary:
-
-$$
-\text{label}(t, b) = 
-\begin{cases}
-1 & \text{if } t \text{ belongs to } b \\
-0 & \text{otherwise}
-\end{cases}
-$$
-
-### Step 5: Train, Test, Validation Splitting
-
-The dataset is partitioned into training, validation, and test sets based on predefined probabilities $p_{\text{train}}, p_{\text{val}}, p_{\text{test}}$:
-
-$$
-p_{\text{train}} + p_{\text{val}} + p_{\text{test}} = 1
-$$
-
-Each tile is randomly assigned to one of these sets according to the specified probabilities.
-
-### Output
-
-The final output consists of a set of tiles, each containing a graph representation of the spatial transcriptomics data. These tiles are stored in designated directories (`train_tiles`, `val_tiles`, `test_tiles`) and are ready for integration into machine learning pipelines.
+```
+<data_dir>/
+  train_tiles/
+    processed/
+      tiles_x=..._y=..._w=..._h=....pt
+  val_tiles/
+    processed/
+      ...
+  test_tiles/
+    processed/
+      ...
+```
 
 
 ## Example Usage
 
-Below are examples demonstrating how to utilize the `segger` data preparation module for both Xenium and Merscope datasets.
-
-### Xenium Data
+### Xenium (with optional scRNA-seq-derived embeddings)
 
 ```python
-from segger.data import XeniumSample
 from pathlib import Path
-import scanpy as sc
+import pandas as pd
 
-# Set up the file paths
-raw_data_dir = Path("/path/to/xenium_output")
-processed_data_dir = Path("path/to/processed_files")
-sample_tag = "sample/tag"
+# Optional: provide transcript embeddings (rows: genes, cols: embedding dims)
+# For example, cell-type abundance embeddings indexed by gene name
+# weights = pd.DataFrame(..., index=gene_names)
+weights = None  # set to a DataFrame if available
 
-# Load scRNA-seq data using Scanpy and subsample for efficiency
-scRNAseq_path = "path/to/scRNAseq.h5ad"
-scRNAseq = sc.read(scRNAseq_path)
-sc.pp.subsample(scRNAseq, fraction=0.1)
+from segger.data.sample import STSampleParquet
 
-# Calculate gene cell type abundance embedding from scRNA-seq data
-from segger.utils import calculate_gene_celltype_abundance_embedding
+base_dir = Path("/path/to/xenium_output")
+data_dir = Path("/path/to/processed_tiles")
 
-celltype_column = "celltype_column"
-gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-    scRNAseq, celltype_column
+sample = STSampleParquet(
+    base_dir=base_dir,
+    sample_type="xenium",
+    n_workers=4,            # controls parallel tiling across regions
+    # weights=weights,        # optional transcript embeddings
+    scale_factor=1.0,       # optional override (geometry scaling)
 )
 
-# Create a XeniumSample instance for spatial transcriptomics processing
-xenium_sample = XeniumSample()
-
-# Load transcripts and include the calculated cell type abundance embedding
-xenium_sample.load_transcripts(
-    base_path=raw_data_dir,
-    sample=sample_tag,
-    transcripts_filename="transcripts.parquet",
-    file_format="parquet",
-    additional_embeddings={"cell_type_abundance": gene_celltype_abundance_embedding},
-)
-
-# Set the embedding to "cell_type_abundance" to use it in further processing
-xenium_sample.set_embedding("cell_type_abundance")
-
-# Load nuclei data to define boundaries
-nuclei_path = raw_data_dir / sample_tag / "nucleus_boundaries.parquet"
-xenium_sample.load_boundaries(path=nuclei_path, file_format="parquet")
-
-# Build PyTorch Geometric (PyG) data from a tile of the dataset
-tile_pyg_data = xenium_sample.build_pyg_data_from_tile(
-    boundaries_df=xenium_sample.boundaries_df,
-    transcripts_df=xenium_sample.transcripts_df,
-    r_tx=20,
-    k_tx=20,
-    use_precomputed=False,
-    workers=1,
-)
-
-# Save dataset in processed format for segmentation
-xenium_sample.save_dataset_for_segger(
-    processed_dir=processed_data_dir,
-    x_size=360,
-    y_size=360,
-    d_x=180,
-    d_y=180,
-    margin_x=10,
-    margin_y=10,
-    compute_labels=False,
-    r_tx=5,
-    k_tx=5,
+# Save tiles (choose either tile_size OR tile_width+tile_height)
+sample.save(
+    data_dir=data_dir,
+    # Receptive fields (neighbors)
+    k_bd=3,        # nearest boundaries per transcript
+    dist_bd=15.0,  # max distance for tx->bd neighbors (µm-equivalent)
+    k_tx=20,       # nearest transcripts per transcript
+    dist_tx=5.0,   # max distance for tx->tx neighbors
+    # Optional broader receptive fields for mutually exclusive genes (if used)
+    # Tiling
+    tile_size=50000,   # alternative: tile_width=..., tile_height=...
+    # Sampling/splitting
+    neg_sampling_ratio=5.0,
+    frac=1.0,
     val_prob=0.1,
     test_prob=0.2,
-    neg_sampling_ratio_approx=5,
-    sampling_rate=1,
-    num_workers=1,
 )
 ```
 
-### Merscope Data
+### Merscope (fixed-size tiling)
 
 ```python
-from segger.data import MerscopeSample
 from pathlib import Path
+from segger.data.sample import STSampleParquet
 
-# Set up the file paths
-raw_data_dir = Path("path/to/merscope_outputs")
-processed_data_dir = Path("path/to/processed_files")
-sample_tag = "sample_tag"
+base_dir = Path("/path/to/merscope_output")
+data_dir = Path("/path/to/processed_tiles")
 
-# Create a MerscopeSample instance for spatial transcriptomics processing
-merscope_sample = MerscopeSample()
-
-# Load transcripts from a CSV file
-merscope_sample.load_transcripts(
-    base_path=raw_data_dir,
-    sample=sample_tag,
-    transcripts_filename="transcripts.csv",
-    file_format="csv",
+sample = STSampleParquet(
+    base_dir=base_dir,
+    sample_type="merscope",
+    n_workers=2,
 )
 
-# Optionally load cell boundaries
-cell_boundaries_path = raw_data_dir / sample_tag / "cell_boundaries.parquet"
-merscope_sample.load_boundaries(path=cell_boundaries_path, file_format="parquet")
-
-# Filter transcripts based on specific criteria
-filtered_transcripts = merscope_sample.filter_transcripts(
-    merscope_sample.transcripts_df
-)
-
-# Build PyTorch Geometric (PyG) data from a tile of the dataset
-tile_pyg_data = merscope_sample.build_pyg_data_from_tile(
-    boundaries_df=merscope_sample.boundaries_df,
-    transcripts_df=filtered_transcripts,
-    r_tx=15,
+sample.save(
+    data_dir=data_dir,
+    # Nearest neighbors
+    k_bd=3,
+    dist_bd=15.0,
     k_tx=15,
-    use_precomputed=True,
-    workers=2,
-)
-
-# Save dataset in processed format for segmentation
-merscope_sample.save_dataset_for_segger(
-    processed_dir=processed_data_dir,
-    x_size=360,
-    y_size=360,
-    d_x=180,
-    d_y=180,
-    margin_x=10,
-    margin_y=10,
-    compute_labels=True,
-    r_tx=5,
-    k_tx=5,
+    dist_tx=5.0,
+    # Fixed-size tiling in sample units
+    tile_width=300,
+    tile_height=300,
+    # Splits
+    neg_sampling_ratio=3.0,
     val_prob=0.1,
     test_prob=0.2,
-    neg_sampling_ratio_approx=3,
-    sampling_rate=1,
-    num_workers=2,
+)
+```
+
+### Debug mode (step-by-step logging)
+
+```python
+sample.save_debug(
+    data_dir=data_dir,
+    k_bd=3,
+    dist_bd=15.0,
+    k_tx=20,
+    dist_tx=5.0,
+    tile_width=300,
+    tile_height=300,
+    neg_sampling_ratio=5.0,
+    frac=1.0,
+    val_prob=0.1,
+    test_prob=0.2,
+)
+```
+
+
+## Notes and Recommendations
+
+- **Settings and columns**: Filenames and columns for transcripts/boundaries are resolved via `sample_type` settings. See `segger.data._settings/*` for details.
+- **Transcript IDs**: The constructor ensures an ID column exists in transcripts; if missing, it is added deterministically.
+- **Quality filtering**: Uses settings-defined columns (e.g., QV) and filter substrings. Genes absent from provided `weights` will be auto-added to filter substrings to avoid OOV embeddings.
+- **Neighbors**: Set `k_tx/dist_tx` based on typical nuclear radii and transcript densities; `k_bd/dist_bd` controls candidate boundaries per transcript.
+- **Splits**: Tiles with no `('tx','belongs','bd')` edges are automatically placed in `test_tiles`.
+- **Embeddings**: If no `weights` are provided, transcripts fall back to token/ID-based embeddings.
+
+## Using scRNA-seq for embeddings and mutually exclusive genes
+
+You can leverage scRNA-seq data both to create transcript embeddings (weights) and to identify mutually exclusive gene pairs that guide repulsive/attractive transcript edges.
+
+### 1) Compute transcript embeddings (weights) from scRNA-seq
+
+```python
+import scanpy as sc
+from segger.data._utils import calculate_gene_celltype_abundance_embedding
+
+# Load a reference AnnData
+adata = sc.read("/path/to/reference_scrnaseq.h5ad")
+sc.pp.subsample(adata, 0.25)        # optional downsampling
+adata.var_names_make_unique()
+sc.pp.log1p(adata)
+sc.pp.normalize_total(adata)
+
+# Column in adata.obs with cell-type annotations
+celltype_column = "celltype_minor"
+
+# Compute gene x cell-type abundance matrix (DataFrame indexed by gene names)
+weights = calculate_gene_celltype_abundance_embedding(
+    adata,
+    celltype_column,
+)
+
+# Pass weights to STSampleParquet to encode transcript features
+from segger.data.sample import STSampleParquet
+sample = STSampleParquet(
+    base_dir="/path/to/technology_output",
+    sample_type="xenium",      # or "merscope"
+    n_workers=4,
+    weights=weights,
+)
+```
+
+### 2) [OPTIONAL] Identify mutually exclusive genes from scRNA-seq
+
+```python
+from segger.data._utils import find_markers, find_mutually_exclusive_genes
+
+# Optionally restrict to genes present in the sample
+genes = list(set(adata.var_names) & set(sample.transcripts_metadata["feature_names"]))
+adata_sub = adata[:, genes]
+
+# Find cell-type markers (tune thresholds as needed)
+markers = find_markers(
+    adata_sub,
+    cell_type_column=celltype_column,
+    pos_percentile=90,
+    neg_percentile=20,
+    percentage=20,
+)
+
+# Compute mutually exclusive gene pairs using markers
+exclusive_gene_pairs = find_mutually_exclusive_genes(
+    adata=adata,
+    markers=markers,
+    cell_type_column=celltype_column,
+)
+```
+
+### 3) Save tiles with both weights and mutually exclusive genes
+
+```python
+sample.save(
+    data_dir="/path/to/processed_tiles",
+    # Nearest-neighbor receptive fields
+    k_bd=3, dist_bd=15.0,
+    k_tx=20, dist_tx=5.0,
+    # Optional broader receptive fields used for mutually exclusive genes
+    k_tx_ex=100, dist_tx_ex=20.0,
+    # Tiling and splits
+    tile_size=50_000,
+    neg_sampling_ratio=5.0,
+    val_prob=0.1, test_prob=0.2,
+    # Use mutually exclusive pairs to add repulsive/attractive tx-tx labels
+    mutually_exclusive_genes=exclusive_gene_pairs,
 )
 ```

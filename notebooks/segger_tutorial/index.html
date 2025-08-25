@@ -1415,7 +1415,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">from</span> <span class="nn">segger.data.parquet.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
+<span class="kn">from</span> <span class="nn">segger.data._utils</span> <span class="kn">import</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">,</span> <span class="n">find_markers</span><span class="p">,</span> <span class="n">find_mutually_exclusive_genes</span> <span class="c1"># Optional: import if using a scRNAseq data</span>
 <span class="kn">from</span> <span class="nn">segger.training.segger_data_module</span> <span class="kn">import</span> <span class="n">SeggerDataModule</span>
 <span class="kn">from</span> <span class="nn">segger.training.train</span> <span class="kn">import</span> <span class="n">LitSegger</span>
 <span class="kn">from</span> <span class="nn">segger.prediction.predict_parquet</span> <span class="kn">import</span> <span class="n">segment</span><span class="p">,</span> <span class="n">load_model</span>
@@ -1427,7 +1428,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
 <span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-3">from segger.data.parquet.sample import STSampleParquet
+<div class="clipboard-copy-txt" id="cell-3">from segger.data.sample import STSampleParquet
+from segger.data._utils import calculate_gene_celltype_abundance_embedding, find_markers, find_mutually_exclusive_genes # Optional: import if using a scRNAseq data
 from segger.training.segger_data_module import SeggerDataModule
 from segger.training.train import LitSegger
 from segger.prediction.predict_parquet import segment, load_model
@@ -1469,6 +1471,8 @@ import scanpy as sc</div>
 <ul>
 <li><strong>base_dir</strong>: The directory containing the raw dataset.</li>
 <li><strong>data_dir</strong>: The directory where the processed dataset (tiles in PyG format) will be saved.</li>
+<li><strong>--sample_type</strong>: (Optional) Specifies the type of dataset (e.g., "xenium" or "merscope"). Defaults to None.</li>
+<li><strong>--n_workers</strong>: Number of workers for parallel processing (default: 1).</li>
 </ul>
 <p>The core improvements in this method come from the use of <strong>ND-tree partitioning</strong>, which splits the data efficiently into spatial regions, and <strong>parallel processing</strong>, which speeds up the handling of these regions across multiple CPU cores. For example, using this pipeline, the Xenium Human Pancreatic Dataset can be processed in just a few minutes when running with 16 workers.</p>
 <p>Below is an example of how to create a dataset using the faster Segger pipeline:</p>
@@ -1503,20 +1507,6 @@ import scanpy as sc</div>
     <span class="n">sample_type</span><span class="o">=</span><span class="s1">'xenium'</span><span class="p">,</span> <span class="c1"># this could be 'xenium_v2' in case one uses the cell boundaries from the segmentation kit.</span>
     <span class="c1"># weights=gene_celltype_abundance_embedding, # uncomment if gene-celltype embeddings are available</span>
 <span class="p">)</span>
-
-<span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
-      <span class="n">data_dir</span><span class="o">=</span><span class="n">segger_data_dir</span><span class="p">,</span>
-      <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-      <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>
-      <span class="n">k_tx</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-      <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
-      <span class="n">tile_width</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-      <span class="n">tile_height</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-      <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
-      <span class="n">frac</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-      <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-      <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-<span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-4">xenium_data_dir = Path('data_xenium')
 segger_data_dir = Path('data_segger')
@@ -1526,53 +1516,9 @@ sample = STSampleParquet(
     n_workers=4,
     sample_type='xenium', # this could be 'xenium_v2' in case one uses the cell boundaries from the segmentation kit.
     # weights=gene_celltype_abundance_embedding, # uncomment if gene-celltype embeddings are available
-)
-
-sample.save(
-      data_dir=segger_data_dir,
-      k_bd=3,
-      dist_bd=15.0,
-      k_tx=3,
-      dist_tx=5.0,
-      tile_width=120,
-      tile_height=120,
-      neg_sampling_ratio=5.0,
-      frac=1.0,
-      val_prob=0.1,
-      test_prob=0.2,
 )</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6ab27f9a">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h4 id="parameters"><strong>Parameters</strong><a class="anchor-link" href="#parameters">¶</a></h4><p>Here is a complete list of parameters you can use to control the dataset creation process:</p>
-<ul>
-<li><strong>--base_dir</strong>: Directory containing the raw spatial transcriptomics dataset.</li>
-<li><strong>--data_dir</strong>: Directory where the processed Segger dataset (in PyG format) will be saved.</li>
-<li><strong>--sample_type</strong>: (Optional) Specifies the type of dataset (e.g., "xenium" or "merscope"). Defaults to None.</li>
-<li><strong>--scrnaseq_file</strong>: Path to the scRNAseq file (default: None).</li>
-<li><strong>--celltype_column</strong>: Column name for cell type annotations in the scRNAseq file (default: None).</li>
-<li><strong>--k_bd</strong>: Number of nearest neighbors for boundary nodes (default: 3).</li>
-<li><strong>--dist_bd</strong>: Maximum distance for boundary neighbors (default: 15.0).</li>
-<li><strong>--k_tx</strong>: Number of nearest neighbors for transcript nodes (default: 3).</li>
-<li><strong>--dist_tx</strong>: Maximum distance for transcript neighbors (default: 5.0).</li>
-<li><strong>--tile_size</strong>: Specifies the size of the tile. If provided, it overrides both tile_width and tile_height.</li>
-<li><strong>--tile_width</strong>: Width of the tiles in pixels (ignored if tile_size is provided).</li>
-<li><strong>--tile_height</strong>: Height of the tiles in pixels (ignored if tile_size is provided).</li>
-<li><strong>--neg_sampling_ratio</strong>: Ratio of negative samples (default: 5.0).</li>
-<li><strong>--frac</strong>: Fraction of the dataset to process (default: 1.0).</li>
-<li><strong>--val_prob</strong>: Proportion of data used for validation split (default: 0.1).</li>
-<li><strong>--test_prob</strong>: Proportion of data used for testing split (default: 0.2).</li>
-<li><strong>--n_workers</strong>: Number of workers for parallel processing (default: 1).</li>
-</ul>
 </div>
 </div>
 </div>
@@ -1583,7 +1529,7 @@ sample.save(
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="12-using-custom-gene-embeddings"><strong>1.2. Using custom gene embeddings</strong><a class="anchor-link" href="#12-using-custom-gene-embeddings">¶</a></h3><p>In the default mode, segger initially tokenizes transcripts based on their gene type simply in a one-hot manner. However, one can use other genes embeddings (e.g., pre-trained embeddings). The following example shows how one can employ a cell-type-annotated scRNAseq reference of the same tissue type (not necessary same sample or experiment) to embed genes based on their abaundance in different cell types:</p>
+<h3 id="12-using-scrnaseq-data-for-gene-embeddings-and-mutually-exclusive-genes"><strong>1.2. Using scRNAseq data for gene embeddings and mutually exclusive genes</strong><a class="anchor-link" href="#12-using-scrnaseq-data-for-gene-embeddings-and-mutually-exclusive-genes">¶</a></h3><p>In the default mode, segger initially tokenizes transcripts based on their gene type simply in a one-hot manner. However, one can use other genes embeddings (e.g., pre-trained embeddings). Furthermore, optionally, one can idea identify mutually exclusive gene pairs that guide repulsive/attractive transcript edges. The following example shows how to employ a cell-type-annotated scRNAseq reference of the same tissue type (not necessary same sample or experiment) to embed genes based on their abaundance in different cell types:</p>
 </div>
 </div>
 </div>
@@ -1606,11 +1552,11 @@ sample.save(
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">from</span> <span class="nn">segger.data.utils</span> <span class="kn">import</span> <span class="n">calculate_gene_celltype_abundance_embedding</span>
-<span class="n">scrnaseq_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'my_scRNAseq_file.h5ad'</span><span class="p">)</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="n">scrnaseq_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'my_scRNAseq_file.h5ad'</span><span class="p">)</span>
 <span class="n">celltype_column</span> <span class="o">=</span> <span class="s1">'celltype_column'</span>
+<span class="n">scrnaseq_adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">scrnaseq_file</span><span class="p">)</span>
 <span class="n">gene_celltype_abundance_embedding</span> <span class="o">=</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span>
-    <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">scrnaseq_file</span><span class="p">),</span>
+    <span class="n">scrnaseq_adata</span><span class="p">,</span>
     <span class="n">celltype_column</span>
 <span class="p">)</span>
 
@@ -1618,14 +1564,14 @@ sample.save(
     <span class="n">base_dir</span><span class="o">=</span><span class="n">xenium_data_dir</span><span class="p">,</span>
     <span class="n">n_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
     <span class="n">sample_type</span><span class="o">=</span><span class="s1">'xenium'</span><span class="p">,</span> <span class="c1"># this could be 'xenium_v2' in case one uses the cell boundaries from the segmentation kit.</span>
-    <span class="n">weights</span><span class="o">=</span><span class="n">gene_celltype_abundance_embedding</span><span class="p">,</span> 
+    <span class="n">weights</span><span class="o">=</span><span class="n">gene_celltype_abundance_embedding</span><span class="p">,</span>  <span class="c1"># This is where the gene embeddings are plugged in.</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-5">from segger.data.utils import calculate_gene_celltype_abundance_embedding
-scrnaseq_file = Path('my_scRNAseq_file.h5ad')
+<div class="clipboard-copy-txt" id="cell-5">scrnaseq_file = Path('my_scRNAseq_file.h5ad')
 celltype_column = 'celltype_column'
+scrnaseq_adata = sc.read(scrnaseq_file)
 gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-    sc.read(scrnaseq_file),
+    scrnaseq_adata,
     celltype_column
 )
 
@@ -1633,10 +1579,146 @@ sample = STSampleParquet(
     base_dir=xenium_data_dir,
     n_workers=4,
     sample_type='xenium', # this could be 'xenium_v2' in case one uses the cell boundaries from the segmentation kit.
-    weights=gene_celltype_abundance_embedding, 
+    weights=gene_celltype_abundance_embedding,  # This is where the gene embeddings are plugged in.
 )</div>
 </div>
 </div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5b1fb570">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Restrict to genes available in the sample to avoid OOV</span>
+<span class="n">genes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">scrnaseq_adata</span><span class="o">.</span><span class="n">var_names</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">transcripts_metadata</span><span class="p">[</span><span class="s1">'feature_names'</span><span class="p">]))</span>
+<span class="n">scrnaseq_adata_sub</span> <span class="o">=</span> <span class="n">scrnaseq_adata</span><span class="p">[:,</span> <span class="n">genes</span><span class="p">]</span>
+
+<span class="n">markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span>
+    <span class="n">scrnaseq_adata_sub</span><span class="p">,</span>
+    <span class="n">cell_type_column</span><span class="o">=</span><span class="n">celltype_column</span><span class="p">,</span>
+    <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+    <span class="n">neg_percentile</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">percentage</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">exclusive_gene_pairs</span> <span class="o">=</span> <span class="n">find_mutually_exclusive_genes</span><span class="p">(</span>
+    <span class="n">adata</span><span class="o">=</span><span class="n">scrnaseq_adata</span><span class="p">,</span>
+    <span class="n">markers</span><span class="o">=</span><span class="n">markers</span><span class="p">,</span>
+    <span class="n">cell_type_column</span><span class="o">=</span><span class="n">celltype_column</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-6"># Restrict to genes available in the sample to avoid OOV
+genes = list(set(scrnaseq_adata.var_names) &amp; set(sample.transcripts_metadata['feature_names']))
+scrnaseq_adata_sub = scrnaseq_adata[:, genes]
+
+markers = find_markers(
+    scrnaseq_adata_sub,
+    cell_type_column=celltype_column,
+    pos_percentile=90,
+    neg_percentile=20,
+    percentage=20,
+)
+
+exclusive_gene_pairs = find_mutually_exclusive_genes(
+    adata=scrnaseq_adata,
+    markers=markers,
+    cell_type_column=celltype_column,
+)</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=411d4990">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Save tiles using mutually exclusive genes</span>
+<span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="s2">"/path/to/processed_tiles"</span><span class="p">,</span>
+    <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">k_tx_ex</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">dist_tx_ex</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="c1"># Optional when using mutually exclusive genes</span>
+    <span class="n">tile_size</span><span class="o">=</span><span class="mi">50_000</span><span class="p">,</span>
+    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">mutually_exclusive_genes</span><span class="o">=</span><span class="n">exclusive_gene_pairs</span><span class="p">,</span> <span class="c1"># Optional when using mutually exclusive genes</span>
+<span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-7"># Save tiles using mutually exclusive genes
+sample.save(
+    data_dir="/path/to/processed_tiles",
+    k_bd=3, dist_bd=15.0,
+    k_tx=20, dist_tx=5.0,
+    k_tx_ex=100, dist_tx_ex=20.0, # Optional when using mutually exclusive genes
+    tile_size=50_000,
+    neg_sampling_ratio=5.0,
+    val_prob=0.1, test_prob=0.2,
+    mutually_exclusive_genes=exclusive_gene_pairs, # Optional when using mutually exclusive genes
+)</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=68c33279">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="parameters"><strong>Parameters</strong><a class="anchor-link" href="#parameters">¶</a></h4><p>Here is a complete list of parameters you can use to control the dataset creation process:</p>
+<ul>
+<li><strong>--base_dir</strong>: Directory containing the raw spatial transcriptomics dataset.</li>
+<li><strong>--data_dir</strong>: Directory where the processed Segger dataset (in PyG format) will be saved.</li>
+<li><strong>--scrnaseq_file</strong>: Path to the scRNAseq file (default: None).</li>
+<li><strong>--celltype_column</strong>: Column name for cell type annotations in the scRNAseq file (default: None).</li>
+<li><strong>--k_bd</strong>: Number of nearest neighbors for boundary nodes (default: 3).</li>
+<li><strong>--dist_bd</strong>: Maximum distance for boundary neighbors (default: 15.0).</li>
+<li><strong>--k_tx</strong>: Number of nearest neighbors for transcript nodes (default: 3).</li>
+<li><strong>--dist_tx</strong>: Maximum distance for transcript neighbors (default: 5.0).</li>
+<li><strong>--k_tx_ex</strong>: Number of nearest neighbors for transcript exclusion (used when applying mutually exclusive gene pairs) (default: 100).</li>
+<li><strong>--dist_tx_ex</strong>: Maximum distance for transcript exclusion neighbors (paired with k_tx_ex) (default: 20.0).</li>
+<li><strong>--tile_size</strong>: Specifies the size of the tile. If provided, it overrides both tile_width and tile_height.</li>
+<li><strong>--tile_width</strong>: Width of the tiles in pixels (ignored if tile_size is provided).</li>
+<li><strong>--tile_height</strong>: Height of the tiles in pixels (ignored if tile_size is provided).</li>
+<li><strong>--neg_sampling_ratio</strong>: Ratio of negative samples (default: 5.0).</li>
+<li><strong>--frac</strong>: Fraction of the dataset to process (default: 1.0).</li>
+<li><strong>--val_prob</strong>: Proportion of data used for validation split (default: 0.1).</li>
+<li><strong>--test_prob</strong>: Proportion of data used for testing split (default: 0.2).</li>
+</ul>
 </div>
 </div>
 </div>
@@ -1662,7 +1744,7 @@ sample = STSampleParquet(
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -1717,7 +1799,7 @@ sample = STSampleParquet(
     <span class="n">logger</span><span class="o">=</span><span class="n">CSVLogger</span><span class="p">(</span><span class="n">models_dir</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-6"># Base directory to store Pytorch Lightning models
+<div class="clipboard-copy-txt" id="cell-8"># Base directory to store Pytorch Lightning models
 models_dir = Path('models')
 
 # Initialize the Lightning data module
@@ -1775,7 +1857,7 @@ trainer = Trainer(
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -1791,7 +1873,7 @@ trainer = Trainer(
     <span class="n">datamodule</span><span class="o">=</span><span class="n">dm</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-7"># Fit model
+<div class="clipboard-copy-txt" id="cell-9"># Fit model
 trainer.fit(
     model=ls,
     datamodule=dm
@@ -1839,7 +1921,7 @@ trainer.fit(
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -1864,7 +1946,7 @@ trainer.fit(
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Step'</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-8"># Evaluate results
+<div class="clipboard-copy-txt" id="cell-10"># Evaluate results
 model_version = 0  # 'v_num' from training output above
 model_path = Path('../human_CRC') / 'lightning_logs' / f'version_{model_version}'
 metrics = pd.read_csv(model_path / 'metrics.csv', index_col=1)
@@ -1909,7 +1991,7 @@ ax.set_xlabel('Step')</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -1934,7 +2016,7 @@ ax.set_xlabel('Step')</div>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Step'</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-9"># Evaluate results
+<div class="clipboard-copy-txt" id="cell-11"># Evaluate results
 model_version = 0  # 'v_num' from training output above
 model_path = models_dir / 'lightning_logs' / f'version_{model_version}'
 metrics = pd.read_csv(model_path / 'metrics.csv', index_col=1)
@@ -2009,7 +2091,7 @@ ax.set_xlabel('Step')</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2021,7 +2103,7 @@ ax.set_xlabel('Step')</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-10"></div>
+<div class="clipboard-copy-txt" id="cell-12"></div>
 </div>
 </div>
 </div>
@@ -2036,7 +2118,7 @@ ax.set_xlabel('Step')</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2074,7 +2156,7 @@ ax.set_xlabel('Step')</div>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-11">dm = SeggerDataModule(
+<div class="clipboard-copy-txt" id="cell-13">dm = SeggerDataModule(
     data_dir='data_segger',
     batch_size=1,
     num_workers=4,
@@ -2176,7 +2258,7 @@ segment(
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2196,7 +2278,7 @@ segment(
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Segger Similarity Score'</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-12">fig, ax = plt.subplots(1,1, figsize=(2,2))
+<div class="clipboard-copy-txt" id="cell-14">fig, ax = plt.subplots(1,1, figsize=(2,2))
 sns.histplot(
     segmentation['score'],
     bins=50,
@@ -2276,7 +2358,7 @@ ax.set_yscale('log')</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2289,7 +2371,7 @@ ax.set_yscale('log')</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-13">import itertools
+<div class="clipboard-copy-txt" id="cell-15">import itertools
 import pandas as pd</div>
 </div>
 </div>
@@ -2305,7 +2387,7 @@ import pandas as pd</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2318,7 +2400,7 @@ import pandas as pd</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">tuning_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'path/to/tutorial/tuning/'</span><span class="p">)</span>
 <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mf">0.125</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-14">tuning_dir = Path('path/to/tutorial/tuning/')
+<div class="clipboard-copy-txt" id="cell-16">tuning_dir = Path('path/to/tutorial/tuning/')
 sampling_rate = 0.125</div>
 </div>
 </div>
@@ -2334,7 +2416,7 @@ sampling_rate = 0.125</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2367,7 +2449,7 @@ sampling_rate = 0.125</div>
 
 <span class="n">predict_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">score_cut</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">use_cc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-15"># Fixed function arguments used for each trial
+<div class="clipboard-copy-txt" id="cell-17"># Fixed function arguments used for each trial
 transcripts_path = xenium_data_dir / 'transcripts.parquet'
 
 boundaries_path = xenium_data_dir / 'nucleus_boundaries.parquet'
@@ -2403,7 +2485,7 @@ predict_kwargs = dict(score_cut=0.2, use_cc=True)</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-18">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2466,7 +2548,7 @@ predict_kwargs = dict(score_cut=0.2, use_cc=True)</div>
     <span class="n">metrics</span><span class="p">[</span><span class="s1">'cell_size_cc'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc_avg</span>
     <span class="k">return</span> <span class="n">metrics</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-16">def trainable(config):
+<div class="clipboard-copy-txt" id="cell-18">def trainable(config):
 
     receptive_field = {k: config[k] for k in ['k_bd', 'k_tx', 'dist_bd', 'dist_tx']}
 
@@ -2532,7 +2614,7 @@ def evaluate(segmentation: pd.DataFrame, score_cut: float) -&gt; pd.Series:
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-19">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2573,7 +2655,7 @@ def evaluate(segmentation: pd.DataFrame, score_cut: float) -&gt; pd.Series:
 
 <span class="n">metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-17">param_space = {
+<div class="clipboard-copy-txt" id="cell-19">param_space = {
     "k_bd": [3, 5, 10],
     "dist_bd": [5, 10, 15, 20],
     "k_tx": [3, 5, 10],
@@ -2634,7 +2716,7 @@ metrics = pd.DataFrame(metrics)</div>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-18">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-20">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -2646,7 +2728,7 @@ metrics = pd.DataFrame(metrics)</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="n">metrics</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-18">metrics</div>
+<div class="clipboard-copy-txt" id="cell-20">metrics</div>
 </div>
 </div>
 </div>

@@ -1,0 +1,1135 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fast and accurate cell segmentation for single-molecule spatial omics">
+      
+      
+        <meta name="author" content="Elyas Heidari">
+      
+      
+        <link rel="canonical" href="https://EliHei2.github.io/segger_dev/api/models/architecture/">
+      
+      
+      
+      
+      <link rel="icon" href="../../../images/logo.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.33">
+    
+    
+      
+        <title>Segger Model Architecture - segger Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=ubuntu:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"ubuntu";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/termynal@0.0.1/termynal.css">
+    
+      <link rel="stylesheet" href="../../../termynal.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#segger-model-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="segger Documentation" class="md-header__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            segger Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Segger Model Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="deep-orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="segger Documentation" class="md-nav__button md-logo" aria-label="segger Documentation" data-md-component="logo">
+      
+  <img src="../../../images/logo.png" alt="logo">
+
+    </a>
+    segger Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/EliHei2/segger_dev" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/data_creation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dataset Creation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user_guide/validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../notebooks/segger_tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction to Segger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            Data
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/sample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sample
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/pyg_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyG Dataset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/_utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/transcript_embedding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transcript Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/ndtree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    NDTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prediction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prediction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="segger-model-architecture">Segger Model Architecture<a class="headerlink" href="#segger-model-architecture" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The Segger model implements a sophisticated Graph Neural Network architecture specifically designed for spatial transcriptomics data analysis. The model formulates cell segmentation as a transcript-to-cell link prediction task, leveraging heterogeneous graphs with specialized attention mechanisms to learn complex spatial relationships.</p>
+<h2 id="core-design-principles">Core Design Principles<a class="headerlink" href="#core-design-principles" title="Permanent link">&para;</a></h2>
+<h3 id="1-heterogeneous-graph-representation">1. Heterogeneous Graph Representation<a class="headerlink" href="#1-heterogeneous-graph-representation" title="Permanent link">&para;</a></h3>
+<p>Segger models spatial transcriptomics data as a heterogeneous graph G = (V, E) with two distinct node types:</p>
+<ul>
+<li><strong>Transcript Nodes (T)</strong>: Represent individual gene expression measurements with spatial coordinates</li>
+<li><strong>Boundary Nodes (C)</strong>: Represent cell or region boundaries as geometric polygons</li>
+</ul>
+<p>The graph contains two types of edges:
+- <strong>ETT</strong>: Transcript-to-transcript edges capturing spatial colocalization
+- <strong>ETC</strong>: Transcript-to-cell edges representing initial assignments</p>
+<h3 id="2-link-prediction-framework">2. Link Prediction Framework<a class="headerlink" href="#2-link-prediction-framework" title="Permanent link">&para;</a></h3>
+<p>Rather than traditional image-based segmentation, Segger frames cell segmentation as a link prediction problem:</p>
+<div class="highlight"><pre><span></span><code>Given: Heterogeneous graph with transcript and boundary nodes
+Task: Predict transcript-to-cell associations
+Output: Probability scores for each transcript-cell pair
+</code></pre></div>
+<p>This approach enables the model to:
+- Learn from spatial relationships between transcripts
+- Leverage biological priors through gene embeddings
+- Handle incomplete initial segmentations
+- Identify both cells and cell fragments</p>
+<h2 id="model-architecture-details">Model Architecture Details<a class="headerlink" href="#model-architecture-details" title="Permanent link">&para;</a></h2>
+<h3 id="input-processing-layer">Input Processing Layer<a class="headerlink" href="#input-processing-layer" title="Permanent link">&para;</a></h3>
+<p>The model automatically handles different input types through specialized processing:</p>
+<h4 id="transcript-node-processing">Transcript Node Processing<a class="headerlink" href="#transcript-node-processing" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># For transcript nodes with gene embeddings</span>
+<span class="k">if</span> <span class="n">has_scrnaseq_embeddings</span><span class="p">:</span>
+    <span class="n">x_tx</span> <span class="o">=</span> <span class="n">gene_celltype_embeddings</span><span class="p">[</span><span class="n">gene_labels</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># One-hot encoding fallback</span>
+    <span class="n">x_tx</span> <span class="o">=</span> <span class="n">embedding_layer</span><span class="p">(</span><span class="n">gene_token_ids</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="boundary-node-processing">Boundary Node Processing<a class="headerlink" href="#boundary-node-processing" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># For boundary nodes, compute geometric features</span>
+<span class="n">boundary_features</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">area</span><span class="p">(</span><span class="n">Bi</span><span class="p">),</span>           <span class="c1"># Surface area</span>
+    <span class="n">convexity</span><span class="p">(</span><span class="n">Bi</span><span class="p">),</span>      <span class="c1"># A(Conv(Bi))/A(Bi)</span>
+    <span class="n">elongation</span><span class="p">(</span><span class="n">Bi</span><span class="p">),</span>     <span class="c1"># A(MBR(Bi))/A(Env(Bi))</span>
+    <span class="n">circularity</span><span class="p">(</span><span class="n">Bi</span><span class="p">)</span>     <span class="c1"># A(Bi)/r_min(Bi)²</span>
+<span class="p">]</span>
+<span class="n">x_bd</span> <span class="o">=</span> <span class="n">linear_transform</span><span class="p">(</span><span class="n">boundary_features</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="graph-attention-layers">Graph Attention Layers<a class="headerlink" href="#graph-attention-layers" title="Permanent link">&para;</a></h3>
+<p>The core of the model consists of multiple GATv2Conv layers:</p>
+<h4 id="layer-structure">Layer Structure<a class="headerlink" href="#layer-structure" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>Input Features → Node Type Detection → Feature Processing → GATv2Conv Layers → Output Embeddings
+     ↓              ↓                    ↓                ↓                ↓
+Transcripts    Auto-routing         Embedding/Linear   Attention Mech.   Learned Features
+Boundaries     (1D vs Multi-D)     Transformations    Spatial Learning   Biological Insights
+</code></pre></div>
+<h4 id="gatv2conv-implementation">GATv2Conv Implementation<a class="headerlink" href="#gatv2conv-implementation" title="Permanent link">&para;</a></h4>
+<p>Each GATv2Conv layer computes attention coefficients:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Attention computation for edge (i, j)</span>
+<span class="n">e_ij</span> <span class="o">=</span> <span class="n">a</span><span class="o">^</span><span class="n">T</span> <span class="n">LeakyReLU</span><span class="p">([</span><span class="n">Wh_i</span> <span class="o">||</span> <span class="n">Wh_j</span><span class="p">])</span>
+
+<span class="c1"># Normalized attention weights</span>
+<span class="n">α_ij</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">e_ij</span><span class="p">)</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">e_ij</span><span class="p">)</span> <span class="o">/</span> <span class="n">Σ_k</span> <span class="n">exp</span><span class="p">(</span><span class="n">e_ik</span><span class="p">)</span>
+
+<span class="c1"># Node update</span>
+<span class="n">h_i</span><span class="o">^</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">σ</span><span class="p">(</span><span class="n">Σ_j</span><span class="err">∈</span><span class="n">N</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="n">α_ij</span> <span class="n">W</span><span class="o">^</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="n">h_j</span><span class="o">^</span><span class="p">(</span><span class="n">l</span><span class="p">))</span>
+</code></pre></div>
+<p>Where:
+- <code>W^(l)</code> is a learnable weight matrix for layer l
+- <code>a</code> is a learnable attention vector
+- <code>σ</code> is the activation function (ReLU)
+- <code>N(i)</code> represents the neighborhood of node i</p>
+<h4 id="multi-head-attention">Multi-head Attention<a class="headerlink" href="#multi-head-attention" title="Permanent link">&para;</a></h4>
+<p>The model uses multiple attention heads in parallel:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Multi-head attention with K heads</span>
+<span class="n">h_i</span><span class="o">^</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">||</span><span class="n">_k</span><span class="o">=</span><span class="mi">1</span><span class="o">^</span><span class="n">K</span> <span class="n">σ</span><span class="p">(</span><span class="n">Σ_j</span><span class="err">∈</span><span class="n">N</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="n">α_ij</span><span class="o">^</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="n">W</span><span class="o">^</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="n">h_j</span><span class="o">^</span><span class="p">(</span><span class="n">l</span><span class="p">))</span>
+</code></pre></div>
+<p>This allows the model to capture different types of relationships simultaneously.</p>
+<h3 id="layer-configuration">Layer Configuration<a class="headerlink" href="#layer-configuration" title="Permanent link">&para;</a></h3>
+<p>The model architecture is configurable with the following parameters:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Segger</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_tx_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>      <span class="c1"># Vocabulary size for transcripts</span>
+        <span class="n">init_emb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>      <span class="c1"># Initial embedding dimension</span>
+        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="c1"># Hidden layer size</span>
+        <span class="n">num_mid_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># Number of hidden GAT layers</span>
+        <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>   <span class="c1"># Output embedding dimension</span>
+        <span class="n">heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>           <span class="c1"># Number of attention heads</span>
+    <span class="p">):</span>
+</code></pre></div>
+<h4 id="recommended-architecture-sizes">Recommended Architecture Sizes<a class="headerlink" href="#recommended-architecture-sizes" title="Permanent link">&para;</a></h4>
+<p>Based on the Segger paper:</p>
+<ul>
+<li><strong>Small Datasets</strong> (&lt; 10k nodes): 2-3 layers, 32-64 hidden channels</li>
+<li><strong>Medium Datasets</strong> (10k-100k nodes): 3-4 layers, 64-128 hidden channels  </li>
+<li><strong>Large Datasets</strong> (&gt; 100k nodes): 4-5 layers, 128-256 hidden channels</li>
+</ul>
+<h3 id="output-processing">Output Processing<a class="headerlink" href="#output-processing" title="Permanent link">&para;</a></h3>
+<p>The final layer produces embeddings in a common latent space:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Final embeddings for link prediction</span>
+<span class="n">f</span><span class="p">(</span><span class="n">t_i</span><span class="p">)</span> <span class="err">∈</span> <span class="n">R</span><span class="o">^</span><span class="n">d3</span>  <span class="c1"># Transcript embedding</span>
+<span class="n">f</span><span class="p">(</span><span class="n">c_j</span><span class="p">)</span> <span class="err">∈</span> <span class="n">R</span><span class="o">^</span><span class="n">d3</span>  <span class="c1"># Cell embedding</span>
+
+<span class="c1"># Similarity score computation</span>
+<span class="n">s_ij</span> <span class="o">=</span> <span class="err">⟨</span><span class="n">f</span><span class="p">(</span><span class="n">t_i</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">c_j</span><span class="p">)</span><span class="err">⟩</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">t_i</span><span class="p">)</span><span class="o">^</span><span class="n">T</span> <span class="n">f</span><span class="p">(</span><span class="n">c_j</span><span class="p">)</span>
+
+<span class="c1"># Probability of association</span>
+<span class="n">P</span><span class="p">(</span><span class="n">link_ij</span><span class="p">)</span> <span class="o">=</span> <span class="n">σ</span><span class="p">(</span><span class="n">s_ij</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">s_ij</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="heterogeneous-graph-processing">Heterogeneous Graph Processing<a class="headerlink" href="#heterogeneous-graph-processing" title="Permanent link">&para;</a></h2>
+<h3 id="edge-type-handling">Edge Type Handling<a class="headerlink" href="#edge-type-handling" title="Permanent link">&para;</a></h3>
+<p>The model processes different edge types with specialized attention:</p>
+<h4 id="transcript-transcript-edges-ett">Transcript-Transcript Edges (ETT)<a class="headerlink" href="#transcript-transcript-edges-ett" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Purpose</strong>: Capture spatial proximity and gene co-expression patterns</li>
+<li><strong>Construction</strong>: k-nearest neighbor graph with distance threshold</li>
+<li><strong>Parameters</strong>: <code>k_tx</code> (number of neighbors), <code>dist_tx</code> (maximum distance)</li>
+</ul>
+<h4 id="transcript-cell-edges-etc">Transcript-Cell Edges (ETC)<a class="headerlink" href="#transcript-cell-edges-etc" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Purpose</strong>: Represent initial transcript-to-cell assignments</li>
+<li><strong>Construction</strong>: Spatial overlap between transcripts and boundaries</li>
+<li><strong>Training</strong>: Used as positive examples for link prediction</li>
+</ul>
+<h3 id="message-passing-mechanism">Message Passing Mechanism<a class="headerlink" href="#message-passing-mechanism" title="Permanent link">&para;</a></h3>
+<p>Information flows through the heterogeneous graph:</p>
+<div class="highlight"><pre><span></span><code>Transcript Nodes ←→ Transcript Nodes (spatial proximity)
+       ↓                    ↑
+       ↓                    ↑
+    Cell Nodes ←→ Transcript Nodes (containment)
+</code></pre></div>
+<p>This enables:
+- <strong>Spatial Context</strong>: Transcripts learn from nearby neighbors
+- <strong>Biological Context</strong>: Transcripts learn from cell assignments
+- <strong>Geometric Context</strong>: Cells learn from transcript distributions</p>
+<h2 id="training-strategy">Training Strategy<a class="headerlink" href="#training-strategy" title="Permanent link">&para;</a></h2>
+<h3 id="loss-function">Loss Function<a class="headerlink" href="#loss-function" title="Permanent link">&para;</a></h3>
+<p>The model uses binary cross-entropy loss for link prediction:</p>
+<div class="highlight"><pre><span></span><code><span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">Σ_</span><span class="p">(</span><span class="n">t_i</span><span class="p">,</span><span class="n">c_j</span><span class="p">)</span><span class="err">∈</span><span class="n">E_TC</span> <span class="p">[</span><span class="n">y_ij</span> <span class="n">log</span><span class="p">(</span><span class="n">σ</span><span class="p">(</span><span class="n">s_ij</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">y_ij</span><span class="p">)</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">σ</span><span class="p">(</span><span class="n">s_ij</span><span class="p">))]</span>
+</code></pre></div>
+<p>Where:
+- <code>y_ij = 1</code> for positive edges (observed transcript-cell associations)
+- <code>y_ij = 0</code> for negative edges (sampled non-associations)</p>
+<h3 id="negative-sampling">Negative Sampling<a class="headerlink" href="#negative-sampling" title="Permanent link">&para;</a></h3>
+<p>To handle class imbalance, negative edges are sampled:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Sample negative edges at ratio 1:5 (positive:negative)</span>
+<span class="n">E</span><span class="o">^-</span> <span class="o">=</span> <span class="n">random_sample</span><span class="p">(</span><span class="n">E_TC</span><span class="o">^</span><span class="n">c</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="o">|</span><span class="n">E</span><span class="o">^+|</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="training-process">Training Process<a class="headerlink" href="#training-process" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Forward Pass</strong>: Compute embeddings for all nodes</li>
+<li><strong>Link Prediction</strong>: Calculate similarity scores for all transcript-cell pairs</li>
+<li><strong>Loss Computation</strong>: Binary cross-entropy on positive and negative edges</li>
+<li><strong>Backpropagation</strong>: Update model parameters</li>
+<li><strong>Validation</strong>: Monitor AUROC and F1 score on validation set</li>
+</ol>
+<h2 id="performance-characteristics">Performance Characteristics<a class="headerlink" href="#performance-characteristics" title="Permanent link">&para;</a></h2>
+<h3 id="computational-complexity">Computational Complexity<a class="headerlink" href="#computational-complexity" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Time per layer</strong>: O(|E| × F × H)</li>
+<li>|E|: Number of edges</li>
+<li>F: Feature dimension</li>
+<li>
+<p>H: Number of attention heads</p>
+</li>
+<li>
+<p><strong>Memory usage</strong>: O(|V| × F + |E| × H)</p>
+</li>
+<li>|V|: Number of nodes</li>
+<li>|E|: Number of edges</li>
+</ul>
+<h3 id="scalability-features">Scalability Features<a class="headerlink" href="#scalability-features" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Efficient Attention</strong>: GATv2Conv optimized for sparse graphs</li>
+<li><strong>GPU Acceleration</strong>: Full CUDA support with PyTorch</li>
+<li><strong>Batch Processing</strong>: Mini-batch training for large datasets</li>
+<li><strong>Multi-GPU</strong>: Distributed training with PyTorch Lightning</li>
+</ul>
+<h2 id="integration-with-segger-pipeline">Integration with Segger Pipeline<a class="headerlink" href="#integration-with-segger-pipeline" title="Permanent link">&para;</a></h2>
+<h3 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>Spatial Data → Graph Construction → Segger Model → Node Embeddings → Link Prediction → Cell Segmentation
+     ↓              ↓                ↓              ↓                ↓                ↓
+Transcripts    Heterogeneous    GNN Processing   Learned Features   Similarity      Final
+Boundaries     Graph Creation   Attention Mech.   Spatial Context    Scores         Assignments
+</code></pre></div>
+<h3 id="key-integration-points">Key Integration Points<a class="headerlink" href="#key-integration-points" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Data Preprocessing</strong>: Tiled graph construction with balanced regions</li>
+<li><strong>Model Training</strong>: PyTorch Lightning integration with validation</li>
+<li><strong>Inference</strong>: Batch-wise prediction with GPU acceleration</li>
+<li><strong>Post-processing</strong>: Connected components for unassigned transcripts</li>
+</ol>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="architecture-selection">Architecture Selection<a class="headerlink" href="#architecture-selection" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Layer Depth</strong>: Balance expressiveness with over-smoothing (3-5 layers recommended)</li>
+<li><strong>Hidden Dimensions</strong>: Scale with dataset size and task complexity</li>
+<li><strong>Attention Heads</strong>: Use 4-8 heads for robust learning</li>
+<li><strong>Embedding Size</strong>: Match output dimension to downstream tasks</li>
+</ul>
+<h3 id="training-configuration">Training Configuration<a class="headerlink" href="#training-configuration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Learning Rate</strong>: Start with 0.001 and adjust based on convergence</li>
+<li><strong>Batch Size</strong>: Use largest size that fits in memory</li>
+<li><strong>Regularization</strong>: Apply weight decay (1e-5) to prevent overfitting</li>
+<li><strong>Early Stopping</strong>: Monitor validation AUROC to prevent overfitting</li>
+</ul>
+<h3 id="data-preparation">Data Preparation<a class="headerlink" href="#data-preparation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Graph Construction</strong>: Ensure proper spatial edge construction</li>
+<li><strong>Feature Engineering</strong>: Provide meaningful transcript and boundary features</li>
+<li><strong>Validation Strategy</strong>: Use spatial-aware train/val/test splits</li>
+<li><strong>Quality Control</strong>: Filter low-quality transcripts and boundaries</li>
+</ul>
+<h2 id="future-enhancements">Future Enhancements<a class="headerlink" href="#future-enhancements" title="Permanent link">&para;</a></h2>
+<p>Planned improvements include:</p>
+<ul>
+<li><strong>Additional Attention Types</strong>: Support for different attention mechanisms</li>
+<li><strong>Multi-modal Integration</strong>: Support for additional data types (images, protein markers)</li>
+<li><strong>Distributed Training</strong>: Multi-node training capabilities</li>
+<li><strong>Model Compression</strong>: Efficient deployment of trained models</li>
+<li><strong>Interpretability Tools</strong>: Understanding learned spatial relationships</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Graph Attention Networks</strong>: Veličković et al. (2018) - ICLR</li>
+<li><strong>GATv2</strong>: Brody et al. (2022) - ICLR  </li>
+<li><strong>Heterogeneous GNNs</strong>: Hong et al. (2020) - AAAI</li>
+<li><strong>Link Prediction</strong>: Kipf &amp; Welling (2016) - arXiv</li>
+<li><strong>Spatial Transcriptomics</strong>: Nature Reviews Genetics (2016)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.sections", "navigation.instant", "toc.integrate", "search.suggest", "search.highlight", "content.code.annotate", "content.tabs.link", "navigation.tracking"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.af256bd8.min.js"></script>
+      
+        <script src="../../../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://unpkg.com/termynal@0.0.1/termynal.js"></script>
+      
+        <script src="../../../termynal.js"></script>
+      
+    
+  </body>
+</html>

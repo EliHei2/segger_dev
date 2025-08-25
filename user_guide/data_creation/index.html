@@ -438,19 +438,19 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-spatialtranscriptomicssample-abstract-base-class" class="md-nav__link">
+  <a href="#1-stsampleparquet" class="md-nav__link">
     <span class="md-ellipsis">
-      1. SpatialTranscriptomicsSample (Abstract Base Class)
+      1. STSampleParquet
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1. SpatialTranscriptomicsSample (Abstract Base Class)">
+    <nav class="md-nav" aria-label="1. STSampleParquet">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#key-methods" class="md-nav__link">
+  <a href="#key-params" class="md-nav__link">
     <span class="md-ellipsis">
-      Key Methods:
+      Key Params
     </span>
   </a>
   
@@ -462,9 +462,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-xeniumsample-and-merscopesample-child-classes" class="md-nav__link">
+  <a href="#2-stinmemorydataset" class="md-nav__link">
     <span class="md-ellipsis">
-      2. XeniumSample and MerscopeSample (Child Classes)
+      2. STInMemoryDataset
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sttile" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. STTile
     </span>
   </a>
   
@@ -486,54 +495,36 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#step-1-data-loading-and-filtering" class="md-nav__link">
+  <a href="#step-1-initialize-sample-from-settings" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Data Loading and Filtering
+      Step 1: Initialize sample from settings
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-2-tiling" class="md-nav__link">
+  <a href="#step-2-region-partitioning-and-tiling" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Tiling
+      Step 2: Region partitioning and tiling
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-3-graph-construction" class="md-nav__link">
+  <a href="#step-3-graph-construction-per-tile" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3: Graph Construction
+      Step 3: Graph construction per tile
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-4-label-computation" class="md-nav__link">
+  <a href="#step-4-splitting-and-saving" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 4: Label Computation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-5-train-test-validation-splitting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 5: Train, Test, Validation Splitting
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Output
+      Step 4: Splitting and saving
     </span>
   </a>
   
@@ -541,6 +532,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
   
 </li>
       
@@ -555,18 +555,78 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#xenium-data" class="md-nav__link">
+  <a href="#xenium-with-optional-scrna-seq-derived-embeddings" class="md-nav__link">
     <span class="md-ellipsis">
-      Xenium Data
+      Xenium (with optional scRNA-seq-derived embeddings)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#merscope-data" class="md-nav__link">
+  <a href="#merscope-fixed-size-tiling" class="md-nav__link">
     <span class="md-ellipsis">
-      Merscope Data
+      Merscope (fixed-size tiling)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-mode-step-by-step-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debug mode (step-by-step logging)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-and-recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes and Recommendations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-scrna-seq-for-embeddings-and-mutually-exclusive-genes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using scRNA-seq for embeddings and mutually exclusive genes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using scRNA-seq for embeddings and mutually exclusive genes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-compute-transcript-embeddings-weights-from-scrna-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      1) Compute transcript embeddings (weights) from scRNA-seq
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-optional-identify-mutually-exclusive-genes-from-scrna-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      2) [OPTIONAL] Identify mutually exclusive genes from scRNA-seq
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-save-tiles-with-both-weights-and-mutually-exclusive-genes" class="md-nav__link">
+    <span class="md-ellipsis">
+      3) Save tiles with both weights and mutually exclusive genes
     </span>
   </a>
   
@@ -1044,244 +1104,250 @@
 
 
 <h1 id="data-preparation-for-segger">Data Preparation for <code>segger</code><a class="headerlink" href="#data-preparation-for-segger" title="Permanent link">&para;</a></h1>
-<p>The <code>segger</code> package provides a comprehensive data preparation module for cell segmentation and subsequent graph-based deep learning tasks by leveraging scalable and efficient processing tools. </p>
+<p>The <code>segger</code> package provides a streamlined, settings-driven pipeline to transform raw spatial transcriptomics outputs (e.g., Xenium, Merscope) into graph tiles ready for model training and evaluation.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Currently, <code>segger</code> supports <strong>Xenium</strong> and <strong>Merscope</strong> datasets. </p>
+<p>Currently, <code>segger</code> supports <strong>Xenium</strong> and <strong>Merscope</strong> datasets via technology-specific settings.</p>
 </div>
 <h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
-<p>The data preparation module offers the following key functionalities:</p>
+<p>The data preparation pipeline includes:</p>
 <ol>
-<li><strong>Lazy Loading of Large Datasets</strong>: Utilizes <strong>Dask</strong> to handle large-scale transcriptomics and boundary datasets efficiently, avoiding memory bottlenecks.</li>
-<li><strong>Initial Filtering</strong>: Filters transcripts based on quality metrics and dataset-specific criteria to ensure data integrity and relevance.</li>
-<li><strong>Tiling</strong>: Divides datasets into spatial tiles, essential for localized graph-based models and parallel processing.</li>
-<li><strong>Graph Construction</strong>: Converts spatial data into graph formats using <strong>PyTorch Geometric (PyG)</strong>, enabling the application of graph neural networks (GNNs).</li>
-<li><strong>Boundary Processing</strong>: Handles polygons, performs spatial geometrical calculations, and checks transcript overlaps with boundaries.</li>
+<li><strong>Settings-driven I/O</strong>: Uses a <code>sample_type</code> (e.g., <code>xenium</code>, <code>merscope</code>) to resolve input file names and column mappings.</li>
+<li><strong>Lazy Loading + Filtering</strong>: Efficiently reads Parquet in spatial regions and filters transcripts/boundaries.</li>
+<li><strong>Tiling</strong>: Partitions the whole slide into spatial tiles (fixed size or balanced by transcript count).</li>
+<li><strong>Graph Construction</strong>: Builds PyTorch Geometric <code>HeteroData</code> with typed nodes/edges and labels for link prediction.</li>
+<li><strong>Splitting</strong>: Writes tiles into <code>train</code>, <code>val</code>, and <code>test</code> subsets.</li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Key Technologies</p>
 <ul>
-<li><strong>Dask</strong>: Facilitates parallel and lazy data processing, enabling scalable handling of large datasets.</li>
-<li><strong>PyTorch Geometric (PyG)</strong>: Enables the construction of graph-based data representations suitable for GNNs.</li>
-<li><strong>Shapely &amp; Geopandas</strong>: Utilized for spatial operations such as polygon creation, scaling, and spatial relationship computations.</li>
-<li><strong>Dask-Geopandas</strong>: Extends Geopandas for parallel processing of geospatial data, enhancing scalability.</li>
+<li><strong>PyTorch Geometric (PyG)</strong>: Heterogeneous graphs for GNNs.</li>
+<li><strong>Shapely &amp; GeoPandas</strong>: Geometry operations (polygons, centroids, areas).</li>
+<li><strong>PyArrow Parquet</strong>: Efficient I/O with schema-aware reads.</li>
 </ul>
 </div>
 <h2 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">&para;</a></h2>
-<h3 id="1-spatialtranscriptomicssample-abstract-base-class">1. <code>SpatialTranscriptomicsSample</code> (Abstract Base Class)<a class="headerlink" href="#1-spatialtranscriptomicssample-abstract-base-class" title="Permanent link">&para;</a></h3>
-<p>This abstract class defines the foundational structure for managing spatial transcriptomics datasets. It provides essential methods for:</p>
+<h3 id="1-stsampleparquet">1. <code>STSampleParquet</code><a class="headerlink" href="#1-stsampleparquet" title="Permanent link">&para;</a></h3>
+<p>Settings-based entry point for preparing a sample into graph tiles.</p>
 <ul>
-<li><strong>Loading Data</strong>: Scalable loading of transcript and boundary data using Dask.</li>
-<li><strong>Filtering Transcripts</strong>: Applying quality-based or dataset-specific filtering criteria.</li>
-<li><strong>Spatial Relationships</strong>: Computing overlaps and spatial relationships between transcripts and boundaries.</li>
-<li><strong>Tiling</strong>: Dividing datasets into smaller spatial tiles for localized processing.</li>
-<li><strong>Graph Preparation</strong>: Converting data tiles into <code>PyTorch Geometric</code> graph structures.</li>
+<li><strong>Constructor</strong>: resolves input file paths and metadata using <code>sample_type</code> settings (e.g., file names, column names, quality fields). Ensures transcript IDs exist.</li>
+<li><strong>Embeddings</strong>: optionally accepts a <code>weights</code> DataFrame (index: gene names; columns: embedding dims) to encode transcript features.</li>
+<li><strong>Saving</strong>: orchestrates region partitioning, tiling, PyG graph construction, negative sampling, and dataset splitting.</li>
 </ul>
-<h4 id="key-methods">Key Methods:<a class="headerlink" href="#key-methods" title="Permanent link">&para;</a></h4>
+<h4 id="key-params">Key Params<a class="headerlink" href="#key-params" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong><code>load_transcripts()</code></strong>: Loads transcriptomic data from Parquet files, applies quality filtering, and incorporates additional gene embeddings.</li>
-<li><strong><code>load_boundaries()</code></strong>: Loads boundary data (e.g., cell or nucleus boundaries) from Parquet files.</li>
-<li><strong><code>get_tile_data()</code></strong>: Retrieves transcriptomic and boundary data within specified spatial bounds.</li>
-<li><strong><code>generate_and_scale_polygons()</code></strong>: Creates and scales polygon representations of boundaries for spatial computations.</li>
-<li><strong><code>compute_transcript_overlap_with_boundaries()</code></strong>: Determines the association of transcripts with boundary polygons.</li>
-<li><strong><code>build_pyg_data_from_tile()</code></strong>: Converts tile-specific data into <code>HeteroData</code> objects suitable for PyG models.</li>
+<li><code>base_dir</code>: folder with required Parquet files (transcripts and boundaries).</li>
+<li><code>sample_type</code>: one of <code>xenium</code>, <code>merscope</code> (determines settings such as file names, columns, nuclear flags, scale factors).</li>
+<li><code>weights</code>: optional <code>pd.DataFrame</code> of gene embeddings used by <code>TranscriptEmbedding</code>.</li>
+<li><code>scale_factor</code>: optional override for boundary scaling used during spatial queries.</li>
 </ul>
-<h3 id="2-xeniumsample-and-merscopesample-child-classes">2. <code>XeniumSample</code> and <code>MerscopeSample</code> (Child Classes)<a class="headerlink" href="#2-xeniumsample-and-merscopesample-child-classes" title="Permanent link">&para;</a></h3>
-<p>These classes inherit from <code>SpatialTranscriptomicsSample</code> and implement dataset-specific processing logic:</p>
-<ul>
-<li><strong><code>XeniumSample</code></strong>: Tailored for <strong>Xenium</strong> datasets, it includes specific filtering rules to exclude unwanted transcripts based on naming patterns (e.g., <code>NegControlProbe_</code>, <code>BLANK_</code>).</li>
-<li><strong><code>MerscopeSample</code></strong>: Designed for <strong>Merscope</strong> datasets, allowing for custom filtering and processing logic as needed.</li>
-</ul>
+<h3 id="2-stinmemorydataset">2. <code>STInMemoryDataset</code><a class="headerlink" href="#2-stinmemorydataset" title="Permanent link">&para;</a></h3>
+<p>Internal helper that loads filtered transcripts/boundaries for a region, pre-builds a KDTree, and generates tile bounds (fixed-size or balanced by count).</p>
+<h3 id="3-sttile">3. <code>STTile</code><a class="headerlink" href="#3-sttile" title="Permanent link">&para;</a></h3>
+<p>Per-tile builder that assembles a <code>HeteroData</code> graph:
+- Nodes: <code>tx</code> (transcripts) with <code>pos</code>, <code>x</code> (features); <code>bd</code> (boundaries) with <code>pos</code>, <code>x</code> (polygon properties).
+- Edges:
+  - <code>('tx','neighbors','tx')</code>: transcript proximity (KDTree-based; <code>k_tx</code>, <code>dist_tx</code>).
+  - <code>('tx','neighbors','bd')</code>: transcript-to-boundary proximity for receptive field construction.
+  - <code>('tx','belongs','bd')</code>: positive labels from nuclear overlap or provided assignment; negative sampling performed from receptive-field candidates.</p>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
-<p>The dataset creation and processing workflow involves several key steps, each ensuring that the spatial transcriptomics data is appropriately prepared for downstream machine learning tasks.</p>
-<h3 id="step-1-data-loading-and-filtering">Step 1: Data Loading and Filtering<a class="headerlink" href="#step-1-data-loading-and-filtering" title="Permanent link">&para;</a></h3>
+<h3 id="step-1-initialize-sample-from-settings">Step 1: Initialize sample from settings<a class="headerlink" href="#step-1-initialize-sample-from-settings" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Transcriptomic Data</strong>: Loaded lazily using Dask to handle large datasets efficiently. Custom filtering rules specific to the dataset (Xenium or Merscope) are applied to ensure data quality.</li>
-<li><strong>Boundary Data</strong>: Loaded similarly using Dask, representing spatial structures such as cell or nucleus boundaries.</li>
+<li>Provide <code>base_dir</code> containing technology outputs.</li>
+<li>Pick <code>sample_type</code> to resolve filenames/columns.</li>
+<li>Optionally provide <code>weights</code> for transcript embeddings.</li>
 </ul>
-<h3 id="step-2-tiling">Step 2: Tiling<a class="headerlink" href="#step-2-tiling" title="Permanent link">&para;</a></h3>
+<h3 id="step-2-region-partitioning-and-tiling">Step 2: Region partitioning and tiling<a class="headerlink" href="#step-2-region-partitioning-and-tiling" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Spatial Segmentation</strong>: The dataset is divided into smaller, manageable tiles of size <span class="arithmatex">\(x_{\text{size}} \times y_{\text{size}}\)</span>, defined by their top-left corner coordinates <span class="arithmatex">\((x_i, y_j)\)</span>.</li>
+<li>If multiple workers are set, extents are split into balanced regions (ND-tree over boundaries).</li>
+<li>Tiles are created either by fixed width/height or by a target <code>tile_size</code> (balanced by transcript count).</li>
 </ul>
-<div class="arithmatex">\[
-n_x = \left\lfloor \frac{x_{\text{max}} - x_{\text{min}}}{d_x} \right\rfloor, \quad n_y = \left\lfloor \frac{y_{\text{max}} - y_{\text{min}}}{d_y} \right\rfloor
-\]</div>
-<p>Where:
-  - <span class="arithmatex">\(x_{\text{min}}, y_{\text{min}}\)</span>: Minimum spatial coordinates.
-  - <span class="arithmatex">\(x_{\text{max}}, y_{\text{max}}\)</span>: Maximum spatial coordinates.
-  - <span class="arithmatex">\(d_x, d_y\)</span>: Step sizes along the <span class="arithmatex">\(x\)</span>- and <span class="arithmatex">\(y\)</span>-axes, respectively.</p>
+<h3 id="step-3-graph-construction-per-tile">Step 3: Graph construction per tile<a class="headerlink" href="#step-3-graph-construction-per-tile" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Transcript and Boundary Inclusion</strong>: For each tile, transcripts and boundaries within the spatial bounds (with optional margins) are included:</li>
+<li>Build <code>HeteroData</code> with transcript (<code>tx</code>) and boundary (<code>bd</code>) nodes.</li>
+<li>Add proximity edges and <code>belongs</code> labels (positives + sampled negatives).</li>
 </ul>
-<div class="arithmatex">\[ 
-x_i - \text{margin}_x \leq x_t &lt; x_i + x_{\text{size}} + \text{margin}_x, \quad y_j - \text{margin}_y \leq y_t &lt; y_j + y_{\text{size}} + \text{margin}_y 
-\]</div>
-<p>Where:
-  - <span class="arithmatex">\(x_t, y_t\)</span>: Transcript coordinates.
-  - <span class="arithmatex">\(\text{margin}_x, \text{margin}_y\)</span>: Optional margins to include contextual data.</p>
-<h3 id="step-3-graph-construction">Step 3: Graph Construction<a class="headerlink" href="#step-3-graph-construction" title="Permanent link">&para;</a></h3>
-<p>For each tile, a graph <span class="arithmatex">\(G\)</span> is constructed with:</p>
+<h3 id="step-4-splitting-and-saving">Step 4: Splitting and saving<a class="headerlink" href="#step-4-splitting-and-saving" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Nodes (<span class="arithmatex">\(V\)</span>)</strong>:</li>
-<li><strong>Transcripts</strong>: Represented by their spatial coordinates <span class="arithmatex">\((x_t, y_t)\)</span> and feature vectors <span class="arithmatex">\(\mathbf{f}_t\)</span>.</li>
-<li>
-<p><strong>Boundaries</strong>: Represented by centroid coordinates <span class="arithmatex">\((x_b, y_b)\)</span> and associated properties (e.g., area).</p>
-</li>
-<li>
-<p><strong>Edges (<span class="arithmatex">\(E\)</span>)</strong>:</p>
-</li>
-<li>Created based on spatial proximity using methods like KD-Tree or FAISS.</li>
-<li>Defined by a distance threshold <span class="arithmatex">\(d\)</span> and the number of nearest neighbors <span class="arithmatex">\(k\)</span>:</li>
+<li>Tiles are written to <code>&lt;data_dir&gt;/{train_tiles,val_tiles,test_tiles}/processed/*.pt</code> according to <code>val_prob</code>/<code>test_prob</code>.</li>
 </ul>
-<div class="arithmatex">\[ 
-E = \{ (v_i, v_j) \mid \text{dist}(v_i, v_j) &lt; d, \, v_i \in V, \, v_j \in V \}
-\]</div>
-<h3 id="step-4-label-computation">Step 4: Label Computation<a class="headerlink" href="#step-4-label-computation" title="Permanent link">&para;</a></h3>
-<p>If enabled, edges can be labeled based on relationships, such as whether a transcript belongs to a boundary:</p>
-<div class="arithmatex">\[
-\text{label}(t, b) = 
-\begin{cases}
-1 &amp; \text{if } t \text{ belongs to } b \\
-0 &amp; \text{otherwise}
-\end{cases}
-\]</div>
-<h3 id="step-5-train-test-validation-splitting">Step 5: Train, Test, Validation Splitting<a class="headerlink" href="#step-5-train-test-validation-splitting" title="Permanent link">&para;</a></h3>
-<p>The dataset is partitioned into training, validation, and test sets based on predefined probabilities <span class="arithmatex">\(p_{\text{train}}, p_{\text{val}}, p_{\text{test}}\)</span>:</p>
-<div class="arithmatex">\[
-p_{\text{train}} + p_{\text{val}} + p_{\text{test}} = 1
-\]</div>
-<p>Each tile is randomly assigned to one of these sets according to the specified probabilities.</p>
-<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
-<p>The final output consists of a set of tiles, each containing a graph representation of the spatial transcriptomics data. These tiles are stored in designated directories (<code>train_tiles</code>, <code>val_tiles</code>, <code>test_tiles</code>) and are ready for integration into machine learning pipelines.</p>
+<h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A directory structure with train/val/test tiles in PyG <code>HeteroData</code> format ready for the Segger model and <code>STPyGDataset</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>&lt;data_dir&gt;/
+  train_tiles/
+    processed/
+      tiles_x=..._y=..._w=..._h=....pt
+  val_tiles/
+    processed/
+      ...
+  test_tiles/
+    processed/
+      ...
+</code></pre></div>
 <h2 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">&para;</a></h2>
-<p>Below are examples demonstrating how to utilize the <code>segger</code> data preparation module for both Xenium and Merscope datasets.</p>
-<h3 id="xenium-data">Xenium Data<a class="headerlink" href="#xenium-data" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data</span> <span class="kn">import</span> <span class="n">XeniumSample</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<h3 id="xenium-with-optional-scrna-seq-derived-embeddings">Xenium (with optional scRNA-seq-derived embeddings)<a class="headerlink" href="#xenium-with-optional-scrna-seq-derived-embeddings" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="c1"># Set up the file paths</span>
-<span class="n">raw_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/xenium_output&quot;</span><span class="p">)</span>
-<span class="n">processed_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/processed_files&quot;</span><span class="p">)</span>
-<span class="n">sample_tag</span> <span class="o">=</span> <span class="s2">&quot;sample/tag&quot;</span>
+<span class="c1"># Optional: provide transcript embeddings (rows: genes, cols: embedding dims)</span>
+<span class="c1"># For example, cell-type abundance embeddings indexed by gene name</span>
+<span class="c1"># weights = pd.DataFrame(..., index=gene_names)</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># set to a DataFrame if available</span>
 
-<span class="c1"># Load scRNA-seq data using Scanpy and subsample for efficiency</span>
-<span class="n">scRNAseq_path</span> <span class="o">=</span> <span class="s2">&quot;path/to/scRNAseq.h5ad&quot;</span>
-<span class="n">scRNAseq</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">scRNAseq_path</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">scRNAseq</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
 
-<span class="c1"># Calculate gene cell type abundance embedding from scRNA-seq data</span>
-<span class="kn">from</span> <span class="nn">segger.utils</span> <span class="kn">import</span> <span class="n">calculate_gene_celltype_abundance_embedding</span>
+<span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/xenium_output&quot;</span><span class="p">)</span>
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/processed_tiles&quot;</span><span class="p">)</span>
 
-<span class="n">celltype_column</span> <span class="o">=</span> <span class="s2">&quot;celltype_column&quot;</span>
-<span class="n">gene_celltype_abundance_embedding</span> <span class="o">=</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span>
-    <span class="n">scRNAseq</span><span class="p">,</span> <span class="n">celltype_column</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">STSampleParquet</span><span class="p">(</span>
+    <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+    <span class="n">sample_type</span><span class="o">=</span><span class="s2">&quot;xenium&quot;</span><span class="p">,</span>
+    <span class="n">n_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>            <span class="c1"># controls parallel tiling across regions</span>
+    <span class="c1"># weights=weights,        # optional transcript embeddings</span>
+    <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>       <span class="c1"># optional override (geometry scaling)</span>
 <span class="p">)</span>
 
-<span class="c1"># Create a XeniumSample instance for spatial transcriptomics processing</span>
-<span class="n">xenium_sample</span> <span class="o">=</span> <span class="n">XeniumSample</span><span class="p">()</span>
-
-<span class="c1"># Load transcripts and include the calculated cell type abundance embedding</span>
-<span class="n">xenium_sample</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">(</span>
-    <span class="n">base_path</span><span class="o">=</span><span class="n">raw_data_dir</span><span class="p">,</span>
-    <span class="n">sample</span><span class="o">=</span><span class="n">sample_tag</span><span class="p">,</span>
-    <span class="n">transcripts_filename</span><span class="o">=</span><span class="s2">&quot;transcripts.parquet&quot;</span><span class="p">,</span>
-    <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">,</span>
-    <span class="n">additional_embeddings</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cell_type_abundance&quot;</span><span class="p">:</span> <span class="n">gene_celltype_abundance_embedding</span><span class="p">},</span>
-<span class="p">)</span>
-
-<span class="c1"># Set the embedding to &quot;cell_type_abundance&quot; to use it in further processing</span>
-<span class="n">xenium_sample</span><span class="o">.</span><span class="n">set_embedding</span><span class="p">(</span><span class="s2">&quot;cell_type_abundance&quot;</span><span class="p">)</span>
-
-<span class="c1"># Load nuclei data to define boundaries</span>
-<span class="n">nuclei_path</span> <span class="o">=</span> <span class="n">raw_data_dir</span> <span class="o">/</span> <span class="n">sample_tag</span> <span class="o">/</span> <span class="s2">&quot;nucleus_boundaries.parquet&quot;</span>
-<span class="n">xenium_sample</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">nuclei_path</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
-
-<span class="c1"># Build PyTorch Geometric (PyG) data from a tile of the dataset</span>
-<span class="n">tile_pyg_data</span> <span class="o">=</span> <span class="n">xenium_sample</span><span class="o">.</span><span class="n">build_pyg_data_from_tile</span><span class="p">(</span>
-    <span class="n">boundaries_df</span><span class="o">=</span><span class="n">xenium_sample</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">,</span>
-    <span class="n">transcripts_df</span><span class="o">=</span><span class="n">xenium_sample</span><span class="o">.</span><span class="n">transcripts_df</span><span class="p">,</span>
-    <span class="n">r_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="n">use_precomputed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="c1"># Save dataset in processed format for segmentation</span>
-<span class="n">xenium_sample</span><span class="o">.</span><span class="n">save_dataset_for_segger</span><span class="p">(</span>
-    <span class="n">processed_dir</span><span class="o">=</span><span class="n">processed_data_dir</span><span class="p">,</span>
-    <span class="n">x_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
-    <span class="n">y_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
-    <span class="n">d_x</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
-    <span class="n">d_y</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
-    <span class="n">margin_x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">margin_y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">compute_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">r_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">k_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="c1"># Save tiles (choose either tile_size OR tile_width+tile_height)</span>
+<span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+    <span class="c1"># Receptive fields (neighbors)</span>
+    <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>        <span class="c1"># nearest boundaries per transcript</span>
+    <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>  <span class="c1"># max distance for tx-&gt;bd neighbors (µm-equivalent)</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>       <span class="c1"># nearest transcripts per transcript</span>
+    <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>   <span class="c1"># max distance for tx-&gt;tx neighbors</span>
+    <span class="c1"># Optional broader receptive fields for mutually exclusive genes (if used)</span>
+    <span class="c1"># Tiling</span>
+    <span class="n">tile_size</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span>   <span class="c1"># alternative: tile_width=..., tile_height=...</span>
+    <span class="c1"># Sampling/splitting</span>
+    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">frac</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
     <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-    <span class="n">neg_sampling_ratio_approx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">sampling_rate</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<h3 id="merscope-data">Merscope Data<a class="headerlink" href="#merscope-data" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data</span> <span class="kn">import</span> <span class="n">MerscopeSample</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<h3 id="merscope-fixed-size-tiling">Merscope (fixed-size tiling)<a class="headerlink" href="#merscope-fixed-size-tiling" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
 
-<span class="c1"># Set up the file paths</span>
-<span class="n">raw_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/merscope_outputs&quot;</span><span class="p">)</span>
-<span class="n">processed_data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;path/to/processed_files&quot;</span><span class="p">)</span>
-<span class="n">sample_tag</span> <span class="o">=</span> <span class="s2">&quot;sample_tag&quot;</span>
+<span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/merscope_output&quot;</span><span class="p">)</span>
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/processed_tiles&quot;</span><span class="p">)</span>
 
-<span class="c1"># Create a MerscopeSample instance for spatial transcriptomics processing</span>
-<span class="n">merscope_sample</span> <span class="o">=</span> <span class="n">MerscopeSample</span><span class="p">()</span>
-
-<span class="c1"># Load transcripts from a CSV file</span>
-<span class="n">merscope_sample</span><span class="o">.</span><span class="n">load_transcripts</span><span class="p">(</span>
-    <span class="n">base_path</span><span class="o">=</span><span class="n">raw_data_dir</span><span class="p">,</span>
-    <span class="n">sample</span><span class="o">=</span><span class="n">sample_tag</span><span class="p">,</span>
-    <span class="n">transcripts_filename</span><span class="o">=</span><span class="s2">&quot;transcripts.csv&quot;</span><span class="p">,</span>
-    <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">STSampleParquet</span><span class="p">(</span>
+    <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+    <span class="n">sample_type</span><span class="o">=</span><span class="s2">&quot;merscope&quot;</span><span class="p">,</span>
+    <span class="n">n_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1"># Optionally load cell boundaries</span>
-<span class="n">cell_boundaries_path</span> <span class="o">=</span> <span class="n">raw_data_dir</span> <span class="o">/</span> <span class="n">sample_tag</span> <span class="o">/</span> <span class="s2">&quot;cell_boundaries.parquet&quot;</span>
-<span class="n">merscope_sample</span><span class="o">.</span><span class="n">load_boundaries</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">cell_boundaries_path</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
-
-<span class="c1"># Filter transcripts based on specific criteria</span>
-<span class="n">filtered_transcripts</span> <span class="o">=</span> <span class="n">merscope_sample</span><span class="o">.</span><span class="n">filter_transcripts</span><span class="p">(</span>
-    <span class="n">merscope_sample</span><span class="o">.</span><span class="n">transcripts_df</span>
-<span class="p">)</span>
-
-<span class="c1"># Build PyTorch Geometric (PyG) data from a tile of the dataset</span>
-<span class="n">tile_pyg_data</span> <span class="o">=</span> <span class="n">merscope_sample</span><span class="o">.</span><span class="n">build_pyg_data_from_tile</span><span class="p">(</span>
-    <span class="n">boundaries_df</span><span class="o">=</span><span class="n">merscope_sample</span><span class="o">.</span><span class="n">boundaries_df</span><span class="p">,</span>
-    <span class="n">transcripts_df</span><span class="o">=</span><span class="n">filtered_transcripts</span><span class="p">,</span>
-    <span class="n">r_tx</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+    <span class="c1"># Nearest neighbors</span>
+    <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>
     <span class="n">k_tx</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-    <span class="n">use_precomputed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="c1"># Save dataset in processed format for segmentation</span>
-<span class="n">merscope_sample</span><span class="o">.</span><span class="n">save_dataset_for_segger</span><span class="p">(</span>
-    <span class="n">processed_dir</span><span class="o">=</span><span class="n">processed_data_dir</span><span class="p">,</span>
-    <span class="n">x_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
-    <span class="n">y_size</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
-    <span class="n">d_x</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
-    <span class="n">d_y</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
-    <span class="n">margin_x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">margin_y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">compute_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">r_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">k_tx</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="c1"># Fixed-size tiling in sample units</span>
+    <span class="n">tile_width</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">tile_height</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="c1"># Splits</span>
+    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
     <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
     <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-    <span class="n">neg_sampling_ratio_approx</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">sampling_rate</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">num_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="debug-mode-step-by-step-logging">Debug mode (step-by-step logging)<a class="headerlink" href="#debug-mode-step-by-step-logging" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">sample</span><span class="o">.</span><span class="n">save_debug</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+    <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">tile_width</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">tile_height</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">frac</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="notes-and-recommendations">Notes and Recommendations<a class="headerlink" href="#notes-and-recommendations" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Settings and columns</strong>: Filenames and columns for transcripts/boundaries are resolved via <code>sample_type</code> settings. See <code>segger.data._settings/*</code> for details.</li>
+<li><strong>Transcript IDs</strong>: The constructor ensures an ID column exists in transcripts; if missing, it is added deterministically.</li>
+<li><strong>Quality filtering</strong>: Uses settings-defined columns (e.g., QV) and filter substrings. Genes absent from provided <code>weights</code> will be auto-added to filter substrings to avoid OOV embeddings.</li>
+<li><strong>Neighbors</strong>: Set <code>k_tx/dist_tx</code> based on typical nuclear radii and transcript densities; <code>k_bd/dist_bd</code> controls candidate boundaries per transcript.</li>
+<li><strong>Splits</strong>: Tiles with no <code>('tx','belongs','bd')</code> edges are automatically placed in <code>test_tiles</code>.</li>
+<li><strong>Embeddings</strong>: If no <code>weights</code> are provided, transcripts fall back to token/ID-based embeddings.</li>
+</ul>
+<h2 id="using-scrna-seq-for-embeddings-and-mutually-exclusive-genes">Using scRNA-seq for embeddings and mutually exclusive genes<a class="headerlink" href="#using-scrna-seq-for-embeddings-and-mutually-exclusive-genes" title="Permanent link">&para;</a></h2>
+<p>You can leverage scRNA-seq data both to create transcript embeddings (weights) and to identify mutually exclusive gene pairs that guide repulsive/attractive transcript edges.</p>
+<h3 id="1-compute-transcript-embeddings-weights-from-scrna-seq">1) Compute transcript embeddings (weights) from scRNA-seq<a class="headerlink" href="#1-compute-transcript-embeddings-weights-from-scrna-seq" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">from</span> <span class="nn">segger.data._utils</span> <span class="kn">import</span> <span class="n">calculate_gene_celltype_abundance_embedding</span>
+
+<span class="c1"># Load a reference AnnData</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;/path/to/reference_scrnaseq.h5ad&quot;</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">)</span>        <span class="c1"># optional downsampling</span>
+<span class="n">adata</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+
+<span class="c1"># Column in adata.obs with cell-type annotations</span>
+<span class="n">celltype_column</span> <span class="o">=</span> <span class="s2">&quot;celltype_minor&quot;</span>
+
+<span class="c1"># Compute gene x cell-type abundance matrix (DataFrame indexed by gene names)</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">calculate_gene_celltype_abundance_embedding</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">,</span>
+    <span class="n">celltype_column</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Pass weights to STSampleParquet to encode transcript features</span>
+<span class="kn">from</span> <span class="nn">segger.data.sample</span> <span class="kn">import</span> <span class="n">STSampleParquet</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">STSampleParquet</span><span class="p">(</span>
+    <span class="n">base_dir</span><span class="o">=</span><span class="s2">&quot;/path/to/technology_output&quot;</span><span class="p">,</span>
+    <span class="n">sample_type</span><span class="o">=</span><span class="s2">&quot;xenium&quot;</span><span class="p">,</span>      <span class="c1"># or &quot;merscope&quot;</span>
+    <span class="n">n_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="2-optional-identify-mutually-exclusive-genes-from-scrna-seq">2) [OPTIONAL] Identify mutually exclusive genes from scRNA-seq<a class="headerlink" href="#2-optional-identify-mutually-exclusive-genes-from-scrna-seq" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">segger.data._utils</span> <span class="kn">import</span> <span class="n">find_markers</span><span class="p">,</span> <span class="n">find_mutually_exclusive_genes</span>
+
+<span class="c1"># Optionally restrict to genes present in the sample</span>
+<span class="n">genes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">var_names</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">transcripts_metadata</span><span class="p">[</span><span class="s2">&quot;feature_names&quot;</span><span class="p">]))</span>
+<span class="n">adata_sub</span> <span class="o">=</span> <span class="n">adata</span><span class="p">[:,</span> <span class="n">genes</span><span class="p">]</span>
+
+<span class="c1"># Find cell-type markers (tune thresholds as needed)</span>
+<span class="n">markers</span> <span class="o">=</span> <span class="n">find_markers</span><span class="p">(</span>
+    <span class="n">adata_sub</span><span class="p">,</span>
+    <span class="n">cell_type_column</span><span class="o">=</span><span class="n">celltype_column</span><span class="p">,</span>
+    <span class="n">pos_percentile</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+    <span class="n">neg_percentile</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">percentage</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Compute mutually exclusive gene pairs using markers</span>
+<span class="n">exclusive_gene_pairs</span> <span class="o">=</span> <span class="n">find_mutually_exclusive_genes</span><span class="p">(</span>
+    <span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span>
+    <span class="n">markers</span><span class="o">=</span><span class="n">markers</span><span class="p">,</span>
+    <span class="n">cell_type_column</span><span class="o">=</span><span class="n">celltype_column</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="3-save-tiles-with-both-weights-and-mutually-exclusive-genes">3) Save tiles with both weights and mutually exclusive genes<a class="headerlink" href="#3-save-tiles-with-both-weights-and-mutually-exclusive-genes" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">sample</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+    <span class="n">data_dir</span><span class="o">=</span><span class="s2">&quot;/path/to/processed_tiles&quot;</span><span class="p">,</span>
+    <span class="c1"># Nearest-neighbor receptive fields</span>
+    <span class="n">k_bd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dist_bd</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span>
+    <span class="n">k_tx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">dist_tx</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="c1"># Optional broader receptive fields used for mutually exclusive genes</span>
+    <span class="n">k_tx_ex</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">dist_tx_ex</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+    <span class="c1"># Tiling and splits</span>
+    <span class="n">tile_size</span><span class="o">=</span><span class="mi">50_000</span><span class="p">,</span>
+    <span class="n">neg_sampling_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+    <span class="n">val_prob</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">test_prob</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="c1"># Use mutually exclusive pairs to add repulsive/attractive tx-tx labels</span>
+    <span class="n">mutually_exclusive_genes</span><span class="o">=</span><span class="n">exclusive_gene_pairs</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 

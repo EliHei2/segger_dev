@@ -788,11 +788,104 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segger.models" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#advanced-gnn-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced GNN Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spatial-data-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spatial Data Optimization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training &amp; Deployment
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#submodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Submodules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use Cases
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Documentation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#src.segger.models" class="md-nav__link">
     <span class="md-ellipsis">
       models
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -894,15 +987,74 @@
 
 
 <h1 id="seggermodels">segger.models<a class="headerlink" href="#seggermodels" title="Permanent link">&para;</a></h1>
-<p>Models module for Segger.</p>
-<p>Contains the implementation of the Segger model using Graph Neural Networks.</p>
+<p>The <code>segger.models</code> module provides the core machine learning models for the Segger framework, specifically designed for spatial transcriptomics data analysis using Graph Neural Networks (GNNs). This module implements attention-based convolutional architectures that can handle heterogeneous graphs with transcript and boundary nodes, formulating cell segmentation as a transcript-to-cell link prediction task.</p>
+<blockquote>
+<p><strong>📖 <a href="README.md">Detailed Module Guide</a></strong> - For a comprehensive understanding of the models module, including architecture, examples, and best practices.</p>
+<p><strong>🔍 <a href="api_reference/">Complete API Reference</a></strong> - For detailed API documentation of all classes, functions, and modules.</p>
+</blockquote>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The models module serves as the machine learning engine for spatial transcriptomics analysis in Segger, offering:</p>
+<ul>
+<li><strong>Graph Neural Network Architecture</strong>: Attention-based convolutional layers for spatial data analysis</li>
+<li><strong>Heterogeneous Graph Support</strong>: Handles different node types (transcripts, boundaries) with specialized processing</li>
+<li><strong>Spatial Relationship Learning</strong>: Learns complex spatial relationships between transcripts and cellular structures</li>
+<li><strong>Link Prediction Framework</strong>: Formulates cell segmentation as a transcript-to-cell assignment problem</li>
+<li><strong>PyTorch Integration</strong>: Seamless integration with PyTorch and PyTorch Geometric ecosystems</li>
+<li><strong>Scalable Training</strong>: Support for both single and multi-GPU training workflows</li>
+</ul>
+<h2 id="core-architecture">Core Architecture<a class="headerlink" href="#core-architecture" title="Permanent link">&para;</a></h2>
+<p>The module is built around a sophisticated GNN architecture that processes spatial transcriptomics data:</p>
+<ul>
+<li><strong><code>Segger</code></strong>: Main GNN model with attention-based convolutional layers using GATv2Conv</li>
+<li><strong>Heterogeneous Graph Processing</strong>: Handles different node and edge types with specialized attention mechanisms</li>
+<li><strong>Attention Mechanisms</strong>: Multi-head Graph Attention Networks for learning node relationships</li>
+<li><strong>Feature Engineering</strong>: Automatic feature transformation and embedding for transcripts and boundaries</li>
+</ul>
+<h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
+<h3 id="advanced-gnn-architecture"><strong>Advanced GNN Architecture</strong><a class="headerlink" href="#advanced-gnn-architecture" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Graph Attention Networks</strong>: GATv2Conv layers for learning node relationships with flexible attention</li>
+<li><strong>Heterogeneous Processing</strong>: Specialized handling for transcript and boundary nodes with different feature types</li>
+<li><strong>Multi-head Attention</strong>: Parallel attention mechanisms for robust feature learning</li>
+<li><strong>Residual Connections</strong>: Stabilized learning with configurable layer depth</li>
+</ul>
+<h3 id="spatial-data-optimization"><strong>Spatial Data Optimization</strong><a class="headerlink" href="#spatial-data-optimization" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Node Type Differentiation</strong>: Automatic detection and processing of different node types</li>
+<li><strong>Spatial Relationship Learning</strong>: Captures complex spatial interactions through graph structure</li>
+<li><strong>Feature Embedding</strong>: Efficient transformation of spatial and transcript features</li>
+<li><strong>Memory Optimization</strong>: Optimized for large spatial transcriptomics datasets</li>
+</ul>
+<h3 id="training-deployment"><strong>Training &amp; Deployment</strong><a class="headerlink" href="#training-deployment" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>PyTorch Integration</strong>: Native PyTorch module compatibility with full CUDA support</li>
+<li><strong>PyTorch Geometric</strong>: Optimized for graph-based operations and heterogeneous graphs</li>
+<li><strong>Multi-GPU Support</strong>: Scalable training across multiple devices with PyTorch Lightning</li>
+<li><strong>Production Ready</strong>: Optimized inference and deployment capabilities</li>
+</ul>
+<h2 id="submodules">Submodules<a class="headerlink" href="#submodules" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="segger_model/">Segger Model</a>: Core GNN architecture for spatial transcriptomics</li>
+<li><a href="architecture/">Architecture Details</a>: Detailed model architecture and design principles</li>
+<li><a href="training/">Training Workflows</a>: Training workflows and optimization strategies</li>
+<li><a href="inference/">Inference &amp; Prediction</a>: Model inference and prediction utilities</li>
+</ul>
+<h2 id="use-cases">Use Cases<a class="headerlink" href="#use-cases" title="Permanent link">&para;</a></h2>
+<p>The models module is designed for:</p>
+<ul>
+<li><strong>Research Scientists</strong>: Training GNNs on spatial transcriptomics data for cell segmentation</li>
+<li><strong>ML Engineers</strong>: Building production-ready spatial analysis models with link prediction</li>
+<li><strong>Bioinformaticians</strong>: Analyzing complex spatial gene expression patterns and cell relationships</li>
+<li><strong>Software Developers</strong>: Integrating GNN models into spatial analysis pipelines</li>
+</ul>
+<h2 id="api-documentation">API Documentation<a class="headerlink" href="#api-documentation" title="Permanent link">&para;</a></h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<a id="segger.models"></a>
+<a id="src.segger.models"></a>
     <div class="doc doc-contents first">
 
 
