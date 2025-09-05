@@ -25,15 +25,16 @@ def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_v
         np.ndarray: Padded or truncated list of polygon vertices.
     """
     flattened = []
-    
-    if isinstance(vertices, np.ndarray):
-        vertices = vertices.tolist()
-        
     for vertices in polygon_vertices:
+        if len(vertices) < 3:
+            pass
+        if isinstance(vertices, np.ndarray):
+            vertices = vertices.tolist()
+        
         if len(vertices) > max_value:
             flattened.append(vertices[:max_value])
         else:
-            flattened.append(vertices + [(0.0, 0.0)] * (max_value - len(vertices)))
+            flattened.append(vertices + [vertices[0]] * (max_value - len(vertices)))
     return np.array(flattened, dtype=np.float32)
 
 
@@ -67,6 +68,7 @@ def seg2explorer(
     """
     source_path = Path(source_path)
     storage = Path(output_dir)
+    storage.mkdir(parents=True, exist_ok=True)
 
     cell_id2old_id: Dict[int, Any] = {}
     cell_id: List[int] = []
@@ -127,7 +129,7 @@ def seg2explorer(
         seg_mask_value.append(uint_cell_id)
 
     cell_polygon_vertices = get_flatten_version(polygon_vertices[0], max_value=128)
-    nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=128)
+    # nucl_polygon_vertices = get_flatten_version(polygon_vertices[1], max_value=20)
 
     cells = {
         "cell_id": np.array(
@@ -141,19 +143,33 @@ def seg2explorer(
             ],
             dtype=np.int32,
         ),
-        "polygon_vertices": np.array(
-            [nucl_polygon_vertices, cell_polygon_vertices], dtype=np.float32
-        ),
+        # "polygon_vertices": np.array(
+        #     [nucl_polygon_vertices, cell_polygon_vertices], dtype=np.float32
+        # ),
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
 
     source_zarr_store = ZipStore(source_path / "cells.zarr.zip", mode="r") # added this line
     existing_store = zarr.open(source_zarr_store, mode="r")
     new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
-    new_store["cell_id"] = cells["cell_id"]
-    new_store["polygon_num_vertices"] = cells["polygon_num_vertices"]
-    new_store["polygon_vertices"] = cells["polygon_vertices"]
-    new_store["seg_mask_value"] = cells["seg_mask_value"]
+
+    # Create polygon_sets group with the new structure
+    polygon_group = new_store.create_group("polygon_sets")
+
+    # Process cell polygons (set 1)
+    # cell_polygons = cells["polygon_vertices"][1]  # Cell polygons are at index 1
+    cell_num_vertices = cells["polygon_num_vertices"][1]  # Cell vertex counts
+
+    # Reshape cell polygons to (n_cells, 50) format
+    n_cells = cell_polygon_vertices.shape[0]
+    cell_vertices_flat = cell_polygon_vertices.reshape(n_cells, -1)[:, :257]  # Take first 50 values
+
+    set1 = polygon_group.create_group("1")
+    set1["cell_index"] = np.arange(1, n_cells + 1, dtype=np.uint32)  # 1-based indexing
+    set1["method"] = np.ones(n_cells, dtype=np.uint32)  # All method=1
+    set1["num_vertices"] = np.array(cell_num_vertices, dtype=np.int32)
+    set1["vertices"] = cell_vertices_flat.astype(np.float32)
+
     new_store.attrs.update(existing_store.attrs)
     new_store.attrs["number_cells"] = len(cells["cell_id"])
     new_store.store.close()
@@ -440,8 +456,8 @@ def generate_experiment_file(
     with open(template_path) as f:
         experiment = json.load(f)
 
-    experiment["images"].pop("morphology_filepath")
-    experiment["images"].pop("morphology_focus_filepath")
+    # experiment["images"].pop("morphology_filepath")
+    # experiment["images"].pop("morphology_focus_filepath")
 
     experiment["xenium_explorer_files"][
         "cells_zarr_filepath"
