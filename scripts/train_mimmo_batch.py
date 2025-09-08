@@ -1,4 +1,5 @@
 from segger.training.segger_data_module import SeggerDataModule
+
 # from segger.prediction.predict import predict, load_model
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
@@ -9,16 +10,21 @@ from pathlib import Path
 from lightning.pytorch.plugins.environments import LightningEnvironment
 from matplotlib import pyplot as plt
 import seaborn as sns
+
 # import pandas as pd
 from segger.data.utils import calculate_gene_celltype_abundance_embedding
+
 # import scanpy as sc
 import os
 from lightning import LightningModule
 
 
-
-segger_data_dir = Path("data_tidy/pyg_datasets/project24_MNG/output-XETG00423__0042861__mng_07_TMA__20250303__153740")
-models_dir = Path("./models/project24_MNG/output-XETG00423__0042861__mng_07_TMA__20250303__153740")
+segger_data_dir = Path(
+    "data_tidy/pyg_datasets/project24_MNG/output-XETG00423__0042861__mng_07_TMA__20250303__153740"
+)
+models_dir = Path(
+    "./models/project24_MNG/output-XETG00423__0042861__mng_07_TMA__20250303__153740"
+)
 
 # Base directory to store Pytorch Lightning models
 # models_dir = Path('models')
@@ -44,14 +50,18 @@ num_tx_tokens = 500
 
 model = Segger(
     # is_token_based=is_token_based,
-    num_tx_tokens= num_tx_tokens,
+    num_tx_tokens=num_tx_tokens,
     init_emb=8,
     hidden_channels=32,
     out_channels=16,
     heads=4,
     num_mid_layers=3,
 )
-model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+model = to_hetero(
+    model,
+    (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]),
+    aggr="sum",
+)
 
 batch = dm.train[0]
 model.forward(batch.x_dict, batch.edge_index_dict)
