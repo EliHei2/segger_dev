@@ -9,10 +9,23 @@ from shapely.geometry import MultiPolygon, Polygon
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
-from segger.prediction.boundary import generate_boundary
+# from segger.prediction.boundary import generate_boundary
 from zarr.storage import ZipStore
 import zarr
 
+
+def generate_boundary(seg_cell):
+    """Generate convex hull boundary for a cell"""
+    # Your existing implementation
+    points = seg_cell[['x_location', 'y_location']].values
+    if len(points) < 3:
+        return None
+    try:
+        from scipy.spatial import ConvexHull
+        hull = ConvexHull(points)
+        return Polygon(points[hull.vertices])
+    except:
+        return None
 
 def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_value: int = 21) -> np.ndarray:
     """Standardize list of polygon vertices to a fixed shape.
