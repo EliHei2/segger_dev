@@ -9,6 +9,7 @@ from shapely.geometry import MultiPolygon, Polygon
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Dict, Any, Optional, List, Tuple
+
 # from segger.prediction.boundary import generate_boundary
 from zarr.storage import ZipStore
 import zarr
@@ -17,17 +18,21 @@ import zarr
 def generate_boundary(seg_cell):
     """Generate convex hull boundary for a cell"""
     # Your existing implementation
-    points = seg_cell[['x_location', 'y_location']].values
+    points = seg_cell[["x_location", "y_location"]].values
     if len(points) < 3:
         return None
     try:
         from scipy.spatial import ConvexHull
+
         hull = ConvexHull(points)
         return Polygon(points[hull.vertices])
     except:
         return None
 
-def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_value: int = 21) -> np.ndarray:
+
+def get_flatten_version(
+    polygon_vertices: List[List[Tuple[float, float]]], max_value: int = 21
+) -> np.ndarray:
     """Standardize list of polygon vertices to a fixed shape.
 
     Args:
@@ -43,7 +48,7 @@ def get_flatten_version(polygon_vertices: List[List[Tuple[float, float]]], max_v
             pass
         if isinstance(vertices, np.ndarray):
             vertices = vertices.tolist()
-        
+
         if len(vertices) > max_value:
             flattened.append(vertices[:max_value])
         else:
@@ -112,7 +117,9 @@ def seg2explorer(
         nucleus_convex_hull = None
         if len(seg_nucleous) >= 3:
             try:
-                nucleus_convex_hull = ConvexHull(seg_nucleous[["x_location", "y_location"]])
+                nucleus_convex_hull = ConvexHull(
+                    seg_nucleous[["x_location", "y_location"]]
+                )
             except Exception:
                 pass
 
@@ -137,7 +144,8 @@ def seg2explorer(
             seg_nucleous[["x_location", "y_location"]].values[
                 nucleus_convex_hull.vertices
             ]
-            if nucleus_convex_hull else np.array([[], []]).T
+            if nucleus_convex_hull
+            else np.array([[], []]).T
         )
         seg_mask_value.append(uint_cell_id)
 
@@ -162,7 +170,9 @@ def seg2explorer(
         "seg_mask_value": np.array(seg_mask_value, dtype=np.int32),
     }
 
-    source_zarr_store = ZipStore(source_path / "cells.zarr.zip", mode="r") # added this line
+    source_zarr_store = ZipStore(
+        source_path / "cells.zarr.zip", mode="r"
+    )  # added this line
     existing_store = zarr.open(source_zarr_store, mode="r")
     new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
 
@@ -175,7 +185,9 @@ def seg2explorer(
 
     # Reshape cell polygons to (n_cells, 50) format
     n_cells = cell_polygon_vertices.shape[0]
-    cell_vertices_flat = cell_polygon_vertices.reshape(n_cells, -1)[:, :257]  # Take first 50 values
+    cell_vertices_flat = cell_polygon_vertices.reshape(n_cells, -1)[
+        :, :257
+    ]  # Take first 50 values
 
     set1 = polygon_group.create_group("1")
     set1["cell_index"] = np.arange(1, n_cells + 1, dtype=np.uint32)  # 1-based indexing
@@ -213,7 +225,9 @@ def seg2explorer(
     new_zarr.create_group("/cell_groups")
     for i, cluster in enumerate(clusters_names):
         new_zarr["cell_groups"].create_group(str(i))
-        group_values = [clusters_dict[cluster].get(x, 0) for x in clustering_df[cluster]]
+        group_values = [
+            clusters_dict[cluster].get(x, 0) for x in clustering_df[cluster]
+        ]
         indices, indptr = get_indices_indptr(np.array(group_values))
         new_zarr["cell_groups"][str(i)]["indices"] = indices
         new_zarr["cell_groups"][str(i)]["indptr"] = indptr
@@ -238,7 +252,6 @@ def seg2explorer(
         cells_name=cells_filename,
         analysis_name=analysis_filename,
     )
-
 
 
 def str_to_uint32(cell_id_str: str) -> Tuple[int, int]:
@@ -484,10 +497,11 @@ def generate_experiment_file(
         json.dump(experiment, f, indent=2)
 
 
-
-
-from pqdm.processes import pqdm  # or from pqdm.processes import pqdm for process backend
+from pqdm.processes import (
+    pqdm,
+)  # or from pqdm.processes import pqdm for process backend
 import os
+
 
 def _process_one_cell(args):
     seg_cell_id, seg_cell, area_low, area_high = args
@@ -506,21 +520,21 @@ def _process_one_cell(args):
     cell_vertices = list(cell_convex_hull.exterior.coords)
     if cell_vertices[0] == cell_vertices[-1]:
         cell_vertices = cell_vertices[:-1]
-    
+
     n_vertices = len(cell_vertices)
-    
+
     # Sample up to 16 vertices
     if n_vertices > 16:
         # Evenly sample 16 vertices from original set
-        indices = np.linspace(0, n_vertices-1, 16, dtype=int)
+        indices = np.linspace(0, n_vertices - 1, 16, dtype=int)
         sampled_vertices = [cell_vertices[i] for i in indices]
     else:
         sampled_vertices = cell_vertices
-    
+
     # Pad with first vertex if needed
     if len(sampled_vertices) < 16:
         sampled_vertices += [sampled_vertices[0]] * (16 - len(sampled_vertices))
-    
+
     return {
         "seg_cell_id": seg_cell_id,
         "cell_area": float(cell_convex_hull.area),
@@ -541,7 +555,7 @@ def seg2explorer_pqdm(
     cell_id_columns: str = "seg_cell_id",
     area_low: float = 10,
     area_high: float = 100,
-    n_jobs: int = 1
+    n_jobs: int = 1,
 ) -> None:
     source_path = Path(source_path)
     storage = Path(output_dir)
@@ -551,11 +565,20 @@ def seg2explorer_pqdm(
 
     # Build a lightweight iterable of work items (id, slice, thresholds)
     # NOTE: this will still materialize each group slice, but we avoid copying the whole DF per worker.
-    work_iter = ((seg_cell_id, seg_cell, area_low, area_high) for seg_cell_id, seg_cell in grouped_by)
+    work_iter = (
+        (seg_cell_id, seg_cell, area_low, area_high)
+        for seg_cell_id, seg_cell in grouped_by
+    )
 
     # Parallel map with threads (good default). Tune n_jobs.
     # n_jobs = min(32, os.cpu_count() or 8)
-    results = pqdm(work_iter, _process_one_cell, n_jobs=n_jobs, desc="Cells", exception_behaviour="immediate")
+    results = pqdm(
+        work_iter,
+        _process_one_cell,
+        n_jobs=n_jobs,
+        desc="Cells",
+        exception_behaviour="immediate",
+    )
 
     # Collate results
     cell_id2old_id: Dict[int, Any] = {}
@@ -575,7 +598,9 @@ def seg2explorer_pqdm(
     # Flatten vertices exactly as before
     cell_polygon_vertices = get_flatten_version(polygon_vertices)
 
-    source_zarr_store = ZipStore(source_path / "cells.zarr.zip", mode="r") # added this line
+    source_zarr_store = ZipStore(
+        source_path / "cells.zarr.zip", mode="r"
+    )  # added this line
     existing_store = zarr.open(source_zarr_store, mode="r")
     new_store = zarr.open(storage / f"{cells_filename}.zarr.zip", mode="w")
 
@@ -584,11 +609,13 @@ def seg2explorer_pqdm(
 
     # Process cell polygons (set 1)
     # cell_polygons = cells["polygon_vertices"][1]  # Cell polygons are at index 1
-    cell_num_vertices = polygon_num_vertices # Cell vertex counts
+    cell_num_vertices = polygon_num_vertices  # Cell vertex counts
 
     # Reshape cell polygons to (n_cells, 50) format
     n_cells = cell_polygon_vertices.shape[0]
-    cell_vertices_flat = cell_polygon_vertices.reshape(n_cells, -1)[:, :33]  # Take first 50 values
+    cell_vertices_flat = cell_polygon_vertices.reshape(n_cells, -1)[
+        :, :33
+    ]  # Take first 50 values
 
     set1 = polygon_group.create_group("1")
     set1["cell_index"] = np.arange(1, n_cells + 1, dtype=np.uint32)  # 1-based indexing
@@ -626,7 +653,9 @@ def seg2explorer_pqdm(
     new_zarr.create_group("/cell_groups")
     for i, cluster in enumerate(clusters_names):
         new_zarr["cell_groups"].create_group(str(i))
-        group_values = [clusters_dict[cluster].get(x, 0) for x in clustering_df[cluster]]
+        group_values = [
+            clusters_dict[cluster].get(x, 0) for x in clustering_df[cluster]
+        ]
         indices, indptr = get_indices_indptr(np.array(group_values))
         new_zarr["cell_groups"][str(i)]["indices"] = indices
         new_zarr["cell_groups"][str(i)]["indptr"] = indptr

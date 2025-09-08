@@ -87,7 +87,6 @@ Where:
 For each tile, a graph $$G$$ is constructed with:
 
 - **Nodes ($$V$$)**:
-
   - **Transcripts**: Represented by their spatial coordinates $$(x_t, y_t)$$ and feature vectors $$\mathbf{f}_t$$.
   - **Boundaries**: Represented by centroid coordinates $$(x_b, y_b)$$ and associated properties (e.g., area).
 

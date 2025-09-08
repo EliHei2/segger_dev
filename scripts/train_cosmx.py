@@ -1,4 +1,5 @@
 from segger.training.segger_data_module import SeggerDataModule
+
 # from segger.prediction.predict import predict, load_model
 from segger.models.segger_model import Segger
 from segger.training.train import LitSegger
@@ -9,12 +10,13 @@ from pathlib import Path
 from lightning.pytorch.plugins.environments import LightningEnvironment
 from matplotlib import pyplot as plt
 import seaborn as sns
+
 # import pandas as pd
 from segger.data.utils import calculate_gene_celltype_abundance_embedding
+
 # import scanpy as sc
 import os
 from lightning import LightningModule
-
 
 
 segger_data_dir = Path("data_tidy/pyg_datasets/cosmx_pancreas_degbugged")
@@ -50,7 +52,11 @@ model = Segger(
     heads=4,
     num_mid_layers=3,
 )
-model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+model = to_hetero(
+    model,
+    (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]),
+    aggr="sum",
+)
 
 batch = dm.train[0]
 model.forward(batch.x_dict, batch.edge_index_dict)

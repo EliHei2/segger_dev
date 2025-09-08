@@ -69,7 +69,7 @@ nucleus_polygons = get_polygons_from_xy(
 )
 
 
-cells = list(set(transcript_counts.index) &  set(nucleus_polygons.index))
+cells = list(set(transcript_counts.index) & set(nucleus_polygons.index))
 nucleus_polygons = nucleus_polygons[cells]
 transcript_counts = transcript_counts[cells]
 
