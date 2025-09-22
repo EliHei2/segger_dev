@@ -188,8 +188,6 @@ def load_model(checkpoint_path: str) -> LitSegger:
     return lit_segger
 
 
-
-
 def get_similarity_scores(
     model: torch.nn.Module,
     batch: Batch,
@@ -242,7 +240,8 @@ def get_similarity_scores(
         if is_1d:
             x = x.unsqueeze(1)
         emb = (
-            model.tx_embedding[key]((x.sum(-1).int())) if is_1d
+            model.tx_embedding[key]((x.sum(-1).int()))
+            if is_1d
             else model.lin0[key](x.float())
         )
         return F.normalize(emb, p=2, dim=1)
@@ -252,8 +251,7 @@ def get_similarity_scores(
             embeddings = model(batch.x_dict, batch.edge_index_dict)
         else:
             embeddings = {
-                key: get_normalized_embedding(x, key)
-                for key, x in batch.x_dict.items()
+                key: get_normalized_embedding(x, key) for key, x in batch.x_dict.items()
             }
 
     def sparse_multiply(
@@ -264,14 +262,20 @@ def get_similarity_scores(
         """
         Compute sparse similarity scores using torch only (no cupy).
         """
-        padded_emb = F.pad(embeddings[to_type], (0, 0, 0, 1))  # Add dummy row for -1 padding
+        padded_emb = F.pad(
+            embeddings[to_type], (0, 0, 0, 1)
+        )  # Add dummy row for -1 padding
         neighbor_embs = padded_emb[edge_index]  # [num_from, k, dim]
         source_embs = embeddings[from_type].unsqueeze(1)  # [num_from, 1, dim]
 
         similarity = (neighbor_embs * source_embs).sum(dim=-1)  # [num_from, k]
 
         valid_mask = edge_index != -1
-        row_idx = torch.arange(edge_index.size(0), device=device).unsqueeze(1).expand_as(edge_index)
+        row_idx = (
+            torch.arange(edge_index.size(0), device=device)
+            .unsqueeze(1)
+            .expand_as(edge_index)
+        )
         row_valid = row_idx[valid_mask]
         col_valid = edge_index[valid_mask]
         val_valid = similarity[valid_mask]
@@ -280,7 +284,9 @@ def get_similarity_scores(
             val_valid = torch.sigmoid(val_valid)
 
         indices = torch.stack([row_valid, col_valid], dim=0)
-        return torch.sparse_coo_tensor(indices, val_valid, shape, device=device).coalesce()
+        return torch.sparse_coo_tensor(
+            indices, val_valid, shape, device=device
+        ).coalesce()
 
     return sparse_multiply(embeddings, dense_index, shape)
 
@@ -383,10 +389,12 @@ def predict_batch(
                 sub_v = sub_v[valid]
 
                 if sub_i.numel() > 0:
-                    edge_df = pd.DataFrame({
-                        "source": [transcript_id[i.item()] for i in sub_i[0]],
-                        "target": [transcript_id[i.item()] for i in sub_i[1]],
-                    })
+                    edge_df = pd.DataFrame(
+                        {
+                            "source": [transcript_id[i.item()] for i in sub_i[0]],
+                            "target": [transcript_id[i.item()] for i in sub_i[1]],
+                        }
+                    )
 
                     edge_index_ddf = delayed(dd.from_pandas)(edge_df, npartitions=1)
                     delayed_write_edge_index = delayed(edge_index_ddf.to_parquet)(
@@ -598,7 +606,9 @@ def segment(
             print(f"Mapping component labels...")
 
         def _get_id():
-            return "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
+            return (
+                "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
+            )
 
         new_ids = np.array([_get_id() for _ in range(n)])
         comp_labels = new_ids[comps]
@@ -608,7 +618,9 @@ def segment(
         unassigned_transcripts_df = transcripts_df_filtered.loc[
             unassigned_mask, ["transcript_id"]
         ]
-        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(comp_labels)
+        new_segger_cell_ids = unassigned_transcripts_df["transcript_id"].map(
+            comp_labels
+        )
         unassigned_transcripts_df = unassigned_transcripts_df.assign(
             segger_cell_id=new_segger_cell_ids
         )

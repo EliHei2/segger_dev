@@ -129,8 +129,9 @@ def read_parquet_region(
     columns = list({x, y} | set(extra_columns))
 
     # Check if 'Geometry', 'geometry', 'polygon', or 'Polygon' is in the columns
-    if any(col in columns for col in ['Geometry', 'geometry', 'polygon', 'Polygon']):
+    if any(col in columns for col in ["Geometry", "geometry", "polygon", "Polygon"]):
         import geopandas as gpd
+
         # If geometry columns are present, read with geopandas
         region = gpd.read_parquet(
             filepath,
@@ -199,7 +200,7 @@ def get_polygons_from_xy(
         # Scale polygons around their centroid
         gs = gpd.GeoSeries(
             [
-                scale(geom, xfact=scale_factor, yfact=scale_factor, origin='centroid')
+                scale(geom, xfact=scale_factor, yfact=scale_factor, origin="centroid")
                 for geom in gs
             ],
             index=gs.index,
@@ -357,7 +358,11 @@ def filter_transcripts(
     mask = pd.Series(True, index=transcripts_df.index)
     if filter_substrings is not None and label is not None:
         mask &= ~transcripts_df[label].str.startswith(tuple(filter_substrings))
-    if min_qv is not None and qv_column is not None and qv_column in transcripts_df.columns:
+    if (
+        min_qv is not None
+        and qv_column is not None
+        and qv_column in transcripts_df.columns
+    ):
         mask &= transcripts_df[qv_column].ge(min_qv)
     return transcripts_df[mask]
 
