@@ -255,7 +255,8 @@ def get_similarity_scores(
             if is_1d:
                 x = x.unsqueeze(1)
             embed = (
-                model.tx_embedding[key]((x.sum(-1).int())) if is_1d
+                model.tx_embedding[key]((x.sum(-1).int()))
+                if is_1d
                 else model.lin0[key](x.float())
             )
             embed = F.normalize(embed, p=2, dim=1)
@@ -266,7 +267,8 @@ def get_similarity_scores(
                 embeddings = model(batch.x_dict, batch.edge_index_dict)
             else:  # to go with the inital embeddings for tx-tx
                 embeddings = {
-                    key: get_normalized_embedding(x, key) for key, x in batch.x_dict.items()
+                    key: get_normalized_embedding(x, key)
+                    for key, x in batch.x_dict.items()
                 }
 
         def sparse_multiply(embeddings, edge_index, shape) -> coo_matrix:
