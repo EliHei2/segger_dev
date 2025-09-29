@@ -1306,7 +1306,7 @@ class STTile:
             )
 
         # Ensure self.boundaries is a GeoDataFrame with correct geometry
-        self.boundaries = gpd.GeoDataFrame(self.boundaries.copy(), geometry=polygons)
+        self.boundaries = gpd.GeoDataFrame(index = polygons.index, geometry=polygons)
         centroids = polygons.centroid.get_coordinates()
         pyg_data["bd"].id = polygons.index.to_numpy()
         pyg_data["bd"].pos = torch.tensor(centroids.values, dtype=torch.float32)
