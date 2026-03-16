@@ -33,7 +33,6 @@ import dask
 
 # from rmm.allocators.cupy import rmm_cupy_allocator
 from cupyx.scipy.sparse import coo_matrix
-from torch.utils.dlpack import to_dlpack, from_dlpack
 
 from dask.distributed import Client, LocalCluster
 import cupy as cp
@@ -181,6 +180,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
     # Load model from checkpoint
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
+        weights_only=False,
     )
 
     return lit_segger
@@ -255,7 +255,8 @@ def get_similarity_scores(
             if is_1d:
                 x = x.unsqueeze(1)
             embed = (
-                model.tx_embedding[key]((x.sum(-1).int())) if is_1d
+                model.tx_embedding[key]((x.sum(-1).int()))
+                if is_1d
                 else model.lin0[key](x.float())
             )
             embed = F.normalize(embed, p=2, dim=1)
@@ -266,7 +267,8 @@ def get_similarity_scores(
                 embeddings = model(batch.x_dict, batch.edge_index_dict)
             else:  # to go with the inital embeddings for tx-tx
                 embeddings = {
-                    key: get_normalized_embedding(x, key) for key, x in batch.x_dict.items()
+                    key: get_normalized_embedding(x, key)
+                    for key, x in batch.x_dict.items()
                 }
 
         def sparse_multiply(embeddings, edge_index, shape) -> coo_matrix:
@@ -286,8 +288,8 @@ def get_similarity_scores(
             indices = torch.argwhere(edge_index != -1).T
             indices[1] = edge_index[edge_index != -1]
             indices_gpu = indices.to("cuda")  # Keep reference
-            rows = cp.fromDlpack(to_dlpack(indices_gpu[0, :]))
-            columns = cp.fromDlpack(to_dlpack(indices_gpu[1, :]))
+            rows = cp.from_dlpack(indices_gpu[0, :])
+            columns = cp.from_dlpack(indices_gpu[1, :])
             del indices_gpu  # Delete only after CuPy arrays exist
             stream = cp.cuda.get_current_stream()
             stream.synchronize()  # <-- ADD THIS
@@ -295,7 +297,7 @@ def get_similarity_scores(
             del indices
             values = similarity[edge_index != -1].flatten()
             sparse_result = coo_matrix(
-                (cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape
+                (cp.from_dlpack(values), (rows, columns)), shape=shape
             )
             stream.synchronize()
             return sparse_result
@@ -342,7 +344,7 @@ def predict_batch(
         return "".join(np.random.choice(list("abcdefghijklmnopqrstuvwxyz"), 8)) + "-nx"
 
     # print(gpu_id)
-    with cp.cuda.Device(gpu_id):
+    with cp.cuda.Device(gpu_id), torch.no_grad():
         # Move the batch to the specified GPU
         batch = batch.to(f"cuda:{gpu_id}")
         lit_segger.model = lit_segger.model.to(f"cuda:{gpu_id}")

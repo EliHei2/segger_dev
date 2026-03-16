@@ -17,10 +17,8 @@ from dask_cuda import LocalCUDACluster
 import dask.dataframe as dd
 
 
-
 seg_tag = "human_CRC_seg_cells"
 model_version = 0
-
 
 
 XENIUM_DATA_DIR = Path(
@@ -32,9 +30,7 @@ models_dir = Path("./models") / seg_tag
 benchmarks_dir = Path(
     "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_tidy/benchmarks/human_CRC_seg_cells"
 )
-transcripts_file = (
-   "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real/transcripts.parquet"
-)
+transcripts_file = "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real/transcripts.parquet"
 # Initialize the Lightning data module
 dm = SeggerDataModule(
     data_dir=SEGGER_DATA_DIR,

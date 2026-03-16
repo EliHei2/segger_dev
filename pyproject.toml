@@ -39,6 +39,10 @@ dev = [
     "jupyter>=1.1.1",
     "pytest-dependency>=0.6.0",
 ]
+cuda12 = [
+    "cupy-cuda12x",
+    "nvidia-cuda-nvrtc-cu12",
+]
 validate = [
     "anndata>=0.11.4",
     "matplotlib>=3.10.1",

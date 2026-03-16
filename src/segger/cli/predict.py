@@ -1,6 +1,6 @@
 import click
 from segger.training.segger_data_module import SeggerDataModule
-from segger.prediction.predict import segment, load_model
+from segger.prediction.predict_parquet import segment, load_model
 from segger.cli.utils import add_options, CustomFormatter
 from pathlib import Path
 import logging

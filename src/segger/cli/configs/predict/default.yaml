@@ -46,6 +46,10 @@ knn_method:
   type: str
   default: "cuda"
   help: Method for KNN computation.
+gpu_ids:
+  type: str
+  default: "0"
+  help: Comma-separated GPU IDs for inference (e.g. '0,1,2').
 file_format:
   type: str
   default: "anndata"

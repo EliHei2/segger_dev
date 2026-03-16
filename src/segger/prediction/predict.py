@@ -66,7 +66,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
     # Load model
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
-        # map_location=torch.device("cuda"),
+        weights_only=False,
     )
 
     return lit_segger

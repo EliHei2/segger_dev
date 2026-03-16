@@ -29,7 +29,6 @@ import time
 import dask
 from rmm.allocators.cupy import rmm_cupy_allocator
 from cupyx.scipy.sparse import coo_matrix
-from torch.utils.dlpack import to_dlpack, from_dlpack
 
 from dask.distributed import Client, LocalCluster
 import cupy as cp
@@ -179,6 +178,7 @@ def load_model(checkpoint_path: str) -> LitSegger:
     # Load model from checkpoint
     lit_segger = LitSegger.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
+        weights_only=False,
     )
 
     return lit_segger
@@ -248,13 +248,13 @@ def get_similarity_scores(
             # shape = batch[from_type].x.shape[0], batch[to_type].x.shape[0]
             indices = torch.argwhere(edge_index != -1).T
             indices[1] = edge_index[edge_index != -1]
-            rows = cp.fromDlpack(to_dlpack(indices[0, :].to("cuda")))
-            columns = cp.fromDlpack(to_dlpack(indices[1, :].to("cuda")))
+            rows = cp.from_dlpack(indices[0, :].to("cuda"))
+            columns = cp.from_dlpack(indices[1, :].to("cuda"))
             # print(rows)
             del indices
             values = similarity[edge_index != -1].flatten()
             sparse_result = coo_matrix(
-                (cp.fromDlpack(to_dlpack(values)), (rows, columns)), shape=shape
+                (cp.from_dlpack(values), (rows, columns)), shape=shape
             )
             return sparse_result
             # Free GPU memory after computation

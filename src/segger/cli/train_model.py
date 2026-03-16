@@ -12,35 +12,74 @@ help_msg = "Train the Segger segmentation model."
 
 @click.command(name="train_model", help=help_msg)
 @add_options(config_path=train_yml)
-@click.option("--dataset_dir", type=Path, required=True, help="Directory containing the processed Segger dataset.")
 @click.option(
-    "--models_dir", type=Path, required=True, help="Directory to save the trained model and the training logs."
+    "--dataset_dir",
+    type=Path,
+    required=True,
+    help="Directory containing the processed Segger dataset.",
 )
-@click.option("--sample_tag", type=str, required=True, help="Sample tag for the dataset.")
+@click.option(
+    "--models_dir",
+    type=Path,
+    required=True,
+    help="Directory to save the trained model and the training logs.",
+)
+@click.option(
+    "--sample_tag", type=str, required=True, help="Sample tag for the dataset."
+)
 @click.option("--init_emb", type=int, default=8, help="Size of the embedding layer.")
-@click.option("--hidden_channels", type=int, default=32, help="Size of hidden channels in the model.")
-@click.option("--num_tx_tokens", type=int, default=500, help="Number of transcript tokens.")
+@click.option(
+    "--hidden_channels",
+    type=int,
+    default=32,
+    help="Size of hidden channels in the model.",
+)
+@click.option(
+    "--num_tx_tokens", type=int, default=500, help="Number of transcript tokens."
+)
 @click.option("--out_channels", type=int, default=8, help="Number of output channels.")
 @click.option("--heads", type=int, default=2, help="Number of attention heads.")
-@click.option("--num_mid_layers", type=int, default=2, help="Number of mid layers in the model.")
-@click.option("--batch_size", type=int, default=4, help="Batch size for training.")
-@click.option("--num_workers", type=int, default=2, help="Number of workers for data loading.")
 @click.option(
-    "--accelerator", type=str, default="cuda", help='Device type to use for training (e.g., "cuda", "cpu").'
+    "--num_mid_layers", type=int, default=2, help="Number of mid layers in the model."
+)
+@click.option("--batch_size", type=int, default=4, help="Batch size for training.")
+@click.option(
+    "--num_workers", type=int, default=2, help="Number of workers for data loading."
+)
+@click.option(
+    "--accelerator",
+    type=str,
+    default="cuda",
+    help='Device type to use for training (e.g., "cuda", "cpu").',
 )  # Ask for accelerator
-@click.option("--max_epochs", type=int, default=200, help="Number of epochs for training.")
-@click.option("--save_best_model", type=bool, default=True, help="Whether to save the best model.")  # unused for now
-@click.option("--learning_rate", type=float, default=1e-3, help="Learning rate for training.")
+@click.option(
+    "--max_epochs", type=int, default=200, help="Number of epochs for training."
+)
+@click.option(
+    "--save_best_model", type=bool, default=True, help="Whether to save the best model."
+)  # unused for now
+@click.option(
+    "--learning_rate", type=float, default=1e-3, help="Learning rate for training."
+)
 @click.option(
     "--pretrained_model_dir",
     type=Path,
     default=None,
     help="Directory containing the pretrained modelDirectory containing the pretrained model to use (if any).",
 )
-@click.option("--pretrained_model_version", type=int, default=None, help="Version of pretrained model.")
+@click.option(
+    "--pretrained_model_version",
+    type=int,
+    default=None,
+    help="Version of pretrained model.",
+)
 @click.option("--devices", type=int, default=4, help="Number of devices (GPUs) to use.")
-@click.option("--strategy", type=str, default="auto", help="Training strategy for the trainer.")
-@click.option("--precision", type=str, default="16-mixed", help="Precision for training.")
+@click.option(
+    "--strategy", type=str, default="auto", help="Training strategy for the trainer."
+)
+@click.option(
+    "--precision", type=str, default="16-mixed", help="Precision for training."
+)
 def train_model(args: Namespace):
 
     # Setup logging
@@ -56,10 +95,10 @@ def train_model(args: Namespace):
     from segger.training.segger_data_module import SeggerDataModule
     from segger.prediction.predict_parquet import load_model
     from lightning.pytorch.loggers import CSVLogger
-    from lightning import Trainer
+    from lightning.pytorch import Trainer
 
     logging.info("Done.")
-uv a
+
     # Load datasets
     logging.info("Loading Xenium datasets...")
     dm = SeggerDataModule(
@@ -74,7 +113,12 @@ uv a
     # Initialize model
     if args.pretrained_model_dir is not None:
         logging.info("Loading pretrained model...")
-        ls = load_model(args.pretrained_model_dir / "lightning_logs" / f"version_{args.model_version}" / "checkpoints")
+        ls = load_model(
+            args.pretrained_model_dir
+            / "lightning_logs"
+            / f"version_{args.model_version}"
+            / "checkpoints"
+        )
     else:
         logging.info("Creating new model...")
         is_token_based = dm.train[0].x_dict["tx"].ndim == 1
@@ -83,13 +127,19 @@ uv a
             assert dm.train[0].x_dict["tx"].ndim == 1
             assert dm.train[0].x_dict["tx"].dtype == torch.long
             num_tx_features = args.num_tx_tokens
-            print("Using token-based embeddings as node features, number of tokens: ", num_tx_features)
+            print(
+                "Using token-based embeddings as node features, number of tokens: ",
+                num_tx_features,
+            )
         else:
             # if the model is not token-based, the input is a 2D tensor of scRNAseq embeddings
             assert dm.train[0].x_dict["tx"].ndim == 2
             assert dm.train[0].x_dict["tx"].dtype == torch.float32
             num_tx_features = dm.train[0].x_dict["tx"].shape[1]
-            print("Using scRNAseq embeddings as node features, number of features: ", num_tx_features)
+            print(
+                "Using scRNAseq embeddings as node features, number of features: ",
+                num_tx_features,
+            )
         num_bd_features = dm.train[0].x_dict["bd"].shape[1]
         print("Number of boundary node features: ", num_bd_features)
         ls = LitSegger(

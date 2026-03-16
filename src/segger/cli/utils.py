@@ -65,6 +65,9 @@ def add_options(
 
         # Decorate function with all options
         for name, kwargs in reversed(config.items()):
+            # Handle simple values (not dicts) as defaults
+            if not isinstance(kwargs, dict):
+                kwargs = {"default": kwargs}
             kwargs["show_default"] = show_default
             if "type" in kwargs:
                 kwargs["type"] = locate(kwargs["type"])

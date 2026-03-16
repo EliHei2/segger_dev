@@ -180,9 +180,14 @@ def create_anndata(
     for cell_id, cell_data in df_filtered.groupby(cell_id_col):
         if len(cell_data) < min_transcripts:
             continue
-        cell_convex_hull = ConvexHull(
-            cell_data[["x_location", "y_location"]], qhull_options="QJ"
-        )
+        # Filter out NaN coordinates before ConvexHull computation
+        coords = cell_data[["x_location", "y_location"]].dropna()
+        if len(coords) < 3:
+            continue
+        try:
+            cell_convex_hull = ConvexHull(coords, qhull_options="QJ")
+        except Exception:
+            continue
         cell_area = cell_convex_hull.area
         if cell_area < min_cell_area or cell_area > max_cell_area:
             continue
@@ -501,7 +506,8 @@ class SpatialTranscriptomicsDataset(InMemoryDataset):
             Data: The processed data object.
         """
         data = torch.load(
-            os.path.join(self.processed_dir, self.processed_file_names[idx])
+            os.path.join(self.processed_dir, self.processed_file_names[idx]),
+            weights_only=False,
         )
         data["tx"].x = data["tx"].x.to_dense()
         return data
