@@ -38,8 +38,8 @@ Usage:
 # CELLTYPE_COLUMN = 'celltype_minor'
 
 
-MERSCOPE_DATA_DIR = Path('data_raw/merscope/processed/')
-SEGGER_DATA_DIR = Path('data_tidy/pyg_datasets/merscope_liver')
+MERSCOPE_DATA_DIR = Path("data_raw/merscope/processed/")
+SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/merscope_liver")
 # SCRNASEQ_FILE = Path('/omics/groups/OE0606/internal/mimmo/MERSCOPE/notebooks/data/scData/bh/bh_mng_scdata_20250306.h5ad')
 # CELLTYPE_COLUMN = 'annot_v1'
 

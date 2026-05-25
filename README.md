@@ -1,6 +1,5 @@
 # 🍳 Welcome to segger!
 
-
 Stable migration (MARCH 2026): WE HAVE A NEW STABLE VERSION! --> please check out https://github.com/dpeerlab/segger
 
 **segger** is a GNN-based method for segmenting image-based spatial transcriptomics data. It models transcripts and cells as a heterogeneous graph and treats cell segmentation as a link prediction problem, connecting transcripts to cells. For more information, visit our [bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.03.14.643160v1).

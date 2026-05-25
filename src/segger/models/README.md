@@ -6,7 +6,6 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
 
 1. **Input Node Features**:  
    For input node features \( \mathbf{x} \), the model distinguishes between one-dimensional (transcript) nodes and multi-dimensional (boundary or nucleus) nodes by checking the dimension of \( \mathbf{x} \).
-
    - **Transcript Nodes**: If \( \mathbf{x} \) is 1-dimensional (e.g., for tokenized transcript data), the model applies an embedding layer:
 
    $$
@@ -14,7 +13,6 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
    $$
 
    where \( i \) is the transcript token index.
-
    - **Nuclei or Cell Boundary Nodes**: If \( \mathbf{x} \) has multiple dimensions, the model applies a linear transformation:
 
    $$
@@ -31,13 +29,11 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
    $$
 
    where:
-
    - \( \alpha\_{ij} \) is the attention coefficient between node \( i \) and node \( j \), computed as:
 
    $$
    \alpha_{ij} = \frac{\exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{j}^{(l)}] \right)\right)}{\sum_{k \in \mathcal{N}(i)} \exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{k}^{(l)}] \right)\right)}
    $$
-
    - \( \mathbf{a} \) is a learnable attention vector.
 
 3. **Residual Linear Connections**:  
