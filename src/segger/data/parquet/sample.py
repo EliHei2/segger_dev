@@ -18,6 +18,7 @@ from pqdm.threads import pqdm
 import torch
 import random
 from segger.data.parquet.transcript_embedding import TranscriptEmbedding
+
 # import re
 
 
@@ -209,7 +210,9 @@ class STSampleParquet:
                 logging.warning(f"Number of missing genes: {len(missing_genes)}")
                 self.settings.transcripts.filter_substrings.extend(missing_genes)
             # pattern = "|".join(self.settings.transcripts.filter_substrings)
-            pattern = "|".join(f"^{s}" for s in self.settings.transcripts.filter_substrings)
+            pattern = "|".join(
+                f"^{s}" for s in self.settings.transcripts.filter_substrings
+            )
             mask = pc.invert(pc.match_substring_regex(names, pattern))
             filtered_names = pc.filter(names, mask).to_pylist()
             metadata["feature_names"] = [
@@ -1168,11 +1171,13 @@ class STTile:
         """
         # Get polygons from coordinates
         # Use getattr to check for the geometry column
-        geometry_column = getattr(self.settings.boundaries, 'geometry', None)
+        geometry_column = getattr(self.settings.boundaries, "geometry", None)
         if geometry_column and geometry_column in self.boundaries.columns:
             polygons = self.boundaries[geometry_column]
         else:
-            polygons = self.boundaries['geometry']  # Assign None if the geometry column does not exist
+            polygons = self.boundaries[
+                "geometry"
+            ]  # Assign None if the geometry column does not exist
         # Geometric properties of polygons
         props = self.get_polygon_props(polygons)
         props = torch.as_tensor(props.values).float()
@@ -1233,9 +1238,11 @@ class STTile:
 
         # Set up Boundary nodes
         # Check if boundaries have geometries
-        geometry_column = getattr(self.settings.boundaries, 'geometry', None)
+        geometry_column = getattr(self.settings.boundaries, "geometry", None)
         if geometry_column and geometry_column in self.boundaries.columns:
-            polygons = gpd.GeoSeries(self.boundaries[geometry_column], index=self.boundaries.index)
+            polygons = gpd.GeoSeries(
+                self.boundaries[geometry_column], index=self.boundaries.index
+            )
         else:
             # Fallback: compute polygons
             polygons = utils.get_polygons_from_xy(

@@ -17,7 +17,6 @@ from typing import Optional
 import re
 from scipy.spatial import KDTree
 
-
 # CONFIG
 torch._dynamo.config.suppress_errors = True
 os.environ["PYTORCH_USE_CUDA_DSA"] = "1"

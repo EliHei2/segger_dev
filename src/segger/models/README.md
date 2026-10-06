@@ -37,7 +37,6 @@ The `segger` model is a graph neural network designed to handle heterogeneous gr
    $$
    \alpha_{ij} = \frac{\exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{j}^{(l)}] \right)\right)}{\sum_{k \in \mathcal{N}(i)} \exp\left( \text{LeakyReLU}\left( \mathbf{a}^{\top} [\mathbf{W}^{(l)} \mathbf{h}_{i}^{(l)} || \mathbf{W}^{(l)} \mathbf{h}_{k}^{(l)}] \right)\right)}
    $$
-
    - \( \mathbf{a} \) is a learnable attention vector.
 
 3. **Residual Linear Connections**:  

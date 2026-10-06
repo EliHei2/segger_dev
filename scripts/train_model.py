@@ -8,7 +8,7 @@ from lightning.pytorch.loggers import CSVLogger
 from lightning import Trainer
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', type=Path, required=True)
+parser.add_argument("--data_dir", type=Path, required=True)
 args = parser.parse_args()
 
 segger_data_dir = args.data_dir
@@ -32,7 +32,11 @@ model = Segger(
     heads=4,
     num_mid_layers=2,
 )
-model = to_hetero(model, (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]), aggr="sum")
+model = to_hetero(
+    model,
+    (["tx", "bd"], [("tx", "belongs", "bd"), ("tx", "neighbors", "tx")]),
+    aggr="sum",
+)
 
 ls = LitSegger(model=model)
 
