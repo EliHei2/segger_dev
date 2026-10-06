@@ -42,17 +42,14 @@ XENIUM_DATA_DIR = Path(
     "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
 )
 SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_nuclei")
-SCRNASEQ_FILE = Path(
-    "data_tidy/Human_CRC/scRNAseq.h5ad"
-)
+SCRNASEQ_FILE = Path("data_tidy/Human_CRC/scRNAseq.h5ad")
 CELLTYPE_COLUMN = "Level1"
 scrnaseq = sc.read(SCRNASEQ_FILE)
 sc.pp.subsample(scrnaseq, 0.1)
 scrnaseq.var_names_make_unique()
 # Calculate gene-celltype embeddings from reference data
 gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-    scrnaseq,
-    CELLTYPE_COLUMN
+    scrnaseq, CELLTYPE_COLUMN
 )
 
 # Initialize spatial transcriptomics sample object
@@ -61,7 +58,7 @@ sample = STSampleParquet(
     n_workers=4,
     sample_type="xenium",
     # scale_factor=0.8,
-    weights=gene_celltype_abundance_embedding
+    weights=gene_celltype_abundance_embedding,
 )
 
 # # Load and filter datas

@@ -35,17 +35,13 @@ Usage:
 """
 
 
-
 XENIUM_DATA_DIR = Path(
     "/dkfz/cluster/gpu/data/OE0606/elihei/segger_experiments/data_raw/xenium_seg_kit/human_CRC_real"
 )
 SEGGER_DATA_DIR = Path("data_tidy/pyg_datasets/human_CRC_seg_nuclei")
-SCRNASEQ_FILE = Path(
-    "data_tidy/Human_CRC/scRNAseq.h5ad"
-)
-CELLTYPE_COLUMN = "Level1" # change this to your column name
+SCRNASEQ_FILE = Path("data_tidy/Human_CRC/scRNAseq.h5ad")
+CELLTYPE_COLUMN = "Level1"  # change this to your column name
 scrnaseq = sc.read(SCRNASEQ_FILE)
-
 
 
 # subsample the scRNAseq if needed
@@ -55,8 +51,7 @@ scrnaseq = sc.read(SCRNASEQ_FILE)
 
 # Calculate gene-celltype embeddings from reference data
 gene_celltype_abundance_embedding = calculate_gene_celltype_abundance_embedding(
-    scrnaseq,
-    CELLTYPE_COLUMN
+    scrnaseq, CELLTYPE_COLUMN
 )
 
 # Initialize spatial transcriptomics sample object
@@ -65,7 +60,7 @@ sample = STSampleParquet(
     n_workers=4,
     sample_type="xenium",
     weights=gene_celltype_abundance_embedding,
-    scale_factor=1.
+    scale_factor=1.0,
 )
 
 
@@ -77,7 +72,7 @@ sample.save(
     dist_tx=5,  # Use calculated optimal search radius
     tile_size=10000,  # Tile size for processing
     # tile_height=50,
-    neg_sampling_ratio=10.,  # 5:1 negative:positive samples
+    neg_sampling_ratio=10.0,  # 5:1 negative:positive samples
     frac=1.0,  # Use all data
     val_prob=0.3,  # 30% validation set
     test_prob=0,  # No test set
