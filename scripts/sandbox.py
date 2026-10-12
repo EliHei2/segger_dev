@@ -52,7 +52,6 @@ mcer_data_filtered = mcer_box_data[
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-
 sns.set_style("white")
 sns.set_context("paper", font_scale=1.2)
 
